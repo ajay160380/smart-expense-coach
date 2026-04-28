@@ -94,6 +94,45 @@
             margin-bottom: 0;
         }
 
+        /* Weekly Comparison Styling */
+        .comparison-text {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .comparison-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            flex: 1;
+            min-width: 150px;
+            background: #F9FAFB;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .stat-box span:first-child {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-box .stat-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
         /* Grid Layout for lists */
         .grid-container {
             display: grid;
@@ -158,6 +197,21 @@
     <div class="card card-insight">
         <h3>💡 Smart Insight</h3>
         <p>{{ insight }}</p>
+    </div>
+
+    <div class="card">
+        <h3>📅 Weekly Comparison</h3>
+        <p class="comparison-text">{{ comparison }}</p>
+        <div class="comparison-stats">
+            <div class="stat-box">
+                <span>This Week</span>
+                <span class="stat-amount">₹{{ current_total }}</span>
+            </div>
+            <div class="stat-box">
+                <span>Last Week</span>
+                <span class="stat-amount">₹{{ previous_total }}</span>
+            </div>
+        </div>
     </div>
 
     <div class="grid-container">
