@@ -1,17 +1,53 @@
-<h1>Dashboard</h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .flex {
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
 
-<h2>Total Expense: ₹{{ total }}</h2>
+<h1>💰 Expense Dashboard</h1>
 
-<h3>Category-wise:</h3>
-<ul>
-    {% for category, amount in category_data.items %}
-        <li>{{ category }} : ₹{{ amount }}</li>
-    {% endfor %}
-</ul>
+<div class="card">
+    <h2>Total Expense: ₹{{ total }}</h2>
+</div>
 
-<h3>All Expenses:</h3>
-<ul>
-    {% for exp in expenses %}
-        <li>{{ exp.category }} - ₹{{ exp.amount }}</li>
-    {% endfor %}
-</ul>
+<div class="flex">
+    <div class="card">
+        <h3>Category Breakdown</h3>
+        <ul>
+            {% for category, amount in category_data.items %}
+                <li>{{ category }} - ₹{{ amount }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>Recent Expenses</h3>
+        <ul>
+            {% for exp in expenses %}
+                <li>{{ exp.category }} - ₹{{ exp.amount }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>
