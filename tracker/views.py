@@ -1,13 +1,22 @@
-from django.shortcuts import render, redirect
-from .forms import ExpenseForm
+from django.shortcuts import render
+from .models import Expense
 
-def add_expense(request):
-    if request.method == "POST":
-        form = ExpenseForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('/')
-    else:
-        form = ExpenseForm()
+def dashboard(request):
+    expenses = Expense.objects.all()
 
-    return render(request, 'tracker/add_expense.html', {'form': form})
+    total = sum(exp.amount for exp in expenses)
+
+    category_data = {}
+    for exp in expenses:
+        if exp.category in category_data:
+            category_data[exp.category] += exp.amount
+        else:
+            category_data[exp.category] = exp.amount
+
+    context = {
+        'total': total,
+        'category_data': category_data,
+        'expenses': expenses
+    }
+
+    return render(request, 'tracker/dashboard.html', context)
