@@ -1,66 +1,75 @@
-from django.shortcuts import render
-from .models import Expense
+from django.shortcuts import render, redirect
+from django.db.models import Sum
 from datetime import date, timedelta
+from .models import Expense
+from .forms import ExpenseForm
+
+def add_expense(request):
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    else:
+        form = ExpenseForm()
+
+    return render(request, 'tracker/add_expense.html', {'form': form})
 
 def dashboard(request):
-    expenses = Expense.objects.all()
+    # 🔹 TOTAL (DB level calculation)
+    total = Expense.objects.aggregate(total=Sum('amount'))['total'] or 0
 
-    total = sum(exp.amount for exp in expenses)
+    # 🔹 CATEGORY BREAKDOWN (DB optimized)
+    category_qs = Expense.objects.values('category').annotate(total=Sum('amount'))
+    category_data = {item['category']: item['total'] for item in category_qs}
 
-    # Category breakdown
-    category_data = {}
-    for exp in expenses:
-        if exp.category in category_data:
-            category_data[exp.category] += exp.amount
+    # 🔥 SMART INSIGHT
+    if total > 0 and category_data:
+        top_category = max(category_data, key=category_data.get)
+        percent = (category_data[top_category] / total) * 100
+
+        if percent > 60:
+            insight = f"⚠️ Heavy spending on {top_category} ({percent:.1f}%). Reduce it."
+        elif percent > 40:
+            insight = f"⚡ {top_category} dominates ({percent:.1f}%). Keep an eye."
         else:
-            category_data[exp.category] = exp.amount
+            insight = "✅ Spending is balanced."
+    else:
+        insight = "No expenses yet."
 
-    # 🔥 SMART INSIGHT (category)
-    insight = ""
-    if total > 0:
-        for category, amount in category_data.items():
-            percent = (amount / total) * 100
-            if percent > 50:
-                insight = f"You are spending too much on {category} ({percent:.1f}%) ⚠️"
-                break
-    if insight == "":
-        insight = "Your spending looks balanced 👍"
-
-    # 🔥 WEEKLY COMPARISON
+    # 🔥 WEEKLY COMPARISON (proper 7-day window)
     today = date.today()
 
     current_week_start = today - timedelta(days=7)
     previous_week_start = today - timedelta(days=14)
 
-    current_week_expenses = Expense.objects.filter(date__gte=current_week_start)
-    previous_week_expenses = Expense.objects.filter(
+    current_total = Expense.objects.filter(
+        date__gte=current_week_start
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    previous_total = Expense.objects.filter(
         date__gte=previous_week_start,
         date__lt=current_week_start
-    )
-
-    current_total = sum(exp.amount for exp in current_week_expenses)
-    previous_total = sum(exp.amount for exp in previous_week_expenses)
+    ).aggregate(total=Sum('amount'))['total'] or 0
 
     # 🔥 COMPARISON MESSAGE
-    comparison = ""
-
     if previous_total > 0:
-        diff = current_total - previous_total
-        percent_change = (diff / previous_total) * 100
+        change = current_total - previous_total
+        percent_change = (change / previous_total) * 100
 
-        if diff > 0:
-            comparison = f"⚠️ You spent {percent_change:.1f}% more than last week"
-        elif diff < 0:
-            comparison = f"✅ You spent {abs(percent_change):.1f}% less than last week"
+        if change > 0:
+            comparison = f"⚠️ {percent_change:.1f}% MORE than last week"
+        elif change < 0:
+            comparison = f"✅ {abs(percent_change):.1f}% LESS than last week"
         else:
             comparison = "No change from last week"
     else:
-        comparison = "Not enough data for comparison"
+        comparison = "No previous week data"
 
     context = {
         'total': total,
         'category_data': category_data,
-        'expenses': expenses,
+        'expenses': Expense.objects.all().order_by('-date')[:5],  # latest 5 only
         'insight': insight,
         'comparison': comparison,
         'current_total': current_total,

@@ -1,5 +1,159 @@
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Add Expense</button>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Expense</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS Variables matching your Dashboard Theme */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
+            --bg-color: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #111827;
+            --text-secondary: #4B5563;
+            --border-radius: 16px;
+            --input-border: #D1D5DB;
+            --focus-ring: rgba(79, 70, 229, 0.25);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Beautiful Centered Card */
+        .form-container {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .form-container h2 {
+            margin-top: 0;
+            margin-bottom: 30px;
+            color: var(--text-main);
+            font-size: 1.8rem;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        /* Magic CSS to style Django's default {{ form.as_p }} */
+        .django-form p {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        .django-form label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .django-form input, 
+        .django-form select, 
+        .django-form textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            background-color: #F9FAFB;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        /* Focus State (Glow Effect) */
+        .django-form input:focus, 
+        .django-form select:focus, 
+        .django-form textarea:focus {
+            outline: none;
+            border-color: #4F46E5;
+            background-color: #FFFFFF;
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+
+        /* Handling errors and help texts from Django */
+        .django-form .helptext {
+            font-size: 0.8rem;
+            color: #6B7280;
+            margin-top: 6px;
+        }
+        
+        .django-form .errorlist {
+            color: #DC2626;
+            list-style: none;
+            padding: 0;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* Premium Button */
+        .submit-btn {
+            width: 100%;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+        }
+        
+        /* Navigation Link */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #4F46E5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>✍️ Add Expense</h2>
+    
+    <form method="POST" class="django-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        
+        <button type="submit" class="submit-btn">Save Expense 🚀</button>
+    </form>
+    
+    <a href="{% url 'dashboard' %}" class="back-link">← Back to Dashboard</a>
+</div>
+
+</body>
+</html>
