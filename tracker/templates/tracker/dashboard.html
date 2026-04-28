@@ -1,251 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Expense Coach</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% extends 'tracker/base.html' %}
+{% block extra_css %}
+<style>
+    .card { background: var(--card-bg); padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;}
+    .card-total { background: var(--primary-gradient); color: white; text-align: center;}
+    .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 768px) { .grid-container { grid-template-columns: 1fr; } }
     
-    <style>
-        /* CSS Variables for consistent theming */
-        :root {
-            --primary-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
-            --bg-color: #F3F4F6;
-            --card-bg: #FFFFFF;
-            --text-main: #111827;
-            --text-secondary: #4B5563;
-            --insight-bg: #EEF2FF;
-            --insight-border: #4F46E5;
-            --border-radius: 16px;
-            --transition: all 0.3s ease;
-        }
+    /* List item with Edit/Delete buttons */
+    .expense-item {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #F9FAFB; padding: 12px 16px; margin-bottom: 10px; border-radius: 8px;
+    }
+    .expense-actions a {
+        text-decoration: none; font-size: 0.9rem; margin-left: 10px; padding: 4px 8px; border-radius: 4px;
+    }
+    .btn-edit { background: #E0E7FF; color: #4F46E5; }
+    .btn-delete { background: #FEE2E2; color: #DC2626; }
+</style>
+{% endblock %}
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-        }
-
-        .dashboard-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            text-align: center;
-            font-weight: 700;
-            color: var(--text-main);
-            margin-bottom: 30px;
-            font-size: 2.2rem;
-        }
-
-        h2, h3 {
-            margin-top: 0;
-            font-weight: 600;
-        }
-
-        /* Reusable Card Styling */
-        .card {
-            background: var(--card-bg);
-            padding: 24px;
-            margin-bottom: 24px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border: 1px solid #E5E7EB;
-            transition: var(--transition);
-        }
-
-        .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Specific Card Styles */
-        .card-total {
-            background: var(--primary-gradient);
-            color: white;
-            text-align: center;
-            border: none;
-        }
-
-        .card-total h2 {
-            font-size: 2.5rem;
-            margin-bottom: 0;
-            font-weight: 700;
-        }
-
-        .card-insight {
-            background: var(--insight-bg);
-            border-left: 5px solid var(--insight-border);
-        }
-
-        .card-insight h3 {
-            color: var(--insight-border);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .card-insight p {
-            color: var(--text-secondary);
-            margin-bottom: 0;
-        }
-
-        /* Weekly Comparison Styling */
-        .comparison-text {
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-        }
-
-        .comparison-stats {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .stat-box {
-            flex: 1;
-            min-width: 150px;
-            background: #F9FAFB;
-            padding: 16px;
-            border-radius: 8px;
-            border: 1px solid #E5E7EB;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        .stat-box span:first-child {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .stat-box .stat-amount {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        /* Grid Layout for lists */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-        }
-
-        /* List Styling */
-        ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        li {
-            background: #F9FAFB;
-            padding: 14px 18px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid #F3F4F6;
-            font-weight: 500;
-            color: var(--text-secondary);
-            transition: var(--transition);
-        }
-
-        li:hover {
-            background: #F3F4F6;
-            color: var(--text-main);
-        }
-
-        li:last-child {
-            margin-bottom: 0;
-        }
-
-        .amount {
-            font-weight: 600;
-            color: var(--text-main);
-        }
-        
-        .empty-state {
-            text-align: center;
-            color: #9CA3AF;
-            font-style: italic;
-            justify-content: center;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="dashboard-container">
-    <h1>💰 Smart Expense Dashboard</h1>
-
+{% block content %}
     <div class="card card-total">
-        <h2>₹{{ total }}</h2>
+        <h2 style="font-size: 2.5rem; margin: 0;">₹{{ total }}</h2>
         <p style="margin: 0; opacity: 0.9;">Total Expense</p>
     </div>
 
-    <div class="card card-insight">
-        <h3>💡 Smart Insight</h3>
-        <p>{{ insight }}</p>
-    </div>
-
-    <div class="card">
-        <h3>📅 Weekly Comparison</h3>
-        <p class="comparison-text">{{ comparison }}</p>
-        <div class="comparison-stats">
-            <div class="stat-box">
-                <span>This Week</span>
-                <span class="stat-amount">₹{{ current_total }}</span>
-            </div>
-            <div class="stat-box">
-                <span>Last Week</span>
-                <span class="stat-amount">₹{{ previous_total }}</span>
-            </div>
-        </div>
+    <div class="card" style="background: #EEF2FF; border-left: 5px solid #4F46E5;">
+        <h3 style="color: #4F46E5; margin-top:0;">💡 Smart Insight</h3>
+        <p style="margin:0;">{{ insight }}</p>
     </div>
 
     <div class="grid-container">
-
         <div class="card">
-            <h3>📊 Category Breakdown</h3>
-            <ul>
+            <h3 style="margin-top:0;">📊 Category Breakdown</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
                 {% for category, amount in category_data.items %}
-                    <li>
-                        <span class="category-name">{{ category }}</span>
-                        <span class="amount">₹{{ amount }}</span>
-                    </li>
-                {% empty %}
-                    <li class="empty-state">No data yet</li>
+                    <div class="expense-item">
+                        <span>{{ category }}</span>
+                        <strong>₹{{ amount }}</strong>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
 
         <div class="card">
-            <h3>🧾 Recent Expenses</h3>
-            <ul>
+            <h3 style="margin-top:0;">🧾 Recent Expenses</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
                 {% for exp in expenses %}
-                    <li>
-                        <span class="expense-name">{{ exp.category }}</span>
-                        <span class="amount">₹{{ exp.amount }}</span>
-                    </li>
+                    <div class="expense-item">
+                        <div>
+                            <strong>{{ exp.category }}</strong> <br>
+                            <span style="font-size: 0.8rem; color: #6B7280;">{{ exp.date|date:"d M Y" }}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <strong>₹{{ exp.amount }}</strong>
+                            <div class="expense-actions">
+                                <a href="{% url 'edit_expense' exp.id %}" class="btn-edit">✏️ Edit</a>
+                                <a href="{% url 'delete_expense' exp.id %}" class="btn-delete">🗑️</a>
+                            </div>
+                        </div>
+                    </div>
                 {% empty %}
-                    <li class="empty-state">No expenses added</li>
+                    <p style="text-align: center; color: #6B7280;">No expenses yet!</p>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
-
     </div>
-</div>
-
-</body>
-</html>
+{% endblock %}
