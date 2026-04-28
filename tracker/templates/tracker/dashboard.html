@@ -1,0 +1,17 @@
+<h1>Dashboard</h1>
+
+<h2>Total Expense: ₹{{ total }}</h2>
+
+<h3>Category-wise:</h3>
+<ul>
+    {% for category, amount in category_data.items %}
+        <li>{{ category }} : ₹{{ amount }}</li>
+    {% endfor %}
+</ul>
+
+<h3>All Expenses:</h3>
+<ul>
+    {% for exp in expenses %}
+        <li>{{ exp.category }} - ₹{{ exp.amount }}</li>
+    {% endfor %}
+</ul>
