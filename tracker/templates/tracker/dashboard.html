@@ -2,84 +2,183 @@
 
 {% block extra_css %}
 <style>
-    .card { background: var(--card-bg); padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;}
-    .card-total { background: var(--primary-gradient); color: white; text-align: center;}
-    .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    /* 🔥 100X PREMIUM ANIMATIONS 🔥 */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(40px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulseLive { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+    @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+    /* Cards with Softer, Deeper Shadows */
+    .card { background: var(--card-bg); padding: 28px; border-radius: 24px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 28px; animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; border: 1px solid var(--border-color); backdrop-filter: blur(10px); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card:hover { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08); }
+    .card-1 { animation-delay: 0.1s; border: none; } .card-2 { animation-delay: 0.2s; } .card-3 { animation-delay: 0.3s; }
+    
+    .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
     @media (max-width: 768px) { .grid-container { grid-template-columns: 1fr; } }
     
-    .expense-item {
-        display: flex; justify-content: space-between; align-items: center;
-        background: #F9FAFB; padding: 12px 16px; margin-bottom: 10px; border-radius: 8px;
-        transition: transform 0.2s;
-    }
-    .expense-item:hover {
-        transform: translateX(5px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .expense-actions a {
-        text-decoration: none; font-size: 0.9rem; margin-left: 10px; padding: 6px 10px; border-radius: 6px;
-    }
-    .btn-edit { background: #E0E7FF; color: #4F46E5; }
-    .btn-delete { background: #FEE2E2; color: #DC2626; }
+    /* 3D Expense List Hover */
+    .expense-item { display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); padding: 16px 20px; margin-bottom: 14px; border-radius: 16px; border: 1px solid transparent; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); animation: slideInRight 0.5s ease forwards; opacity: 0; }
+    /* Staggered list loading */
+    .expense-item:nth-child(1) { animation-delay: 0.3s; } .expense-item:nth-child(2) { animation-delay: 0.4s; } .expense-item:nth-child(3) { animation-delay: 0.5s; } .expense-item:nth-child(4) { animation-delay: 0.6s; } .expense-item:nth-child(5) { animation-delay: 0.7s; }
     
-    /* 🚀 Chart ke liye perfect container */
-    .chart-container {
-        position: relative;
-        height: 280px; 
-        width: 100%;
-        margin-top: 10px;
-    }
+    .expense-item:hover { transform: translateY(-4px) scale(1.015); background: var(--item-hover); border-color: var(--primary); box-shadow: 0 15px 25px -10px rgba(79, 70, 229, 0.2); }
+    
+    .expense-actions a { text-decoration: none; font-size: 1rem; margin-left: 12px; padding: 8px 12px; border-radius: 10px; transition: all 0.2s; display: inline-block; }
+    .btn-edit { background: rgba(79, 70, 229, 0.08); color: #4F46E5; } .btn-edit:hover { background: #4F46E5; color: white; transform: scale(1.1); }
+    .btn-delete { background: rgba(220, 38, 38, 0.08); color: #DC2626; } .btn-delete:hover { background: #DC2626; color: white; transform: scale(1.1); }
+    
+    .chart-container { position: relative; height: 320px; width: 100%; margin-top: 15px; }
+    
+    /* Interactive Buttons */
+    .action-btn { background: var(--item-bg); color: var(--text-main); padding: 10px 18px; border-radius: 12px; text-decoration: none; font-size: 0.9rem; font-weight: 700; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 2px solid var(--border-color); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+    .action-btn:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 8px 15px rgba(79,70,229,0.15); color: var(--primary); }
+    .action-btn:active { transform: translateY(1px) scale(0.95); }
+    
+    /* Dynamic Tabs */
+    .filter-tabs { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; animation: fadeUp 0.1s forwards; background: var(--item-bg); padding: 8px; border-radius: 50px; width: max-content; margin-left: auto; margin-right: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .tab { padding: 10px 24px; color: var(--text-secondary); border-radius: 50px; text-decoration: none; font-size: 0.95rem; font-weight: 700; transition: all 0.3s; }
+    .tab:hover { color: var(--text-main); }
+    .tab.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+
+    /* Animated Progress Bar */
+    .progress-bar-container { width: 100%; background: var(--border-color); border-radius: 100px; height: 16px; overflow: hidden; position: relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+    .progress-bar-fill { height: 100%; transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); border-radius: 100px; position: relative; overflow: hidden; }
+    .progress-bar-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 2s infinite linear; }
 </style>
 {% endblock %}
 
 {% block content %}
-    <div class="card card-total">
-        <h2 style="font-size: 2.5rem; margin: 0;">₹{{ total }}</h2>
-        <p style="margin: 0; opacity: 0.9; font-weight: 500;">Total Expense</p>
+
+    <div class="filter-tabs">
+        <a href="?filter=week" class="tab {% if current_filter == 'week' %}active{% endif %}">This Week</a>
+        <a href="?filter=month" class="tab {% if current_filter == 'month' %}active{% endif %}">This Month</a>
+        <a href="?filter=all" class="tab {% if current_filter == 'all' %}active{% endif %}">All Time</a>
     </div>
 
-    <div class="card" style="background: #EEF2FF; border-left: 5px solid #4F46E5;">
-        <h3 style="color: #4F46E5; margin-top:0; display: flex; align-items: center; gap: 8px;">
-            💡 Smart Insight
+    <div class="card card-1" style="padding: 0; overflow: hidden; border: none; box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.3);">
+        <div style="background: linear-gradient(-45deg, #4F46E5, #7C3AED, #EC4899, #4F46E5); background-size: 400% 400%; animation: gradientBG 12s ease infinite; color: white; text-align: center; padding: 50px 20px; position: relative;">
+            
+            <button onclick="document.getElementById('budgetModal').style.display='flex'" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 18px; border-radius: 14px; cursor: pointer; font-size: 0.9rem; font-weight: 700; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onmousedown="this.style.transform='scale(0.95)'">
+                ⚙️ Setup Budget
+            </button>
+            
+            <div style="display: inline-block; padding: 8px 16px; background: rgba(0,0,0,0.2); backdrop-filter: blur(5px); border-radius: 30px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
+                <p style="margin: 0; font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">Monthly Spent</p>
+            </div>
+            <h2 style="font-size: 4.5rem; margin: 0; line-height: 1; font-weight: 800; text-shadow: 0 10px 20px rgba(0,0,0,0.15);">₹{{ total|floatformat:0 }}</h2>
+            <p style="margin: 12px 0 0 0; font-size: 1.1rem; opacity: 0.9; font-weight: 500;">out of ₹{{ monthly_budget|floatformat:0 }} limit</p>
+        </div>
+        
+        <div style="padding: 30px 35px; background: var(--card-bg);">
+            <div style="display: flex; justify-content: space-between; font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: var(--text-secondary);">
+                <span>Used: <span style="color: var(--text-main);">{{ budget_percent|floatformat:1 }}%</span></span>
+                <span style="color: {% if remaining_budget < 0 %}#EF4444{% else %}#10B981{% endif %}; background: {% if remaining_budget < 0 %}rgba(239, 68, 68, 0.1){% else %}rgba(16, 185, 129, 0.1){% endif %}; padding: 6px 14px; border-radius: 12px;">Remaining: ₹{{ remaining_budget|floatformat:0 }}</span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: {{ budget_percent }}%; background: {% if budget_percent < 50 %}linear-gradient(90deg, #10B981, #34D399){% elif budget_percent < 80 %}linear-gradient(90deg, #F59E0B, #FBBF24){% else %}linear-gradient(90deg, #EF4444, #F87171){% endif %}; box-shadow: 0 0 15px {% if budget_percent < 50 %}rgba(16,185,129,0.5){% elif budget_percent < 80 %}rgba(245,158,11,0.5){% else %}rgba(239,68,68,0.5){% endif %};"></div>
+            </div>
+            
+            <div style="margin-top: 25px; padding: 20px; background: var(--item-bg); border-radius: 16px; border: 1px solid var(--border-color); display: flex; gap: 18px; align-items: flex-start; transition: 0.3s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                <div style="font-size: 2.2rem; transform: translateY(-5px);">🤖</div>
+                <div style="width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                        <strong style="color: var(--text-main); font-size: 1.1rem; letter-spacing: -0.5px;">Smart Coach AI</strong>
+                        <div style="width: 10px; height: 10px; background: #10B981; border-radius: 50%; animation: pulseLive 2s infinite;"></div>
+                    </div>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">{{ coach_advice }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-2" style="background: var(--insight-bg); border-left: 8px solid #4F46E5; padding: 24px 30px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.05);">
+        <h3 style="color: #4F46E5; margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">💡</span> Instant Insight
         </h3>
-        <p style="margin:0; color: #4B5563; font-weight: 500;">{{ insight }}</p>
+        <p style="margin:0; color: var(--text-main); font-weight: 600; font-size: 1.05rem; line-height: 1.4;">{{ insight }}</p>
     </div>
 
     <div class="grid-container">
-        
-        <div class="card">
-            <h3 style="margin-top:0; text-align: center; color: var(--text-main);">📊 Category Breakdown</h3>
-            
+        <div class="card card-3">
+            <h3 style="margin-top:0; color: var(--text-main); font-size: 1.3rem; font-weight: 800; border-bottom: 2px solid var(--item-bg); padding-bottom: 16px;">📊 Category Breakdown</h3>
             {% if category_data %}
-                <div class="chart-container">
-                    <canvas id="expenseChart"></canvas>
-                </div>
+                <div class="chart-container"><canvas id="expenseChart"></canvas></div>
             {% else %}
-                <p style="text-align: center; color: #9CA3AF; margin-top: 40px; font-style: italic;">No expenses yet to show chart.</p>
+                <div style="text-align: center; padding: 60px 0; color: var(--text-secondary);">
+                    <div style="font-size: 4rem; opacity: 0.3; margin-bottom: 15px;">📉</div>
+                    <p style="font-weight: 600; font-size: 1.1rem;">No data to visualize yet.</p>
+                </div>
             {% endif %}
         </div>
 
-        <div class="card">
-            <h3 style="margin-top:0; color: var(--text-main);">🧾 Recent Expenses</h3>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="card card-3">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid var(--item-bg); padding-bottom: 16px;">
+                <h3 style="margin:0; color: var(--text-main); font-size: 1.3rem; font-weight: 800;">🧾 Expenses</h3>
+                <a href="{% url 'export_expenses' %}" class="action-btn">📥 Export CSV</a>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
                 {% for exp in expenses %}
                     <div class="expense-item">
-                        <div>
-                            <strong style="text-transform: capitalize; color: var(--text-main);">{{ exp.category }}</strong> <br>
-                            <span style="font-size: 0.8rem; color: #6B7280;">{{ exp.date|date:"d M Y" }}</span>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 48px; height: 48px; background: var(--card-bg); border-radius: 14px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid var(--border-color);">
+                                {{ exp.icon }}
+                            </div>
+                            <div>
+                                <strong style="text-transform: capitalize; color: var(--text-main); font-size: 1.1rem; letter-spacing: -0.3px;">{{ exp.category }}</strong> <br>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">{{ exp.date|date:"d M, Y" }}</span>
+                            </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 15px;">
-                            <strong style="color: var(--text-main);">₹{{ exp.amount }}</strong>
+                            <strong style="color: var(--text-main); font-size: 1.25rem; font-weight: 800;">₹{{ exp.amount }}</strong>
                             <div class="expense-actions">
-                                <a href="{% url 'edit_expense' exp.id %}" class="btn-edit" title="Edit">✏️</a>
-                                <a href="{% url 'delete_expense' exp.id %}" class="btn-delete" title="Delete">🗑️</a>
+                                <a href="{% url 'edit_expense' exp.id %}" class="btn-edit">✏️</a>
+                                <a href="{% url 'delete_expense' exp.id %}" class="btn-delete">🗑️</a>
                             </div>
                         </div>
                     </div>
                 {% empty %}
-                    <p style="text-align: center; color: #9CA3AF; font-style: italic;">Your list is empty!</p>
+                    <div style="text-align: center; padding: 50px 0; background: var(--item-bg); border-radius: 20px; border: 2px dashed var(--border-color);">
+                        <span style="font-size: 3rem;">💸</span>
+                        <p style="color: var(--text-secondary); margin-top: 15px; font-weight: 600; font-size: 1.1rem;">Your expense list is squeaky clean!</p>
+                    </div>
                 {% endfor %}
             </div>
+        </div>
+    </div>
+
+    <div id="budgetModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: var(--card-bg); width: 100%; max-width: 400px; padding: 40px; border-radius: 28px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border-color); animation: fadeUp 0.3s ease-out;">
+            <button onclick="document.getElementById('budgetModal').style.display='none'" style="position: absolute; right: 20px; top: 20px; background: var(--item-bg); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; color: var(--text-main); font-size: 1.2rem; transition: 0.2s;" onmouseover="this.style.background='var(--border-color)'" onmouseout="this.style.background='var(--item-bg)'">&times;</button>
+            <h3 style="margin-top: 0; color: var(--text-main); font-size: 1.5rem; font-weight: 800;">🎯 Setup Budget</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 25px; font-size: 0.95rem;">Tell Smart Coach your monthly spending limit.</p>
+            <form method="POST" action="{% url 'dashboard' %}">
+                {% csrf_token %}
+                <div style="position: relative; margin-bottom: 25px;">
+                    <span style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 1.3rem; color: var(--text-secondary); font-weight: 600;">₹</span>
+                    <input type="number" name="new_budget" value="{{ monthly_budget|floatformat:0 }}" required style="width: 100%; padding: 16px 16px 16px 45px; border: 2px solid var(--border-color); border-radius: 16px; font-size: 1.2rem; font-weight: 700; background: var(--item-bg); color: var(--text-main); outline: none; transition: 0.3s;" onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 4px rgba(79, 70, 229, 0.1)'" onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none'">
+                </div>
+                <button type="submit" style="width: 100%; background: var(--primary-gradient); color: white; border: none; padding: 18px; border-radius: 16px; cursor: pointer; font-weight: 800; font-size: 1.1rem; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 25px -5px rgba(79, 70, 229, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 20px -5px rgba(79, 70, 229, 0.4)'" onmousedown="this.style.transform='scale(0.96)'">Save Budget Tracker</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="expenseModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: var(--card-bg); width: 100%; max-width: 440px; padding: 40px; border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border-color); position: relative; animation: fadeUp 0.3s ease-out;">
+            <button onclick="document.getElementById('expenseModal').style.display='none'" style="position: absolute; right: 20px; top: 20px; background: var(--item-bg); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; color: var(--text-main); font-size: 1.2rem; transition: 0.2s;" onmouseover="this.style.background='var(--border-color)'" onmouseout="this.style.background='var(--item-bg)'">&times;</button>
+            <h2 style="margin-top: 0; color: var(--text-main); margin-bottom: 30px; font-weight: 800; font-size: 1.8rem;">✍️ Add Expense</h2>
+            <form method="POST" action="{% url 'add_expense' %}">
+                {% csrf_token %}
+                <style>
+                    #expenseModal p { display: flex; flex-direction: column; margin-bottom: 20px; }
+                    #expenseModal label { font-weight: 700; color: var(--text-main); margin-bottom: 10px; font-size: 0.95rem; }
+                    #expenseModal input, #expenseModal select { padding: 16px; border: 2px solid var(--border-color); border-radius: 14px; font-size: 1.05rem; background: var(--item-bg); color: var(--text-main); outline: none; transition: 0.3s; font-weight: 500; }
+                    #expenseModal input:focus, #expenseModal select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); background: var(--card-bg); }
+                </style>
+                {{ form.as_p }}
+                <button type="submit" style="width: 100%; background: var(--primary-gradient); color: white; border: none; padding: 18px; font-size: 1.15rem; font-weight: 800; border-radius: 16px; cursor: pointer; margin-top: 15px; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 25px -5px rgba(79, 70, 229, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 20px -5px rgba(79, 70, 229, 0.4)'" onmousedown="this.style.transform='scale(0.96)'">🚀 Log Expense</button>
+            </form>
         </div>
     </div>
 
@@ -89,69 +188,39 @@
         document.addEventListener('DOMContentLoaded', function() {
             const ctx = document.getElementById('expenseChart').getContext('2d');
             
-            // Django se data nikal kar JavaScript arrays mein daalna
-            const chartLabels = [
-                {% for category in category_data.keys %}
-                    "{{ category|title }}",
-                {% endfor %}
-            ];
-            
-            const chartData = [
-                {% for amount in category_data.values %}
-                    {{ amount }},
-                {% endfor %}
-            ];
+            // Get CSS variable for dynamic dark mode border
+            const getBorderColor = () => getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim();
 
-            // Chart Create Karna
-            new Chart(ctx, {
-                type: 'doughnut', // Pie chart jisme beech mein hole hota hai
-                data: {
-                    labels: chartLabels,
-                    datasets: [{
-                        data: chartData,
-                        backgroundColor: [
-                            '#4F46E5', // Primary Indigo
-                            '#10B981', // Success Emerald
-                            '#F59E0B', // Warning Amber
-                            '#EF4444', // Danger Red
-                            '#8B5CF6', // Purple
-                            '#EC4899', // Pink
-                            '#06B6D4'  // Cyan
-                        ],
-                        borderWidth: 0, // Clean look ke liye border hata diya
-                        hoverOffset: 8  // Hover karne pe slice bahar aayegi
-                    }]
+            const chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { 
+                    labels: [{% for category in category_data.keys %}"{{ category|title }}",{% endfor %}], 
+                    datasets: [{ 
+                        data: [{% for amount in category_data.values %}{{ amount }},{% endfor %}], 
+                        backgroundColor: ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'], 
+                        borderWidth: 4, 
+                        borderColor: getBorderColor(), 
+                        hoverOffset: 15 
+                    }] 
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%', // Beech ka hole bada aur premium karne ke liye
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true, // Legend boxes ko circle banayega
-                                font: {
-                                    family: "'Inter', sans-serif",
-                                    size: 13,
-                                    weight: '500'
-                                }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: '#111827',
-                            padding: 12,
-                            titleFont: { family: "'Inter', sans-serif", size: 14 },
-                            bodyFont: { family: "'Inter', sans-serif", size: 14, weight: 'bold' },
-                            callbacks: {
-                                label: function(context) {
-                                    return ' ₹' + context.raw; // Tooltip pe ₹ sign show karega
-                                }
-                            }
-                        }
-                    }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '75%',
+                    animation: { animateScale: true, animateRotate: true, duration: 2000, easing: 'easeOutQuart' },
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { padding: 25, usePointStyle: true, pointStyle: 'circle', font: { family: "'Inter', sans-serif", size: 14, weight: '600' }, color: '#9CA3AF' } },
+                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 16, titleFont: { family: "'Inter', sans-serif", size: 15 }, bodyFont: { family: "'Inter', sans-serif", size: 16, weight: 'bold' }, cornerRadius: 12, displayColors: true, boxPadding: 6, callbacks: { label: function(context) { return ' ₹' + context.raw; } } }
+                    } 
                 }
+            });
+
+            // Update Chart borders dynamically when Dark Mode changes
+            document.getElementById('theme-toggle')?.addEventListener('click', () => {
+                setTimeout(() => {
+                    chart.data.datasets[0].borderColor = getBorderColor();
+                    chart.update();
+                }, 100);
             });
         });
         {% endif %}
