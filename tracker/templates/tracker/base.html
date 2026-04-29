@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
+        /* 🎨 DYNAMIC THEME VARIABLES */
         :root {
             --primary: #4F46E5;
             --primary-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
@@ -14,90 +15,62 @@
             --card-bg: #FFFFFF;
             --text-main: #111827;
             --text-secondary: #4B5563;
+            --item-bg: #F9FAFB;
+            --item-hover: #FFFFFF;
+            --border-color: #E5E7EB;
+            --insight-bg: #EEF2FF;
+            --nav-bg: #FFFFFF;
+        }
+
+        /* 🌙 DARK MODE VARIABLES */
+        [data-theme="dark"] {
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --text-main: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --item-bg: #334155;
+            --item-hover: #475569;
+            --border-color: #334155;
+            --insight-bg: rgba(79, 70, 229, 0.15);
+            --nav-bg: #1E293B;
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-            color: var(--text-main);
+            margin: 0; padding: 0; color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* 🚀 GLOBAL NAVBAR */
         .navbar {
-            background: var(--card-bg);
-            padding: 15px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
+            background: var(--nav-bg); padding: 15px 40px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 30px; transition: 0.3s; border-bottom: 1px solid var(--border-color);
         }
-
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-secondary);
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .nav-btn {
-            background: var(--primary-gradient);
-            color: white !important;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
+        .navbar-brand { font-size: 1.5rem; font-weight: 700; color: var(--primary); text-decoration: none; }
+        .nav-links { display: flex; align-items: center; gap: 20px; }
+        .nav-links a { text-decoration: none; color: var(--text-secondary); font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--primary); }
+        .nav-btn { background: var(--primary-gradient); color: white !important; padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
         
-        .logout-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-weight: 500;
-            cursor: pointer;
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-        }
-        .logout-btn:hover {
-            color: #DC2626;
-        }
+        .logout-btn { background: none; border: none; color: var(--text-secondary); font-weight: 500; cursor: pointer; font-size: 1rem; font-family: 'Inter', sans-serif; }
+        .logout-btn:hover { color: #DC2626; }
+
+        /* Theme Toggle Button */
+        #theme-toggle { background: var(--item-bg); border: 1px solid var(--border-color); font-size: 1.2rem; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        #theme-toggle:hover { background: var(--item-hover); transform: scale(1.1); }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-
     <nav class="navbar">
         <a href="{% url 'dashboard' %}" class="navbar-brand">💰 SmartCoach</a>
         <div class="nav-links">
             {% if user.is_authenticated %}
-                <span style="color: var(--primary); font-weight: 600;">👤 Hi, {{ user.username }}!</span>
+                <button id="theme-toggle" title="Toggle Dark Mode">🌙</button>
+                <span style="color: var(--primary); font-weight: 600;"><span id="smart-greeting">Hi</span>, {{ user.username }}! 👋</span>
                 <a href="{% url 'dashboard' %}">Dashboard</a>
-                <a href="{% url 'add_expense' %}" class="nav-btn">+ Add Expense</a>
-                
+                <a href="#" onclick="if(document.getElementById('expenseModal')) { document.getElementById('expenseModal').style.display='flex'; return false; }" class="nav-btn">+ Add Expense</a>
                 <form action="{% url 'logout' %}" method="post" style="display:inline; margin:0;">
                     {% csrf_token %}
                     <button type="submit" class="logout-btn">Logout</button>
@@ -108,9 +81,41 @@
             {% endif %}
         </div>
     </nav>
+
     <div class="container">
         {% block content %}{% endblock %}
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Dynamic Greeting
+            const hour = new Date().getHours();
+            let greeting = "Good Evening";
+            if(hour < 12) greeting = "Good Morning";
+            else if(hour < 17) greeting = "Good Afternoon";
+            const greetingElement = document.getElementById('smart-greeting');
+            if(greetingElement) greetingElement.innerText = greeting;
+
+            // 2. Dark Mode Toggle
+            const themeBtn = document.getElementById('theme-toggle');
+            if(themeBtn) {
+                if(localStorage.getItem('theme') === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    themeBtn.innerText = '☀️';
+                }
+                themeBtn.addEventListener('click', () => {
+                    if(document.documentElement.getAttribute('data-theme') === 'dark') {
+                        document.documentElement.setAttribute('data-theme', 'light');
+                        localStorage.setItem('theme', 'light');
+                        themeBtn.innerText = '🌙';
+                    } else {
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                        localStorage.setItem('theme', 'dark');
+                        themeBtn.innerText = '☀️';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
