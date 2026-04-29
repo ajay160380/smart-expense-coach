@@ -42,11 +42,16 @@
             text-decoration: none;
         }
 
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
         .nav-links a {
             text-decoration: none;
             color: var(--text-secondary);
             font-weight: 500;
-            margin-left: 20px;
             transition: color 0.3s;
         }
 
@@ -67,6 +72,19 @@
             margin: 0 auto;
             padding: 0 20px;
         }
+        
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+        .logout-btn:hover {
+            color: #DC2626;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -75,8 +93,19 @@
     <nav class="navbar">
         <a href="{% url 'dashboard' %}" class="navbar-brand">💰 SmartCoach</a>
         <div class="nav-links">
-            <a href="{% url 'dashboard' %}">Dashboard</a>
-            <a href="{% url 'add_expense' %}" class="nav-btn">+ Add Expense</a>
+            {% if user.is_authenticated %}
+                <span style="color: var(--primary); font-weight: 600;">👤 Hi, {{ user.username }}!</span>
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'add_expense' %}" class="nav-btn">+ Add Expense</a>
+                
+                <form action="{% url 'logout' %}" method="post" style="display:inline; margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'register' %}" class="nav-btn">Register</a>
+            {% endif %}
         </div>
     </nav>
     <div class="container">
