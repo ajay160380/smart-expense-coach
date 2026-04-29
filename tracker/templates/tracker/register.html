@@ -1,0 +1,28 @@
+{% extends 'tracker/base.html' %}
+
+{% block extra_css %}
+<style>
+    .auth-container { max-width: 450px; margin: 50px auto; background: var(--card-bg); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+    .auth-container h2 { text-align: center; margin-top: 0; color: var(--text-main); }
+    .django-form p { display: flex; flex-direction: column; margin-bottom: 12px; }
+    .django-form label { font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; font-size: 0.9rem; }
+    .django-form input { padding: 10px; border: 1px solid #D1D5DB; border-radius: 8px; width: 100%; box-sizing: border-box; }
+    .django-form input:focus { outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+    .django-form .helptext, .django-form ul { font-size: 0.8rem; color: #6B7280; margin: 2px 0 0 0; padding-left: 15px; }
+    .submit-btn { width: 100%; background: var(--primary-gradient); color: white; border: none; padding: 14px; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+    .auth-link { display: block; text-align: center; margin-top: 20px; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+    .auth-link:hover { color: var(--primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Create Account 🚀</h2>
+    <form method="POST" class="django-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="submit-btn">Register</button>
+    </form>
+    <a href="{% url 'login' %}" class="auth-link">Already have an account? Login here</a>
+</div>
+{% endblock %}
