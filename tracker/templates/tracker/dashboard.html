@@ -1,4 +1,5 @@
 {% extends 'tracker/base.html' %}
+
 {% block extra_css %}
 <style>
     .card { background: var(--card-bg); padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;}
@@ -6,64 +7,153 @@
     .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
     @media (max-width: 768px) { .grid-container { grid-template-columns: 1fr; } }
     
-    /* List item with Edit/Delete buttons */
     .expense-item {
         display: flex; justify-content: space-between; align-items: center;
         background: #F9FAFB; padding: 12px 16px; margin-bottom: 10px; border-radius: 8px;
+        transition: transform 0.2s;
+    }
+    .expense-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .expense-actions a {
-        text-decoration: none; font-size: 0.9rem; margin-left: 10px; padding: 4px 8px; border-radius: 4px;
+        text-decoration: none; font-size: 0.9rem; margin-left: 10px; padding: 6px 10px; border-radius: 6px;
     }
     .btn-edit { background: #E0E7FF; color: #4F46E5; }
     .btn-delete { background: #FEE2E2; color: #DC2626; }
+    
+    /* 🚀 Chart ke liye perfect container */
+    .chart-container {
+        position: relative;
+        height: 280px; 
+        width: 100%;
+        margin-top: 10px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
     <div class="card card-total">
         <h2 style="font-size: 2.5rem; margin: 0;">₹{{ total }}</h2>
-        <p style="margin: 0; opacity: 0.9;">Total Expense</p>
+        <p style="margin: 0; opacity: 0.9; font-weight: 500;">Total Expense</p>
     </div>
 
     <div class="card" style="background: #EEF2FF; border-left: 5px solid #4F46E5;">
-        <h3 style="color: #4F46E5; margin-top:0;">💡 Smart Insight</h3>
-        <p style="margin:0;">{{ insight }}</p>
+        <h3 style="color: #4F46E5; margin-top:0; display: flex; align-items: center; gap: 8px;">
+            💡 Smart Insight
+        </h3>
+        <p style="margin:0; color: #4B5563; font-weight: 500;">{{ insight }}</p>
     </div>
 
     <div class="grid-container">
+        
         <div class="card">
-            <h3 style="margin-top:0;">📊 Category Breakdown</h3>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                {% for category, amount in category_data.items %}
-                    <div class="expense-item">
-                        <span>{{ category }}</span>
-                        <strong>₹{{ amount }}</strong>
-                    </div>
-                {% endfor %}
-            </div>
+            <h3 style="margin-top:0; text-align: center; color: var(--text-main);">📊 Category Breakdown</h3>
+            
+            {% if category_data %}
+                <div class="chart-container">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: #9CA3AF; margin-top: 40px; font-style: italic;">No expenses yet to show chart.</p>
+            {% endif %}
         </div>
 
         <div class="card">
-            <h3 style="margin-top:0;">🧾 Recent Expenses</h3>
+            <h3 style="margin-top:0; color: var(--text-main);">🧾 Recent Expenses</h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 {% for exp in expenses %}
                     <div class="expense-item">
                         <div>
-                            <strong>{{ exp.category }}</strong> <br>
+                            <strong style="text-transform: capitalize; color: var(--text-main);">{{ exp.category }}</strong> <br>
                             <span style="font-size: 0.8rem; color: #6B7280;">{{ exp.date|date:"d M Y" }}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 15px;">
-                            <strong>₹{{ exp.amount }}</strong>
+                            <strong style="color: var(--text-main);">₹{{ exp.amount }}</strong>
                             <div class="expense-actions">
-                                <a href="{% url 'edit_expense' exp.id %}" class="btn-edit">✏️ Edit</a>
-                                <a href="{% url 'delete_expense' exp.id %}" class="btn-delete">🗑️</a>
+                                <a href="{% url 'edit_expense' exp.id %}" class="btn-edit" title="Edit">✏️</a>
+                                <a href="{% url 'delete_expense' exp.id %}" class="btn-delete" title="Delete">🗑️</a>
                             </div>
                         </div>
                     </div>
                 {% empty %}
-                    <p style="text-align: center; color: #6B7280;">No expenses yet!</p>
+                    <p style="text-align: center; color: #9CA3AF; font-style: italic;">Your list is empty!</p>
                 {% endfor %}
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        {% if category_data %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            
+            // Django se data nikal kar JavaScript arrays mein daalna
+            const chartLabels = [
+                {% for category in category_data.keys %}
+                    "{{ category|title }}",
+                {% endfor %}
+            ];
+            
+            const chartData = [
+                {% for amount in category_data.values %}
+                    {{ amount }},
+                {% endfor %}
+            ];
+
+            // Chart Create Karna
+            new Chart(ctx, {
+                type: 'doughnut', // Pie chart jisme beech mein hole hota hai
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: [
+                            '#4F46E5', // Primary Indigo
+                            '#10B981', // Success Emerald
+                            '#F59E0B', // Warning Amber
+                            '#EF4444', // Danger Red
+                            '#8B5CF6', // Purple
+                            '#EC4899', // Pink
+                            '#06B6D4'  // Cyan
+                        ],
+                        borderWidth: 0, // Clean look ke liye border hata diya
+                        hoverOffset: 8  // Hover karne pe slice bahar aayegi
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%', // Beech ka hole bada aur premium karne ke liye
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true, // Legend boxes ko circle banayega
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 13,
+                                    weight: '500'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#111827',
+                            padding: 12,
+                            titleFont: { family: "'Inter', sans-serif", size: 14 },
+                            bodyFont: { family: "'Inter', sans-serif", size: 14, weight: 'bold' },
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ₹' + context.raw; // Tooltip pe ₹ sign show karega
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+        {% endif %}
+    </script>
 {% endblock %}

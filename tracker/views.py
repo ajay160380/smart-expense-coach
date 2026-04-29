@@ -6,6 +6,8 @@ from django.contrib.auth.forms import UserCreationForm    # 👈 Registration fo
 from django.contrib.auth import login                     # 👈 Auto-login ke liye
 from .models import Expense
 from .forms import ExpenseForm
+import calendar
+from datetime import datetime
 
 def register(request):
     if request.method == 'POST':
