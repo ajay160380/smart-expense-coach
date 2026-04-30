@@ -1,16 +1,15 @@
+import csv
+from django.db.models import Sum, Max
+from datetime import date, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Sum
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.http import HttpResponse
-import csv
-import calendar
-from datetime import datetime, date, timedelta
-
 from .models import Expense
 from .forms import ExpenseForm
 
+# ── AUTHENTICATION ──
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -22,10 +21,9 @@ def register(request):
         form = UserCreationForm()
     return render(request, 'tracker/register.html', {'form': form})
 
-
+# ── DASHBOARD (Premium Look) ──
 @login_required(login_url='login')
 def dashboard(request):
-    # Budget Logic
     if request.method == 'POST' and 'new_budget' in request.POST:
         try:
             request.session['budget'] = float(request.POST['new_budget'])
@@ -33,74 +31,115 @@ def dashboard(request):
             pass
         return redirect('dashboard')
 
-    monthly_budget = request.session.get('budget', 10000.0)
+    budget = request.session.get('budget', 20000.0)
     today = date.today()
     
-    # ⏳ QUICK FILTER LOGIC (Week / Month / All)
-    filter_type = request.GET.get('filter', 'month') # Default is month
+    # Filters & Search
+    search_query = request.GET.get('q', '')
+    filter_type = request.GET.get('filter', 'month')
+
+    query_set = Expense.objects.filter(user=request.user)
     
+    if search_query:
+        query_set = query_set.filter(category__icontains=search_query)
+
     if filter_type == 'week':
-        start_date = today - timedelta(days=today.weekday())
-        display_expenses = Expense.objects.filter(user=request.user, date__gte=start_date)
-    elif filter_type == 'all':
-        display_expenses = Expense.objects.filter(user=request.user)
+        start_date = today - timedelta(days=7)
+        query_set = query_set.filter(date__gte=start_date)
+    elif filter_type == 'month':
+        query_set = query_set.filter(date__year=today.year, date__month=today.month)
+    
+    # Hero Stats
+    total_spent = query_set.aggregate(total=Sum('amount'))['total'] or 0
+    transaction_count = query_set.count()
+    highest_expense = query_set.aggregate(highest=Max('amount'))['highest'] or 0
+    
+    budget_percent = min((float(total_spent) / float(budget)) * 100, 100) if budget > 0 else 0
+    remaining_budget = max(float(budget) - float(total_spent), 0)
+    
+    days_in_period = today.day if filter_type == 'month' else (7 if filter_type == 'week' else max(1, transaction_count))
+    avg_per_day = total_spent / days_in_period if days_in_period > 0 else 0
+    
+    savings_rate = ((budget - total_spent) / budget) * 100 if budget > 0 else 0
+    savings_rate = max(0, min(100, savings_rate))
+
+    # Category Breakdown
+    cat_qs = query_set.values('category').annotate(total=Sum('amount')).order_by('-total')
+    category_data_list = []
+    top_cat = "None"
+    
+    cat_colors = {'food':'#6c5ce7','transport':'#00cec9','shopping':'#fd79a8','health':'#00b894','entertainment':'#fdcb6e','education':'#74b9ff','utilities':'#a29bfe','other':'#dfe6e9'}
+    cat_icons = {'food':'🍜','transport':'🚗','shopping':'🛍️','health':'💊','entertainment':'🎬','education':'📚','utilities':'⚡','other':'📦'}
+    
+    if cat_qs:
+        top_cat = cat_qs[0]['category'].title()
+        for c in cat_qs:
+            cat_name = c['category'].lower()
+            cat_percent = (c['total'] / total_spent) * 100 if total_spent > 0 else 0
+            category_data_list.append({
+                'name': cat_name,
+                'title': cat_name.title(),
+                'total': c['total'],
+                'percent': min(cat_percent, 100),
+                'color': cat_colors.get(cat_name, '#888'),
+                'icon': cat_icons.get(cat_name, '📦')
+            })
+
+    # AI Insight
+    if transaction_count == 0:
+        insight = "<strong>Start logging!</strong> Add your first expense to see insights."
+    elif budget_percent > 90:
+        insight = f"<strong>Budget alert!</strong> You've used {budget_percent:.0f}% of your budget. Consider slowing down."
+    elif budget_percent > 70:
+        insight = f"<strong>Getting close.</strong> You've used {budget_percent:.0f}% of budget. Keep an eye on spending."
     else:
-        display_expenses = Expense.objects.filter(user=request.user, date__year=today.year, date__month=today.month)
+        insight = f"<strong>Looking good!</strong> Your biggest spending category is <strong>{top_cat}</strong>. You have ₹{remaining_budget:.0f} left."
 
-    # 🍕 AUTO-EMOJI MAGIC (Smart Categorization)
-    expenses_list = display_expenses.order_by('-date')[:15]
-    for exp in expenses_list:
-        cat = exp.category.lower()
-        if any(x in cat for x in ['pizza', 'burger', 'food', 'maggie', 'zomato', 'swiggy', 'eat', 'dinner']): exp.icon = '🍔'
-        elif any(x in cat for x in ['petrol', 'uber', 'cab', 'travel', 'ola', 'auto', 'train', 'bus']): exp.icon = '🚗'
-        elif any(x in cat for x in ['movie', 'netflix', 'game', 'fun', 'party']): exp.icon = '🍿'
-        elif any(x in cat for x in ['rent', 'emi', 'bill', 'electricity', 'water', 'wifi', 'recharge']): exp.icon = '📄'
-        elif any(x in cat for x in ['cloth', 'shopping', 'amazon', 'flipkart', 'shoe', 'myntra']): exp.icon = '🛍️'
-        elif any(x in cat for x in ['doctor', 'med', 'pharmacy', 'health', 'gym']): exp.icon = '💊'
-        else: exp.icon = '💸'
+    # 7-Day Chart Data Logic
+    chart_data = []
+    chart_totals = []
+    for i in range(6, -1, -1):
+        d = today - timedelta(days=i)
+        day_total = Expense.objects.filter(user=request.user, date=d).aggregate(t=Sum('amount'))['t'] or 0
+        chart_totals.append(day_total)
+    
+    max_chart_val = max(chart_totals) if chart_totals and max(chart_totals) > 0 else 1
+    
+    for i in range(6, -1, -1):
+        d = today - timedelta(days=i)
+        day_total = chart_totals[6-i]
+        height = max((day_total / max_chart_val) * 140, 8 if day_total > 0 else 2)
+        chart_data.append({
+            'day': d.strftime('%a'),
+            'total': day_total,
+            'height': height,
+            'is_today': d == today
+        })
 
-    # Filtered Data for Chart
-    category_qs = display_expenses.values('category').annotate(total=Sum('amount'))
-    category_data = {item['category']: item['total'] for item in category_qs}
-
-    # Monthly calculation for "Smart Coach" (Coach humesha monthly chalna chahiye)
-    current_month_expenses = Expense.objects.filter(user=request.user, date__year=today.year, date__month=today.month)
-    monthly_total = current_month_expenses.aggregate(total=Sum('amount'))['total'] or 0
-
-    insight = "No expenses recorded for this period! 🚀"
-    if monthly_total > 0 and category_data:
-        top_category = max(category_data, key=category_data.get)
-        percent = (category_data[top_category] / monthly_total) * 100
-        if percent > 60: insight = f"⚠️ Heavy spending on {top_category} ({percent:.1f}%). Try to cut back!"
-        elif percent > 40: insight = f"⚡ {top_category} is your biggest expense ({percent:.1f}%)."
-        else: insight = "✅ Your spending across categories looks perfectly balanced."
-
-    budget_percent = (float(monthly_total) / float(monthly_budget)) * 100 if monthly_budget > 0 else 0
-    _, last_day = calendar.monthrange(today.year, today.month)
-    remaining_days = last_day - today.day + 1
-    remaining_budget = float(monthly_budget) - float(monthly_total)
-    daily_limit = remaining_budget / remaining_days if remaining_days > 0 else 0
-
-    if remaining_budget < 0: coach_advice = "🚨 Alert! You have crossed your monthly budget. Stop unnecessary spending!"
-    elif remaining_days <= 3 and remaining_budget > 0: coach_advice = f"Month is almost over! You saved ₹{remaining_budget:.0f}. Great job! 🎉"
-    elif budget_percent >= 80: coach_advice = f"⚠️ High alert! Only ₹{remaining_budget:.0f} left. Try spending less than ₹{daily_limit:.0f}/day."
-    elif budget_percent <= 50 and remaining_days < 15: coach_advice = f"👍 You are managing very well. Safe daily limit is ₹{daily_limit:.0f}."
-    else: coach_advice = f"📊 You are on track. Try to keep your daily expenses around ₹{daily_limit:.0f}."
+    expenses_list = query_set.order_by('-date')
 
     context = {
-        'total': monthly_total,
-        'category_data': category_data,
-        'expenses': expenses_list, 
-        'insight': insight,
-        'monthly_budget': monthly_budget,
-        'budget_percent': min(budget_percent, 100),
-        'coach_advice': coach_advice,
+        'budget': budget,
+        'total_spent': total_spent,
+        'budget_percent': budget_percent,
         'remaining_budget': remaining_budget,
+        'transaction_count': transaction_count,
+        'avg_per_day': avg_per_day,
+        'highest_expense': highest_expense,
+        'savings_rate': savings_rate,
+        'insight': insight,
+        'category_data_list': category_data_list,
+        'chart_data': chart_data,
+        'expenses': expenses_list,
+        'current_filter': filter_type,
+        'search_query': search_query,
         'form': ExpenseForm(),
-        'current_filter': filter_type, # To keep the active tab highlighted
+        'today_month_year': today.strftime('%B %Y')
     }
     return render(request, 'tracker/dashboard.html', context)
 
+
+# ── ACTIONS (Add, Edit, Delete, Export) ──
 @login_required(login_url='login')
 def add_expense(request):
     if request.method == 'POST':
@@ -108,9 +147,11 @@ def add_expense(request):
         if form.is_valid():
             expense = form.save(commit=False)
             expense.user = request.user
+            if not expense.date:
+                expense.date = date.today()
             expense.save()
             return redirect('dashboard')
-    return render(request, 'tracker/add_expense.html', {'form': ExpenseForm()})
+    return redirect('dashboard')
 
 @login_required(login_url='login')
 def edit_expense(request, pk):
@@ -120,22 +161,22 @@ def edit_expense(request, pk):
         if form.is_valid():
             form.save()
             return redirect('dashboard')
-    return render(request, 'tracker/add_expense.html', {'form': ExpenseForm(instance=expense), 'edit_mode': True})
+    return redirect('dashboard')
 
 @login_required(login_url='login')
 def delete_expense(request, pk):
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
     if request.method == 'POST':
         expense.delete()
-        return redirect('dashboard')
-    return render(request, 'tracker/delete_confirm.html', {'expense': expense})
+    return redirect('dashboard')
 
 @login_required(login_url='login')
 def export_expenses(request):
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="my_expenses_{date.today()}.csv"'
+    response['Content-Disposition'] = f'attachment; filename="expenses_{date.today()}.csv"'
     writer = csv.writer(response)
     writer.writerow(['Date', 'Category', 'Amount'])
     expenses = Expense.objects.filter(user=request.user).order_by('-date')
-    for exp in expenses: writer.writerow([exp.date, exp.category.title(), exp.amount])
+    for exp in expenses:
+        writer.writerow([exp.date, exp.category, exp.amount])
     return response
