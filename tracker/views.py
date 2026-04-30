@@ -1,13 +1,16 @@
 import csv
-from django.db.models import Sum, Max
+import calendar
 from datetime import date, timedelta
+from django.db.models import Sum, Max
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.http import HttpResponse
-from .models import Expense
-from .forms import ExpenseForm
+
+# Imports ek hi baar, ekdum saaf
+from .models import Expense, Subscription
+from .forms import ExpenseForm, SubscriptionForm
 
 # ── AUTHENTICATION ──
 def register(request):
@@ -21,7 +24,7 @@ def register(request):
         form = UserCreationForm()
     return render(request, 'tracker/register.html', {'form': form})
 
-# ── DASHBOARD (Premium Look) ──
+# ── DASHBOARD (Premium Look & Auto-Billing) ──
 @login_required(login_url='login')
 def dashboard(request):
     if request.method == 'POST' and 'new_budget' in request.POST:
@@ -33,8 +36,34 @@ def dashboard(request):
 
     budget = request.session.get('budget', 20000.0)
     today = date.today()
+
+    # 🔥 AUTO-DEDUCT MAGIC 🔥
+    subscriptions = Subscription.objects.filter(user=request.user)
+    for sub in subscriptions:
+        while sub.next_billing_date <= today:
+            # 1. Kharcha automatically add kar do
+            Expense.objects.create(
+                user=request.user,
+                category=sub.category,
+                amount=sub.amount,
+                date=sub.next_billing_date
+            )
+            # 2. Agle mahine ki date set kar do
+            month = sub.next_billing_date.month
+            year = sub.next_billing_date.year
+            if month == 12:
+                month = 1
+                year += 1
+            else:
+                month += 1
+            day = min(sub.next_billing_date.day, calendar.monthrange(year, month)[1])
+            sub.next_billing_date = date(year, month, day)
+            sub.save()
+
+    # ⏳ Upcoming Bills List (Sirf aage aane wale 4 bills)
+    upcoming_subs = Subscription.objects.filter(user=request.user, next_billing_date__gte=today).order_by('next_billing_date')[:4]
     
-    # Filters & Search
+    # 🔍 Filters & Search
     search_query = request.GET.get('q', '')
     filter_type = request.GET.get('filter', 'month')
 
@@ -49,7 +78,7 @@ def dashboard(request):
     elif filter_type == 'month':
         query_set = query_set.filter(date__year=today.year, date__month=today.month)
     
-    # Hero Stats
+    # 📊 Hero Stats
     total_spent = query_set.aggregate(total=Sum('amount'))['total'] or 0
     transaction_count = query_set.count()
     highest_expense = query_set.aggregate(highest=Max('amount'))['highest'] or 0
@@ -63,7 +92,7 @@ def dashboard(request):
     savings_rate = ((budget - total_spent) / budget) * 100 if budget > 0 else 0
     savings_rate = max(0, min(100, savings_rate))
 
-    # Category Breakdown
+    # 📑 Category Breakdown
     cat_qs = query_set.values('category').annotate(total=Sum('amount')).order_by('-total')
     category_data_list = []
     top_cat = "None"
@@ -85,7 +114,7 @@ def dashboard(request):
                 'icon': cat_icons.get(cat_name, '📦')
             })
 
-    # AI Insight
+    # 🤖 AI Insight
     if transaction_count == 0:
         insight = "<strong>Start logging!</strong> Add your first expense to see insights."
     elif budget_percent > 90:
@@ -95,7 +124,7 @@ def dashboard(request):
     else:
         insight = f"<strong>Looking good!</strong> Your biggest spending category is <strong>{top_cat}</strong>. You have ₹{remaining_budget:.0f} left."
 
-    # 7-Day Chart Data Logic
+    # 📉 7-Day Chart Data Logic
     chart_data = []
     chart_totals = []
     for i in range(6, -1, -1):
@@ -134,6 +163,8 @@ def dashboard(request):
         'current_filter': filter_type,
         'search_query': search_query,
         'form': ExpenseForm(),
+        'sub_form': SubscriptionForm(), # FIX: Added this!
+        'upcoming_subs': upcoming_subs, # FIX: Added this!
         'today_month_year': today.strftime('%B %Y')
     }
     return render(request, 'tracker/dashboard.html', context)
@@ -180,3 +211,14 @@ def export_expenses(request):
     for exp in expenses:
         writer.writerow([exp.date, exp.category, exp.amount])
     return response
+
+# ── SUBSCRIPTIONS ACTION ──
+@login_required(login_url='login')
+def add_subscription(request):
+    if request.method == 'POST':
+        form = SubscriptionForm(request.POST)
+        if form.is_valid():
+            sub = form.save(commit=False)
+            sub.user = request.user
+            sub.save()
+    return redirect('dashboard')
