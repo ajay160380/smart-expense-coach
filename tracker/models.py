@@ -12,3 +12,13 @@ class Expense(models.Model):
     
     def __str__(self):
         return f"{self.category} - ₹{self.amount}"
+    
+class Subscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100) 
+    amount = models.FloatField()
+    category = models.CharField(max_length=100, default='entertainment')
+    next_billing_date = models.DateField()
+
+    def __str__(self):
+        return f"{self.name} - ₹{self.amount} (Due: {self.next_billing_date})"
