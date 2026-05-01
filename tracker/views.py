@@ -1,249 +1,427 @@
-import csv
-import calendar
-import os
+"""
+views.py — PaisaTracker 2.0
+New features:
+  ① /api/category-insight/ — category select pe real-time breakdown + Groq tip
+  ② /ai_chat/              — dedicated AI chat API (PaisaMitra)
+"""
+
+import csv, json, calendar, logging
 from datetime import date, timedelta
-from django.db.models import Sum, Max
-from django.shortcuts import render, redirect, get_object_or_404
+from decimal import Decimal, InvalidOperation
+
+from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
-from django.http import HttpResponse
-from django.conf import settings
+from django.core.cache import cache
+from django.db import transaction
+from django.db.models import Avg, Count, Max, Min, Sum
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from groq import Groq
 
-# Models aur Forms import
+from django.conf import settings
 from .models import Expense, Subscription
 from .forms import ExpenseForm, SubscriptionForm
 
-# Groq Client Initialization
-client = Groq(api_key=settings.GROQ_API_KEY)
+# ── CONSTANTS ─────────────────────────────────────────────────────────────────
+logger = logging.getLogger(__name__)
+DEFAULT_BUDGET    = 20_000.0
+MAX_UPCOMING_SUBS = 4
+CHART_DAYS        = 7
+AI_CACHE_TIMEOUT  = 300
 
-def get_groq_insight(expenses, budget, total_spent):
-    """Groq API se Hinglish mein financial roast/advice mangwane ke liye."""
+CAT_COLORS = {
+    "food": "#6c5ce7", "transport": "#00cec9", "shopping": "#fd79a8",
+    "health": "#00b894", "entertainment": "#fdcb6e", "education": "#74b9ff",
+    "utilities": "#a29bfe", "other": "#dfe6e9",
+}
+CAT_ICONS = {
+    "food": "🍜", "transport": "🚗", "shopping": "🛍️", "health": "💊",
+    "entertainment": "🎬", "education": "📚", "utilities": "⚡", "other": "📦",
+}
+VALID_CATEGORIES = set(CAT_COLORS.keys())
+VALID_FILTERS    = {"week", "month", "all"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SERVICE LAYER
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _next_month_date(d: date) -> date:
+    m = d.month % 12 + 1
+    y = d.year + (1 if d.month == 12 else 0)
+    return date(y, m, min(d.day, calendar.monthrange(y, m)[1]))
+
+
+@transaction.atomic
+def process_subscriptions(user) -> int:
+    today = date.today()
+    subs  = Subscription.objects.filter(user=user, next_billing_date__lte=today).select_for_update()
+    debits, batch = 0, []
+    for sub in subs:
+        bd, itr = sub.next_billing_date, 0
+        while bd <= today and itr < 24:
+            batch.append(Expense(user=user, category=sub.category, amount=sub.amount, date=bd))
+            bd = _next_month_date(bd); itr += 1; debits += 1
+        sub.next_billing_date = bd
+        sub.save(update_fields=["next_billing_date"])
+    Expense.objects.bulk_create(batch, ignore_conflicts=True)
+    return debits
+
+
+def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
+    qs = Expense.objects.filter(user=user)
+    if search_query:
+        qs = qs.filter(category__icontains=search_query)
+    today = date.today()
+    if filter_type == "week":
+        qs = qs.filter(date__gte=today - timedelta(days=7))
+    elif filter_type == "month":
+        qs = qs.filter(date__year=today.year, date__month=today.month)
+    return qs.order_by("-date", "-id")
+
+
+def calculate_stats(qs, budget: float) -> dict:
+    agg = qs.aggregate(total=Sum("amount"), count=Count("id"),
+                       highest=Max("amount"), lowest=Min("amount"), average=Avg("amount"))
+    ts = float(agg["total"] or 0)
+    return {
+        "total_spent":       ts,
+        "transaction_count": agg["count"] or 0,
+        "highest_expense":   float(agg["highest"] or 0),
+        "lowest_expense":    float(agg["lowest"]  or 0),
+        "average_expense":   float(agg["average"] or 0),
+        "budget_percent":    min(ts / budget * 100, 100) if budget else 0,
+        "remaining_budget":  max(budget - ts, 0),
+        "avg_per_day":       ts / max(date.today().day, 1),
+        "savings_rate":      max(0, min(100, (budget - ts) / budget * 100)) if budget else 0,
+    }
+
+
+def build_category_breakdown(qs, total_spent: float) -> list:
+    result = []
+    for c in qs.values("category").annotate(total=Sum("amount")).order_by("-total"):
+        n = (c["category"] or "other").lower()
+        t = float(c["total"] or 0)
+        result.append({"name": n, "title": n.title(), "total": t,
+                        "percent": min(t / total_spent * 100 if total_spent else 0, 100),
+                        "color": CAT_COLORS.get(n, "#888"), "icon": CAT_ICONS.get(n, "📦")})
+    return result
+
+
+def build_chart_data(user) -> list:
+    today = date.today()
+    start = today - timedelta(days=CHART_DAYS - 1)
+    dm = {r["date"]: float(r["day_total"])
+          for r in Expense.objects.filter(user=user, date__range=(start, today))
+                          .values("date").annotate(day_total=Sum("amount"))}
+    totals  = [dm.get(start + timedelta(days=i), 0) for i in range(CHART_DAYS)]
+    max_val = max(totals) if max(totals) > 0 else 1
+    return [{"day": (start + timedelta(days=i)).strftime("%a"),
+             "date": (start + timedelta(days=i)).isoformat(),
+             "total": totals[i],
+             "height": max(totals[i] / max_val * 140, 8 if totals[i] else 2),
+             "is_today": (start + timedelta(days=i)) == today}
+            for i in range(CHART_DAYS)]
+
+
+def _groq() -> Groq:
+    return Groq(api_key=settings.GROQ_API_KEY)
+
+
+def get_ai_insight(user_id, expenses, budget, total_spent) -> str:
+    ck = f"ai_insight_{user_id}_{int(budget)}_{int(total_spent)}"
+    if hit := cache.get(ck): return hit
     try:
-        # AI ko dene ke liye summary (last 5 expenses)
-        expense_summary = ", ".join([f"{e.category}: ₹{e.amount}" for e in expenses[:5]])
+        summary   = "; ".join(f"{e.category}: ₹{e.amount}" for e in expenses[:5]) or "No data"
+        remaining = max(0, budget - total_spent)
+        days_left = ((date.today().replace(day=1) + timedelta(days=32)).replace(day=1) - date.today()).days
+        prompt = (f"You are a brutally honest funny Indian financial coach.\n"
+                  f"Budget ₹{budget:,.0f} | Spent ₹{total_spent:,.0f} | Left ₹{remaining:,.0f} | Days left {days_left}\n"
+                  f"Expenses: {summary}\n"
+                  f"ONE punchy Hinglish sentence (Roman script), sarcastic, Indian references, under 30 words, ends with micro-tip. ONLY the sentence.")
         
-        prompt = f"""
-        You are a sarcastic but helpful Indian middle-class financial coach. 
-        User's Monthly Budget: ₹{budget}
-        Total Spent so far: ₹{total_spent}
-        Recent Expenses: {expense_summary}
-        
-        Give a 1-sentence witty roast or advice in Hinglish (Roman script). 
-        Make it funny and relatable (mention things like Chai, Zomato, or Middle-class struggles).
-        Keep it under 25 words.
-        """
-
-        chat_completion = client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            model="llama3-8b-8192",
-            temperature=0.7,
-            max_tokens=100,
-        )
-        return chat_completion.choices[0].message.content
+        # ✅ FIX: Used latest available stable model for Groq
+        r = _groq().chat.completions.create(messages=[{"role":"user","content":prompt}],
+                                            model="llama-3.3-70b-versatile", temperature=0.8, max_tokens=80)
+        insight = r.choices[0].message.content.strip()
+        cache.set(ck, insight, AI_CACHE_TIMEOUT)
+        return insight
     except Exception as e:
-        # Agar API fail ho jaye toh default message
-        return f"Budget check kar lo bhai, ₹{max(0, budget - total_spent)} bacha hai bas!"
+        logger.error("Groq insight uid=%s: %s", user_id, e)
+        return f"Bhai ₹{max(0,budget-total_spent):,.0f} bacha hai — Zomato band karo! 🍛"
 
-# ── AUTHENTICATION ──
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ① CATEGORY INSIGHT API  (GET /api/category-insight/?category=food&period=month)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url="login")
+def api_category_insight(request: HttpRequest) -> JsonResponse:
+    """
+    Dashboard pe category select hone pe call karo.
+    Returns: total, share%, count, avg, highest, recent 3 txns, AI tip.
+    """
+    category = request.GET.get("category", "").strip().lower()
+    period   = request.GET.get("period", "month")
+
+    if category not in VALID_CATEGORIES:
+        return JsonResponse({"error": "Invalid category"}, status=400)
+
+    base_qs = get_filtered_expenses(request.user, period)
+    cat_qs  = base_qs.filter(category=category)
+    agg     = cat_qs.aggregate(total=Sum("amount"), count=Count("id"),
+                                highest=Max("amount"), avg=Avg("amount"))
+
+    cat_total = float(agg["total"] or 0)
+    all_total = float(base_qs.aggregate(t=Sum("amount"))["t"] or 0)
+    share_pct = round(cat_total / all_total * 100 if all_total else 0, 1)
+
+    recent = [{"date": r["date"].isoformat(), "amount": float(r["amount"])}
+              for r in cat_qs.values("date", "amount").order_by("-date")[:3]]
+
+    # Groq tip for this category
+    ck  = f"cat_tip_{request.user.id}_{category}_{period}_{int(cat_total)}"
+    tip = cache.get(ck)
+    if not tip:
+        try:
+            prompt = (f"You are a witty Indian financial coach.\n"
+                      f"User spent ₹{cat_total:,.0f} on {category} ({share_pct}% of budget). "
+                      f"Avg per txn: ₹{float(agg['avg'] or 0):,.0f}.\n"
+                      f"ONE Hinglish sentence: roast this {category} spending with Indian reference "
+                      f"+ one saving hack. Under 35 words. ONLY the sentence.")
+            # ✅ FIX: Used latest available stable model for Groq
+            r   = _groq().chat.completions.create(messages=[{"role":"user","content":prompt}],
+                                                   model="llama-3.3-70b-versatile", temperature=0.85, max_tokens=90)
+            tip = r.choices[0].message.content.strip()
+            cache.set(ck, tip, AI_CACHE_TIMEOUT)
+        except Exception as e:
+            logger.error("Cat tip: %s", e)
+            tip = f"{category.title()} pe itna? Thoda control karo yaar! 💸"
+
+    return JsonResponse({
+        "category":  category,
+        "icon":      CAT_ICONS.get(category, "📦"),
+        "color":     CAT_COLORS.get(category, "#888"),
+        "total":     cat_total,
+        "share_pct": share_pct,
+        "count":     agg["count"] or 0,
+        "avg":       round(float(agg["avg"] or 0), 2),
+        "highest":   float(agg["highest"] or 0),
+        "recent":    recent,
+        "ai_tip":    tip,
+    })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ② DEDICATED AI ASSIST API (/ai_chat/)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url="login")
+def ai_chat(request: HttpRequest) -> JsonResponse:
+    """
+    POST → AJAX: user message lo, full financial context ke saath Groq reply do
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST requests allowed"}, status=405)
+
+    try:
+        body     = json.loads(request.body)
+        user_msg = body.get("message", "").strip()
+        # Frontend ab history nahi bhej raha (from JS), so handling string directly
+    except (json.JSONDecodeError, KeyError):
+        return JsonResponse({"error": "Invalid body format"}, status=400)
+
+    if not user_msg:
+        return JsonResponse({"error": "Message khali hai"}, status=400)
+
+    # Build financial context
+    budget   = float(request.session.get("budget", DEFAULT_BUDGET))
+    month_qs = get_filtered_expenses(request.user, "month")
+    stats    = calculate_stats(month_qs, budget)
+    cats     = build_category_breakdown(month_qs, stats["total_spent"])
+    cat_lines = "\n".join(f"  - {c['title']}: ₹{c['total']:,.0f} ({c['percent']:.0f}%)" for c in cats[:6])
+
+    system = f"""You are "PaisaMitra" — a friendly, witty Indian personal finance coach.
+Speak in Hinglish (Roman script). Be warm, sometimes sarcastic, always practical.
+
+USER'S {date.today().strftime('%B %Y')} SNAPSHOT:
+- Budget:        ₹{budget:,.0f}
+- Spent:         ₹{stats['total_spent']:,.0f}
+- Remaining:     ₹{stats['remaining_budget']:,.0f}
+- Budget Used:   {stats['budget_percent']:.0f}%
+- Transactions:  {stats['transaction_count']}
+- Daily Avg:     ₹{stats['avg_per_day']:,.0f}
+
+TOP CATEGORIES:
+{cat_lines or "  (No data yet)"}
+
+RULES:
+- Answer in Hinglish naturally.
+- Keep responses concise (max 80 words).
+- If unrelated to finance, gently redirect back."""
+
+    try:
+        # ✅ FIX: Used latest available stable model for Groq
+        resp = _groq().chat.completions.create(
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_msg}
+            ],
+            model="llama-3.3-70b-versatile", temperature=0.7, max_tokens=150,
+        )
+        return JsonResponse({"reply": resp.choices[0].message.content.strip()})
+    except Exception as e:
+        logger.error("AI Assist uid=%s: %s", request.user.id, e)
+        return JsonResponse({"reply": "Oops! Network issue aa gaya. Thodi der baad try karo yaar 😅"})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# AUTHENTICATION
+# ══════════════════════════════════════════════════════════════════════════════
+
 def register(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('dashboard')
+            user = form.save(); login(request, user)
+            messages.success(request, "Account ban gaya! 🎉")
+            return redirect("dashboard")
+        messages.error(request, "Kuch gadbad hai.")
     else:
         form = UserCreationForm()
-    return render(request, 'tracker/register.html', {'form': form})
+    return render(request, "tracker/register.html", {"form": form})
 
-# ── DASHBOARD ──
-@login_required(login_url='login')
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DASHBOARD
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url="login")
 def dashboard(request):
-    # Budget Update Logic
-    if request.method == 'POST' and 'new_budget' in request.POST:
+    if request.method == "POST" and "new_budget" in request.POST:
         try:
-            request.session['budget'] = float(request.POST['new_budget'])
-        except ValueError:
-            pass
-        return redirect('dashboard')
+            nb = float(request.POST["new_budget"])
+            if nb <= 0: raise ValueError
+            request.session["budget"] = nb
+            messages.success(request, f"Budget set: ₹{nb:,.0f} 💰")
+        except (ValueError, TypeError):
+            messages.error(request, "Valid budget daalo.")
+        return redirect("dashboard")
 
-    budget = request.session.get('budget', 20000.0)
-    today = date.today()
+    user   = request.user
+    budget = float(request.session.get("budget", DEFAULT_BUDGET))
+    today  = date.today()
 
-    # 🔥 AUTO-DEDUCT MAGIC (Subscriptions)
-    subscriptions = Subscription.objects.filter(user=request.user)
-    for sub in subscriptions:
-        while sub.next_billing_date <= today:
-            Expense.objects.create(
-                user=request.user,
-                category=sub.category,
-                amount=sub.amount,
-                date=sub.next_billing_date
-            )
-            # Next billing date logic
-            month = sub.next_billing_date.month
-            year = sub.next_billing_date.year
-            if month == 12:
-                month = 1
-                year += 1
-            else:
-                month += 1
-            day = min(sub.next_billing_date.day, calendar.monthrange(year, month)[1])
-            sub.next_billing_date = date(year, month, day)
-            sub.save()
+    debits = process_subscriptions(user)
+    if debits: messages.info(request, f"{debits} subscription(s) auto-deduct ho gaye. 📅")
 
-    # Upcoming Bills
-    upcoming_subs = Subscription.objects.filter(user=request.user, next_billing_date__gte=today).order_by('next_billing_date')[:4]
-    
-    # Search & Filters
-    search_query = request.GET.get('q', '')
-    filter_type = request.GET.get('filter', 'month')
+    upcoming_subs = (Subscription.objects.filter(user=user, next_billing_date__gte=today)
+                                         .order_by("next_billing_date")[:MAX_UPCOMING_SUBS])
 
-    query_set = Expense.objects.filter(user=request.user)
-    
-    if search_query:
-        query_set = query_set.filter(category__icontains=search_query)
+    search_query = request.GET.get("q", "").strip()
+    filter_type  = request.GET.get("filter", "month")
+    if filter_type not in VALID_FILTERS: filter_type = "month"
 
-    if filter_type == 'week':
-        start_date = today - timedelta(days=7)
-        query_set = query_set.filter(date__gte=start_date)
-    elif filter_type == 'month':
-        query_set = query_set.filter(date__year=today.year, date__month=today.month)
-    
-    # Stats Calculation
-    total_spent = query_set.aggregate(total=Sum('amount'))['total'] or 0
-    transaction_count = query_set.count()
-    highest_expense = query_set.aggregate(highest=Max('amount'))['highest'] or 0
-    
-    budget_percent = min((float(total_spent) / float(budget)) * 100, 100) if budget > 0 else 0
-    remaining_budget = max(float(budget) - float(total_spent), 0)
-    
-    days_in_period = today.day if filter_type == 'month' else (7 if filter_type == 'week' else max(1, transaction_count))
-    avg_per_day = total_spent / days_in_period if days_in_period > 0 else 0
-    
-    savings_rate = max(0, min(100, ((budget - total_spent) / budget) * 100)) if budget > 0 else 0
+    expenses_qs       = get_filtered_expenses(user, filter_type, search_query)
+    stats             = calculate_stats(expenses_qs, budget)
+    category_data_list = build_category_breakdown(expenses_qs, stats["total_spent"])
+    chart_data        = build_chart_data(user)
 
-    # Category Breakdown logic
-    cat_qs = query_set.values('category').annotate(total=Sum('amount')).order_by('-total')
-    category_data_list = []
-    
-    cat_colors = {'food':'#6c5ce7','transport':'#00cec9','shopping':'#fd79a8','health':'#00b894','entertainment':'#fdcb6e','education':'#74b9ff','utilities':'#a29bfe','other':'#dfe6e9'}
-    cat_icons = {'food':'🍜','transport':'🚗','shopping':'🛍️','health':'💊','entertainment':'🎬','education':'📚','utilities':'⚡','other':'📦'}
-    
-    if cat_qs:
-        for c in cat_qs:
-            cat_name = c['category'].lower()
-            cat_percent = (c['total'] / total_spent) * 100 if total_spent > 0 else 0
-            category_data_list.append({
-                'name': cat_name,
-                'title': cat_name.title(),
-                'total': c['total'],
-                'percent': min(cat_percent, 100),
-                'color': cat_colors.get(cat_name, '#888'),
-                'icon': cat_icons.get(cat_name, '📦')
-            })
-
-    # Chart Data (Last 7 Days)
-    chart_data = []
-    chart_totals = []
-    for i in range(6, -1, -1):
-        d = today - timedelta(days=i)
-        day_total = Expense.objects.filter(user=request.user, date=d).aggregate(t=Sum('amount'))['t'] or 0
-        chart_totals.append(day_total)
-    
-    max_chart_val = max(chart_totals) if chart_totals and max(chart_totals) > 0 else 1
-    
-    for i in range(6, -1, -1):
-        d = today - timedelta(days=i)
-        day_total = chart_totals[6-i]
-        height = max((day_total / max_chart_val) * 140, 8 if day_total > 0 else 2)
-        chart_data.append({
-            'day': d.strftime('%a'),
-            'total': day_total,
-            'height': height,
-            'is_today': d == today
-        })
-
-    # Data ready, ab AI Insight mangwayein
-    expenses_list = query_set.order_by('-date')
-
-    if transaction_count == 0:
-        insight = "<strong>Start logging!</strong> Add your first expense to see AI insights."
+    if stats["transaction_count"] == 0:
+        insight = "<strong>Shuru karo!</strong> Pehla expense add karo, AI coaching milegi. 🚀"
     else:
-        # 🔥 GROQ AI CALL
-        ai_response = get_groq_insight(expenses_list, budget, total_spent)
-        insight = f"<strong>AI Coach:</strong> {ai_response}"
+        insight = f"<strong>AI Coach:</strong> {get_ai_insight(user.id, expenses_qs, budget, stats['total_spent'])}"
 
     context = {
-        'budget': budget,
-        'total_spent': total_spent,
-        'budget_percent': budget_percent,
-        'remaining_budget': remaining_budget,
-        'transaction_count': transaction_count,
-        'avg_per_day': avg_per_day,
-        'highest_expense': highest_expense,
-        'savings_rate': savings_rate,
-        'insight': insight,
-        'category_data_list': category_data_list,
-        'chart_data': chart_data,
-        'expenses': expenses_list,
-        'current_filter': filter_type,
-        'search_query': search_query,
-        'form': ExpenseForm(),
-        'sub_form': SubscriptionForm(),
-        'upcoming_subs': upcoming_subs,
-        'today_month_year': today.strftime('%B %Y')
+        "budget": budget, "insight": insight,
+        "category_data_list": category_data_list, "chart_data": chart_data,
+        "expenses": expenses_qs, "current_filter": filter_type,
+        "search_query": search_query, "form": ExpenseForm(),
+        "sub_form": SubscriptionForm(), "upcoming_subs": upcoming_subs,
+        "today_month_year": today.strftime("%B %Y"),
+        "valid_categories": list(VALID_CATEGORIES),
+        **stats,
     }
-    return render(request, 'tracker/dashboard.html', context)
+    return render(request, "tracker/dashboard.html", context)
 
-# ── ACTIONS ──
-@login_required(login_url='login')
+
+# ══════════════════════════════════════════════════════════════════════════════
+# EXPENSE ACTIONS
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url="login")
+@require_POST
 def add_expense(request):
-    if request.method == 'POST':
-        form = ExpenseForm(request.POST)
-        if form.is_valid():
-            expense = form.save(commit=False)
-            expense.user = request.user
-            if not expense.date:
-                expense.date = date.today()
-            expense.save()
-    return redirect('dashboard')
+    try:
+        amount = Decimal(request.POST.get("amount","").strip())
+        if amount <= 0: raise InvalidOperation
+    except (InvalidOperation, ValueError):
+        messages.error(request, "Valid amount daalo.")
+        return redirect("dashboard")
+    category = request.POST.get("category","other").strip().lower()
+    if category not in VALID_CATEGORIES: category = "other"
+    try:    exp_date = date.fromisoformat(request.POST.get("date",""))
+    except: exp_date = date.today()
+    Expense.objects.create(user=request.user, amount=amount, category=category, date=exp_date)
+    messages.success(request, f"₹{amount:,} added! ✅")
+    return redirect("dashboard")
 
-@login_required(login_url='login')
+
+@login_required(login_url="login")
 def edit_expense(request, pk):
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ExpenseForm(request.POST, instance=expense)
-        if form.is_valid():
-            form.save()
-    return redirect('dashboard')
+        if form.is_valid(): form.save(); messages.success(request, "Updated! ✏️")
+        else: messages.error(request, "Invalid data.")
+    return redirect("dashboard")
 
-@login_required(login_url='login')
+
+@login_required(login_url="login")
+@require_POST
 def delete_expense(request, pk):
-    expense = get_object_or_404(Expense, pk=pk, user=request.user)
-    if request.method == 'POST':
-        expense.delete()
-    return redirect('dashboard')
+    get_object_or_404(Expense, pk=pk, user=request.user).delete()
+    messages.success(request, "Deleted. 🗑️")
+    return redirect("dashboard")
 
-@login_required(login_url='login')
+
+# ══════════════════════════════════════════════════════════════════════════════
+# EXPORT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url="login")
 def export_expenses(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="expenses_{date.today()}.csv"'
-    writer = csv.writer(response)
-    writer.writerow(['Date', 'Category', 'Amount'])
-    expenses = Expense.objects.filter(user=request.user).order_by('-date')
-    for exp in expenses:
-        writer.writerow([exp.date, exp.category, exp.amount])
-    return response
+    resp = HttpResponse(content_type="text/csv; charset=utf-8")
+    resp["Content-Disposition"] = f'attachment; filename="expenses_{date.today()}.csv"'
+    resp.write("\ufeff")
+    w = csv.writer(resp)
+    w.writerow(["Date", "Category", "Amount (₹)"])
+    w.writerows(Expense.objects.filter(user=request.user).order_by("-date").values_list("date","category","amount"))
+    return resp
 
-@login_required(login_url='login')
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SUBSCRIPTIONS
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url="login")
+@require_POST
 def add_subscription(request):
-    if request.method == 'POST':
-        form = SubscriptionForm(request.POST)
-        if form.is_valid():
-            sub = form.save(commit=False)
-            sub.user = request.user
-            sub.save()
-    return redirect('dashboard')
+    form = SubscriptionForm(request.POST)
+    if form.is_valid():
+        sub = form.save(commit=False); sub.user = request.user; sub.save()
+        messages.success(request, "Subscription add ho gayi! 📅")
+    else:
+        messages.error(request, "Details check karo.")
+    return redirect("dashboard")
+
+
+@login_required(login_url="login")
+@require_POST
+def delete_subscription(request, pk):
+    get_object_or_404(Subscription, pk=pk, user=request.user).delete()
+    messages.success(request, "Subscription cancel! ✂️")
+    return redirect("dashboard")
