@@ -1,5 +1,6 @@
 import csv
 import calendar
+import os
 from datetime import date, timedelta
 from django.db.models import Sum, Max
 from django.shortcuts import render, redirect, get_object_or_404
@@ -7,10 +8,43 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.http import HttpResponse
+from django.conf import settings
+from groq import Groq
 
-# Imports ek hi baar, ekdum saaf
+# Models aur Forms import
 from .models import Expense, Subscription
 from .forms import ExpenseForm, SubscriptionForm
+
+# Groq Client Initialization
+client = Groq(api_key=settings.GROQ_API_KEY)
+
+def get_groq_insight(expenses, budget, total_spent):
+    """Groq API se Hinglish mein financial roast/advice mangwane ke liye."""
+    try:
+        # AI ko dene ke liye summary (last 5 expenses)
+        expense_summary = ", ".join([f"{e.category}: ₹{e.amount}" for e in expenses[:5]])
+        
+        prompt = f"""
+        You are a sarcastic but helpful Indian middle-class financial coach. 
+        User's Monthly Budget: ₹{budget}
+        Total Spent so far: ₹{total_spent}
+        Recent Expenses: {expense_summary}
+        
+        Give a 1-sentence witty roast or advice in Hinglish (Roman script). 
+        Make it funny and relatable (mention things like Chai, Zomato, or Middle-class struggles).
+        Keep it under 25 words.
+        """
+
+        chat_completion = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama3-8b-8192",
+            temperature=0.7,
+            max_tokens=100,
+        )
+        return chat_completion.choices[0].message.content
+    except Exception as e:
+        # Agar API fail ho jaye toh default message
+        return f"Budget check kar lo bhai, ₹{max(0, budget - total_spent)} bacha hai bas!"
 
 # ── AUTHENTICATION ──
 def register(request):
@@ -24,9 +58,10 @@ def register(request):
         form = UserCreationForm()
     return render(request, 'tracker/register.html', {'form': form})
 
-# ── DASHBOARD (Premium Look & Auto-Billing) ──
+# ── DASHBOARD ──
 @login_required(login_url='login')
 def dashboard(request):
+    # Budget Update Logic
     if request.method == 'POST' and 'new_budget' in request.POST:
         try:
             request.session['budget'] = float(request.POST['new_budget'])
@@ -37,18 +72,17 @@ def dashboard(request):
     budget = request.session.get('budget', 20000.0)
     today = date.today()
 
-    # 🔥 AUTO-DEDUCT MAGIC 🔥
+    # 🔥 AUTO-DEDUCT MAGIC (Subscriptions)
     subscriptions = Subscription.objects.filter(user=request.user)
     for sub in subscriptions:
         while sub.next_billing_date <= today:
-            # 1. Kharcha automatically add kar do
             Expense.objects.create(
                 user=request.user,
                 category=sub.category,
                 amount=sub.amount,
                 date=sub.next_billing_date
             )
-            # 2. Agle mahine ki date set kar do
+            # Next billing date logic
             month = sub.next_billing_date.month
             year = sub.next_billing_date.year
             if month == 12:
@@ -60,10 +94,10 @@ def dashboard(request):
             sub.next_billing_date = date(year, month, day)
             sub.save()
 
-    # ⏳ Upcoming Bills List (Sirf aage aane wale 4 bills)
+    # Upcoming Bills
     upcoming_subs = Subscription.objects.filter(user=request.user, next_billing_date__gte=today).order_by('next_billing_date')[:4]
     
-    # 🔍 Filters & Search
+    # Search & Filters
     search_query = request.GET.get('q', '')
     filter_type = request.GET.get('filter', 'month')
 
@@ -78,7 +112,7 @@ def dashboard(request):
     elif filter_type == 'month':
         query_set = query_set.filter(date__year=today.year, date__month=today.month)
     
-    # 📊 Hero Stats
+    # Stats Calculation
     total_spent = query_set.aggregate(total=Sum('amount'))['total'] or 0
     transaction_count = query_set.count()
     highest_expense = query_set.aggregate(highest=Max('amount'))['highest'] or 0
@@ -89,19 +123,16 @@ def dashboard(request):
     days_in_period = today.day if filter_type == 'month' else (7 if filter_type == 'week' else max(1, transaction_count))
     avg_per_day = total_spent / days_in_period if days_in_period > 0 else 0
     
-    savings_rate = ((budget - total_spent) / budget) * 100 if budget > 0 else 0
-    savings_rate = max(0, min(100, savings_rate))
+    savings_rate = max(0, min(100, ((budget - total_spent) / budget) * 100)) if budget > 0 else 0
 
-    # 📑 Category Breakdown
+    # Category Breakdown logic
     cat_qs = query_set.values('category').annotate(total=Sum('amount')).order_by('-total')
     category_data_list = []
-    top_cat = "None"
     
     cat_colors = {'food':'#6c5ce7','transport':'#00cec9','shopping':'#fd79a8','health':'#00b894','entertainment':'#fdcb6e','education':'#74b9ff','utilities':'#a29bfe','other':'#dfe6e9'}
     cat_icons = {'food':'🍜','transport':'🚗','shopping':'🛍️','health':'💊','entertainment':'🎬','education':'📚','utilities':'⚡','other':'📦'}
     
     if cat_qs:
-        top_cat = cat_qs[0]['category'].title()
         for c in cat_qs:
             cat_name = c['category'].lower()
             cat_percent = (c['total'] / total_spent) * 100 if total_spent > 0 else 0
@@ -114,17 +145,7 @@ def dashboard(request):
                 'icon': cat_icons.get(cat_name, '📦')
             })
 
-    # 🤖 AI Insight
-    if transaction_count == 0:
-        insight = "<strong>Start logging!</strong> Add your first expense to see insights."
-    elif budget_percent > 90:
-        insight = f"<strong>Budget alert!</strong> You've used {budget_percent:.0f}% of your budget. Consider slowing down."
-    elif budget_percent > 70:
-        insight = f"<strong>Getting close.</strong> You've used {budget_percent:.0f}% of budget. Keep an eye on spending."
-    else:
-        insight = f"<strong>Looking good!</strong> Your biggest spending category is <strong>{top_cat}</strong>. You have ₹{remaining_budget:.0f} left."
-
-    # 📉 7-Day Chart Data Logic
+    # Chart Data (Last 7 Days)
     chart_data = []
     chart_totals = []
     for i in range(6, -1, -1):
@@ -145,7 +166,15 @@ def dashboard(request):
             'is_today': d == today
         })
 
+    # Data ready, ab AI Insight mangwayein
     expenses_list = query_set.order_by('-date')
+
+    if transaction_count == 0:
+        insight = "<strong>Start logging!</strong> Add your first expense to see AI insights."
+    else:
+        # 🔥 GROQ AI CALL
+        ai_response = get_groq_insight(expenses_list, budget, total_spent)
+        insight = f"<strong>AI Coach:</strong> {ai_response}"
 
     context = {
         'budget': budget,
@@ -163,14 +192,13 @@ def dashboard(request):
         'current_filter': filter_type,
         'search_query': search_query,
         'form': ExpenseForm(),
-        'sub_form': SubscriptionForm(), # FIX: Added this!
-        'upcoming_subs': upcoming_subs, # FIX: Added this!
+        'sub_form': SubscriptionForm(),
+        'upcoming_subs': upcoming_subs,
         'today_month_year': today.strftime('%B %Y')
     }
     return render(request, 'tracker/dashboard.html', context)
 
-
-# ── ACTIONS (Add, Edit, Delete, Export) ──
+# ── ACTIONS ──
 @login_required(login_url='login')
 def add_expense(request):
     if request.method == 'POST':
@@ -181,7 +209,6 @@ def add_expense(request):
             if not expense.date:
                 expense.date = date.today()
             expense.save()
-            return redirect('dashboard')
     return redirect('dashboard')
 
 @login_required(login_url='login')
@@ -191,7 +218,6 @@ def edit_expense(request, pk):
         form = ExpenseForm(request.POST, instance=expense)
         if form.is_valid():
             form.save()
-            return redirect('dashboard')
     return redirect('dashboard')
 
 @login_required(login_url='login')
@@ -212,7 +238,6 @@ def export_expenses(request):
         writer.writerow([exp.date, exp.category, exp.amount])
     return response
 
-# ── SUBSCRIPTIONS ACTION ──
 @login_required(login_url='login')
 def add_subscription(request):
     if request.method == 'POST':
