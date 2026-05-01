@@ -236,6 +236,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 </style>
 </head>
 <body>
+
+<!-- 🚀 ADDED: Hidden form to handle secure deletions -->
+<form id="delete-form" method="POST" style="display:none;">
+    {% csrf_token %}
+</form>
+
 <h2 class="sr-only">PaisaTracker — smart expense tracker with AI financial coach</h2>
 
 <div class="app">
@@ -383,7 +389,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- 🚀 FIXED: ADD EXPENSE MODAL (Now a proper Django Form) -->
+<!-- ADD EXPENSE MODAL (Django Form) -->
 <div class="overlay" id="addModal">
   <div class="modal">
     <div class="modal-title">Add Expense <button type="button" class="modal-close" onclick="closeModal('addModal')">✕</button></div>
@@ -421,7 +427,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 <div class="overlay" id="budgetModal">
   <div class="modal">
     <div class="modal-title">Budget Settings <button class="modal-close" onclick="closeModal('budgetModal')">✕</button></div>
-    <!-- 🚀 FIXED: Budget form with POST request to dashboard -->
     <form method="POST" action="{% url 'dashboard' %}">
         {% csrf_token %}
         <div class="form-group">
@@ -434,7 +439,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- 🚀 FIXED: ADD BILL MODAL (Now a proper Django Form) -->
+<!-- ADD BILL MODAL (Django Form) -->
 <div class="overlay" id="billModal">
   <div class="modal">
     <div class="modal-title">Add Upcoming Bill <button type="button" class="modal-close" onclick="closeModal('billModal')">✕</button></div>
@@ -472,7 +477,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 const COLORS={food:'#7C6FF7',transport:'#34D399',shopping:'#F472B6',health:'#60A5FA',entertainment:'#FBBF24',education:'#A78BFA',utilities:'#FB923C',other:'#94A3B8'};
 const ICONS={food:'🍜',transport:'🚗',shopping:'🛍️',health:'💊',entertainment:'🎬',education:'📚',utilities:'⚡',other:'📦'};
 
-// 🚀 FIXED: Data ab Backend se aayega!
+// 🚀 ADDED: Base URLs for delete operations (Using Django templating)
+const deleteExpUrlBase = "{% url 'delete_expense' 999999 %}".replace('999999/', '');
+const deleteBillUrlBase = "{% url 'delete_subscription' 999999 %}".replace('999999/', '');
+
 let expenses = [
   {% for exp in expenses %}
   {
@@ -593,7 +601,8 @@ function renderFilterTags(){
     `<button class="ftag ${activeCatFilter===c?'active':''}" onclick="setCatFilter('${c}')">${c==='all'?'All':ICONS[c]+' '+c.charAt(0).toUpperCase()+c.slice(1)}</button>`
   ).join('');
 }
-function setCatFilter(c){activeCatFilter=c;renderFilterTags();renderTxns();}
+
+// 🚀 FIXED: Delete button added back to renderTxns
 function renderTxns(){
   const search=document.getElementById('search-input').value.toLowerCase();
   let f=getCatFiltered();
@@ -609,11 +618,13 @@ function renderTxns(){
       </div>
       <div class="txn-right">
         <span class="txn-amt">${fmt(e.amount)}</span>
+        <button class="txn-del" onclick="deleteExpense('${e.id}')" title="Delete Expense">✕</button>
       </div>
     </div>`
   ).join('');
 }
 
+// 🚀 FIXED: Delete button added back to renderBills
 function renderBills(){
   const el=document.getElementById('bills-list');
   const now=new Date();
@@ -630,8 +641,26 @@ function renderBills(){
       </div>
       <div class="bill-amt">${fmt(b.amount)}</div>
       <div class="bill-due" style="color:${overdue?'var(--red)':'var(--text3)'}">${dueLabel}</div>
+      <button class="bill-del" onclick="deleteBill('${b.id}')" title="Delete Bill">✕</button>
     </div>`;
   }).join('');
+}
+
+// 🚀 ADDED: Delete logic linked to Django hidden form
+function deleteExpense(id) {
+    if(confirm("Ye expense sach mein delete karna hai?")) {
+        const form = document.getElementById('delete-form');
+        form.action = deleteExpUrlBase + id + '/';
+        form.submit();
+    }
+}
+
+function deleteBill(id) {
+    if(confirm("Ye bill sach mein delete karna hai?")) {
+        const form = document.getElementById('delete-form');
+        form.action = deleteBillUrlBase + id + '/';
+        form.submit();
+    }
 }
 
 function showInsight(cat){
@@ -661,7 +690,6 @@ function showInsight(cat){
   document.getElementById('insight-panel').classList.add('open');
   document.getElementById('insight-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
   
-  // 🚀 FIXED: Call Django backend for insight
   fetchCatInsight(cat,catTotal,allTotal,f.length,avg,high);
 }
 
@@ -765,7 +793,6 @@ async function sendMsg(){
   document.getElementById('ai-send').disabled=true;
   showTyping();
 
-  // 🚀 FIXED: Ab message backend view 'ai_chat' par ja raha hai
   try{
     const response = await fetch('{% url "ai_chat" %}', {
         method: 'POST',
