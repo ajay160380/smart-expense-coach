@@ -24,7 +24,6 @@ A premium, highly intuitive personal finance tracker built with **Django**. This
 
 *   [ ] **Groq AI Integration:** Connecting Llama 3 for personalized spending "roasts" and coaching.
 *   [ ] **Interactive Charts:** Detailed weekly trends using `Chart.js`.
-*   [ ] **PWA Support:** Making the app installable on Android/iOS.
 
 ---
 
@@ -34,24 +33,27 @@ A premium, highly intuitive personal finance tracker built with **Django**. This
    ```bash
    git clone [https://github.com/ajay160380/-smart-expense-coach.git](https://github.com/ajay160380/-smart-expense-coach.git)
    cd -smart-expense-coach
-Set up the virtual environment:
+   
+2. **Virtual Environment Setup**
 
-Bash
-python3 -m venv env
-source env/bin/activate
-Install & Migrate:
+python3 -m venv env && source env/bin/activate
 
-Bash
-pip install django
-python manage.py makemigrations
-python manage.py migrate
-Start the Coach:
+3. **Install Django & Database Setup**
 
-Bash
+pip install django && python manage.py makemigrations && python manage.py migrate
+
+4. **Run the Project**
+
 python manage.py runserver
-📌 Author
-Ajay
 
-B.Tech CSE (AI) Student at Babu Banarasi Das University (BBDU), Lucknow
+---
+
+##📌 Author Details
+
+**Name: Ajay**
+
+
+**Education:** B.Tech CSE (AI) student at Babu Banarasi Das University (BBDU)
+
 
 Built with ❤️ and Django.
