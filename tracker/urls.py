@@ -24,4 +24,6 @@ urlpatterns = [
     # APIs & AI Chat
     path('api/category-insight/', views.api_category_insight, name='api_category_insight'),
     path('ai_chat/', views.ai_chat, name='ai_chat'),
+    path('api/voice-expense/', views.voice_expense, name='voice_expense'),
+    
 ]
