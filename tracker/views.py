@@ -1,9 +1,4 @@
-"""
-views.py — PaisaTracker 2.0
-New features:
-  ① /api/category-insight/ — category select pe real-time breakdown + Groq tip
-  ② /ai_chat/              — dedicated AI chat API (PaisaMitra)
-"""
+
 
 import csv, json, calendar, logging
 from datetime import date, timedelta
@@ -143,7 +138,6 @@ def get_ai_insight(user_id, expenses, budget, total_spent) -> str:
                   f"Expenses: {summary}\n"
                   f"ONE punchy Hinglish sentence (Roman script), sarcastic, Indian references, under 30 words, ends with micro-tip. ONLY the sentence.")
         
-        # ✅ FIX: Used latest available stable model for Groq
         r = _groq().chat.completions.create(messages=[{"role":"user","content":prompt}],
                                             model="llama-3.3-70b-versatile", temperature=0.8, max_tokens=80)
         insight = r.choices[0].message.content.strip()
@@ -192,7 +186,6 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
                       f"Avg per txn: ₹{float(agg['avg'] or 0):,.0f}.\n"
                       f"ONE Hinglish sentence: roast this {category} spending with Indian reference "
                       f"+ one saving hack. Under 35 words. ONLY the sentence.")
-            # ✅ FIX: Used latest available stable model for Groq
             r   = _groq().chat.completions.create(messages=[{"role":"user","content":prompt}],
                                                    model="llama-3.3-70b-versatile", temperature=0.85, max_tokens=90)
             tip = r.choices[0].message.content.strip()

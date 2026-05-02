@@ -75,6 +75,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .h-stat-l{font-size:10px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
 .h-stat-v{font-size:18px;font-weight:500;font-family:var(--mono);}
 
+/* 🎮 BADGES (GAMIFICATION) */
+.badges-wrap { margin-top: 18px; padding-top: 16px; border-top: 0.5px solid var(--border2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.badge-label { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text3); letter-spacing: 0.05em; margin-right: 4px; }
+.badge { padding: 4px 10px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.b-starter { background: var(--green-bg); color: var(--green); }
+.b-pro { background: var(--primary-l); color: var(--primary); }
+.b-ninja { background: var(--amber-bg); color: var(--amber); }
+.b-danger { background: var(--red-bg); color: var(--red); }
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
 /* STAT ROW */
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
 .stat-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;}
@@ -290,6 +300,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       <div class="h-stat"><div class="h-stat-l">Used</div><div class="h-stat-v" id="hero-pct">0%</div></div>
       <div class="h-stat"><div class="h-stat-l">Remaining</div><div class="h-stat-v" id="hero-rem">₹0</div></div>
       <div class="h-stat"><div class="h-stat-l">Transactions</div><div class="h-stat-v" id="hero-count">0</div></div>
+    </div>
+    
+    <!-- 🚀 ADDED: TROPHY ROOM -->
+    <div class="badges-wrap">
+      <div class="badge-label">🏆 Trophies:</div>
+      <div id="badge-container" style="display:flex; gap:8px;"></div>
     </div>
   </div>
 
@@ -508,7 +524,12 @@ let bills = [
 let budget = {{ budget }};
 let activeFilter='month', activeCatFilter='all';
 let aiOpen=false, aiTyping=false, aiSeen=false, aiHistory=[];
-let darkMode=false;
+
+// 🚀 FIXED: Theme Memory Logic
+let darkMode = localStorage.getItem('theme') === 'dark';
+if (darkMode) {
+  document.documentElement.setAttribute('data-theme', 'dark');
+}
 
 const today=new Date();
 document.getElementById('month-label').textContent=today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
@@ -516,14 +537,21 @@ document.getElementById('inp-date').value=today.toISOString().split('T')[0];
 document.getElementById('budget-inp').value=budget;
 document.getElementById('bill-date').value=today.toISOString().split('T')[0];
 
+if (darkMode) {
+    document.getElementById('theme-btn').textContent = '☀️';
+} else {
+    document.getElementById('theme-btn').textContent = '🌙';
+}
+
 function fmt(n){return'₹'+Math.round(n).toLocaleString('en-IN');}
 function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'});}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function toggleTheme(){
-  darkMode=!darkMode;
-  document.documentElement.setAttribute('data-theme',darkMode?'dark':'');
-  document.getElementById('theme-btn').textContent=darkMode?'☀️':'🌙';
+  darkMode = !darkMode;
+  document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : '');
+  document.getElementById('theme-btn').textContent = darkMode ? '☀️' : '🌙';
+  localStorage.setItem('theme', darkMode ? 'dark' : 'light'); 
 }
 
 function getFiltered(){
@@ -538,7 +566,7 @@ function getFiltered(){
 function getCatFiltered(){const f=getFiltered();return activeCatFilter==='all'?f:f.filter(e=>e.cat===activeCatFilter);}
 function setFilter(f,el){activeFilter=f;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');render();}
 
-function render(){renderHero();renderStats();renderCats();renderChart();renderFilterTags();renderTxns();renderBills();updateBannerMsg();}
+function render(){renderHero();renderStats();renderCats();renderChart();renderFilterTags();renderTxns();renderBills();updateBannerMsg();renderBadges();}
 
 function renderHero(){
   const f=getFiltered(),total=f.reduce((s,e)=>s+e.amount,0),pct=Math.min(total/budget*100,100);
@@ -602,7 +630,6 @@ function renderFilterTags(){
   ).join('');
 }
 
-// 🚀 FIXED: Delete button added back to renderTxns
 function renderTxns(){
   const search=document.getElementById('search-input').value.toLowerCase();
   let f=getCatFiltered();
@@ -624,7 +651,6 @@ function renderTxns(){
   ).join('');
 }
 
-// 🚀 FIXED: Delete button added back to renderBills
 function renderBills(){
   const el=document.getElementById('bills-list');
   const now=new Date();
@@ -646,7 +672,26 @@ function renderBills(){
   }).join('');
 }
 
-// 🚀 ADDED: Delete logic linked to Django hidden form
+// 🚀 ADDED: Gamification Badges Logic
+function renderBadges() {
+  const container = document.getElementById('badge-container');
+  if(!container) return;
+  const monthFiltered = getFiltered();
+  const total = monthFiltered.reduce((s,e) => s + e.amount, 0);
+  const pct = budget > 0 ? (total / budget * 100) : 0;
+  
+  let html = '';
+  
+  if (expenses.length >= 1) html += '<span class="badge b-starter">🌱 Starter</span>';
+  if (expenses.length >= 10) html += '<span class="badge b-pro">🔥 Pro Tracker</span>';
+  if (pct > 0 && pct <= 50) html += '<span class="badge b-ninja">🥷 Savings Ninja</span>';
+  if (pct >= 90) html += '<span class="badge b-danger">🚨 Danger Zone</span>';
+  
+  if (!html) html = '<span style="font-size:11px; color:var(--text3);">No badges yet. Start tracking!</span>';
+  
+  container.innerHTML = html;
+}
+
 function deleteExpense(id) {
     if(confirm("Ye expense sach mein delete karna hai?")) {
         const form = document.getElementById('delete-form');

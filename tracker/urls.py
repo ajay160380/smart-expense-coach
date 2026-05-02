@@ -1,20 +1,25 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views  # 🚀 YE IMPORT NAYA HAI
 from . import views
 
 urlpatterns = [
-    # Dashboard & Auth (Agar tera auth alag file me hai toh ignore karna)
+    # Dashboard
     path('', views.dashboard, name='dashboard'),
+
+    # 🚀 AUTHENTICATION WALE URLS (Jo pehle missing the)
+    path('login/', auth_views.LoginView.as_view(template_name='tracker/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('register/', views.register, name='register'),
     
     # Expenses
     path('add/', views.add_expense, name='add_expense'),
     path('edit/<int:pk>/', views.edit_expense, name='edit_expense'),
-    path('delete/<int:pk>/', views.delete_expense, name='delete_expense'), # 🚀 YE ZAROORI HAI
+    path('delete/<int:pk>/', views.delete_expense, name='delete_expense'),
     path('export/', views.export_expenses, name='export_expenses'),
     
     # Subscriptions / Bills
     path('add-sub/', views.add_subscription, name='add_subscription'),
-    path('delete-sub/<int:pk>/', views.delete_subscription, name='delete_subscription'), # 🚀 YE WALA MISSING THA
+    path('delete-sub/<int:pk>/', views.delete_subscription, name='delete_subscription'),
     
     # APIs & AI Chat
     path('api/category-insight/', views.api_category_insight, name='api_category_insight'),
