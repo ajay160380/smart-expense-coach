@@ -268,6 +268,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <div class="nav-brand">Paisa<span>Tracker</span><sub id="month-label"></sub></div>
     <div class="nav-actions">
       <button class="icon-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+      
+      <!-- 🎙️ NAYA VOICE BUTTON -->
+      <button class="add-btn" id="mic-btn" onclick="startVoice()" style="background:var(--amber); color:#fff;">🎙️ Bol ke likho</button>
+      
       <button class="add-btn" onclick="openModal('addModal')">+ Add expense</button>
     </div>
   </div>
@@ -872,7 +876,7 @@ function showTyping(){
 function hideTyping(){const t=document.getElementById('typing-ind');if(t)t.remove();}
 function scrollMsgs(){const m=document.getElementById('ai-msgs');m.scrollTop=m.scrollHeight;}
 
-// 🚀 FIXED: Chat will securely hit your Django backend
+// 🚀 Chat Backend Connection
 async function sendMsg(){
   const inp=document.getElementById('ai-input');
   const msg=inp.value.trim();
@@ -890,7 +894,7 @@ async function sendMsg(){
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}' // Django security token
+            'X-CSRFToken': '{{ csrf_token }}'
         },
         body: JSON.stringify({ message: msg })
     });
@@ -907,6 +911,67 @@ async function sendMsg(){
 
   aiTyping=false;
   document.getElementById('ai-send').disabled=false;
+}
+
+// 🎙️ VOICE-TO-EXPENSE MAGIC
+// ⚡ SUPER FAST VOICE-TO-EXPENSE MAGIC
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'hi-IN';
+    recognition.continuous = false; // Sirf ek sentence sunega
+    recognition.interimResults = false;
+
+    recognition.onstart = function() {
+        document.getElementById('mic-btn').textContent = '🔴 Bol bhai...';
+    };
+
+    // 🚀 FIX: Jaise hi tu chup hoga, mic turant band ho jayega!
+    recognition.onspeechend = function() {
+        recognition.stop();
+        document.getElementById('mic-btn').textContent = '⏳ Saving...';
+    }
+
+    recognition.onresult = async function(event) {
+        const transcript = event.results[0][0].transcript;
+        console.log("Awaaz se text: ", transcript);
+
+        try {
+            const response = await fetch('{% url "voice_expense" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ text: transcript })
+            });
+
+            const data = await response.json();
+            if(data.status === 'success') {
+                document.getElementById('mic-btn').textContent = '✅ Done!';
+                setTimeout(() => { location.reload(); }, 600); // Jaldi refresh karega
+            } else {
+                alert("Oops, Groq samajh nahi paya. Dobara koshish karo.");
+                document.getElementById('mic-btn').textContent = '🎙️ Bol ke likho';
+            }
+        } catch(err) {
+            alert("Network Issue! Backend chalu hai na?");
+            document.getElementById('mic-btn').textContent = '🎙️ Bol ke likho';
+        }
+    };
+
+    recognition.onerror = function(event) {
+        document.getElementById('mic-btn').textContent = '🎙️ Bol ke likho';
+        console.error("Mic error:", event.error);
+    };
+
+    window.startVoice = function() {
+        recognition.start();
+    };
+} else {
+    setTimeout(() => {
+        if(document.getElementById('mic-btn')) document.getElementById('mic-btn').style.display = 'none';
+    }, 100);
 }
 
 render();

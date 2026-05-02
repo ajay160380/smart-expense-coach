@@ -1,6 +1,4 @@
-
-
-import csv, json, calendar, logging
+import csv, json, calendar, logging, re
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
@@ -49,7 +47,6 @@ def _next_month_date(d: date) -> date:
     y = d.year + (1 if d.month == 12 else 0)
     return date(y, m, min(d.day, calendar.monthrange(y, m)[1]))
 
-
 @transaction.atomic
 def process_subscriptions(user) -> int:
     today = date.today()
@@ -65,7 +62,6 @@ def process_subscriptions(user) -> int:
     Expense.objects.bulk_create(batch, ignore_conflicts=True)
     return debits
 
-
 def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
     qs = Expense.objects.filter(user=user)
     if search_query:
@@ -76,7 +72,6 @@ def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
     elif filter_type == "month":
         qs = qs.filter(date__year=today.year, date__month=today.month)
     return qs.order_by("-date", "-id")
-
 
 def calculate_stats(qs, budget: float) -> dict:
     agg = qs.aggregate(total=Sum("amount"), count=Count("id"),
@@ -94,7 +89,6 @@ def calculate_stats(qs, budget: float) -> dict:
         "savings_rate":      max(0, min(100, (budget - ts) / budget * 100)) if budget else 0,
     }
 
-
 def build_category_breakdown(qs, total_spent: float) -> list:
     result = []
     for c in qs.values("category").annotate(total=Sum("amount")).order_by("-total"):
@@ -104,7 +98,6 @@ def build_category_breakdown(qs, total_spent: float) -> list:
                         "percent": min(t / total_spent * 100 if total_spent else 0, 100),
                         "color": CAT_COLORS.get(n, "#888"), "icon": CAT_ICONS.get(n, "📦")})
     return result
-
 
 def build_chart_data(user) -> list:
     today = date.today()
@@ -121,10 +114,8 @@ def build_chart_data(user) -> list:
              "is_today": (start + timedelta(days=i)) == today}
             for i in range(CHART_DAYS)]
 
-
 def _groq() -> Groq:
     return Groq(api_key=settings.GROQ_API_KEY)
-
 
 def get_ai_insight(user_id, expenses, budget, total_spent) -> str:
     ck = f"ai_insight_{user_id}_{int(budget)}_{int(total_spent)}"
@@ -149,15 +140,11 @@ def get_ai_insight(user_id, expenses, budget, total_spent) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ① CATEGORY INSIGHT API  (GET /api/category-insight/?category=food&period=month)
+# ① CATEGORY INSIGHT API
 # ══════════════════════════════════════════════════════════════════════════════
 
 @login_required(login_url="login")
 def api_category_insight(request: HttpRequest) -> JsonResponse:
-    """
-    Dashboard pe category select hone pe call karo.
-    Returns: total, share%, count, avg, highest, recent 3 txns, AI tip.
-    """
     category = request.GET.get("category", "").strip().lower()
     period   = request.GET.get("period", "month")
 
@@ -176,7 +163,6 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
     recent = [{"date": r["date"].isoformat(), "amount": float(r["amount"])}
               for r in cat_qs.values("date", "amount").order_by("-date")[:3]]
 
-    # Groq tip for this category
     ck  = f"cat_tip_{request.user.id}_{category}_{period}_{int(cat_total)}"
     tip = cache.get(ck)
     if not tip:
@@ -214,23 +200,18 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
 
 @login_required(login_url="login")
 def ai_chat(request: HttpRequest) -> JsonResponse:
-    """
-    POST → AJAX: user message lo, full financial context ke saath Groq reply do
-    """
     if request.method != "POST":
         return JsonResponse({"error": "Only POST requests allowed"}, status=405)
 
     try:
         body     = json.loads(request.body)
         user_msg = body.get("message", "").strip()
-        # Frontend ab history nahi bhej raha (from JS), so handling string directly
     except (json.JSONDecodeError, KeyError):
         return JsonResponse({"error": "Invalid body format"}, status=400)
 
     if not user_msg:
         return JsonResponse({"error": "Message khali hai"}, status=400)
 
-    # Build financial context
     budget   = float(request.session.get("budget", DEFAULT_BUDGET))
     month_qs = get_filtered_expenses(request.user, "month")
     stats    = calculate_stats(month_qs, budget)
@@ -257,7 +238,6 @@ RULES:
 - If unrelated to finance, gently redirect back."""
 
     try:
-        # ✅ FIX: Used latest available stable model for Groq
         resp = _groq().chat.completions.create(
             messages=[
                 {"role": "system", "content": system},
@@ -361,6 +341,56 @@ def add_expense(request):
     Expense.objects.create(user=request.user, amount=amount, category=category, date=exp_date)
     messages.success(request, f"₹{amount:,} added! ✅")
     return redirect("dashboard")
+
+
+# 🚀 FAST VOICE-TO-EXPENSE LOGIC (FIXED MODEL & FIXED DB ERROR)
+@login_required(login_url="login")
+def voice_expense(request: HttpRequest) -> JsonResponse:
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            spoken_text = data.get("text", "")
+            print(f"🎤 User ne bola: {spoken_text}") 
+
+            prompt = f"""
+            You are a strict data parser. The user said: "{spoken_text}"
+            Return ONLY a valid JSON object. NO extra words.
+            Categories allowed: food, transport, shopping, health, entertainment, education, utilities, other.
+            Format required: {{"amount": <number>, "category": "<string>"}}
+            Example: {{"amount": 300, "category": "food"}}
+            """
+
+            client = _groq()
+            chat_completion = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama-3.1-8b-instant", # <--- NAYA FAST MODEL
+                temperature=0.0,
+            )
+
+            response_text = chat_completion.choices[0].message.content.strip()
+            print(f"🤖 Groq ka reply: {response_text}")
+            
+            match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if not match:
+                raise ValueError(f"Groq ne valid JSON nahi diya: {response_text}")
+                
+            ai_data = json.loads(match.group(0))
+
+            # Database me save karna (Bina 'title' k jisse pehle error aaya tha)
+            Expense.objects.create(
+                user=request.user,
+                amount=Decimal(str(ai_data.get("amount", 0))),
+                category=ai_data.get("category", "other").lower(),
+                date=date.today()
+            )
+
+            return JsonResponse({"status": "success", "message": "Expense saved!"})
+
+        except Exception as e:
+            print(f"❌ ERROR in Voice API: {e}")
+            return JsonResponse({"status": "error", "message": str(e)})
+            
+    return JsonResponse({"status": "error", "message": "Invalid request"})
 
 
 @login_required(login_url="login")
