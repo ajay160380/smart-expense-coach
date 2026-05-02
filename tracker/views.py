@@ -343,7 +343,6 @@ def add_expense(request):
     return redirect("dashboard")
 
 
-# 🚀 FAST VOICE-TO-EXPENSE LOGIC (FIXED MODEL & FIXED DB ERROR)
 @login_required(login_url="login")
 def voice_expense(request: HttpRequest) -> JsonResponse:
     if request.method == "POST":
@@ -353,17 +352,18 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             print(f"🎤 User ne bola: {spoken_text}") 
 
             prompt = f"""
-            You are a strict data parser. The user said: "{spoken_text}"
-            Return ONLY a valid JSON object. NO extra words.
-            Categories allowed: food, transport, shopping, health, entertainment, education, utilities, other.
-            Format required: {{"amount": <number>, "category": "<string>"}}
+            Extract expense details. User said: "{spoken_text}"
+            Return ONLY a JSON object. NO markdown, NO text.
+            Categories: food, transport, shopping, health, entertainment, education, utilities, other.
+            Format: {{"amount": <number>, "category": "<string>"}}
             Example: {{"amount": 300, "category": "food"}}
             """
 
             client = _groq()
+            # 🚀 IS MODEL KO CHHEDNA MAT AB!
             chat_completion = client.chat.completions.create(
                 messages=[{"role": "user", "content": prompt}],
-                model="llama-3.1-8b-instant", # <--- NAYA FAST MODEL
+                model="llama-3.1-8b-instant",  # <--- SIRF YEH SAHI HAI
                 temperature=0.0,
             )
 
@@ -376,7 +376,6 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 
             ai_data = json.loads(match.group(0))
 
-            # Database me save karna (Bina 'title' k jisse pehle error aaya tha)
             Expense.objects.create(
                 user=request.user,
                 amount=Decimal(str(ai_data.get("amount", 0))),

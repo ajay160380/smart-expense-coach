@@ -30,7 +30,7 @@
 }
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:14px;transition:background .3s,color .3s;}
 
-/* 🚀 FIXED: FULL SCREEN LAYOUT */
+/* FULL SCREEN LAYOUT */
 .app{max-width:1600px; width:96%; margin:0 auto; padding:24px 0 100px;}
 
 /* NAV & TABS */
@@ -161,7 +161,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .ip-tip{background:var(--primary-l);border-left:3px solid var(--primary);padding:12px 14px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-top:14px;}
 .ip-tip-label{font-size:10px;color:var(--primary);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
 .ip-tip-text{font-size:12px;line-height:1.6;color:var(--text);}
-.ip-loading{text-align:center;padding:20px;color:var(--text3);font-size:13px;}
 
 /* BILLS & TRANSACTIONS */
 .bills-section{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
@@ -396,7 +395,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     </div>
   </div>
 
-  <!-- 🚀 UPCOMING BILLS (Full Width Restored) -->
+  <!-- 🚀 UPCOMING BILLS -->
   <div class="bills-section">
     <div class="bills-header">
       <div class="section-title">🗓 Upcoming Bills</div>
@@ -449,7 +448,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- ADD EXPENSE MODAL (Django Form) -->
+<!-- MODALS -->
 <div class="overlay" id="addModal">
   <div class="modal">
     <div class="modal-title">Add Expense <button class="modal-close" onclick="closeModal('addModal')" type="button">✕</button></div>
@@ -913,61 +912,91 @@ async function sendMsg(){
   document.getElementById('ai-send').disabled=false;
 }
 
-// 🎙️ VOICE-TO-EXPENSE MAGIC
-// ⚡ SUPER FAST VOICE-TO-EXPENSE MAGIC
+// ⚡ SUPER SMART VOICE LOGIC (AUTO-DETECTS SILENCE IN 1.5 SECONDS)
+let isRecording = false;
+let silenceTimer = null;
+let finalSpokenText = "";
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
 if(SpeechRecognition) {
     const recognition = new SpeechRecognition();
     recognition.lang = 'hi-IN';
-    recognition.continuous = false; // Sirf ek sentence sunega
-    recognition.interimResults = false;
+    recognition.continuous = true; // Taaki khud stop na ho, hum control karenge
+    recognition.interimResults = true; // Bolte time hi text milna shuru ho jaye
 
     recognition.onstart = function() {
-        document.getElementById('mic-btn').textContent = '🔴 Bol bhai...';
+        isRecording = true;
+        finalSpokenText = "";
+        document.getElementById('mic-btn').innerHTML = '🔴 Sun raha hu...';
     };
 
-    // 🚀 FIX: Jaise hi tu chup hoga, mic turant band ho jayega!
-    recognition.onspeechend = function() {
-        recognition.stop();
-        document.getElementById('mic-btn').textContent = '⏳ Saving...';
-    }
+    recognition.onresult = function(event) {
+        let currentText = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            currentText += event.results[i][0].transcript;
+        }
+        finalSpokenText = currentText;
 
-    recognition.onresult = async function(event) {
-        const transcript = event.results[0][0].transcript;
-        console.log("Awaaz se text: ", transcript);
+        // Jaise hi naya word aayega, purana timer cancel kar dega
+        clearTimeout(silenceTimer);
+
+        // Agar 1.5 second tak koi naya word nahi aaya, toh backend bhej do!
+        if (finalSpokenText.trim() !== "") {
+            silenceTimer = setTimeout(() => {
+                recognition.stop();
+                sendToBackend(finalSpokenText);
+            }, 1500); // 1.5 seconds ka silence = Done speaking
+        }
+    };
+
+    recognition.onend = function() {
+        isRecording = false;
+        if(document.getElementById('mic-btn').textContent.includes('Sun raha hu')) {
+            document.getElementById('mic-btn').innerHTML = '🎙️ Bol ke likho';
+        }
+    };
+
+    recognition.onerror = function(event) {
+        console.error("Mic error:", event.error);
+        isRecording = false;
+        document.getElementById('mic-btn').innerHTML = '🎙️ Bol ke likho';
+    };
+
+    window.startVoice = function() {
+        if (!isRecording) {
+            recognition.start();
+        } else {
+            // Agar pehle se chal raha hai aur galti se daba diya, toh band karke bhej do
+            recognition.stop(); 
+            clearTimeout(silenceTimer);
+            if(finalSpokenText.trim() !== "") sendToBackend(finalSpokenText);
+        }
+    };
+
+    async function sendToBackend(text) {
+        document.getElementById('mic-btn').textContent = '⚡ Magic ho raha hai...';
+        console.log("Backend bheja text: ", text);
 
         try {
             const response = await fetch('{% url "voice_expense" %}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ text: transcript })
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ text: text })
             });
 
             const data = await response.json();
             if(data.status === 'success') {
                 document.getElementById('mic-btn').textContent = '✅ Done!';
-                setTimeout(() => { location.reload(); }, 600); // Jaldi refresh karega
+                setTimeout(() => { location.reload(); }, 600);
             } else {
-                alert("Oops, Groq samajh nahi paya. Dobara koshish karo.");
-                document.getElementById('mic-btn').textContent = '🎙️ Bol ke likho';
+                alert("Oops, AI samajh nahi paya.");
+                document.getElementById('mic-btn').innerHTML = '🎙️ Bol ke likho';
             }
         } catch(err) {
-            alert("Network Issue! Backend chalu hai na?");
-            document.getElementById('mic-btn').textContent = '🎙️ Bol ke likho';
+            alert("Network Issue!");
+            document.getElementById('mic-btn').innerHTML = '🎙️ Bol ke likho';
         }
-    };
-
-    recognition.onerror = function(event) {
-        document.getElementById('mic-btn').textContent = '🎙️ Bol ke likho';
-        console.error("Mic error:", event.error);
-    };
-
-    window.startVoice = function() {
-        recognition.start();
-    };
+    }
 } else {
     setTimeout(() => {
         if(document.getElementById('mic-btn')) document.getElementById('mic-btn').style.display = 'none';
