@@ -1,30 +1,8 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║          PAISA MITRA — EXPENSE TRACKER  |  views.py  |  Production v3.0        ║
+║          PAISA MITRA — EXPENSE TRACKER  |  views.py  |  Production v3.2        ║
 ║          Full-stack Django views with AI, Voice, Analytics & Smart Features     ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
-
-Author   : PaisaMitra Dev Team
-Version  : 3.0.0
-Python   : 3.11+
-Django   : 4.2+
-AI Model : Groq (llama-3.3-70b-versatile)
-
-Features:
-  ✅ Dashboard with AI coach (Hinglish)
-  ✅ Voice-to-Expense (100x upgraded — date, description, confidence)
-  ✅ AI Chat Assistant (PaisaMitra bot)
-  ✅ Category Insight API
-  ✅ Monthly & Weekly Analytics API
-  ✅ Budget Goal Tracker
-  ✅ Subscription Manager with auto-deduct
-  ✅ Smart CSV/JSON Export
-  ✅ Recurring Expense Patterns
-  ✅ Spending Heatmap Data API
-  ✅ Anomaly Detection (sudden spike alert)
-  ✅ Savings Goal Tracker
-  ✅ Rate Limiting on AI endpoints
-  ✅ Full audit logging
 """
 
 import csv
@@ -66,14 +44,12 @@ from .models import Expense, Subscription
 from .forms import ExpenseForm, SubscriptionForm
 
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # CONSTANTS & CONFIGURATION
 # ══════════════════════════════════════════════════════════════════════════════
 
 logger = logging.getLogger(__name__)
 
-# Budget & Display Defaults
 DEFAULT_BUDGET       = 20_000.0
 MAX_UPCOMING_SUBS    = 5
 CHART_DAYS           = 7
@@ -81,24 +57,19 @@ CHART_MONTHS         = 6
 EXPENSES_PER_PAGE    = 15
 MAX_EXPORT_ROWS      = 10_000
 
-# Cache Timeouts (seconds)
-AI_CACHE_TIMEOUT     = 300      # 5 min — AI insights
-CAT_CACHE_TIMEOUT    = 180      # 3 min — category tips
-ANALYTICS_TIMEOUT    = 120      # 2 min — analytics data
-HEATMAP_TIMEOUT      = 600      # 10 min — heatmap (changes less often)
+AI_CACHE_TIMEOUT     = 300
+CAT_CACHE_TIMEOUT    = 180
+ANALYTICS_TIMEOUT    = 120
+HEATMAP_TIMEOUT      = 600
 
-# AI Rate Limiting
-AI_RATE_LIMIT_CALLS  = 15       # max calls per window
-AI_RATE_LIMIT_WINDOW = 3600     # per hour
+AI_RATE_LIMIT_CALLS  = 15
+AI_RATE_LIMIT_WINDOW = 3600
 
-# Voice Processing
 VOICE_MAX_TEXT_LEN   = 500
-VOICE_CONFIDENCE_WARN = 0.60    # below this → warn user
+VOICE_CONFIDENCE_WARN = 0.60
 
-# Anomaly Detection
-ANOMALY_MULTIPLIER   = 2.5      # if today's spend > 2.5x avg → alert
+ANOMALY_MULTIPLIER   = 2.5
 
-# Category Configuration
 CAT_COLORS = {
     "food":          "#6c5ce7",
     "transport":     "#00cec9",
@@ -140,45 +111,43 @@ VALID_CATEGORIES = set(CAT_COLORS.keys())
 VALID_FILTERS    = {"week", "month", "all"}
 VALID_PERIODS    = {"week", "month", "quarter", "year"}
 
-# Hinglish Number Map for Voice Pre-processing
 HINGLISH_NUM_MAP = {
-    r'\bek\b':         '1',
-    r'\bdo\b':         '2',
-    r'\bteen\b':       '3',
-    r'\bchar\b':       '4',
-    r'\bpaanch\b':     '5',
-    r'\bchhe\b':       '6',
-    r'\bsaat\b':       '7',
-    r'\baath\b':       '8',
-    r'\bnau\b':        '9',
-    r'\bdas\b':        '10',
-    r'\bgyarah\b':     '11',
-    r'\bbaarah\b':     '12',
-    r'\bterah\b':      '13',
-    r'\bchaudah\b':    '14',
-    r'\bpandrah\b':    '15',
-    r'\bsolah\b':      '16',
-    r'\bsattrah\b':    '17',
-    r'\baathaarah\b':  '18',
-    r'\bunees\b':      '19',
-    r'\bbees\b':       '20',
-    r'\bpaccheees\b':  '25',
-    r'\btees\b':       '30',
-    r'\bchaalis\b':    '40',
-    r'\bpackaas\b':    '50',
-    r'\saath\b':       '60',
-    r'\bsaattar\b':    '70',
-    r'\bassee\b':      '80',
-    r'\bnabbe\b':      '90',
-    r'\bsau\b':        '00',
-    r'\bsou\b':        '00',
-    r'\bhazar\b':      '000',
-    r'\bhajaar\b':     '000',
-    r'\blakh\b':       '00000',
-    r'\bkarod\b':      '0000000',
+    r'\bek\b':        '1',
+    r'\bdo\b':        '2',
+    r'\bteen\b':      '3',
+    r'\bchar\b':      '4',
+    r'\bpaanch\b':    '5',
+    r'\bchhe\b':      '6',
+    r'\bsaat\b':      '7',
+    r'\baath\b':      '8',
+    r'\bnau\b':       '9',
+    r'\bdas\b':       '10',
+    r'\bgyarah\b':    '11',
+    r'\bbaarah\b':    '12',
+    r'\bterah\b':     '13',
+    r'\bchaudah\b':   '14',
+    r'\bpandrah\b':   '15',
+    r'\bsolah\b':     '16',
+    r'\bsattrah\b':   '17',
+    r'\baathaarah\b': '18',
+    r'\bunees\b':     '19',
+    r'\bbees\b':      '20',
+    r'\bpaccheees\b': '25',
+    r'\btees\b':      '30',
+    r'\bchaalis\b':   '40',
+    r'\bpackaas\b':   '50',
+    r'\saath\b':      '60',
+    r'\bsaattar\b':   '70',
+    r'\bassee\b':     '80',
+    r'\bnabbe\b':     '90',
+    r'\bsau\b':       '00',
+    r'\bsou\b':       '00',
+    r'\bhazar\b':     '000',
+    r'\bhajaar\b':    '000',
+    r'\blakh\b':      '00000',
+    r'\bkarod\b':     '0000000',
 }
 
-# Month names for analytics labels
 MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -188,10 +157,6 @@ MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 # ══════════════════════════════════════════════════════════════════════════════
 
 def ai_rate_limited(view_func):
-    """
-    Decorator: limits AI endpoint calls per user per hour.
-    Uses cache as a sliding-window counter.
-    """
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -200,7 +165,7 @@ def ai_rate_limited(view_func):
         count = cache.get(ck, 0)
         if count >= AI_RATE_LIMIT_CALLS:
             return JsonResponse({
-                "error": f"Rate limit reached. Please try again after one hour. 🕐"
+                "error": "Rate limit reached. Please try again after one hour. 🕐"
             }, status=429)
         cache.set(ck, count + 1, AI_RATE_LIMIT_WINDOW)
         return view_func(request, *args, **kwargs)
@@ -208,7 +173,6 @@ def ai_rate_limited(view_func):
 
 
 def json_required(view_func):
-    """Decorator: ensures request body is valid JSON for POST views."""
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if request.method == "POST":
@@ -221,7 +185,6 @@ def json_required(view_func):
 
 
 def get_user_budget(request) -> float:
-    """Safely retrieve budget from session with fallback."""
     try:
         budget = float(request.session.get("budget", DEFAULT_BUDGET))
         return budget if budget > 0 else DEFAULT_BUDGET
@@ -230,18 +193,15 @@ def get_user_budget(request) -> float:
 
 
 def _groq_client() -> Groq:
-    """Return a configured Groq client instance."""
     return Groq(api_key=settings.GROQ_API_KEY)
 
 
 def _cache_key(*parts) -> str:
-    """Build a consistent cache key from parts."""
     raw = "_".join(str(p) for p in parts)
     return hashlib.md5(raw.encode()).hexdigest()[:24]
 
 
 def _safe_float(value, default: float = 0.0) -> float:
-    """Convert value to float safely."""
     try:
         return float(value or default)
     except (ValueError, TypeError):
@@ -253,118 +213,44 @@ def _safe_float(value, default: float = 0.0) -> float:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def normalize_hinglish_numbers(text: str) -> str:
-    """
-    Pre-process ASR (speech-to-text) Hinglish output.
-    Converts spoken number words to digits before AI extraction.
-
-    Examples:
-        "teen sau pachaas" → "3 00 50" → "350"
-        "do hazar paanch sau" → "2 000 5 00" → "2500"
-        "pandrah00" → "1500"    (broken ASR concatenation)
-        "Solah00"   → "1600"
-    """
     text = text.lower().strip()
-
-    # Fix broken ASR concatenations like "pandrah00", "Solah00"
     text = re.sub(r'([a-z]+)(\d{2,})', r'\1 \2', text)
     text = re.sub(r'(\d+)([a-z]+)', r'\1 \2', text)
-
-    # Replace word numbers with digit strings
     for pattern, replacement in HINGLISH_NUM_MAP.items():
         text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
-
-    # Combine digit fragments: "3 00" → "300", "2 000" → "2000"
     text = re.sub(r'(\d+)\s+(0{2,})', r'\1\2', text)
-
-    # Clean up extra whitespace
     text = re.sub(r'\s+', ' ', text).strip()
-
     logger.debug("Normalized Hinglish: %r", text)
     return text
 
 
-def build_voice_ai_prompt(spoken_text: str, today: date) -> str:
+def build_voice_ai_prompt(spoken_text, today):
+    return f"""
+    You are a strict data extractor bot. Extract the EXACT number from the text.
+    Input: "{spoken_text}"
+    Today: {today}
+
+    Rules:
+    - If user says "700 ka transport", amount is 700.
+    - NEVER guess a number. Use ONLY what is in the text.
+    - If no number is found, amount is 0.
+    - Pick category ONLY from: food, transport, shopping, health, entertainment, education, utilities, other.
+    
+    Response MUST be strict JSON ONLY:
+    {{
+        "amount": <number>,
+        "category": "<string>",
+        "date": "{today}",
+        "description": "<string>",
+        "confidence": <float>
+    }}
     """
-    Build the ultra-detailed voice extraction prompt for Groq.
-    Handles date, amount, category, description, confidence.
-    """
-    yesterday = (today - timedelta(days=1)).isoformat()
-    day_before = (today - timedelta(days=2)).isoformat()
-
-    cat_hints = "\n".join(
-        f"   - {cat}: {', '.join(kws[:6])}"
-        for cat, kws in CAT_KEYWORDS.items()
-    )
-
-    return f"""You are a precise AI that extracts expense data from Indian users speaking Hinglish, Hindi, or English.
-
-TODAY: {today.isoformat()} | YESTERDAY: {yesterday} | DAY BEFORE: {day_before}
-
-USER SAID: "{spoken_text}"
-
-══════════ EXTRACTION RULES ══════════
-
-① AMOUNT (number only, no commas):
-   - Word numbers: "do hazar" = 2000, "teen sau" = 300, "paanch sou" = 500
-   - Mixed: "1 hazar 2 sau" = 1200, "do hazar paanch" = 2005
-   - Broken ASR: "pandrah00" = 1500, "Solah00" = 1600, "ek hazar" = 1000
-   - English: "two fifty" = 250, "five hundred" = 500, "two k" = 2000
-   - Currency phrases: "rupye", "rs", "₹", "bucks" → amount before them
-   - If no amount found → 0
-
-② CATEGORY (must be one of these exact strings):
-{cat_hints}
-   - When ambiguous, lean toward the most specific category
-   - Default: other
-
-③ DATE (YYYY-MM-DD only):
-   - "aaj" / "today" / no date → {today.isoformat()}
-   - "kal" / "yesterday" / "kal ka" → {yesterday}
-   - "parso" / "day before yesterday" → {day_before}
-   - Specific: "3 tarikh", "3rd", "3 may" → use current month/year if unspecified
-   - Never return a future date
-
-④ DESCRIPTION (2-5 words, plain English/Hinglish):
-   - Short summary of what was bought/paid
-   - Examples: "Zomato lunch order", "Petrol fill", "Doctor fees", "Metro pass"
-
-⑤ CONFIDENCE (0.00 to 1.00):
-   - 0.90+ = crystal clear input
-   - 0.70–0.89 = mostly clear, minor ambiguity
-   - 0.50–0.69 = some guessing involved
-   - below 0.50 = very unclear
-
-══════════ RESPONSE FORMAT ══════════
-Return ONLY valid JSON. No markdown. No explanation. No extra text whatsoever.
-
-{{"amount": <number>, "category": "<string>", "date": "<YYYY-MM-DD>", "description": "<string>", "confidence": <float>}}
-
-══════════ EXAMPLES ══════════
-"aaj zomato pe 450 kharch kiya"
-→ {{"amount": 450, "category": "food", "date": "{today.isoformat()}", "description": "Zomato food order", "confidence": 0.97}}
-
-"kal petrol ke liye pandrah sau diye"
-→ {{"amount": 1500, "category": "transport", "date": "{yesterday}", "description": "Petrol fill", "confidence": 0.95}}
-
-"doctor ko do hazar"
-→ {{"amount": 2000, "category": "health", "date": "{today.isoformat()}", "description": "Doctor consultation", "confidence": 0.91}}
-
-"netflix subscription teen sou nau nabbe"
-→ {{"amount": 399, "category": "entertainment", "date": "{today.isoformat()}", "description": "Netflix subscription", "confidence": 0.94}}
-
-"bijli ka bill gyarah sou aaya"
-→ {{"amount": 1100, "category": "utilities", "date": "{today.isoformat()}", "description": "Electricity bill", "confidence": 0.96}}
-
-"parso amazon se kapde khareed, ek hazar paanch sau"
-→ {{"amount": 1500, "category": "shopping", "date": "{day_before}", "description": "Amazon clothes", "confidence": 0.93}}"""
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SERVICE LAYER — DATA QUERIES
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _next_month_date(d: date) -> date:
-    """Advance date by one calendar month, clamping to month end."""
     m = d.month % 12 + 1
     y = d.year + (1 if d.month == 12 else 0)
     return date(y, m, min(d.day, calendar.monthrange(y, m)[1]))
@@ -372,11 +258,6 @@ def _next_month_date(d: date) -> date:
 
 @transaction.atomic
 def process_subscriptions(user) -> int:
-    """
-    Process all overdue subscriptions for a user.
-    Creates Expense records and advances next_billing_date.
-    Returns count of expense entries created.
-    """
     today = date.today()
     subs  = (Subscription.objects
              .filter(user=user, next_billing_date__lte=today)
@@ -408,17 +289,10 @@ def process_subscriptions(user) -> int:
 
 
 def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
-    """
-    Return filtered expense queryset for a user.
-    Supports filter_type: 'week', 'month', 'all'.
-    Optional search_query filters by category name.
-    """
     qs = Expense.objects.filter(user=user)
 
     if search_query:
-        qs = qs.filter(
-            Q(category__icontains=search_query)
-        )
+        qs = qs.filter(Q(category__icontains=search_query))
 
     today = date.today()
     if filter_type == "week":
@@ -430,10 +304,6 @@ def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
 
 
 def get_period_expenses(user, period: str):
-    """
-    Return expenses for a named period.
-    period: 'week' | 'month' | 'quarter' | 'year'
-    """
     today = date.today()
     qs    = Expense.objects.filter(user=user)
 
@@ -450,10 +320,6 @@ def get_period_expenses(user, period: str):
 
 
 def calculate_stats(qs, budget: float) -> dict:
-    """
-    Aggregate expense statistics from a queryset.
-    Returns a dict of computed metrics.
-    """
     agg = qs.aggregate(
         total=Sum("amount"),
         count=Count("id"),
@@ -482,10 +348,6 @@ def calculate_stats(qs, budget: float) -> dict:
 
 
 def build_category_breakdown(qs, total_spent: float) -> list:
-    """
-    Build a list of category-level spend summaries sorted by total descending.
-    Each entry includes name, icon, color, total, percentage.
-    """
     result = []
     for c in qs.values("category").annotate(total=Sum("amount")).order_by("-total"):
         n = (c["category"] or "other").lower()
@@ -502,10 +364,6 @@ def build_category_breakdown(qs, total_spent: float) -> list:
 
 
 def build_chart_data(user) -> list:
-    """
-    Build last-N-days daily spending data for the chart widget.
-    Returns list of dicts with day label, total, bar height, and today flag.
-    """
     today = date.today()
     start = today - timedelta(days=CHART_DAYS - 1)
     day_map = {
@@ -531,14 +389,9 @@ def build_chart_data(user) -> list:
 
 
 def build_monthly_trend(user, months: int = 6) -> list:
-    """
-    Build monthly spending totals for the past N months.
-    Used for the trend chart on analytics page.
-    """
-    today    = date.today()
-    result   = []
+    today  = date.today()
+    result = []
     for i in range(months - 1, -1, -1):
-        # Go back i months from today
         target_month = today.month - i
         target_year  = today.year
         while target_month <= 0:
@@ -559,10 +412,6 @@ def build_monthly_trend(user, months: int = 6) -> list:
 
 
 def build_spending_heatmap(user) -> dict:
-    """
-    Build a 52-week spending heatmap (GitHub-contribution style).
-    Returns weeks list with day-level totals for the past year.
-    """
     today  = date.today()
     start  = today - timedelta(days=364)
 
@@ -574,13 +423,12 @@ def build_spending_heatmap(user) -> dict:
                   .annotate(total=Sum("amount")))
     }
 
-    # Build 52-week grid
     weeks = []
-    cur   = start - timedelta(days=start.weekday())  # align to Monday
+    cur   = start - timedelta(days=start.weekday())
     while cur <= today:
         week = []
         for d in range(7):
-            day  = cur + timedelta(days=d)
+            day   = cur + timedelta(days=d)
             total = day_map.get(day, 0)
             week.append({
                 "date":  day.isoformat(),
@@ -598,19 +446,11 @@ def build_spending_heatmap(user) -> dict:
 
 
 def detect_anomalies(user, budget: float) -> list:
-    """
-    Detect spending anomalies for the current user:
-    - Today's spending significantly above average
-    - Category spikes
-    - Budget already exceeded before month end
-    Returns list of alert dicts.
-    """
     alerts = []
     today  = date.today()
 
-    # ① Today vs average daily
-    month_qs  = Expense.objects.filter(user=user, date__year=today.year, date__month=today.month)
-    month_agg = month_qs.aggregate(total=Sum("amount"), days=Count("date", distinct=True))
+    month_qs    = Expense.objects.filter(user=user, date__year=today.year, date__month=today.month)
+    month_agg   = month_qs.aggregate(total=Sum("amount"), days=Count("date", distinct=True))
     month_total = _safe_float(month_agg["total"])
     active_days = max(month_agg["days"] or 1, 1)
     avg_daily   = month_total / active_days
@@ -620,36 +460,32 @@ def detect_anomalies(user, budget: float) -> list:
     )
     if avg_daily > 0 and today_total > avg_daily * ANOMALY_MULTIPLIER:
         alerts.append({
-            "type":    "spending_spike",
-            "icon":    "🚨",
-            "message": f"Today you spent ₹{today_total:,.0f} — {today_total/avg_daily:.1f}x above the daily average. Watch your spending.",
+            "type":     "spending_spike",
+            "icon":     "🚨",
+            "message":  f"Today you spent ₹{today_total:,.0f} — {today_total/avg_daily:.1f}x above the daily average. Watch your spending.",
             "severity": "high",
         })
 
-    # ② Budget overspent
     if month_total > budget:
         over_by = month_total - budget
         alerts.append({
-            "type":    "budget_exceeded",
-            "icon":    "💸",
-            "message": f"Budget exceeded by ₹{over_by:,.0f}! You spent ₹{month_total:,.0f} against a ₹{budget:,.0f} budget. Take action now. 😬",
+            "type":     "budget_exceeded",
+            "icon":     "💸",
+            "message":  f"Budget exceeded by ₹{over_by:,.0f}! You spent ₹{month_total:,.0f} against a ₹{budget:,.0f} budget. Take action now. 😬",
             "severity": "critical",
         })
-
-    # ③ Projected overspend
     elif avg_daily > 0:
         days_in_month  = calendar.monthrange(today.year, today.month)[1]
         days_remaining = days_in_month - today.day
         projected_end  = month_total + (avg_daily * days_remaining)
         if projected_end > budget * 1.1:
             alerts.append({
-                "type":    "projected_overspend",
-                "icon":    "📈",
-                "message": f"If spending continues like this, you'll spend ₹{projected_end:,.0f} by month end against a ₹{budget:,.0f} budget. Start saving now! 🏃",
+                "type":     "projected_overspend",
+                "icon":     "📈",
+                "message":  f"If spending continues, you'll spend ₹{projected_end:,.0f} by month end against ₹{budget:,.0f} budget. Start saving! 🏃",
                 "severity": "warning",
             })
 
-    # ④ Single category dominance
     cat_agg = (month_qs.values("category")
                .annotate(total=Sum("amount"))
                .order_by("-total").first())
@@ -658,9 +494,9 @@ def detect_anomalies(user, budget: float) -> list:
         if cat_pct > 60:
             cat = cat_agg["category"]
             alerts.append({
-                "type":    "category_dominance",
-                "icon":    CAT_ICONS.get(cat, "📦"),
-                "message": f"{cat.title()} accounts for {cat_pct:.0f}% of your spending. Too much in one category — try to diversify.",
+                "type":     "category_dominance",
+                "icon":     CAT_ICONS.get(cat, "📦"),
+                "message":  f"{cat.title()} accounts for {cat_pct:.0f}% of your spending. Too much in one category — diversify.",
                 "severity": "warning",
             })
 
@@ -672,18 +508,14 @@ def detect_anomalies(user, budget: float) -> list:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) -> str:
-    """
-    Generate AI-powered one-liner insight in Hinglish for the dashboard.
-    Cached per user/budget/spent combination to avoid redundant API calls.
-    """
     ck = f"ai_insight_{user_id}_{int(budget)}_{int(total_spent)}"
     if hit := cache.get(ck):
         return hit
 
     try:
-        summary    = "; ".join(f"{e.category}: ₹{e.amount}" for e in expenses[:5]) or "No data"
-        remaining  = max(0, budget - total_spent)
-        days_left  = (
+        summary   = "; ".join(f"{e.category}: ₹{e.amount}" for e in expenses[:5]) or "No data"
+        remaining = max(0, budget - total_spent)
+        days_left = (
             (date.today().replace(day=1) + timedelta(days=32)).replace(day=1) - date.today()
         ).days
 
@@ -718,10 +550,6 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
 
 def get_category_ai_tip(user_id: int, category: str, cat_total: float,
                          share_pct: float, avg_txn: float, period: str) -> str:
-    """
-    Generate a category-specific roast + saving hack via AI.
-    Cached per user/category/period/total combination.
-    """
     ck = f"cat_tip_{user_id}_{category}_{period}_{int(cat_total)}"
     if hit := cache.get(ck):
         return hit
@@ -755,9 +583,6 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
 
 def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
-    """
-    Generate a brief AI-powered monthly spending report / roast.
-    """
     ck = f"monthly_report_{user_id}_{month_data.get('month_key','')}"
     if hit := cache.get(ck):
         return hit
@@ -789,7 +614,7 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 
     except Exception as e:
         logger.error("Monthly report uid=%s error=%s", user_id, e)
-        return "This month's report could not be generated correctly. Pay closer attention next month! 📊"
+        return "This month's report could not be generated. Pay closer attention next month! 📊"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -797,7 +622,6 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def register(request: HttpRequest) -> HttpResponse:
-    """User registration with auto-login on success."""
     if request.user.is_authenticated:
         return redirect("dashboard")
 
@@ -817,7 +641,6 @@ def register(request: HttpRequest) -> HttpResponse:
 
 
 def user_login(request: HttpRequest) -> HttpResponse:
-    """Custom login view with friendly error messages."""
     if request.user.is_authenticated:
         return redirect("dashboard")
 
@@ -838,7 +661,6 @@ def user_login(request: HttpRequest) -> HttpResponse:
 
 @login_required(login_url="login")
 def user_logout(request: HttpRequest) -> HttpResponse:
-    """Logout and redirect to login page."""
     logger.info("User logout uid=%s", request.user.id)
     logout(request)
     messages.info(request, "You have been logged out. See you soon! 👋")
@@ -851,19 +673,7 @@ def user_logout(request: HttpRequest) -> HttpResponse:
 
 @login_required(login_url="login")
 def dashboard(request: HttpRequest) -> HttpResponse:
-    """
-    Main dashboard view.
-    Handles:
-    - Budget update via POST
-    - Subscription auto-deduction
-    - Expense filtering (week/month/all) and search
-    - Stats, category breakdown, chart data
-    - Anomaly alerts
-    - AI insight generation
-    - Pagination
-    """
 
-    # ── Budget update ───────────────────────────────────────────────────────
     if request.method == "POST" and "new_budget" in request.POST:
         try:
             nb = float(request.POST["new_budget"])
@@ -880,17 +690,14 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     budget = get_user_budget(request)
     today  = date.today()
 
-    # ── Process subscriptions ───────────────────────────────────────────────
     debits = process_subscriptions(user)
     if debits:
         messages.info(request, f"📅 {debits} subscription(s) were auto-deducted.")
 
-    # ── Upcoming subscriptions ──────────────────────────────────────────────
     upcoming_subs = (Subscription.objects
                      .filter(user=user, next_billing_date__gte=today)
                      .order_by("next_billing_date")[:MAX_UPCOMING_SUBS])
 
-    # ── Filter & search ─────────────────────────────────────────────────────
     search_query = request.GET.get("q", "").strip()
     filter_type  = request.GET.get("filter", "month")
     if filter_type not in VALID_FILTERS:
@@ -902,7 +709,25 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     chart_data         = build_chart_data(user)
     anomaly_alerts     = detect_anomalies(user, budget)
 
-    # ── Pagination ──────────────────────────────────────────────────────────
+    actual_month_total = float(
+        Expense.objects.filter(
+            user=user,
+            date__year=today.year,
+            date__month=today.month
+        ).aggregate(t=Sum("amount"))["t"] or 0
+    )
+    actual_week_total = float(
+        Expense.objects.filter(
+            user=user,
+            date__gte=today - timedelta(days=7)
+        ).aggregate(t=Sum("amount"))["t"] or 0
+    )
+    actual_all_total = float(
+        Expense.objects.filter(
+            user=user
+        ).aggregate(t=Sum("amount"))["t"] or 0
+    )
+
     page_number = request.GET.get("page", 1)
     paginator   = Paginator(expenses_qs, EXPENSES_PER_PAGE)
     try:
@@ -910,47 +735,35 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     except (PageNotAnInteger, EmptyPage):
         expenses_page = paginator.page(1)
 
-    # ── AI Insight ──────────────────────────────────────────────────────────
     if stats["transaction_count"] == 0:
         insight = "<strong>Get started!</strong> Add your first expense to receive AI guidance. 🚀"
     else:
         raw     = get_ai_insight(user.id, expenses_qs, budget, stats["total_spent"])
         insight = f"<strong>AI Coach:</strong> {raw}"
 
-    # ── Monthly trend for mini-chart ────────────────────────────────────────
     monthly_trend = build_monthly_trend(user, months=CHART_MONTHS)
 
     context = {
-        # Budget & core stats
         "budget":             budget,
         "insight":            insight,
         "anomaly_alerts":     anomaly_alerts,
-
-        # Category & charts
         "category_data_list": category_data_list,
         "chart_data":         chart_data,
         "monthly_trend":      monthly_trend,
-
-        # Expenses
         "expenses":           expenses_page,
         "paginator":          paginator,
         "current_filter":     filter_type,
         "search_query":       search_query,
-
-        # Forms
         "form":               ExpenseForm(),
         "sub_form":           SubscriptionForm(),
-
-        # Subscriptions
         "upcoming_subs":      upcoming_subs,
-
-        # Meta
         "today_month_year":   today.strftime("%B %Y"),
         "valid_categories":   sorted(VALID_CATEGORIES),
         "cat_icons":          CAT_ICONS,
         "cat_colors":         CAT_COLORS,
-
-        # Spread stats dict into context
+        "actual_month_total": actual_month_total,
+        "actual_week_total":  actual_week_total,
+        "actual_all_total":   actual_all_total,
         **stats,
     }
     return render(request, "tracker/dashboard.html", context)
@@ -963,11 +776,6 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 @login_required(login_url="login")
 @require_POST
 def add_expense(request: HttpRequest) -> HttpResponse:
-    """
-    Add a new expense entry.
-    Validates amount (positive Decimal), category (must be valid), and date.
-    """
-    # Amount validation
     try:
         amount = Decimal(request.POST.get("amount", "").strip())
         if amount <= 0:
@@ -976,22 +784,18 @@ def add_expense(request: HttpRequest) -> HttpResponse:
         messages.error(request, "Valid amount daalo yaar (e.g., 150 or 1500.50).")
         return redirect("dashboard")
 
-    # Category validation
     category = request.POST.get("category", "other").strip().lower()
     if category not in VALID_CATEGORIES:
         category = "other"
 
-    # Date validation
     try:
         exp_date = date.fromisoformat(request.POST.get("date", ""))
     except (ValueError, TypeError):
         exp_date = date.today()
 
-    # Clamp date: not in future
     if exp_date > date.today():
         exp_date = date.today()
 
-    # Save
     expense = Expense.objects.create(
         user=request.user,
         amount=amount,
@@ -1006,7 +810,6 @@ def add_expense(request: HttpRequest) -> HttpResponse:
 
 @login_required(login_url="login")
 def edit_expense(request: HttpRequest, pk: int) -> HttpResponse:
-    """Edit an existing expense (POST only; GET redirects to dashboard)."""
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
 
     if request.method == "POST":
@@ -1024,7 +827,6 @@ def edit_expense(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required(login_url="login")
 @require_POST
 def delete_expense(request: HttpRequest, pk: int) -> HttpResponse:
-    """Delete an expense belonging to the current user."""
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
     expense.delete()
     logger.info("Expense deleted uid=%s id=%s", request.user.id, pk)
@@ -1035,10 +837,6 @@ def delete_expense(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required(login_url="login")
 @require_POST
 def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
-    """
-    Bulk-delete multiple expenses by a list of PKs.
-    Expects JSON body: {"ids": [1, 2, 3]}
-    """
     try:
         data = json.loads(request.body)
         ids  = [int(i) for i in data.get("ids", [])]
@@ -1050,67 +848,39 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 
     deleted, _ = Expense.objects.filter(user=request.user, pk__in=ids).delete()
     logger.info("Bulk delete uid=%s count=%d", request.user.id, deleted)
-    return JsonResponse({"deleted": deleted, "message": f"{deleted} expenses deleted successfully! 🗑️"})
+    return JsonResponse({"deleted": deleted, "message": f"{deleted} expenses deleted! 🗑️"})
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VOICE EXPENSE — PRODUCTION-GRADE 
+# VOICE EXPENSE — FIXED
 # ══════════════════════════════════════════════════════════════════════════════
 
-@csrf_exempt  # ✅ ADDED: Iske bina WhatsApp ki request block ho jayegi
-# @login_required(login_url="login")  # ❌ REMOVED: WhatsApp login nahi kar sakta
+@csrf_exempt
 @ai_rate_limited
 @json_required
 def voice_expense(request: HttpRequest) -> JsonResponse:
-    """
-    Ultra-intelligent voice-to-expense endpoint.
-
-    Pipeline:
-      1. Parse & validate spoken text
-      2. Pre-process Hinglish numbers (normalize_hinglish_numbers)
-      3. Send to Groq AI with full prompt (build_voice_ai_prompt)
-      4. Parse & validate extracted JSON
-      5. Save Expense record
-      6. Return rich JSON response with confidence, description, confirmation
-
-    Handles:
-      - Complex Hinglish (paanch sau, do hazar, etc.)
-      - Date expressions (aaj, kal, parso, specific dates)
-      - Category auto-detection from keywords
-      - Confidence scoring with user warning
-      - Broken ASR output (pandrah00, Solah00)
-      - Date clamping (no future dates, no >90 day old dates)
-    """
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "POST requests only."}, status=405)
 
-    # ✅ SMART FIX FOR WHATSAPP: Agar website se ho toh request.user, warna default tera account lega
-    target_user = request.user if request.user.is_authenticated else User.objects.first()
-    if not target_user:
-        return JsonResponse({"status": "error", "message": "No user found in database!"})
+    import os
+    django_username = os.environ.get('DJANGO_USERNAME', 'ajay160380')
+    target_user = User.objects.filter(username=django_username).first() or User.objects.first()
 
-    # ── Extract spoken text ─────────────────────────────────────────────────
+    if not target_user:
+        return JsonResponse({"status": "error", "message": "User nahi mila!"})
+
     body        = getattr(request, "_json_body", {})
     spoken_text = body.get("text", "").strip()
 
     if not spoken_text:
-        return JsonResponse({
-            "status":  "error",
-            "message": "No speech detected. Please try again.",
-        }, status=400)
+        return JsonResponse({"status": "error", "message": "No text received."}, status=400)
 
     if len(spoken_text) > VOICE_MAX_TEXT_LEN:
         spoken_text = spoken_text[:VOICE_MAX_TEXT_LEN]
 
-    logger.info("Voice expense uid=%s text=%r", target_user.id, spoken_text)
-
     today = date.today()
-
-    # ── Pre-process Hinglish numbers ────────────────────────────────────────
     normalized_text = normalize_hinglish_numbers(spoken_text)
 
-    # ── Call Groq AI ────────────────────────────────────────────────────────
-    raw_response = ""
     try:
         prompt   = build_voice_ai_prompt(normalized_text, today)
         response = _groq_client().chat.completions.create(
@@ -1120,129 +890,70 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             max_tokens=150,
         )
         raw_response = response.choices[0].message.content.strip()
-        logger.debug("Groq voice raw uid=%s response=%r", target_user.id, raw_response)
-
-    except Exception as e:
-        logger.error("Groq voice API uid=%s error=%s", target_user.id, e)
-        return JsonResponse({
-            "status":  "error",
-            "message": "Unable to connect to the AI service. Please try again shortly. 😅",
-        })
-
-    # ── Parse AI JSON response ──────────────────────────────────────────────
-    try:
+        print(f"[AI RAW] {raw_response}")
+        
         json_match = re.search(r'\{[^{}]+\}', raw_response, re.DOTALL)
         if not json_match:
-            raise ValueError(f"No JSON found in response: {raw_response}")
+            raise ValueError(f"No JSON in response: {raw_response}")
         ai_data = json.loads(json_match.group(0))
-    except (json.JSONDecodeError, ValueError) as e:
-        logger.error("Voice JSON parse uid=%s error=%s raw=%r", target_user.id, e, raw_response)
-        return JsonResponse({
-            "status":  "error",
-            "message": "AI could not understand that. Please speak clearly, for example: 'Spent 350 on Zomato'",
-        })
+        print(f"[AI PARSED] {ai_data}")
 
-    # ── Validate & sanitize extracted fields ────────────────────────────────
+        amount_raw = ai_data.get("amount", 0)
+        if isinstance(amount_raw, str):
+            amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
+        amount = Decimal(str(amount_raw))
 
-    # Amount
-    try:
-        amount = Decimal(str(ai_data.get("amount", 0)))
         if amount <= 0:
             return JsonResponse({
-                "status":       "error",
-                "message":      "Could not understand the amount. Try: 'Spent 1500 on petrol'",
-                "original_text": spoken_text,
+                "status": "error",
+                "message": "Amount samajh nahi aaya. Try: '500 petrol'",
             })
-    except (InvalidOperation, TypeError, ValueError):
-        return JsonResponse({
-            "status":  "error",
-            "message": "Invalid amount — please try again.",
-        })
 
-    # Category
-    category = str(ai_data.get("category", "other")).strip().lower()
-    if category not in VALID_CATEGORIES:
-        # Attempt keyword-based fallback before defaulting to "other"
-        category = _keyword_category_fallback(spoken_text)
+        category = str(ai_data.get("category", "other")).strip().lower()
+        if category not in VALID_CATEGORIES:
+            category = _keyword_category_fallback(spoken_text)
 
-    # Date
-    try:
-        exp_date = date.fromisoformat(str(ai_data.get("date", today.isoformat())))
-    except (ValueError, TypeError):
-        exp_date = today
+        try:
+            exp_date = date.fromisoformat(str(ai_data.get("date", today.isoformat())))
+        except (ValueError, TypeError):
+            exp_date = today
 
-    # Clamp: not future, not more than 90 days old
-    if exp_date > today:
-        exp_date = today
-        logger.warning("Voice date clamped (future) uid=%s", target_user.id)
-    elif (today - exp_date).days > 90:
-        exp_date = today
-        logger.warning("Voice date clamped (>90 days) uid=%s", target_user.id)
+        if exp_date > today:
+            exp_date = today
 
-    # Description
-    description = str(ai_data.get("description", "")).strip()[:100]
+        description = str(ai_data.get("description", "")).strip()[:100]
 
-    # Confidence
-    try:
-        confidence = float(ai_data.get("confidence", 0.5))
-        confidence = max(0.0, min(1.0, confidence))
-    except (TypeError, ValueError):
-        confidence = 0.5
-
-    # ── Save expense ────────────────────────────────────────────────────────
-    try:
         expense = Expense.objects.create(
             user=target_user,
             amount=amount,
             category=category,
             date=exp_date,
-            # Uncomment if Expense model has a notes/description field:
-            # notes=description,
+            description=description,
         )
         logger.info(
-            "Voice expense saved uid=%s id=%s amount=%s cat=%s date=%s confidence=%.2f",
-            target_user.id, expense.pk, amount, category, exp_date, confidence,
+            "Voice expense saved uid=%s id=%s amount=%s cat=%s date=%s",
+            target_user.id, expense.pk, amount, category, exp_date
         )
-    except Exception as e:
-        logger.error("Voice save uid=%s error=%s", target_user.id, e)
+
+        icon       = CAT_ICONS.get(category, "📦")
+        confirm = f"{icon} ₹{amount:,} — {category.title()} saved! ✅"
+
         return JsonResponse({
-            "status":  "error",
-            "message": "Expense could not be saved. Please try again.",
+            "status":        "success",
+            "message":       confirm,
+            "expense_id":    expense.pk,
+            "amount":        float(amount),
+            "category":      category,
+            "icon":          icon,
+            "date":          exp_date.isoformat(),
         })
 
-    # ── Build user-friendly confirmation ────────────────────────────────────
-    icon       = CAT_ICONS.get(category, "📦")
-    date_label = (
-        "aaj"  if exp_date == today else
-        "kal"  if exp_date == today - timedelta(days=1) else
-        "parso" if exp_date == today - timedelta(days=2) else
-        exp_date.strftime("%d %b")
-    )
-    confirm = f"{icon} ₹{amount:,} — {category.title()} ({date_label}) saved! ✅"
-    if confidence < VOICE_CONFIDENCE_WARN:
-        confirm += " ⚠️ I was not fully confident in the details — please verify once."
-
-    return JsonResponse({
-        "status":        "success",
-        "message":       confirm,
-        "expense_id":    expense.pk,
-        "amount":        float(amount),
-        "category":      category,
-        "icon":          icon,
-        "date":          exp_date.isoformat(),
-        "date_label":    date_label,
-        "description":   description,
-        "confidence":    round(confidence, 2),
-        "original_text": spoken_text,
-        "normalized":    normalized_text,
-    })
+    except Exception as e:
+        logger.error("Voice error uid=%s error=%s", target_user.id, e)
+        return JsonResponse({"status": "error", "message": "Save nahi ho paya. Please retry."})
 
 
 def _keyword_category_fallback(text: str) -> str:
-    """
-    Fallback category detection using keyword matching.
-    Used when AI returns an invalid/unknown category.
-    """
     text_lower = text.lower()
     scores     = defaultdict(int)
     for cat, keywords in CAT_KEYWORDS.items():
@@ -1255,34 +966,26 @@ def _keyword_category_fallback(text: str) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# AI CHAT — PAISAMITRA BOT
+# AI CHAT
 # ══════════════════════════════════════════════════════════════════════════════
 
 @login_required(login_url="login")
 @ai_rate_limited
 @json_required
 def ai_chat(request: HttpRequest) -> JsonResponse:
-    """
-    PaisaMitra conversational AI chat endpoint.
-    Accepts POST with {"message": "...", "history": [...]}
-    Supports multi-turn conversation via history array.
-
-    Returns: {"reply": "...", "intent": "..."}
-    """
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=405)
 
     body     = getattr(request, "_json_body", {})
     user_msg = body.get("message", "").strip()
-    history  = body.get("history", [])  # list of {"role": "...", "content": "..."}
+    history  = body.get("history", [])
 
     if not user_msg:
-        return JsonResponse({"error": "Message is empty. Please enter a question or request."}, status=400)
+        return JsonResponse({"error": "Message is empty."}, status=400)
 
     if len(user_msg) > 500:
-        return JsonResponse({"error": "Message is too long. Please keep it short and to the point."}, status=400)
+        return JsonResponse({"error": "Message is too long."}, status=400)
 
-    # ── Build user context ──────────────────────────────────────────────────
     budget   = get_user_budget(request)
     month_qs = get_filtered_expenses(request.user, "month")
     stats    = calculate_stats(month_qs, budget)
@@ -1299,7 +1002,6 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
 
     system = f"""You are "PaisaMitra" — a friendly, witty, and brutally honest Indian personal finance coach.
 Speak in Hinglish (Roman script). Be warm, sometimes sarcastic, always practical and helpful.
-Never be preachy. Be like that one smart dost who genuinely wants you to save money.
 
 ══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
 Budget:         ₹{budget:,.0f}
@@ -1317,17 +1019,13 @@ TOP SPENDING CATEGORIES:
 
 ══ YOUR RULES ══
 1. Always respond in Hinglish naturally.
-2. Keep responses concise — max 100 words. 
+2. Keep responses concise — max 100 words.
 3. If user asks for calculations, do them correctly.
-4. If question is unrelated to finance/money, gently redirect.
-5. Never make up numbers you don't have.
-6. If budget is exceeded, be extra honest about it.
-7. Suggest specific, actionable Indian-context tips (UPI offers, grocery apps, etc.)."""
+4. Never make up numbers you don't have.
+5. If budget is exceeded, be extra honest about it."""
 
-    # ── Build message history ───────────────────────────────────────────────
     messages_payload = [{"role": "system", "content": system}]
 
-    # Validate and include conversation history (max last 6 turns)
     safe_history = []
     for turn in history[-6:]:
         if (isinstance(turn, dict) and
@@ -1337,7 +1035,6 @@ TOP SPENDING CATEGORIES:
     messages_payload.extend(safe_history)
     messages_payload.append({"role": "user", "content": user_msg})
 
-    # ── Call AI ─────────────────────────────────────────────────────────────
     try:
         resp = _groq_client().chat.completions.create(
             messages=messages_payload,
@@ -1352,7 +1049,7 @@ TOP SPENDING CATEGORIES:
     except Exception as e:
         logger.error("AI chat uid=%s error=%s", request.user.id, e)
         return JsonResponse({
-            "reply":  "Oops! A network issue occurred. Please try again shortly. 😅",
+            "reply":  "Oops! Network issue. Please retry. 😅",
             "status": "error",
         })
 
@@ -1364,14 +1061,6 @@ TOP SPENDING CATEGORIES:
 @login_required(login_url="login")
 @ai_rate_limited
 def api_category_insight(request: HttpRequest) -> JsonResponse:
-    """
-    Return detailed spending analytics for a specific category,
-    plus an AI-generated roast/tip.
-
-    Query params:
-      category (str): one of VALID_CATEGORIES
-      period   (str): 'week' | 'month' | 'quarter' | 'year'
-    """
     category = request.GET.get("category", "").strip().lower()
     period   = request.GET.get("period", "month")
 
@@ -1395,11 +1084,9 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
     all_total = _safe_float(base_qs.aggregate(t=Sum("amount"))["t"])
     share_pct = round(cat_total / all_total * 100 if all_total else 0, 1)
 
-    # Daily average for this category
     qs_dates      = cat_qs.values("date").distinct().count()
     cat_daily_avg = cat_total / max(qs_dates, 1)
 
-    # Recent transactions
     recent = [
         {
             "date":     r["date"].isoformat(),
@@ -1409,7 +1096,6 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
         for r in cat_qs.values("date", "amount").order_by("-date")[:5]
     ]
 
-    # Weekly breakdown within the period
     weekly = []
     if period in ("month", "quarter"):
         for wk in (cat_qs.annotate(week=TruncWeek("date"))
@@ -1421,7 +1107,6 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
                 "total": _safe_float(wk["total"]),
             })
 
-    # AI Tip
     tip = get_category_ai_tip(
         user_id=request.user.id,
         category=category,
@@ -1432,20 +1117,20 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
     )
 
     return JsonResponse({
-        "category":      category,
-        "period":        period,
-        "icon":          CAT_ICONS.get(category, "📦"),
-        "color":         CAT_COLORS.get(category, "#888"),
-        "total":         cat_total,
-        "share_pct":     share_pct,
-        "count":         agg["count"] or 0,
-        "avg":           round(_safe_float(agg["avg"]), 2),
-        "highest":       _safe_float(agg["highest"]),
-        "lowest":        _safe_float(agg["lowest"]),
-        "daily_avg":     round(cat_daily_avg, 2),
-        "recent":        recent,
-        "weekly":        weekly,
-        "ai_tip":        tip,
+        "category":  category,
+        "period":    period,
+        "icon":      CAT_ICONS.get(category, "📦"),
+        "color":     CAT_COLORS.get(category, "#888"),
+        "total":     cat_total,
+        "share_pct": share_pct,
+        "count":     agg["count"] or 0,
+        "avg":       round(_safe_float(agg["avg"]), 2),
+        "highest":   _safe_float(agg["highest"]),
+        "lowest":    _safe_float(agg["lowest"]),
+        "daily_avg": round(cat_daily_avg, 2),
+        "recent":    recent,
+        "weekly":    weekly,
+        "ai_tip":    tip,
     })
 
 
@@ -1455,22 +1140,14 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
 
 @login_required(login_url="login")
 def api_analytics(request: HttpRequest) -> JsonResponse:
-    """
-    Comprehensive analytics API endpoint.
-    Returns monthly trends, category breakdown, heatmap, anomalies,
-    and a cached AI-generated monthly report.
-
-    Query params:
-      period (str): 'week' | 'month' | 'quarter' | 'year'
-    """
     period = request.GET.get("period", "month")
     if period not in VALID_PERIODS:
         period = "month"
 
-    budget   = get_user_budget(request)
-    today    = date.today()
-    ck       = f"analytics_{request.user.id}_{period}_{today.isoformat()}"
-    cached   = cache.get(ck)
+    budget  = get_user_budget(request)
+    today   = date.today()
+    ck      = f"analytics_{request.user.id}_{period}_{today.isoformat()}"
+    cached  = cache.get(ck)
     if cached:
         return JsonResponse(cached)
 
@@ -1480,20 +1157,18 @@ def api_analytics(request: HttpRequest) -> JsonResponse:
     trend     = build_monthly_trend(request.user, months=CHART_MONTHS)
     anomalies = detect_anomalies(request.user, budget)
 
-    # Top expense day
     day_agg = (period_qs.values("date")
                .annotate(total=Sum("amount"))
                .order_by("-total").first())
     top_day = ({"date": day_agg["date"].isoformat(),
                 "total": _safe_float(day_agg["total"])} if day_agg else None)
 
-    # AI Monthly Report
     month_data = {
-        "total":     stats["total_spent"],
-        "budget":    budget,
-        "count":     stats["transaction_count"],
+        "total":      stats["total_spent"],
+        "budget":     budget,
+        "count":      stats["transaction_count"],
         "categories": cats,
-        "month_key": today.strftime("%Y-%m"),
+        "month_key":  today.strftime("%Y-%m"),
     }
     ai_report = get_monthly_ai_report(request.user.id, month_data)
 
@@ -1515,10 +1190,6 @@ def api_analytics(request: HttpRequest) -> JsonResponse:
 
 @login_required(login_url="login")
 def api_heatmap(request: HttpRequest) -> JsonResponse:
-    """
-    Return 52-week spending heatmap data for the current user.
-    Cached for 10 minutes since it covers a whole year.
-    """
     ck     = f"heatmap_{request.user.id}_{date.today().isoformat()}"
     cached = cache.get(ck)
     if cached:
@@ -1531,37 +1202,29 @@ def api_heatmap(request: HttpRequest) -> JsonResponse:
 
 @login_required(login_url="login")
 def api_anomalies(request: HttpRequest) -> JsonResponse:
-    """
-    Return current anomaly alerts for the user.
-    Lightweight endpoint, called periodically by the frontend.
-    """
-    budget   = get_user_budget(request)
-    alerts   = detect_anomalies(request.user, budget)
+    budget = get_user_budget(request)
+    alerts = detect_anomalies(request.user, budget)
     return JsonResponse({"alerts": alerts, "count": len(alerts)})
 
 
 @login_required(login_url="login")
 def api_summary_stats(request: HttpRequest) -> JsonResponse:
-    """
-    Quick summary stats API for dashboard widgets (no AI, no heavy queries).
-    Returns current month stats + budget info.
-    """
     budget   = get_user_budget(request)
     month_qs = get_filtered_expenses(request.user, "month")
     stats    = calculate_stats(month_qs, budget)
     today    = date.today()
 
     return JsonResponse({
-        "budget":           budget,
-        "total_spent":      round(stats["total_spent"], 2),
-        "remaining":        round(stats["remaining_budget"], 2),
-        "budget_percent":   round(stats["budget_percent"], 1),
+        "budget":            budget,
+        "total_spent":       round(stats["total_spent"], 2),
+        "remaining":         round(stats["remaining_budget"], 2),
+        "budget_percent":    round(stats["budget_percent"], 1),
         "transaction_count": stats["transaction_count"],
-        "avg_per_day":      round(stats["avg_per_day"], 2),
-        "savings_rate":     round(stats["savings_rate"], 1),
-        "overspent":        stats["overspent"],
-        "month":            today.strftime("%B %Y"),
-        "days_left":        (
+        "avg_per_day":       round(stats["avg_per_day"], 2),
+        "savings_rate":      round(stats["savings_rate"], 1),
+        "overspent":         stats["overspent"],
+        "month":             today.strftime("%B %Y"),
+        "days_left": (
             (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
         ).days,
     })
@@ -1574,7 +1237,6 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
 @login_required(login_url="login")
 @require_POST
 def add_subscription(request: HttpRequest) -> HttpResponse:
-    """Add a new recurring subscription."""
     form = SubscriptionForm(request.POST)
     if form.is_valid():
         sub      = form.save(commit=False)
@@ -1590,7 +1252,6 @@ def add_subscription(request: HttpRequest) -> HttpResponse:
 @login_required(login_url="login")
 @require_POST
 def delete_subscription(request: HttpRequest, pk: int) -> HttpResponse:
-    """Delete/cancel a subscription."""
     sub = get_object_or_404(Subscription, pk=pk, user=request.user)
     sub.delete()
     logger.info("Subscription deleted uid=%s id=%s", request.user.id, pk)
@@ -1600,33 +1261,29 @@ def delete_subscription(request: HttpRequest, pk: int) -> HttpResponse:
 
 @login_required(login_url="login")
 def api_subscriptions(request: HttpRequest) -> JsonResponse:
-    """
-    Return all subscriptions for the current user as JSON.
-    Includes next billing date, monthly cost, and yearly cost.
-    """
-    subs = Subscription.objects.filter(user=request.user).order_by("next_billing_date")
+    subs  = Subscription.objects.filter(user=request.user).order_by("next_billing_date")
     today = date.today()
     data  = []
     for s in subs:
         days_until = (s.next_billing_date - today).days
         data.append({
-            "id":               s.pk,
-            "category":         s.category,
-            "icon":             CAT_ICONS.get(s.category, "📦"),
-            "color":            CAT_COLORS.get(s.category, "#888"),
-            "amount":           float(s.amount),
-            "next_billing":     s.next_billing_date.isoformat(),
-            "days_until":       days_until,
-            "due_soon":         days_until <= 3,
-            "yearly_cost":      float(s.amount) * 12,
+            "id":           s.pk,
+            "category":     s.category,
+            "icon":         CAT_ICONS.get(s.category, "📦"),
+            "color":        CAT_COLORS.get(s.category, "#888"),
+            "amount":       float(s.amount),
+            "next_billing": s.next_billing_date.isoformat(),
+            "days_until":   days_until,
+            "due_soon":     days_until <= 3,
+            "yearly_cost":  float(s.amount) * 12,
         })
 
     total_monthly = sum(d["amount"] for d in data)
     return JsonResponse({
-        "subscriptions":   data,
-        "count":           len(data),
-        "total_monthly":   total_monthly,
-        "total_yearly":    total_monthly * 12,
+        "subscriptions": data,
+        "count":         len(data),
+        "total_monthly": total_monthly,
+        "total_yearly":  total_monthly * 12,
     })
 
 
@@ -1636,20 +1293,10 @@ def api_subscriptions(request: HttpRequest) -> JsonResponse:
 
 @login_required(login_url="login")
 def export_expenses(request: HttpRequest) -> HttpResponse:
-    """
-    Export expense data as CSV.
-    Query params:
-      format  (str): 'csv' | 'json' (default: csv)
-      filter  (str): 'week' | 'month' | 'all' (default: all)
-      start   (str): YYYY-MM-DD (optional, overrides filter)
-      end     (str): YYYY-MM-DD (optional)
-    """
     export_format = request.GET.get("format", "csv")
     filter_type   = request.GET.get("filter", "all")
-
     qs = get_filtered_expenses(request.user, filter_type)
 
-    # Date range override
     start_str = request.GET.get("start", "")
     end_str   = request.GET.get("end",   "")
     try:
@@ -1658,7 +1305,7 @@ def export_expenses(request: HttpRequest) -> HttpResponse:
         if end_str:
             qs = qs.filter(date__lte=date.fromisoformat(end_str))
     except ValueError:
-        pass  # Ignore invalid dates
+        pass
 
     qs = qs[:MAX_EXPORT_ROWS]
 
@@ -1672,13 +1319,11 @@ def export_expenses(request: HttpRequest) -> HttpResponse:
             content_type="application/json",
         )
         resp["Content-Disposition"] = f'attachment; filename="expenses_{date.today()}.json"'
-        logger.info("JSON export uid=%s rows=%d", request.user.id, len(data))
         return resp
 
-    # Default: CSV
     resp = HttpResponse(content_type="text/csv; charset=utf-8")
     resp["Content-Disposition"] = f'attachment; filename="expenses_{date.today()}.csv"'
-    resp.write("\ufeff")  # UTF-8 BOM for Excel compatibility
+    resp.write("\ufeff")
 
     writer = csv.writer(resp)
     writer.writerow(["Date", "Day", "Category", "Icon", "Amount (₹)"])
@@ -1691,23 +1336,15 @@ def export_expenses(request: HttpRequest) -> HttpResponse:
             float(exp.amount),
         ])
 
-    logger.info("CSV export uid=%s rows=%d", request.user.id, qs.count())
     return resp
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SAVINGS GOALS (Bonus Feature)
+# SAVINGS GOALS
 # ══════════════════════════════════════════════════════════════════════════════
 
 @login_required(login_url="login")
 def api_savings_projection(request: HttpRequest) -> JsonResponse:
-    """
-    Project savings based on current spending rate.
-    Given a goal amount, return how many months to achieve it.
-
-    Query params:
-      goal (float): target savings amount
-    """
     try:
         goal = float(request.GET.get("goal", 0))
         if goal <= 0:
@@ -1715,19 +1352,18 @@ def api_savings_projection(request: HttpRequest) -> JsonResponse:
     except (ValueError, TypeError):
         return JsonResponse({"error": "Invalid goal"}, status=400)
 
-    budget   = get_user_budget(request)
-    month_qs = get_filtered_expenses(request.user, "month")
-    stats    = calculate_stats(month_qs, budget)
-
+    budget          = get_user_budget(request)
+    month_qs        = get_filtered_expenses(request.user, "month")
+    stats           = calculate_stats(month_qs, budget)
     monthly_savings = max(budget - stats["total_spent"], 0)
 
     if monthly_savings <= 0:
         return JsonResponse({
-            "goal":             goal,
-            "monthly_savings":  0,
-            "months_needed":    None,
-            "achievable":       False,
-            "message":          "No savings are being generated yet — reduce spending first! 📉",
+            "goal":            goal,
+            "monthly_savings": 0,
+            "months_needed":   None,
+            "achievable":      False,
+            "message":         "No savings yet — reduce spending first! 📉",
         })
 
     months_needed = math_ceil(goal / monthly_savings)
@@ -1736,18 +1372,16 @@ def api_savings_projection(request: HttpRequest) -> JsonResponse:
         target_date = _next_month_date(target_date)
 
     return JsonResponse({
-        "goal":             goal,
-        "monthly_savings":  round(monthly_savings, 2),
-        "months_needed":    months_needed,
-        "target_date":      target_date.strftime("%B %Y"),
-        "achievable":       True,
-        "message":          f"₹{goal:,.0f} bachane mein ~{months_needed} mahine lagenge. "
-                            f"Target: {target_date.strftime('%B %Y')} 🎯",
+        "goal":            goal,
+        "monthly_savings": round(monthly_savings, 2),
+        "months_needed":   months_needed,
+        "target_date":     target_date.strftime("%B %Y"),
+        "achievable":      True,
+        "message":         f"₹{goal:,.0f} bachane mein ~{months_needed} mahine lagenge. Target: {target_date.strftime('%B %Y')} 🎯",
     })
 
 
 def math_ceil(x: float) -> int:
-    """Ceiling division without importing math."""
     return int(x) + (1 if x != int(x) else 0)
 
 
@@ -1756,27 +1390,19 @@ def math_ceil(x: float) -> int:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def health_check(request: HttpRequest) -> JsonResponse:
-    """
-    Simple health check endpoint for monitoring.
-    Returns 200 if the app is running.
-    No auth required.
-    """
     return JsonResponse({
         "status":    "ok",
         "service":   "PaisaMitra",
-        "version":   "3.0.0",
+        "version":   "3.2.0",
         "timestamp": datetime.now().isoformat(),
     })
 
 
 @login_required(login_url="login")
 def api_user_profile(request: HttpRequest) -> JsonResponse:
-    """
-    Return basic user profile + lifetime stats.
-    """
-    user       = request.user
-    all_time   = Expense.objects.filter(user=user)
-    all_agg    = all_time.aggregate(
+    user    = request.user
+    all_time = Expense.objects.filter(user=user)
+    all_agg  = all_time.aggregate(
         total=Sum("amount"),
         count=Count("id"),
         first_date=Min("date"),
@@ -1784,23 +1410,19 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
     )
 
     return JsonResponse({
-        "username":        user.username,
-        "joined":          user.date_joined.strftime("%d %B %Y"),
-        "lifetime_spent":  round(_safe_float(all_agg["total"]), 2),
-        "total_txns":      all_agg["count"] or 0,
-        "first_expense":   all_agg["first_date"].isoformat() if all_agg["first_date"] else None,
-        "last_expense":    all_agg["last_date"].isoformat()  if all_agg["last_date"]  else None,
-        "budget":          get_user_budget(request),
-        "member_days":     (date.today() - user.date_joined.date()).days,
+        "username":       user.username,
+        "joined":         user.date_joined.strftime("%d %B %Y"),
+        "lifetime_spent": round(_safe_float(all_agg["total"]), 2),
+        "total_txns":     all_agg["count"] or 0,
+        "first_expense":  all_agg["first_date"].isoformat() if all_agg["first_date"] else None,
+        "last_expense":   all_agg["last_date"].isoformat()  if all_agg["last_date"]  else None,
+        "budget":         get_user_budget(request),
+        "member_days":    (date.today() - user.date_joined.date()).days,
     })
 
 
 @login_required(login_url="login")
 def api_quick_add(request: HttpRequest) -> JsonResponse:
-    """
-    Quick-add expense via JSON API (for mobile / progressive web app use).
-    POST body: {"amount": 150, "category": "food", "date": "2025-05-01"}
-    """
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=405)
 
