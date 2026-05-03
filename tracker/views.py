@@ -1472,3 +1472,51 @@ def check_updates(request):
     latest_expense = Expense.objects.filter(user=request.user).order_by('-id').first()
     latest_id = latest_expense.id if latest_expense else 0
     return JsonResponse({'latest_id': latest_id})
+# ══════════════════════════════════════════════════════════════════════════════
+# SMART HABIT PREDICTION & WARNINGS 🧠
+# ══════════════════════════════════════════════════════════════════════════════
+@csrf_exempt
+def habit_warnings(request):
+    # Ajay ka account dhoondo
+    target_user = User.objects.filter(username='ajayvishwakarma').first()
+    if not target_user: target_user = User.objects.first()
+
+    # Pichle 14 din ka data nikalo
+    two_weeks_ago = date.today() - timedelta(days=14)
+    expenses = Expense.objects.filter(user=target_user, date__gte=two_weeks_ago).order_by('date')
+
+    if expenses.count() < 3:
+        return JsonResponse({
+            "warning": "Bhai abhi data bohot kam hai habit samajhne ke liye. Thode aur kharche track kar! 📉"
+        })
+
+    # Data ko AI ke samajhne laayak format mein banao
+    data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
+
+    prompt = f"""
+    You are 'PaisaMitra', a brutally honest, highly intelligent Indian financial AI coach.
+    Here is the user's daily spending data for the last 14 days:
+    {data_str}
+
+    Task:
+    1. Analyze the exact numbers and find a HIDDEN PATTERN or BAD HABIT (e.g., "spending too much on transport regularly", "huge food expenses on weekends").
+    2. Predict what will happen to his budget if he continues this exact habit.
+    3. Give a strict, funny, and highly personalized Hinglish warning message to send via WhatsApp.
+    
+    Rules:
+    - Only give the final message text. No intro, no quotes, no markdown.
+    - Keep it under 4 lines.
+    - Be sarcastic but logical based ON THE DATA provided.
+    """
+
+    try:
+        response = _groq_client().chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.3-70b-versatile",
+            temperature=0.8,
+            max_tokens=150,
+        )
+        warning_msg = response.choices[0].message.content.strip()
+        return JsonResponse({"warning": warning_msg})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
