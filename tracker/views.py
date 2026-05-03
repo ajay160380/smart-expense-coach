@@ -66,6 +66,7 @@ from .models import Expense, Subscription
 from .forms import ExpenseForm, SubscriptionForm
 
 
+
 # ══════════════════════════════════════════════════════════════════════════════
 # CONSTANTS & CONFIGURATION
 # ══════════════════════════════════════════════════════════════════════════════
@@ -199,7 +200,7 @@ def ai_rate_limited(view_func):
         count = cache.get(ck, 0)
         if count >= AI_RATE_LIMIT_CALLS:
             return JsonResponse({
-                "error": f"Bhai {AI_RATE_LIMIT_CALLS} baar ho gaya! Ek ghante baad aana. 🕐"
+                "error": f"Rate limit reached. Please try again after one hour. 🕐"
             }, status=429)
         cache.set(ck, count + 1, AI_RATE_LIMIT_WINDOW)
         return view_func(request, *args, **kwargs)
@@ -621,8 +622,7 @@ def detect_anomalies(user, budget: float) -> list:
         alerts.append({
             "type":    "spending_spike",
             "icon":    "🚨",
-            "message": f"Aaj ₹{today_total:,.0f} kharch ho gaya — "
-                       f"daily avg se {today_total/avg_daily:.1f}x zyada! Sambhalo yaar.",
+            "message": f"Today you spent ₹{today_total:,.0f} — {today_total/avg_daily:.1f}x above the daily average. Watch your spending.",
             "severity": "high",
         })
 
@@ -632,8 +632,7 @@ def detect_anomalies(user, budget: float) -> list:
         alerts.append({
             "type":    "budget_exceeded",
             "icon":    "💸",
-            "message": f"Budget ₹{budget:,.0f} cross ho gaya! "
-                       f"₹{over_by:,.0f} zyada kharch. Matlab koi control nahi. 😬",
+            "message": f"Budget exceeded by ₹{over_by:,.0f}! You spent ₹{month_total:,.0f} against a ₹{budget:,.0f} budget. Take action now. 😬",
             "severity": "critical",
         })
 
@@ -646,8 +645,7 @@ def detect_anomalies(user, budget: float) -> list:
             alerts.append({
                 "type":    "projected_overspend",
                 "icon":    "📈",
-                "message": f"Is rate se month end pe ₹{projected_end:,.0f} kharch hoga — "
-                           f"budget ₹{budget:,.0f} hai. Abhi se bachao karo! 🏃",
+                "message": f"If spending continues like this, you'll spend ₹{projected_end:,.0f} by month end against a ₹{budget:,.0f} budget. Start saving now! 🏃",
                 "severity": "warning",
             })
 
@@ -662,8 +660,7 @@ def detect_anomalies(user, budget: float) -> list:
             alerts.append({
                 "type":    "category_dominance",
                 "icon":    CAT_ICONS.get(cat, "📦"),
-                "message": f"{cat.title()} pe {cat_pct:.0f}% budget uda diya! "
-                            f"Ek hi cheez pe itna? Diversify karo yaar.",
+                "message": f"{cat.title()} accounts for {cat_pct:.0f}% of your spending. Too much in one category — try to diversify.",
                 "severity": "warning",
             })
 
@@ -716,7 +713,7 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
     except Exception as e:
         logger.error("AI insight uid=%s error=%s", user_id, e)
         remaining = max(0, budget - total_spent)
-        return f"Bhai ₹{remaining:,.0f} bacha hai — Zomato band karo, ghar ka khana khao! 🍛"
+        return f"You have ₹{remaining:,.0f} remaining — reduce takeout and cook at home to save more. 🍛"
 
 
 def get_category_ai_tip(user_id: int, category: str, cat_total: float,
@@ -754,7 +751,7 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
     except Exception as e:
         logger.error("Cat tip uid=%s cat=%s error=%s", user_id, category, e)
-        return f"{category.title()} pe itna? Thoda control karo yaar! 💸"
+        return f"So much on {category.title()}? Try to tighten control on this category. 💸"
 
 
 def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
@@ -792,7 +789,7 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 
     except Exception as e:
         logger.error("Monthly report uid=%s error=%s", user_id, e)
-        return "Is mahine ka hisaab theek nahi tha. Agla mahine aur dhyan rakho! 📊"
+        return "This month's report could not be generated correctly. Pay closer attention next month! 📊"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -810,9 +807,9 @@ def register(request: HttpRequest) -> HttpResponse:
             user = form.save()
             login(request, user)
             logger.info("New user registered uid=%s username=%s", user.id, user.username)
-            messages.success(request, "Account ban gaya! Swagat hai PaisaMitra mein 🎉")
+            messages.success(request, "Account created successfully! Welcome to PaisaMitra 🎉")
             return redirect("dashboard")
-        messages.error(request, "Kuch gadbad hai — form dobara check karo.")
+        messages.error(request, "There was an issue — please review the form and try again.")
     else:
         form = UserCreationForm()
 
@@ -832,7 +829,7 @@ def user_login(request: HttpRequest) -> HttpResponse:
             logger.info("User login uid=%s", user.id)
             messages.success(request, f"Welcome back {user.username}! 👋")
             return redirect(request.GET.get("next", "dashboard"))
-        messages.error(request, "Username ya password galat hai bhai.")
+        messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
 
@@ -844,7 +841,7 @@ def user_logout(request: HttpRequest) -> HttpResponse:
     """Logout and redirect to login page."""
     logger.info("User logout uid=%s", request.user.id)
     logout(request)
-    messages.info(request, "Log out ho gaye. Phir milenge! 👋")
+    messages.info(request, "You have been logged out. See you soon! 👋")
     return redirect("login")
 
 
@@ -886,7 +883,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     # ── Process subscriptions ───────────────────────────────────────────────
     debits = process_subscriptions(user)
     if debits:
-        messages.info(request, f"📅 {debits} subscription(s) auto-deduct ho gaye.")
+        messages.info(request, f"📅 {debits} subscription(s) were auto-deducted.")
 
     # ── Upcoming subscriptions ──────────────────────────────────────────────
     upcoming_subs = (Subscription.objects
@@ -915,7 +912,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 
     # ── AI Insight ──────────────────────────────────────────────────────────
     if stats["transaction_count"] == 0:
-        insight = "<strong>Shuru karo!</strong> Pehla expense add karo, AI coaching milegi. 🚀"
+        insight = "<strong>Get started!</strong> Add your first expense to receive AI guidance. 🚀"
     else:
         raw     = get_ai_insight(user.id, expenses_qs, budget, stats["total_spent"])
         insight = f"<strong>AI Coach:</strong> {raw}"
@@ -1053,14 +1050,15 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 
     deleted, _ = Expense.objects.filter(user=request.user, pk__in=ids).delete()
     logger.info("Bulk delete uid=%s count=%d", request.user.id, deleted)
-    return JsonResponse({"deleted": deleted, "message": f"{deleted} expenses delete ho gaye! 🗑️"})
+    return JsonResponse({"deleted": deleted, "message": f"{deleted} expenses deleted successfully! 🗑️"})
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VOICE EXPENSE — PRODUCTION-GRADE
+# VOICE EXPENSE — PRODUCTION-GRADE 
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@csrf_exempt  # ✅ ADDED: Iske bina WhatsApp ki request block ho jayegi
+# @login_required(login_url="login")  # ❌ REMOVED: WhatsApp login nahi kar sakta
 @ai_rate_limited
 @json_required
 def voice_expense(request: HttpRequest) -> JsonResponse:
@@ -1084,7 +1082,12 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
       - Date clamping (no future dates, no >90 day old dates)
     """
     if request.method != "POST":
-        return JsonResponse({"status": "error", "message": "POST only bhai"}, status=405)
+        return JsonResponse({"status": "error", "message": "POST requests only."}, status=405)
+
+    # ✅ SMART FIX FOR WHATSAPP: Agar website se ho toh request.user, warna default tera account lega
+    target_user = request.user if request.user.is_authenticated else User.objects.first()
+    if not target_user:
+        return JsonResponse({"status": "error", "message": "No user found in database!"})
 
     # ── Extract spoken text ─────────────────────────────────────────────────
     body        = getattr(request, "_json_body", {})
@@ -1093,13 +1096,13 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     if not spoken_text:
         return JsonResponse({
             "status":  "error",
-            "message": "Kuch bola nahi tune! 🎤 Dobara try karo.",
+            "message": "No speech detected. Please try again.",
         }, status=400)
 
     if len(spoken_text) > VOICE_MAX_TEXT_LEN:
         spoken_text = spoken_text[:VOICE_MAX_TEXT_LEN]
 
-    logger.info("Voice expense uid=%s text=%r", request.user.id, spoken_text)
+    logger.info("Voice expense uid=%s text=%r", target_user.id, spoken_text)
 
     today = date.today()
 
@@ -1117,13 +1120,13 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             max_tokens=150,
         )
         raw_response = response.choices[0].message.content.strip()
-        logger.debug("Groq voice raw uid=%s response=%r", request.user.id, raw_response)
+        logger.debug("Groq voice raw uid=%s response=%r", target_user.id, raw_response)
 
     except Exception as e:
-        logger.error("Groq voice API uid=%s error=%s", request.user.id, e)
+        logger.error("Groq voice API uid=%s error=%s", target_user.id, e)
         return JsonResponse({
             "status":  "error",
-            "message": "AI se connect nahi ho paya. Thodi der mein try karo 😅",
+            "message": "Unable to connect to the AI service. Please try again shortly. 😅",
         })
 
     # ── Parse AI JSON response ──────────────────────────────────────────────
@@ -1133,10 +1136,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             raise ValueError(f"No JSON found in response: {raw_response}")
         ai_data = json.loads(json_match.group(0))
     except (json.JSONDecodeError, ValueError) as e:
-        logger.error("Voice JSON parse uid=%s error=%s raw=%r", request.user.id, e, raw_response)
+        logger.error("Voice JSON parse uid=%s error=%s raw=%r", target_user.id, e, raw_response)
         return JsonResponse({
             "status":  "error",
-            "message": "AI ne samjha nahi yaar 😕 Seedha bolo, jaise: 'Zomato pe 350 kharch kiya'",
+            "message": "AI could not understand that. Please speak clearly, for example: 'Spent 350 on Zomato'",
         })
 
     # ── Validate & sanitize extracted fields ────────────────────────────────
@@ -1147,13 +1150,13 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         if amount <= 0:
             return JsonResponse({
                 "status":       "error",
-                "message":      "Amount samajh nahi aaya 😕 Try: 'Petrol pe 1500 diye'",
+                "message":      "Could not understand the amount. Try: 'Spent 1500 on petrol'",
                 "original_text": spoken_text,
             })
     except (InvalidOperation, TypeError, ValueError):
         return JsonResponse({
             "status":  "error",
-            "message": "Amount galat hai, dobara bolo.",
+            "message": "Invalid amount — please try again.",
         })
 
     # Category
@@ -1171,10 +1174,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     # Clamp: not future, not more than 90 days old
     if exp_date > today:
         exp_date = today
-        logger.warning("Voice date clamped (future) uid=%s", request.user.id)
+        logger.warning("Voice date clamped (future) uid=%s", target_user.id)
     elif (today - exp_date).days > 90:
         exp_date = today
-        logger.warning("Voice date clamped (>90 days) uid=%s", request.user.id)
+        logger.warning("Voice date clamped (>90 days) uid=%s", target_user.id)
 
     # Description
     description = str(ai_data.get("description", "")).strip()[:100]
@@ -1189,7 +1192,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     # ── Save expense ────────────────────────────────────────────────────────
     try:
         expense = Expense.objects.create(
-            user=request.user,
+            user=target_user,
             amount=amount,
             category=category,
             date=exp_date,
@@ -1198,13 +1201,13 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         )
         logger.info(
             "Voice expense saved uid=%s id=%s amount=%s cat=%s date=%s confidence=%.2f",
-            request.user.id, expense.pk, amount, category, exp_date, confidence,
+            target_user.id, expense.pk, amount, category, exp_date, confidence,
         )
     except Exception as e:
-        logger.error("Voice save uid=%s error=%s", request.user.id, e)
+        logger.error("Voice save uid=%s error=%s", target_user.id, e)
         return JsonResponse({
             "status":  "error",
-            "message": "Save nahi hua bhai. Dobara try karo.",
+            "message": "Expense could not be saved. Please try again.",
         })
 
     # ── Build user-friendly confirmation ────────────────────────────────────
@@ -1217,7 +1220,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     )
     confirm = f"{icon} ₹{amount:,} — {category.title()} ({date_label}) saved! ✅"
     if confidence < VOICE_CONFIDENCE_WARN:
-        confirm += " ⚠️ Mujhe pakka yakin nahi tha — ek baar verify karo."
+        confirm += " ⚠️ I was not fully confident in the details — please verify once."
 
     return JsonResponse({
         "status":        "success",
@@ -1274,10 +1277,10 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
     history  = body.get("history", [])  # list of {"role": "...", "content": "..."}
 
     if not user_msg:
-        return JsonResponse({"error": "Message khali hai yaar"}, status=400)
+        return JsonResponse({"error": "Message is empty. Please enter a question or request."}, status=400)
 
     if len(user_msg) > 500:
-        return JsonResponse({"error": "Itna lamba mat likho, summary mein bolo"}, status=400)
+        return JsonResponse({"error": "Message is too long. Please keep it short and to the point."}, status=400)
 
     # ── Build user context ──────────────────────────────────────────────────
     budget   = get_user_budget(request)
@@ -1310,11 +1313,11 @@ Projected End:  ₹{stats['projected_month_end']:,.0f}
 Savings Rate:   {stats['savings_rate']:.0f}%
 
 TOP SPENDING CATEGORIES:
-{cat_lines or '  (Koi data nahi abhi)'}
+{cat_lines or '  (No data available yet)'}
 
 ══ YOUR RULES ══
 1. Always respond in Hinglish naturally.
-2. Keep responses concise — max 100 words.
+2. Keep responses concise — max 100 words. 
 3. If user asks for calculations, do them correctly.
 4. If question is unrelated to finance/money, gently redirect.
 5. Never make up numbers you don't have.
@@ -1349,7 +1352,7 @@ TOP SPENDING CATEGORIES:
     except Exception as e:
         logger.error("AI chat uid=%s error=%s", request.user.id, e)
         return JsonResponse({
-            "reply":  "Oops! Network issue aa gaya. Thodi der baad try karo yaar 😅",
+            "reply":  "Oops! A network issue occurred. Please try again shortly. 😅",
             "status": "error",
         })
 
@@ -1580,7 +1583,7 @@ def add_subscription(request: HttpRequest) -> HttpResponse:
         logger.info("Subscription added uid=%s id=%s", request.user.id, sub.pk)
         messages.success(request, f"📅 '{sub.category}' subscription add ho gayi! ₹{sub.amount}/month")
     else:
-        messages.error(request, f"Details check karo: {form.errors}")
+        messages.error(request, f"Please check the details: {form.errors}")
     return redirect("dashboard")
 
 
@@ -1708,7 +1711,7 @@ def api_savings_projection(request: HttpRequest) -> JsonResponse:
     try:
         goal = float(request.GET.get("goal", 0))
         if goal <= 0:
-            return JsonResponse({"error": "Valid goal amount chahiye"}, status=400)
+            return JsonResponse({"error": "Valid goal amount required"}, status=400)
     except (ValueError, TypeError):
         return JsonResponse({"error": "Invalid goal"}, status=400)
 
@@ -1724,7 +1727,7 @@ def api_savings_projection(request: HttpRequest) -> JsonResponse:
             "monthly_savings":  0,
             "months_needed":    None,
             "achievable":       False,
-            "message":          "Abhi koi savings nahi ho rahi — pehle kharch kam karo! 📉",
+            "message":          "No savings are being generated yet — reduce spending first! 📉",
         })
 
     months_needed = math_ceil(goal / monthly_savings)
