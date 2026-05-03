@@ -1465,3 +1465,10 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
         "category":   category,
         "date":       exp_date.isoformat(),
     }, status=201)
+
+@login_required
+def check_updates(request):
+    # User ka sabse latest expense dhoondo
+    latest_expense = Expense.objects.filter(user=request.user).order_by('-id').first()
+    latest_id = latest_expense.id if latest_expense else 0
+    return JsonResponse({'latest_id': latest_id})
