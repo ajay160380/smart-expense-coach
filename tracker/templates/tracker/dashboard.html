@@ -350,8 +350,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       <div class="voice-wave"></div><div class="voice-wave"></div><div class="voice-wave"></div>
       <div class="voice-wave"></div>
     </div>
-    <div class="voice-status" id="voice-status">Sun raha hoon... 🎤</div>
-    <div class="voice-sub" id="voice-sub">Bol do apna expense</div>
+    <div class="voice-status" id="voice-status">Listening... 🎤</div>
+    <div class="voice-sub" id="voice-sub">Please speak your expense</div>
     <div class="voice-text-preview" id="voice-preview">—</div>
     <button class="voice-cancel" onclick="cancelVoice()">✕ Cancel</button>
   </div>
@@ -364,7 +364,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <div class="nav-brand">Paisa<span>Tracker</span><sub id="month-label"></sub></div>
     <div class="nav-actions">
       <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">🌙</button>
-      <button class="voice-btn" id="mic-btn" onclick="startVoice()">🎙️ Bol ke likho</button>
+      <button class="voice-btn" id="mic-btn" onclick="startVoice()">🎙️ Record expense</button>
       <button class="add-btn" onclick="openModal('addModal')">+ Add expense</button>
     </div>
   </div>
@@ -381,7 +381,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <div class="ai-avatar">🤖</div>
     <div class="ai-banner-text">
       <div class="ai-banner-label">AI Financial Coach</div>
-      <div class="ai-banner-msg" id="banner-msg">Namaste! Main hoon PaisaMitra — apne finances ke baare mein poochho!</div>
+      <div class="ai-banner-msg" id="banner-msg">Hello! I am PaisaMitra — ask me anything about your finances!</div>
     </div>
     <span class="ai-banner-caret">›</span>
   </div>
@@ -539,21 +539,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
   <!-- Error banner inside chat (hidden by default) -->
   <div class="ai-error-banner" id="ai-error-banner">
-    ⚠️ <span id="ai-error-text">Server se connect nahi ho paya.</span>
+    ⚠️ <span id="ai-error-text">Unable to connect to the server.</span>
     <button onclick="retryLastMsg()" style="margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:var(--font);font-weight:600;">Retry</button>
   </div>
 
   <div class="ai-msgs" id="ai-msgs"></div>
 
   <div class="ai-chips" id="ai-chips">
-    <button class="ai-chip" onclick="quickAsk(this)">Paisa kahan ja raha hai?</button>
-    <button class="ai-chip" onclick="quickAsk(this)">Budget analysis karo</button>
-    <button class="ai-chip" onclick="quickAsk(this)">₹5000 kaise bachaaun?</button>
-    <button class="ai-chip" onclick="quickAsk(this)">Top 3 saving tips do</button>
+    <button class="ai-chip" onclick="quickAsk(this)">Where is my money going?</button>
+    <button class="ai-chip" onclick="quickAsk(this)">Analyze my budget</button>
+    <button class="ai-chip" onclick="quickAsk(this)">How can I save ₹5000?</button>
+    <button class="ai-chip" onclick="quickAsk(this)">Give top 3 saving tips</button>
   </div>
 
   <div class="ai-input-row">
-    <input class="ai-input" id="ai-input" placeholder="Kuch bhi poochho..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
+    <input class="ai-input" id="ai-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
     <button class="ai-send" id="ai-send" onclick="sendMsg()" title="Send">➤</button>
   </div>
 </div>
@@ -628,12 +628,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 // ── CONSTANTS ─────────────────────────────────────────────────────────
 const COLORS = {food:'#7C6FF7',transport:'#34D399',shopping:'#F472B6',health:'#60A5FA',entertainment:'#FBBF24',education:'#A78BFA',utilities:'#FB923C',other:'#94A3B8'};
 const ICONS  = {food:'🍜',transport:'🚗',shopping:'🛍️',health:'💊',entertainment:'🎬',education:'📚',utilities:'⚡',other:'📦'};
-const LEVEL_TITLES = ['Rookie Saver','Budget Padawan','Expense Explorer','Paisa Watcher','Thrift Knight','Savings Hunter','Budget Warrior','Finance Ninja','Money Sage','Paisa Guru'];
+const LEVEL_TITLES = ['Rookie Saver','Budget Analyst','Expense Explorer','Money Watcher','Thrift Knight','Savings Hunter','Budget Warrior','Finance Ninja','Money Sage','Money Guru'];
 const QUESTS = [
-  {icon:'📝',name:'Aaj ek expense log karo',xp:'+20 XP',done:true},
-  {icon:'💰',name:'Budget 80% se kam rakho',xp:'+50 XP',done:true},
-  {icon:'🍜',name:'Food pe ₹500 se kam kharch karo',xp:'+30 XP',done:false},
-  {icon:'📊',name:'Weekly trend check karo',xp:'+10 XP',done:false},
+  {icon:'📝',name:'Log one expense today',xp:'+20 XP',done:true},
+  {icon:'💰',name:'Keep budget below 80%',xp:'+50 XP',done:true},
+  {icon:'🍜',name:'Spend under ₹500 on food',xp:'+30 XP',done:false},
+  {icon:'📊',name:'Review weekly trend',xp:'+10 XP',done:false},
 ];
 
 // Django-rendered URLs & data
@@ -789,7 +789,7 @@ function renderCats() {
   f.forEach(e => { m[e.cat] = (m[e.cat]||0)+e.amount; });
   const sorted = Object.entries(m).sort((a,b) => b[1]-a[1]);
   const el = document.getElementById('cat-list');
-  if (!sorted.length) { el.innerHTML='<div class="empty">Koi expense nahi abhi 😴</div>'; return; }
+  if (!sorted.length) { el.innerHTML='<div class="empty">No expenses yet 😴</div>'; return; }
   el.innerHTML = sorted.map(([cat,amt]) => {
     const pct = total > 0 ? amt/total*100 : 0;
     return `<div class="cat-item" onclick="showInsight('${cat}')" id="ci-${cat}">
@@ -839,7 +839,7 @@ function renderTxns() {
   let f = getCatFiltered();
   if (search) f = f.filter(e => e.cat.includes(search)||(e.note||'').toLowerCase().includes(search));
   const el = document.getElementById('txn-list');
-  if (!f.length) { el.innerHTML='<div class="empty">Koi transaction nahi 🧾</div>'; return; }
+  if (!f.length) { el.innerHTML='<div class="empty">No transactions yet 🧾</div>'; return; }
   el.innerHTML = [...f].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(e =>
     `<div class="txn-item">
       <div class="txn-icon" style="background:${COLORS[e.cat]}20">${ICONS[e.cat]||'📦'}</div>
@@ -860,7 +860,7 @@ function renderBills() {
   const el  = document.getElementById('bills-list');
   const now = new Date();
   if (!bills.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0;font-weight:500;">Koi upcoming bill nahi 🎉</div>';
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0;font-weight:500;">No upcoming bills 🎉</div>';
     return;
   }
   el.innerHTML = bills.map(b => {
@@ -949,10 +949,10 @@ function updateBannerMsg() {
   const rem   = Math.max(budget-total, 0);
   const pct   = budget > 0 ? Math.round(total/budget*100) : 0;
   let msg;
-  if (pct < 40)      msg = `Bahut accha! Budget ka sirf ${pct}% use hua — ${fmt(rem)} aaram se bacha sakte ho! 🌟`;
-  else if (pct < 70) msg = `${pct}% budget used. Dhyan rakhna, ${fmt(rem)} hi bacha hai mahine mein ⚠️`;
-  else if (pct < 100)msg = `Alert! ${pct}% gone — sirf ${fmt(rem)} bacha! Spending rok lo yaar 🚨`;
-  else               msg = `Budget cross ho gaya! ${fmt(total-budget)} zyada kharch kiya. AI se plan banao 😬`;
+  if (pct < 40)      msg = `Great job! You used only ${pct}% of your budget — you can comfortably save ${fmt(rem)} more. 🌟`;
+  else if (pct < 70) msg = `${pct}% of your budget used. Keep an eye on spending — only ${fmt(rem)} left. ⚠️`;
+  else if (pct < 100)msg = `Warning! ${pct}% used — only ${fmt(rem)} left. Slow down your spending 🚨`;
+  else               msg = `Budget exceeded! You spent ${fmt(total-budget)} over budget. Create a recovery plan now. 😬`;
   document.getElementById('banner-msg').textContent = msg;
 }
 
@@ -1015,14 +1015,14 @@ async function fetchCatInsight(cat, period='month') {
     });
     if (!resp.ok) throw new Error('API error '+resp.status);
     const data = await resp.json();
-    document.getElementById('ip-tip-text').textContent = data.ai_tip || 'Koi tip nahi mili.';
+    document.getElementById('ip-tip-text').textContent = data.ai_tip || 'No tip available.';
     // Update stats from API too
     if (data.total)   document.getElementById('ip-total').textContent = fmt(data.total);
     if (data.count)   document.getElementById('ip-count').textContent = data.count;
     if (data.avg)     document.getElementById('ip-avg').textContent   = fmt(data.avg);
     if (data.highest) document.getElementById('ip-high').textContent  = fmt(data.highest);
   } catch(e) {
-    document.getElementById('ip-tip-text').textContent = 'AI abhi busy hai — thodi der baad try karo! 😅';
+    document.getElementById('ip-tip-text').textContent = 'AI is busy right now — please try again shortly. 😅';
   }
 }
 
@@ -1033,7 +1033,7 @@ function exportCSV() {
   a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'));
   a.download = `paisatracker_${today.toISOString().split('T')[0]}.csv`;
   a.click();
-  showToast('CSV export ho gaya! ✅','success');
+  showToast('CSV export complete! ✅','success');
 }
 function exportJSON() {
   const data = {exported_at:new Date().toISOString(), budget, expenses};
@@ -1041,7 +1041,7 @@ function exportJSON() {
   a.href = 'data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2));
   a.download = `paisatracker_${today.toISOString().split('T')[0]}.json`;
   a.click();
-  showToast('JSON export ho gaya! ✅','success');
+  showToast('JSON export complete! ✅','success');
 }
 
 // ── MODAL HELPERS ────────────────────────────────────────────────────────
@@ -1076,11 +1076,11 @@ function getFinancialContext() {
 
 function sendWelcome() {
   const ctx = getFinancialContext();
-  let msg = `Namaste! Main hoon PaisaMitra 🙏\n\n`;
+  let msg = `Hello! I am PaisaMitra 🙏\n\n`;
   msg += `✅ Remaining: ${fmt(ctx.rem)}\n`;
   msg += `📊 Budget used: ${ctx.pct}%\n`;
   if (ctx.topCat) msg += `🔥 Top category: ${ctx.topCat[0].charAt(0).toUpperCase()+ctx.topCat[0].slice(1)} — ${fmt(ctx.topCat[1])}`;
-  msg += `\n\nKya jaanna chahte ho? Kuch bhi poochho! 😊`;
+  msg += `\n\nWhat would you like to know? Ask me anything! 😊`;
   addBotMsg(msg);
 }
 
@@ -1158,7 +1158,7 @@ async function sendMsg() {
       },
       body: JSON.stringify({
         message: msg,
-        history: aiHistory.slice(-8),   // ✅ HISTORY SEND HO RAHA HAI (last 8 turns)
+        history: aiHistory.slice(-8),   // ✅ Sending history (last 8 turns)
       }),
     });
 
@@ -1178,8 +1178,8 @@ async function sendMsg() {
   } catch(err) {
     hideTyping();
     console.error('AI Chat error:', err);
-    showAIError('Server se connect nahi ho paya — retry karo ya thodi der mein try karo.');
-    addBotMsg('Oops! Thoda network issue aa gaya 😅 Retry karo ya dobara try karo.');
+    showAIError('Unable to connect to the server — please retry or try again later.');
+    addBotMsg('Oops! A network issue occurred 😅 Please retry.');
   } finally {
     aiTyping = false;
     document.getElementById('ai-send').disabled = false;
@@ -1208,8 +1208,8 @@ function cancelVoice() {
 
 function showVoiceOverlay() {
   document.getElementById('voice-overlay').classList.add('show');
-  document.getElementById('voice-status').textContent = 'Sun raha hoon... 🎤';
-  document.getElementById('voice-sub').textContent    = 'Bol do apna expense';
+  document.getElementById('voice-status').textContent = 'Listening... 🎤';
+  document.getElementById('voice-sub').textContent    = 'Please speak your expense';
   document.getElementById('voice-preview').textContent = '—';
 }
 
@@ -1219,7 +1219,7 @@ function hideVoiceOverlay() {
 
 function resetMicBtn() {
   const btn = document.getElementById('mic-btn');
-  btn.innerHTML = '🎙️ Bol ke likho';
+  btn.innerHTML = '🎙️ Record expense';
   btn.classList.remove('recording');
 }
 
@@ -1245,7 +1245,7 @@ if (SpeechRecognition) {
     }
     finalText = text;
     document.getElementById('voice-preview').textContent = text || '—';
-    document.getElementById('voice-status').textContent  = 'Bol raha hai... 🎙️';
+    document.getElementById('voice-status').textContent  = 'Listening... 🎙️';
 
     clearTimeout(silenceTimer);
     if (finalText.trim()) {
@@ -1265,7 +1265,7 @@ if (SpeechRecognition) {
     } else if (!voiceCancelled && !finalText.trim()) {
       hideVoiceOverlay();
       resetMicBtn();
-      showToast('Kuch suna nahi — dobara try karo!', 'error');
+      showToast('No speech detected — please try again!', 'error');
     }
   };
 
@@ -1276,9 +1276,9 @@ if (SpeechRecognition) {
     resetMicBtn();
     if (!voiceCancelled) {
       const errs = {
-        'not-allowed': 'Mic permission nahi mili! Browser settings check karo.',
-        'network':     'Network issue — internet check karo.',
-        'no-speech':   'Kuch suna nahi — dobara try karo.',
+        'not-allowed': 'Microphone permission denied! Check your browser settings.',
+        'network':     'Network error — please check your connection.',
+        'no-speech':   'No speech detected — please try again.',
       };
       showToast(errs[event.error] || 'Mic error: '+event.error, 'error');
     }
@@ -1293,7 +1293,7 @@ if (SpeechRecognition) {
 
 function startVoice() {
   if (!recognition) {
-    showToast('Ye browser voice support nahi karta. Chrome use karo!', 'error');
+    showToast('This browser does not support voice input. Please use Chrome or a supported browser.', 'error');
     return;
   }
   if (isRecording) {
@@ -1306,13 +1306,13 @@ function startVoice() {
   try {
     recognition.start();
   } catch(e) {
-    showToast('Voice start nahi hua: '+e.message, 'error');
+    showToast('Voice input could not start: '+e.message, 'error');
   }
 }
 
 async function sendVoiceToBackend(text) {
-  document.getElementById('voice-status').textContent = '⚡ AI samajh raha hai...';
-  document.getElementById('voice-sub').textContent    = 'Thodi der ruko...';
+  document.getElementById('voice-status').textContent = '⚡ AI is understanding...';
+  document.getElementById('voice-sub').textContent    = 'Please wait...';
   document.getElementById('mic-btn').innerHTML        = '⚡ Processing...';
 
   try {
@@ -1334,13 +1334,13 @@ async function sendVoiceToBackend(text) {
       // Reload after short delay to show new expense
       setTimeout(() => location.reload(), 1200);
     } else {
-      showToast(data.message || 'AI samajh nahi paya — dobara bolo', 'error');
+      showToast(data.message || 'AI could not understand that — please try again.', 'error');
       resetMicBtn();
     }
   } catch(err) {
     hideVoiceOverlay();
     resetMicBtn();
-    showToast('Network issue! Internet check karo.', 'error');
+    showToast('Network issue — please check your internet connection.', 'error');
     console.error('Voice backend error:', err);
   }
 }
