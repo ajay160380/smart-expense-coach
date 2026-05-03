@@ -100,5 +100,5 @@ urlpatterns = [
     path('health/',                    views.health_check,         name='health_check'),
     # urls.py ke urlpatterns array mein ye line add karo:
     path('api/check-updates/', views.check_updates, name='check_updates'),
-
+    path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
 ]
