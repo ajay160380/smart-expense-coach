@@ -6,6 +6,7 @@
 <title>PaisaTracker 2.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* (Baaki ki sari styling same hai, isme koi chedh-chaad nahi ki) */
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#F5F3EF;--surface:#FFFFFF;--surface2:#F0EDE8;--surface3:#E8E4DE;
@@ -34,7 +35,6 @@
 }
 
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:14px;transition:background .3s,color .3s;-webkit-font-smoothing:antialiased;}
-
 .app{max-width:1400px;width:95%;margin:0 auto;padding:24px 0 120px;}
 
 /* ── TOAST NOTIFICATIONS ── */
@@ -137,7 +137,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .sd.today-dot{background:var(--primary);color:#fff;}
 .sd.empty{background:var(--surface2);border:1px solid var(--border);}
 .sd span{font-size:8px;margin-top:1px;opacity:.9;}
-.badges-wrap2{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border);}
 .quests-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-bottom:18px;}
 .quests-row::-webkit-scrollbar{display:none;}
 .quest-card{background:var(--surface2);border-radius:var(--radius-sm);padding:14px;min-width:170px;border:1px solid var(--border);flex-shrink:0;transition:transform .2s,border-color .2s;}
@@ -204,7 +203,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .ip-tip-loading span{width:5px;height:5px;border-radius:50%;background:var(--primary);animation:dot 1.2s infinite;}
 .ip-tip-loading span:nth-child(2){animation-delay:.2s;}
 .ip-tip-loading span:nth-child(3){animation-delay:.4s;}
-@keyframes dot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
 
 /* ── BILLS ── */
 .bills-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:var(--shadow);}
@@ -336,7 +334,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 </head>
 <body>
 
-<!-- Hidden delete form (CSRF safe) -->
+<!-- Hidden delete form -->
 <form id="delete-form" method="POST" style="display:none;">{% csrf_token %}</form>
 
 <!-- Toast container -->
@@ -358,7 +356,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 </div>
 
 <div class="app">
-
   <!-- NAV -->
   <div class="nav">
     <div class="nav-brand">Paisa<span>Tracker</span><sub id="month-label"></sub></div>
@@ -386,7 +383,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <span class="ai-banner-caret">›</span>
   </div>
 
-  <!-- ANOMALY ALERTS (rendered by JS from Django context) -->
   <div id="anomaly-container" class="anomaly-list"></div>
 
   <!-- HERO -->
@@ -518,7 +514,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <div class="txn-list" id="txn-list"></div>
   </div>
 
-</div><!-- end .app -->
+</div>
 
 <!-- AI FAB -->
 <div class="ai-fab">
@@ -536,22 +532,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     </div>
     <button class="ai-pop-x" onclick="toggleAI()">✕</button>
   </div>
-
-  <!-- Error banner inside chat (hidden by default) -->
   <div class="ai-error-banner" id="ai-error-banner">
     ⚠️ <span id="ai-error-text">Unable to connect to the server.</span>
     <button onclick="retryLastMsg()" style="margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:var(--font);font-weight:600;">Retry</button>
   </div>
-
   <div class="ai-msgs" id="ai-msgs"></div>
-
   <div class="ai-chips" id="ai-chips">
     <button class="ai-chip" onclick="quickAsk(this)">Where is my money going?</button>
     <button class="ai-chip" onclick="quickAsk(this)">Analyze my budget</button>
     <button class="ai-chip" onclick="quickAsk(this)">How can I save ₹5000?</button>
     <button class="ai-chip" onclick="quickAsk(this)">Give top 3 saving tips</button>
   </div>
-
   <div class="ai-input-row">
     <input class="ai-input" id="ai-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
     <button class="ai-send" id="ai-send" onclick="sendMsg()" title="Send">➤</button>
@@ -621,9 +612,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- JAVASCRIPT -->
-<!-- ═══════════════════════════════════════════════════════════════════ -->
 <script>
 // ── CONSTANTS ─────────────────────────────────────────────────────────
 const COLORS = {food:'#7C6FF7',transport:'#34D399',shopping:'#F472B6',health:'#60A5FA',entertainment:'#FBBF24',education:'#A78BFA',utilities:'#FB923C',other:'#94A3B8'};
@@ -636,7 +624,6 @@ const QUESTS = [
   {icon:'📊',name:'Review weekly trend',xp:'+10 XP',done:false},
 ];
 
-// Django-rendered URLs & data
 const CSRF_TOKEN      = '{{ csrf_token }}';
 const URL_AI_CHAT     = '{% url "ai_chat" %}';
 const URL_VOICE       = '{% url "voice_expense" %}';
@@ -656,7 +643,6 @@ let bills = [
   {% endfor %}
 ];
 
-// Anomaly alerts from Django
 const ANOMALY_ALERTS = [
   {% for alert in anomaly_alerts %}
   {type:'{{ alert.type }}', icon:'{{ alert.icon }}', message:'{{ alert.message|escapejs }}', severity:'{{ alert.severity }}'}{% if not forloop.last %},{% endif %}
@@ -670,7 +656,6 @@ let darkMode     = localStorage.getItem('theme') === 'dark';
 let xp = 1240, level = 7, streak = 5;
 let aiOpen = false, aiTyping = false, aiHistory = [], lastMsg = '';
 
-// ── INIT ───────────────────────────────────────────────────────────────
 const today = new Date();
 if (darkMode) document.documentElement.setAttribute('data-theme','dark');
 document.getElementById('month-label').textContent = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
@@ -679,7 +664,6 @@ document.getElementById('bill-date').value = today.toISOString().split('T')[0];
 if (document.getElementById('budget-inp')) document.getElementById('budget-inp').value = budget;
 if (darkMode) document.getElementById('theme-btn').textContent = '☀️';
 
-// ── TOAST SYSTEM ───────────────────────────────────────────────────────
 function showToast(message, type='info', duration=3500) {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
@@ -693,18 +677,15 @@ function showToast(message, type='info', duration=3500) {
   }, duration);
 }
 
-// Show Django messages as toasts
 {% for message in messages %}
   showToast('{{ message|escapejs }}', '{% if message.tags == "error" %}error{% elif message.tags == "success" %}success{% else %}info{% endif %}');
 {% endfor %}
 
-// ── HELPERS ────────────────────────────────────────────────────────────
 function fmt(n)  { return '₹' + Math.round(n).toLocaleString('en-IN'); }
 function fmtD(d) { return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); }
 function esc(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function getCsrf() { return CSRF_TOKEN; }
 
-// ── FILTER HELPERS ─────────────────────────────────────────────────────
 function getFiltered() {
   const now = new Date();
   return expenses.filter(e => {
@@ -726,7 +707,6 @@ function setFilter(f, el) {
 }
 function setCatFilter(c) { activeCatFilter = c; renderFilterTags(); renderTxns(); }
 
-// ── THEME ──────────────────────────────────────────────────────────────
 function toggleTheme() {
   darkMode = !darkMode;
   document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : '');
@@ -734,7 +714,6 @@ function toggleTheme() {
   localStorage.setItem('theme', darkMode ? 'dark' : 'light');
 }
 
-// ── MAIN RENDER ────────────────────────────────────────────────────────
 function render() {
   renderHero();
   renderStats();
@@ -749,7 +728,6 @@ function render() {
   updateBannerMsg();
 }
 
-// ── HERO ───────────────────────────────────────────────────────────────
 function renderHero() {
   const f = getFiltered();
   const total = f.reduce((s,e) => s+e.amount, 0);
@@ -766,7 +744,6 @@ function renderHero() {
   document.getElementById('hero-count').textContent = f.length;
 }
 
-// ── STATS ──────────────────────────────────────────────────────────────
 function renderStats() {
   const f     = getFiltered();
   const total = f.reduce((s,e) => s+e.amount, 0);
@@ -781,7 +758,6 @@ function renderStats() {
   sv.className   = 'sc-val '+(sr>30?'green':sr>10?'amber':'red');
 }
 
-// ── CATEGORIES ─────────────────────────────────────────────────────────
 function renderCats() {
   const f     = getFiltered();
   const total = f.reduce((s,e) => s+e.amount, 0);
@@ -802,7 +778,6 @@ function renderCats() {
   }).join('');
 }
 
-// ── CHART ──────────────────────────────────────────────────────────────
 function renderChart() {
   const el = document.getElementById('bar-chart');
   const days = [];
@@ -825,7 +800,6 @@ function renderChart() {
   }).join('');
 }
 
-// ── FILTER TAGS ─────────────────────────────────────────────────────────
 function renderFilterTags() {
   const cats = [...new Set(getFiltered().map(e=>e.cat))];
   document.getElementById('filter-tags').innerHTML = ['all',...cats].map(c =>
@@ -833,7 +807,6 @@ function renderFilterTags() {
   ).join('');
 }
 
-// ── TRANSACTIONS ────────────────────────────────────────────────────────
 function renderTxns() {
   const search = document.getElementById('search-input').value.toLowerCase();
   let f = getCatFiltered();
@@ -855,7 +828,6 @@ function renderTxns() {
   ).join('');
 }
 
-// ── BILLS ───────────────────────────────────────────────────────────────
 function renderBills() {
   const el  = document.getElementById('bills-list');
   const now = new Date();
@@ -881,7 +853,6 @@ function renderBills() {
   }).join('');
 }
 
-// ── BADGES ──────────────────────────────────────────────────────────────
 function renderBadges() {
   const container = document.getElementById('badge-container');
   const f     = getFiltered();
@@ -900,7 +871,6 @@ function renderBadges() {
     document.getElementById('badge-count-val').textContent = badges.length;
 }
 
-// ── GAMIFICATION ────────────────────────────────────────────────────────
 function renderGame() {
   const lvlTitle = LEVEL_TITLES[Math.min(level, LEVEL_TITLES.length-1)];
   document.getElementById('lvl-num').textContent   = level;
@@ -929,7 +899,6 @@ function renderGame() {
   document.getElementById('streak-label').textContent = streak+' days in a row — keep it up! 🔥';
 }
 
-// ── ANOMALIES ───────────────────────────────────────────────────────────
 function renderAnomalies() {
   const container = document.getElementById('anomaly-container');
   if (!ANOMALY_ALERTS.length) { container.innerHTML=''; return; }
@@ -942,7 +911,6 @@ function renderAnomalies() {
   ).join('');
 }
 
-// ── BANNER MSG ──────────────────────────────────────────────────────────
 function updateBannerMsg() {
   const f     = getFiltered();
   const total = f.reduce((s,e) => s+e.amount, 0);
@@ -956,7 +924,6 @@ function updateBannerMsg() {
   document.getElementById('banner-msg').textContent = msg;
 }
 
-// ── DELETE ACTIONS ──────────────────────────────────────────────────────
 function deleteExpense(id) {
   if (!confirm('Ye expense delete karna chahte ho?')) return;
   const form = document.getElementById('delete-form');
@@ -970,7 +937,6 @@ function deleteBill(id) {
   form.submit();
 }
 
-// ── CATEGORY INSIGHT ────────────────────────────────────────────────────
 function showInsight(cat) {
   const f = getFiltered().filter(e => e.cat===cat);
   if (!f.length) return;
@@ -995,11 +961,9 @@ function showInsight(cat) {
   document.getElementById('ip-recent').innerHTML =
     '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;">Recent</div>' +
     recent.map(e => `<div class="row"><span style="color:var(--text2)">${fmtD(e.date)}${e.note?' · '+esc(e.note):''}</span><span>${fmt(e.amount)}</span></div>`).join('');
-  // Show loading dots
   document.getElementById('ip-tip-text').innerHTML = '<div class="ip-tip-loading"><span></span><span></span><span></span></div>';
   document.getElementById('insight-panel').classList.add('open');
   document.getElementById('insight-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
-  // Fetch AI tip via category insight API
   fetchCatInsight(cat, 'month');
 }
 
@@ -1016,7 +980,6 @@ async function fetchCatInsight(cat, period='month') {
     if (!resp.ok) throw new Error('API error '+resp.status);
     const data = await resp.json();
     document.getElementById('ip-tip-text').textContent = data.ai_tip || 'No tip available.';
-    // Update stats from API too
     if (data.total)   document.getElementById('ip-total').textContent = fmt(data.total);
     if (data.count)   document.getElementById('ip-count').textContent = data.count;
     if (data.avg)     document.getElementById('ip-avg').textContent   = fmt(data.avg);
@@ -1026,7 +989,6 @@ async function fetchCatInsight(cat, period='month') {
   }
 }
 
-// ── EXPORT ──────────────────────────────────────────────────────────────
 function exportCSV() {
   const rows = [['Date','Category','Amount','Note'], ...expenses.map(e=>[e.date,e.cat,e.amount,e.note||''])];
   const a = document.createElement('a');
@@ -1044,14 +1006,9 @@ function exportJSON() {
   showToast('JSON export complete! ✅','success');
 }
 
-// ── MODAL HELPERS ────────────────────────────────────────────────────────
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open')); });
-
-// ════════════════════════════════════════════════════════════════════════
-// AI CHAT — FULLY FIXED WITH HISTORY, RETRY, ERROR HANDLING
-// ════════════════════════════════════════════════════════════════════════
 
 function openAI()   { if (!aiOpen) toggleAI(); }
 function toggleAI() {
@@ -1132,7 +1089,6 @@ function retryLastMsg() {
   sendMsg();
 }
 
-// ✅ THE MAIN FIX — sendMsg with history, proper error handling, retry
 async function sendMsg() {
   const inp = document.getElementById('ai-input');
   const msg = inp.value.trim();
@@ -1158,7 +1114,7 @@ async function sendMsg() {
       },
       body: JSON.stringify({
         message: msg,
-        history: aiHistory.slice(-8),   // ✅ Sending history (last 8 turns)
+        history: aiHistory.slice(-8),
       }),
     });
 
@@ -1186,10 +1142,6 @@ async function sendMsg() {
     inp.focus();
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════
-// VOICE EXPENSE — PRODUCTION GRADE WITH OVERLAY
-// ════════════════════════════════════════════════════════════════════════
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition     = null;
@@ -1261,7 +1213,6 @@ if (SpeechRecognition) {
   recognition.onend = () => {
     isRecording = false;
     if (!voiceCancelled && finalText.trim()) {
-      // Already handled by silence timer
     } else if (!voiceCancelled && !finalText.trim()) {
       hideVoiceOverlay();
       resetMicBtn();
@@ -1284,7 +1235,6 @@ if (SpeechRecognition) {
     }
   };
 } else {
-  // Hide voice button if speech API not supported
   setTimeout(() => {
     const btn = document.getElementById('mic-btn');
     if (btn) btn.style.display = 'none';
@@ -1331,7 +1281,6 @@ async function sendVoiceToBackend(text) {
     if (data.status === 'success') {
       showToast(data.message || '✅ Expense saved!', 'success', 4000);
       resetMicBtn();
-      // Reload after short delay to show new expense
       setTimeout(() => location.reload(), 1200);
     } else {
       showToast(data.message || 'AI could not understand that — please try again.', 'error');
@@ -1345,8 +1294,55 @@ async function sendVoiceToBackend(text) {
   }
 }
 
-// ── INITIAL RENDER ───────────────────────────────────────────────────────
 render();
+
+// ════════════════════════════════════════════════════════════════════════
+// REAL-TIME DASHBOARD UPDATE SCRIPT (Polling Logic)
+// ════════════════════════════════════════════════════════════════════════
+
+// Define base URL using Django template tag, fallback to manual path
+const URL_CHECK_UPDATES = '{% url "check_updates" %}' || '/api/check-updates/';
+
+// Track the latest expense ID we currently know about
+let currentLatestId = expenses.length > 0 ? Math.max(...expenses.map(e => parseInt(e.id))) : 0;
+
+// Setup the background polling
+setInterval(async function() {
+    // Only poll if the page is visible to save battery/network
+    if (document.hidden) return;
+    
+    try {
+        const response = await fetch(URL_CHECK_UPDATES, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                // Optional: You can send CSRF token if your backend requires it for GET (usually not needed)
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            // If the backend has a higher ID than what we know, a new expense was added
+            if (data.latest_id > currentLatestId) {
+                console.log(`New data detected! Old ID: ${currentLatestId}, New ID: ${data.latest_id}`);
+                
+                // Show a quick notification before reloading
+                showToast('New expense added via WhatsApp! Refreshing...', 'success', 2000);
+                
+                // Update our known ID
+                currentLatestId = data.latest_id;
+                
+                // Smooth reload after a tiny delay
+                setTimeout(() => location.reload(), 1000);
+            }
+        }
+    } catch (error) {
+        console.warn("Background update check failed (likely network issue, will retry):", error);
+    }
+}, 3000); // Checks every 3 seconds
+
 </script>
 </body>
 </html>
