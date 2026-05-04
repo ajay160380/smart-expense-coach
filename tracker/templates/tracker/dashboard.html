@@ -6,7 +6,6 @@
 <title>PaisaTracker 2.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* (Baaki ki sari styling same hai, isme koi chedh-chaad nahi ki) */
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#F5F3EF;--surface:#FFFFFF;--surface2:#F0EDE8;--surface3:#E8E4DE;
@@ -37,7 +36,7 @@
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:14px;transition:background .3s,color .3s;-webkit-font-smoothing:antialiased;}
 .app{max-width:1400px;width:95%;margin:0 auto;padding:24px 0 120px;}
 
-/* ── TOAST NOTIFICATIONS ── */
+/* ── TOAST ── */
 #toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
 .toast{padding:12px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;box-shadow:var(--shadow-md);animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;max-width:320px;}
 .toast.success{background:var(--green-bg);color:var(--green);border:1px solid rgba(26,127,90,.2);}
@@ -52,14 +51,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .nav-brand span{color:var(--primary);}
 .nav-brand sub{font-size:10px;font-weight:400;color:var(--text3);display:block;margin-top:-2px;letter-spacing:0;}
 .nav-actions{display:flex;gap:8px;align-items:center;}
-.icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;color:var(--text);}
-.icon-btn:hover{background:var(--surface2);transform:scale(1.05);}
 .add-btn{background:var(--primary);color:#fff;border:none;padding:9px 18px;border-radius:var(--radius-pill);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font);letter-spacing:-.01em;}
 .add-btn:hover{background:var(--primary-d);transform:translateY(-1px);box-shadow:0 4px 16px rgba(91,79,232,.35);}
 .voice-btn{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;padding:9px 16px;border-radius:var(--radius-pill);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font);display:flex;align-items:center;gap:6px;}
 .voice-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.4);}
 .voice-btn.recording{background:linear-gradient(135deg,#ef4444,#dc2626);animation:pulse-rec 1s infinite;}
 @keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+
+/* ── PROFILE BUTTON & DROPDOWN ── */
+.profile-wrap{position:relative; margin-left: 8px;}
+.profile-btn{width:40px;height:40px;border-radius:50%;border:2px solid var(--primary);background:var(--primary-l);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--primary);transition:all .2s;flex-shrink:0;}
+.profile-btn:hover{transform:scale(1.05);box-shadow:0 0 0 3px rgba(91,79,232,.2);}
+.profile-dropdown{position:absolute;top:calc(100% + 10px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-width:240px;box-shadow:var(--shadow-md);z-index:500;opacity:0;pointer-events:none;transform:translateY(-8px) scale(.97);transform-origin:top right;transition:all .22s cubic-bezier(.34,1.56,.64,1);}
+.profile-dropdown.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
+.pd-header{padding:12px 14px 10px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.pd-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.pd-email{font-size:11px;color:var(--text3);font-weight:400;}
+.pd-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:background .15s;text-decoration:none;border:none;background:none;width:100%;font-family:var(--font);text-align:left;}
+.pd-item:hover:not(.no-hover){background:var(--surface2);color:var(--text);}
+.pd-item.danger{color:var(--red);}
+.pd-item.danger:hover{background:var(--red-bg);}
+.pd-divider{height:1px;background:var(--border);margin:6px 8px;}
+.pd-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.pd-stat{background:var(--surface2);border-radius:8px;padding:8px 10px;text-align:center;}
+.pd-stat-v{font-size:15px;font-weight:600;font-family:var(--mono);color:var(--primary);}
+.pd-stat-l{font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
 
 /* ── TABS ── */
 .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-pill);padding:4px;width:fit-content;margin-bottom:24px;box-shadow:var(--shadow);}
@@ -203,6 +219,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .ip-tip-loading span{width:5px;height:5px;border-radius:50%;background:var(--primary);animation:dot 1.2s infinite;}
 .ip-tip-loading span:nth-child(2){animation-delay:.2s;}
 .ip-tip-loading span:nth-child(3){animation-delay:.4s;}
+@keyframes dot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 
 /* ── BILLS ── */
 .bills-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:var(--shadow);}
@@ -225,7 +242,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .bill-card:hover .bill-del{display:flex;}
 .bill-del:hover{background:var(--red-bg);color:var(--red);}
 
-/* ── TRANSACTIONS ── */
+/* ── TRANSACTIONS — SCROLLABLE ── */
 .txn-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
 .txn-header{display:flex;justify-content:space-between;align-items:center;padding:20px 22px 0;}
 .export-btns{display:flex;gap:8px;}
@@ -238,7 +255,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .filter-tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 22px 16px;}
 .ftag{padding:5px 14px;border-radius:var(--radius-pill);font-size:11px;font-weight:600;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all .2s;}
 .ftag.active{background:var(--primary);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(91,79,232,.25);}
-.txn-list{padding:0 14px 14px;}
+
+/* ✅ FIXED SCROLLABLE TRANSACTION LIST */
+.txn-list-container{
+  max-height:420px;
+  overflow-y:auto;
+  padding:0 14px 14px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--primary) var(--surface2);
+}
+.txn-list-container::-webkit-scrollbar{width:5px;}
+.txn-list-container::-webkit-scrollbar-track{background:var(--surface2);border-radius:10px;}
+.txn-list-container::-webkit-scrollbar-thumb{background:var(--primary);border-radius:10px;opacity:.6;}
+.txn-list-container::-webkit-scrollbar-thumb:hover{background:var(--primary-d);}
+
 .txn-item{display:flex;align-items:center;gap:12px;padding:12px 10px;border-radius:var(--radius-sm);transition:background .15s;}
 .txn-item:hover{background:var(--surface2);}
 .txn-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
@@ -250,6 +280,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .txn-item:hover .txn-del{display:flex;}
 .txn-del:hover{background:var(--red-bg);color:var(--red);}
 .empty{text-align:center;padding:44px;color:var(--text3);font-size:13px;font-weight:500;}
+
+/* Txn count label */
+.txn-count-label{font-size:11px;color:var(--text3);font-weight:500;padding:0 22px 10px;display:flex;justify-content:space-between;align-items:center;}
+.scroll-hint{font-size:10px;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:4px;}
 
 /* ── AI POPUP ── */
 .ai-fab{position:fixed;bottom:28px;right:24px;z-index:300;}
@@ -310,20 +344,32 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .submit-btn{width:100%;background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;border:none;padding:13px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:6px;transition:all .2s;letter-spacing:-.01em;}
 .submit-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(91,79,232,.4);}
 
-/* ── VOICE STATUS OVERLAY ── */
+/* ── PROFILE MODAL ── */
+.profile-modal-wrap{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:26px;width:100%;max-width:440px;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.2,.64,1);}
+.overlay.open .profile-modal-wrap{transform:translateY(0);}
+.pm-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#a855f7);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;margin:0 auto 16px;border:3px solid var(--primary-l);}
+.pm-username{text-align:center;font-size:20px;font-weight:700;margin-bottom:4px;}
+.pm-joined{text-align:center;font-size:12px;color:var(--text3);margin-bottom:20px;font-weight:500;}
+.pm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.pm-stat{background:var(--surface2);border-radius:var(--radius-sm);padding:14px;text-align:center;border:1px solid var(--border);}
+.pm-stat-v{font-size:18px;font-weight:600;font-family:var(--mono);color:var(--primary);margin-bottom:3px;}
+.pm-stat-l{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.pm-section-title{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text3);letter-spacing:.08em;margin-bottom:10px;}
+.pm-info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.pm-info-row:last-child{border:none;}
+.pm-info-key{color:var(--text3);font-weight:500;}
+.pm-info-val{font-weight:600;font-family:var(--mono);}
+.pm-logout-btn{width:100%;background:var(--red-bg);color:var(--red);border:1px solid rgba(192,57,43,.2);padding:12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:16px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.pm-logout-btn:hover{background:var(--red);color:#fff;}
+
+/* ── VOICE OVERLAY ── */
 .voice-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(6px);}
 .voice-overlay.show{opacity:1;pointer-events:all;}
 .voice-card{background:var(--surface);border-radius:24px;padding:40px;text-align:center;width:280px;box-shadow:var(--shadow-md);animation:scaleIn .3s cubic-bezier(.34,1.56,.64,1);}
 @keyframes scaleIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
 .voice-waves{display:flex;align-items:center;justify-content:center;gap:5px;height:48px;margin-bottom:20px;}
 .voice-wave{width:5px;border-radius:5px;background:linear-gradient(to top,#f59e0b,#ef4444);animation:wave 1s ease-in-out infinite;}
-.voice-wave:nth-child(1){animation-delay:0s;}
-.voice-wave:nth-child(2){animation-delay:.1s;}
-.voice-wave:nth-child(3){animation-delay:.2s;}
-.voice-wave:nth-child(4){animation-delay:.3s;}
-.voice-wave:nth-child(5){animation-delay:.2s;}
-.voice-wave:nth-child(6){animation-delay:.1s;}
-.voice-wave:nth-child(7){animation-delay:0s;}
+.voice-wave:nth-child(1){animation-delay:0s;}.voice-wave:nth-child(2){animation-delay:.1s;}.voice-wave:nth-child(3){animation-delay:.2s;}.voice-wave:nth-child(4){animation-delay:.3s;}.voice-wave:nth-child(5){animation-delay:.2s;}.voice-wave:nth-child(6){animation-delay:.1s;}.voice-wave:nth-child(7){animation-delay:0s;}
 @keyframes wave{0%,100%{height:12px}50%{height:44px}}
 .voice-status{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--text);}
 .voice-sub{font-size:12px;color:var(--text3);margin-bottom:20px;font-weight:500;}
@@ -356,13 +402,66 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 </div>
 
 <div class="app">
+
   <!-- NAV -->
   <div class="nav">
     <div class="nav-brand">Paisa<span>Tracker</span><sub id="month-label"></sub></div>
     <div class="nav-actions">
-      <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">🌙</button>
+      <!-- Removed Theme toggle from here, moved to dropdown -->
       <button class="voice-btn" id="mic-btn" onclick="startVoice()">🎙️ Record expense</button>
       <button class="add-btn" onclick="openModal('addModal')">+ Add expense</button>
+
+      <!-- ✅ PROFILE BUTTON AND DROPDOWN -->
+      <div class="profile-wrap" id="profile-wrap">
+        <button class="profile-btn" id="profile-btn" onclick="toggleProfile()" title="Profile">
+          {{ request.user.username|slice:":1"|upper }}
+        </button>
+        <div class="profile-dropdown" id="profile-dropdown">
+          <div class="pd-header">
+            <div class="pd-name">{{ request.user.username }}</div>
+            <div class="pd-email">{{ request.user.email|default:"No email set" }}</div>
+          </div>
+          <div class="pd-stat-row">
+            <div class="pd-stat">
+              <div class="pd-stat-v" id="pd-txn-count">—</div>
+              <div class="pd-stat-l">Transactions</div>
+            </div>
+            <div class="pd-stat">
+              <div class="pd-stat-v" id="pd-days">—</div>
+              <div class="pd-stat-l">Days Active</div>
+            </div>
+          </div>
+          <div class="pd-divider"></div>
+          
+          <!-- ✅ NEW ADDITIONS: WhatsApp & Dark Mode -->
+          <div class="pd-item no-hover" style="cursor:default;">
+            <span style="font-size: 16px;">📱</span> 
+            <span>{{ request.user.userprofile.phone_number|default:"No WhatsApp Linked" }}</span>
+          </div>
+          
+          <button class="pd-item" onclick="toggleTheme(); toggleProfile();">
+            <span style="font-size: 16px;" id="pd-theme-icon">🌙</span>
+            <span>Toggle Dark Mode</span>
+          </button>
+
+          <button class="pd-item" onclick="exportCSV(); toggleProfile();">
+            <span style="font-size: 16px;">📊</span>
+            <span>Export Data (CSV)</span>
+          </button>
+
+          <button class="pd-item" onclick="openModal('budgetModal');toggleProfile()">
+            <span style="font-size: 16px;">💰</span>
+            <span>Set Budget</span>
+          </button>
+
+          <div class="pd-divider"></div>
+          <a href="{% url 'logout' %}" class="pd-item danger">
+            <span style="font-size: 16px;">🚪</span>
+            <span>Logout</span>
+          </a>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -497,7 +596,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <div class="bills-scroll" id="bills-list"></div>
   </div>
 
-  <!-- TRANSACTIONS -->
+  <!-- ✅ TRANSACTIONS — SCROLLABLE VERSION -->
   <div class="txn-section">
     <div class="txn-header">
       <div class="card-title" style="margin:0">💳 Transactions</div>
@@ -511,7 +610,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       <input class="search-input" id="search-input" placeholder="Search by category or note..." oninput="renderTxns()">
     </div>
     <div class="filter-tags" id="filter-tags"></div>
-    <div class="txn-list" id="txn-list"></div>
+
+    <!-- Transaction count + scroll hint -->
+    <div class="txn-count-label">
+      <span id="txn-count-text">Loading...</span>
+      <span class="scroll-hint" id="scroll-hint" style="display:none;">↕ Scroll to see all</span>
+    </div>
+
+    <!-- ✅ Scrollable container — max 420px height -->
+    <div class="txn-list-container" id="txn-list-container">
+      <div id="txn-list"></div>
+    </div>
   </div>
 
 </div>
@@ -612,6 +721,52 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
+<!-- ✅ PROFILE MODAL -->
+<div class="overlay" id="profileModal" onclick="if(event.target===this)closeModal('profileModal')">
+  <div class="profile-modal-wrap">
+    <div class="modal-title">My Profile <button class="modal-close" onclick="closeModal('profileModal')" type="button">✕</button></div>
+
+    <div class="pm-avatar">{{ request.user.username|slice:":1"|upper }}</div>
+    <div class="pm-username">{{ request.user.username }}</div>
+    <div class="pm-joined">Member since {{ request.user.date_joined|date:"d M Y" }}</div>
+
+    <div class="pm-stats">
+      <div class="pm-stat">
+        <div class="pm-stat-v" id="pm-total-spent">₹—</div>
+        <div class="pm-stat-l">All-time spent</div>
+      </div>
+      <div class="pm-stat">
+        <div class="pm-stat-v" id="pm-txn-count">—</div>
+        <div class="pm-stat-l">Transactions</div>
+      </div>
+      <div class="pm-stat">
+        <div class="pm-stat-v" id="pm-days">—</div>
+        <div class="pm-stat-l">Days active</div>
+      </div>
+    </div>
+
+    <div class="pm-section-title">Account Details</div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Username</span>
+      <span class="pm-info-val">{{ request.user.username }}</span>
+    </div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Email</span>
+      <span class="pm-info-val">{{ request.user.email|default:"Not set" }}</span>
+    </div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Budget</span>
+      <span class="pm-info-val" id="pm-budget">₹{{ budget|floatformat:0 }}</span>
+    </div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Member for</span>
+      <span class="pm-info-val" id="pm-member-days">— days</span>
+    </div>
+
+    <a href="{% url 'logout' %}" class="pm-logout-btn">🚪 Logout</a>
+  </div>
+</div>
+
 <script>
 // ── CONSTANTS ─────────────────────────────────────────────────────────
 const COLORS = {food:'#7C6FF7',transport:'#34D399',shopping:'#F472B6',health:'#60A5FA',entertainment:'#FBBF24',education:'#A78BFA',utilities:'#FB923C',other:'#94A3B8'};
@@ -630,6 +785,7 @@ const URL_VOICE       = '{% url "voice_expense" %}';
 const URL_CAT_INSIGHT = '{% url "api_category_insight" %}';
 const URL_DEL_EXP     = '{% url "delete_expense" 999999 %}'.replace('999999/', '');
 const URL_DEL_BILL    = '{% url "delete_subscription" 999999 %}'.replace('999999/', '');
+const URL_CHECK_UPDATES = '{% url "check_updates" %}';
 
 let expenses = [
   {% for exp in expenses %}
@@ -650,20 +806,60 @@ const ANOMALY_ALERTS = [
 ];
 
 let budget       = {{ budget|default:20000 }};
+// Try getting total directly from backend if available for accuracy, else fallback to JS sum.
+const backendTotalSpent = {{ total_spent|default:0 }}; 
+
 let activeFilter = 'month';
 let activeCatFilter = 'all';
 let darkMode     = localStorage.getItem('theme') === 'dark';
 let xp = 1240, level = 7, streak = 5;
 let aiOpen = false, aiTyping = false, aiHistory = [], lastMsg = '';
+let profileOpen  = false;
 
 const today = new Date();
-if (darkMode) document.documentElement.setAttribute('data-theme','dark');
+if (darkMode) {
+  document.documentElement.setAttribute('data-theme','dark');
+  if(document.getElementById('pd-theme-icon')) document.getElementById('pd-theme-icon').textContent = '☀️';
+}
 document.getElementById('month-label').textContent = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
 document.getElementById('inp-date').value = today.toISOString().split('T')[0];
 document.getElementById('bill-date').value = today.toISOString().split('T')[0];
 if (document.getElementById('budget-inp')) document.getElementById('budget-inp').value = budget;
-if (darkMode) document.getElementById('theme-btn').textContent = '☀️';
 
+// ── PROFILE DROPDOWN ──────────────────────────────────────────────────
+function toggleProfile() {
+  profileOpen = !profileOpen;
+  document.getElementById('profile-dropdown').classList.toggle('open', profileOpen);
+  if (profileOpen) loadProfileStats();
+}
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  if (!document.getElementById('profile-wrap').contains(e.target)) {
+    profileOpen = false;
+    document.getElementById('profile-dropdown').classList.remove('open');
+  }
+});
+
+async function loadProfileStats() {
+  try {
+    const res  = await fetch('/api/user-profile/', {headers:{'X-Requested-With':'XMLHttpRequest'}});
+    const data = await res.json();
+    const fmt  = n => '₹'+Math.round(n).toLocaleString('en-IN');
+    // Dropdown mini stats
+    if(document.getElementById('pd-txn-count')) document.getElementById('pd-txn-count').textContent = data.total_txns || 0;
+    if(document.getElementById('pd-days'))      document.getElementById('pd-days').textContent      = data.member_days || 0;
+    // Profile modal stats
+    if(document.getElementById('pm-total-spent')) document.getElementById('pm-total-spent').textContent = fmt(data.lifetime_spent || 0);
+    if(document.getElementById('pm-txn-count'))   document.getElementById('pm-txn-count').textContent   = data.total_txns || 0;
+    if(document.getElementById('pm-days'))         document.getElementById('pm-days').textContent         = data.member_days || 0;
+    if(document.getElementById('pm-member-days'))  document.getElementById('pm-member-days').textContent  = (data.member_days || 0)+' days';
+    if(document.getElementById('pm-budget'))       document.getElementById('pm-budget').textContent       = fmt(data.budget || budget);
+  } catch(e) {
+    console.warn('Profile stats load failed:', e);
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────
 function showToast(message, type='info', duration=3500) {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
@@ -710,7 +906,8 @@ function setCatFilter(c) { activeCatFilter = c; renderFilterTags(); renderTxns()
 function toggleTheme() {
   darkMode = !darkMode;
   document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : '');
-  document.getElementById('theme-btn').textContent = darkMode ? '☀️' : '🌙';
+  const icon = darkMode ? '☀️' : '🌙';
+  if(document.getElementById('pd-theme-icon')) document.getElementById('pd-theme-icon').textContent = icon;
   localStorage.setItem('theme', darkMode ? 'dark' : 'light');
 }
 
@@ -730,7 +927,15 @@ function render() {
 
 function renderHero() {
   const f = getFiltered();
-  const total = f.reduce((s,e) => s+e.amount, 0);
+  let total = 0;
+  
+  // Use backend database sum if looking at all time for max accuracy
+  if (activeFilter === 'all' && backendTotalSpent > 0 && f.length === expenses.length) {
+      total = backendTotalSpent;
+  } else {
+      total = f.reduce((s,e) => s+e.amount, 0);
+  }
+
   const pct   = budget > 0 ? Math.min(total/budget*100, 100) : 0;
   document.getElementById('hero-total').innerHTML = '₹<strong>'+Math.round(total).toLocaleString('en-IN')+'</strong>';
   document.getElementById('hero-budget-label').textContent = 'of '+fmt(budget)+' budget';
@@ -807,11 +1012,19 @@ function renderFilterTags() {
   ).join('');
 }
 
+// ✅ SCROLLABLE TRANSACTIONS WITH COUNT LABEL
 function renderTxns() {
   const search = document.getElementById('search-input').value.toLowerCase();
   let f = getCatFiltered();
   if (search) f = f.filter(e => e.cat.includes(search)||(e.note||'').toLowerCase().includes(search));
   const el = document.getElementById('txn-list');
+
+  // Update count label
+  const countLabel = document.getElementById('txn-count-text');
+  const scrollHint = document.getElementById('scroll-hint');
+  if (countLabel) countLabel.textContent = `${f.length} transaction${f.length!==1?'s':''}`;
+  if (scrollHint) scrollHint.style.display = f.length > 8 ? 'flex' : 'none';
+
   if (!f.length) { el.innerHTML='<div class="empty">No transactions yet 🧾</div>'; return; }
   el.innerHTML = [...f].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(e =>
     `<div class="txn-item">
@@ -1006,9 +1219,18 @@ function exportJSON() {
   showToast('JSON export complete! ✅','success');
 }
 
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function openModal(id)  {
+  document.getElementById(id).classList.add('open');
+  if (id === 'profileModal') loadProfileStats();
+}
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open')); });
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape') {
+    document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
+    profileOpen = false;
+    document.getElementById('profile-dropdown').classList.remove('open');
+  }
+});
 
 function openAI()   { if (!aiOpen) toggleAI(); }
 function toggleAI() {
@@ -1093,48 +1315,33 @@ async function sendMsg() {
   const inp = document.getElementById('ai-input');
   const msg = inp.value.trim();
   if (!msg || aiTyping) return;
-
   lastMsg = msg;
   inp.value = '';
   addUserMsg(msg);
   aiHistory.push({role:'user', content:msg});
-
   document.getElementById('ai-chips').style.display = 'none';
   document.getElementById('ai-error-banner').classList.remove('show');
   aiTyping = true;
   document.getElementById('ai-send').disabled = true;
   showTyping();
-
   try {
     const response = await fetch(URL_AI_CHAT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken':  getCsrf(),
-      },
-      body: JSON.stringify({
-        message: msg,
-        history: aiHistory.slice(-8),
-      }),
+      headers: {'Content-Type': 'application/json','X-CSRFToken': getCsrf()},
+      body: JSON.stringify({message: msg, history: aiHistory.slice(-8)}),
     });
-
     if (!response.ok) {
       const errData = await response.json().catch(()=>({}));
       throw new Error(errData.error || `HTTP ${response.status}`);
     }
-
     const data = await response.json();
     hideTyping();
-
-    if (data.reply) {
-      addBotMsg(data.reply);
-    } else {
-      throw new Error('Empty reply from server');
-    }
+    if (data.reply) addBotMsg(data.reply);
+    else throw new Error('Empty reply from server');
   } catch(err) {
     hideTyping();
     console.error('AI Chat error:', err);
-    showAIError('Unable to connect to the server — please retry or try again later.');
+    showAIError('Unable to connect — please retry.');
     addBotMsg('Oops! A network issue occurred 😅 Please retry.');
   } finally {
     aiTyping = false;
@@ -1143,6 +1350,7 @@ async function sendMsg() {
   }
 }
 
+// ── VOICE ────────────────────────────────────────────────────────────
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition     = null;
 let isRecording     = false;
@@ -1157,18 +1365,13 @@ function cancelVoice() {
   hideVoiceOverlay();
   resetMicBtn();
 }
-
 function showVoiceOverlay() {
   document.getElementById('voice-overlay').classList.add('show');
   document.getElementById('voice-status').textContent = 'Listening... 🎤';
   document.getElementById('voice-sub').textContent    = 'Please speak your expense';
   document.getElementById('voice-preview').textContent = '—';
 }
-
-function hideVoiceOverlay() {
-  document.getElementById('voice-overlay').classList.remove('show');
-}
-
+function hideVoiceOverlay() { document.getElementById('voice-overlay').classList.remove('show'); }
 function resetMicBtn() {
   const btn = document.getElementById('mic-btn');
   btn.innerHTML = '🎙️ Record expense';
@@ -1180,72 +1383,46 @@ if (SpeechRecognition) {
   recognition.lang   = 'hi-IN';
   recognition.continuous      = true;
   recognition.interimResults  = true;
-
   recognition.onstart = () => {
-    isRecording    = true;
-    finalText      = '';
-    voiceCancelled = false;
+    isRecording = true; finalText = ''; voiceCancelled = false;
     showVoiceOverlay();
     document.getElementById('mic-btn').classList.add('recording');
     document.getElementById('mic-btn').innerHTML = '🔴 Recording...';
   };
-
   recognition.onresult = (event) => {
     let text = '';
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      text += event.results[i][0].transcript;
-    }
+    for (let i = event.resultIndex; i < event.results.length; i++) text += event.results[i][0].transcript;
     finalText = text;
     document.getElementById('voice-preview').textContent = text || '—';
     document.getElementById('voice-status').textContent  = 'Listening... 🎙️';
-
     clearTimeout(silenceTimer);
     if (finalText.trim()) {
       silenceTimer = setTimeout(() => {
-        if (!voiceCancelled) {
-          recognition.stop();
-          sendVoiceToBackend(finalText);
-        }
+        if (!voiceCancelled) { recognition.stop(); sendVoiceToBackend(finalText); }
       }, 1800);
     }
   };
-
   recognition.onend = () => {
     isRecording = false;
-    if (!voiceCancelled && finalText.trim()) {
-    } else if (!voiceCancelled && !finalText.trim()) {
-      hideVoiceOverlay();
-      resetMicBtn();
+    if (!voiceCancelled && !finalText.trim()) {
+      hideVoiceOverlay(); resetMicBtn();
       showToast('No speech detected — please try again!', 'error');
     }
   };
-
   recognition.onerror = (event) => {
     console.error('Voice error:', event.error);
-    isRecording = false;
-    hideVoiceOverlay();
-    resetMicBtn();
+    isRecording = false; hideVoiceOverlay(); resetMicBtn();
     if (!voiceCancelled) {
-      const errs = {
-        'not-allowed': 'Microphone permission denied! Check your browser settings.',
-        'network':     'Network error — please check your connection.',
-        'no-speech':   'No speech detected — please try again.',
-      };
+      const errs = {'not-allowed':'Microphone permission denied!','network':'Network error.','no-speech':'No speech detected.'};
       showToast(errs[event.error] || 'Mic error: '+event.error, 'error');
     }
   };
 } else {
-  setTimeout(() => {
-    const btn = document.getElementById('mic-btn');
-    if (btn) btn.style.display = 'none';
-  }, 100);
+  setTimeout(() => { const btn = document.getElementById('mic-btn'); if(btn) btn.style.display='none'; }, 100);
 }
 
 function startVoice() {
-  if (!recognition) {
-    showToast('This browser does not support voice input. Please use Chrome or a supported browser.', 'error');
-    return;
-  }
+  if (!recognition) { showToast('Voice not supported — please use Chrome.', 'error'); return; }
   if (isRecording) {
     clearTimeout(silenceTimer);
     recognition.stop();
@@ -1253,96 +1430,62 @@ function startVoice() {
     else { hideVoiceOverlay(); resetMicBtn(); }
     return;
   }
-  try {
-    recognition.start();
-  } catch(e) {
-    showToast('Voice input could not start: '+e.message, 'error');
-  }
+  try { recognition.start(); } catch(e) { showToast('Voice could not start: '+e.message, 'error'); }
 }
 
 async function sendVoiceToBackend(text) {
   document.getElementById('voice-status').textContent = '⚡ AI is understanding...';
   document.getElementById('voice-sub').textContent    = 'Please wait...';
   document.getElementById('mic-btn').innerHTML        = '⚡ Processing...';
-
   try {
     const response = await fetch(URL_VOICE, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken':  getCsrf(),
-      },
-      body: JSON.stringify({text}),
+      headers: {'Content-Type': 'application/json','X-CSRFToken': getCsrf()},
+      body: JSON.stringify({text}),  // No phone — browser mode uses session
     });
-
     const data = await response.json();
     hideVoiceOverlay();
-
     if (data.status === 'success') {
       showToast(data.message || '✅ Expense saved!', 'success', 4000);
       resetMicBtn();
       setTimeout(() => location.reload(), 1200);
     } else {
-      showToast(data.message || 'AI could not understand that — please try again.', 'error');
+      showToast(data.message || 'AI could not understand — please try again.', 'error');
       resetMicBtn();
     }
   } catch(err) {
-    hideVoiceOverlay();
-    resetMicBtn();
-    showToast('Network issue — please check your internet connection.', 'error');
+    hideVoiceOverlay(); resetMicBtn();
+    showToast('Network issue — check your connection.', 'error');
     console.error('Voice backend error:', err);
   }
 }
 
+// ── INITIAL RENDER ────────────────────────────────────────────────────
 render();
 
-// ════════════════════════════════════════════════════════════════════════
-// REAL-TIME DASHBOARD UPDATE SCRIPT (Polling Logic)
-// ════════════════════════════════════════════════════════════════════════
-
-// Define base URL using Django template tag, fallback to manual path
-const URL_CHECK_UPDATES = '{% url "check_updates" %}' || '/api/check-updates/';
-
-// Track the latest expense ID we currently know about
+// ── REAL-TIME POLLING ─────────────────────────────────────────────────
 let currentLatestId = expenses.length > 0 ? Math.max(...expenses.map(e => parseInt(e.id))) : 0;
 
-// Setup the background polling
 setInterval(async function() {
-    // Only poll if the page is visible to save battery/network
-    if (document.hidden) return;
-    
-    try {
-        const response = await fetch(URL_CHECK_UPDATES, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                // Optional: You can send CSRF token if your backend requires it for GET (usually not needed)
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            
-            // If the backend has a higher ID than what we know, a new expense was added
-            if (data.latest_id > currentLatestId) {
-                console.log(`New data detected! Old ID: ${currentLatestId}, New ID: ${data.latest_id}`);
-                
-                // Show a quick notification before reloading
-                showToast('New expense added via WhatsApp! Refreshing...', 'success', 2000);
-                
-                // Update our known ID
-                currentLatestId = data.latest_id;
-                
-                // Smooth reload after a tiny delay
-                setTimeout(() => location.reload(), 1000);
-            }
-        }
-    } catch (error) {
-        console.warn("Background update check failed (likely network issue, will retry):", error);
+  if (document.hidden) return;
+  try {
+    const response = await fetch(URL_CHECK_UPDATES, {
+      method: 'GET',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.latest_id > currentLatestId) {
+        console.log(`New expense detected! Reloading...`);
+        showToast('New expense added via WhatsApp! Refreshing... 🔄', 'success', 2000);
+        currentLatestId = data.latest_id;
+        setTimeout(() => location.reload(), 1000);
+      }
     }
-}, 3000); // Checks every 3 seconds
-
+  } catch (error) {
+    console.warn("Background update check failed:", error);
+  }
+}, 3000);
 </script>
 </body>
 </html>

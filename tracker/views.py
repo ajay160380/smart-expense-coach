@@ -47,6 +47,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import RegisterSerializer
+from django.db.models import Sum
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -651,7 +653,9 @@ def register(request: HttpRequest) -> HttpResponse:
             logger.info("New user registered uid=%s username=%s", user.id, user.username)
             messages.success(request, "Account created! Ab WhatsApp par message karein 🎉")
             return redirect("dashboard")
-        messages.error(request, "Kuch detail galat hai, dubara check karein.")
+        else:
+            print("FORM ERRORS:", form.errors)
+            messages.error(request, "Kuch detail galat hai, dubara check karein.")
     else:
         form = CustomRegistrationForm()
 
@@ -691,21 +695,29 @@ def user_logout(request: HttpRequest) -> HttpResponse:
 
 @login_required(login_url="login")
 def dashboard(request: HttpRequest) -> HttpResponse:
+    user = request.user
+    
+    # UserProfile fetch karo taaki budget DB mein permanently save ho sake
+    profile, created = UserProfile.objects.get_or_create(user=user)
 
+    # ──────────────────────────────────────────────────────────────────────────
+    # FIX 1: Budget update logic ab Database use karega, Session nahi
+    # ──────────────────────────────────────────────────────────────────────────
     if request.method == "POST" and "new_budget" in request.POST:
         try:
             nb = float(request.POST["new_budget"])
             if nb <= 0:
                 raise ValueError("Budget must be positive")
-            request.session["budget"] = nb
-            logger.info("Budget updated uid=%s budget=%.0f", request.user.id, nb)
+            profile.monthly_budget = nb
+            profile.save()  # Permanently saved in DB!
+            logger.info("Budget updated uid=%s budget=%.0f", user.id, nb)
             messages.success(request, f"Budget set: ₹{nb:,.0f} 💰")
         except (ValueError, TypeError):
             messages.error(request, "Valid budget daalo (positive number).")
         return redirect("dashboard")
 
-    user   = request.user
-    budget = get_user_budget(request)
+    # Fallback default agar profile mein budget na ho
+    budget = getattr(profile, 'monthly_budget', 20000) 
     today  = date.today()
 
     debits = process_subscriptions(user)
@@ -722,11 +734,12 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         filter_type = "month"
 
     expenses_qs        = get_filtered_expenses(user, filter_type, search_query)
-    stats              = calculate_stats(expenses_qs, budget)
-    category_data_list = build_category_breakdown(expenses_qs, stats["total_spent"])
     chart_data         = build_chart_data(user)
     anomaly_alerts     = detect_anomalies(user, budget)
 
+    # ──────────────────────────────────────────────────────────────────────────
+    # PERFECT AGGREGATION (Jo tumne likha tha, ekdum mast hai)
+    # ──────────────────────────────────────────────────────────────────────────
     actual_month_total = float(
         Expense.objects.filter(
             user=user,
@@ -741,19 +754,32 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         ).aggregate(t=Sum("amount"))["t"] or 0
     )
     actual_all_total = float(
-        Expense.objects.filter(
-            user=user
-        ).aggregate(t=Sum("amount"))["t"] or 0
+        Expense.objects.filter(user=user).aggregate(t=Sum("amount"))["t"] or 0
     )
 
-    page_number = request.GET.get("page", 1)
-    paginator   = Paginator(expenses_qs, EXPENSES_PER_PAGE)
-    try:
-        expenses_page = paginator.page(page_number)
-    except (PageNotAnInteger, EmptyPage):
-        expenses_page = paginator.page(1)
+    if filter_type == "month":
+        current_total_spent = actual_month_total
+    elif filter_type == "week":
+        current_total_spent = actual_week_total
+    else:  
+        current_total_spent = actual_all_total
 
-    if stats["transaction_count"] == 0:
+    remaining_budget = max(budget - current_total_spent, 0)
+    budget_percent   = min(current_total_spent / max(budget, 0.01) * 100, 100)
+
+    stats = calculate_stats(expenses_qs, budget)
+    stats["total_spent"]      = current_total_spent
+    stats["remaining_budget"] = remaining_budget
+    stats["budget_percent"]   = budget_percent
+    stats["overspent"]        = current_total_spent > budget
+
+    category_data_list = build_category_breakdown(expenses_qs, current_total_spent)
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # FIX 2: Paginator hata diya taaki frontend JS search theek se kaam kare
+    # Ab 'expenses_qs' direct pass ho raha hai (sirf array mein bhejne ke liye)
+    # ──────────────────────────────────────────────────────────────────────────
+    if stats.get("transaction_count", 0) == 0:
         insight = "<strong>Get started!</strong> Add your first expense to receive AI guidance. 🚀"
     else:
         raw     = get_ai_insight(user.id, expenses_qs, budget, stats["total_spent"])
@@ -762,30 +788,34 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     monthly_trend = build_monthly_trend(user, months=CHART_MONTHS)
 
     context = {
-        "budget":             budget,
-        "insight":            insight,
-        "anomaly_alerts":     anomaly_alerts,
-        "category_data_list": category_data_list,
-        "chart_data":         chart_data,
-        "monthly_trend":      monthly_trend,
-        "expenses":           expenses_page,
-        "paginator":          paginator,
-        "current_filter":     filter_type,
-        "search_query":       search_query,
-        "form":               ExpenseForm(),
-        "sub_form":           SubscriptionForm(),
-        "upcoming_subs":      upcoming_subs,
-        "today_month_year":   today.strftime("%B %Y"),
-        "valid_categories":   sorted(VALID_CATEGORIES),
-        "cat_icons":          CAT_ICONS,
-        "cat_colors":         CAT_COLORS,
-        "actual_month_total": actual_month_total,
-        "actual_week_total":  actual_week_total,
-        "actual_all_total":   actual_all_total,
-        **stats,
+        "budget":               budget,
+        "insight":              insight,
+        "anomaly_alerts":       anomaly_alerts,
+        "category_data_list":   category_data_list,
+        "chart_data":           chart_data,
+        "monthly_trend":        monthly_trend,
+        
+        # Ab expenses mein page object nahi, direct queryset jayega JS ke liye
+        "expenses":             expenses_qs, 
+        
+        "current_filter":       filter_type,
+        "search_query":         search_query,
+        "form":                 ExpenseForm(),
+        "sub_form":             SubscriptionForm(),
+        "upcoming_subs":        upcoming_subs,
+        "today_month_year":     today.strftime("%B %Y"),
+        "valid_categories":     sorted(VALID_CATEGORIES),
+        "cat_icons":            CAT_ICONS,
+        "cat_colors":           CAT_COLORS,
+        "actual_month_total":   actual_month_total,
+        "actual_week_total":    actual_week_total,
+        "actual_all_total":     actual_all_total,
+        "total_spent":          current_total_spent,
+        "remaining_budget":     remaining_budget,
+        "budget_percent":       budget_percent,
+        **stats,  
     }
     return render(request, "tracker/dashboard.html", context)
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # EXPENSE CRUD VIEWS
@@ -870,46 +900,89 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VOICE EXPENSE — FIXED
+# VOICE EXPENSE — DUAL MODE (Web Browser + WhatsApp)
 # ══════════════════════════════════════════════════════════════════════════════
 
 @csrf_exempt
 @ai_rate_limited
 @json_required
 def voice_expense(request: HttpRequest) -> JsonResponse:
+    """
+    Dual-mode voice expense endpoint:
+    - Browser mode: No phone needed — uses logged-in session user directly.
+    - WhatsApp mode: Phone number se UserProfile dhoondo, uska user lo.
+    """
     if request.method != "POST":
-        return JsonResponse({"status": "error", "message": "POST requests only."}, status=405)
+        return JsonResponse({"status": "error", "message": "Only POST allowed."}, status=405)
 
-    body = getattr(request, "_json_body", {})
-    
-    # ─── NAYA: Sender ka phone number nikalna ───
-    incoming_phone = body.get("phone", "").strip()
-    spoken_text = body.get("text", "").strip()
+    # ── Parse body ────────────────────────────────────────────────────────────
+    body = getattr(request, "_json_body", None)
+    if body is None:
+        try:
+            body = json.loads(request.body)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse({"status": "error", "message": "Invalid JSON."}, status=400)
+
+    incoming_phone = str(body.get("phone", "")).strip()
+    spoken_text    = str(body.get("text", "")).strip()
+
+    print(f"DEBUG voice_expense | phone={incoming_phone!r} | text={spoken_text!r}")
 
     if not spoken_text:
         return JsonResponse({"status": "error", "message": "No text received."}, status=400)
 
-    # User Detection Logic (Database check)
+    # ── Dual-mode user resolution ─────────────────────────────────────────────
     target_user = None
-    if incoming_phone:
-        # Phone se user profile dhoondo
-        profile = UserProfile.objects.filter(phone_number=incoming_phone).first()
-        if profile:
-            target_user = profile.user
+
+    if not incoming_phone:
+        # ── MODE 1: Browser — logged-in session user ──────────────────────────
+        if request.user.is_authenticated:
+            target_user = request.user
+            logger.info("Voice expense via browser uid=%s", target_user.id)
         else:
-            return JsonResponse({"status": "error", "message": "Bhai, pehle website par register karke apna WhatsApp number save karo! 🚫"})
+            return JsonResponse({
+                "status":  "error",
+                "message": "Login karein ya WhatsApp number bhejein. 🔐"
+            }, status=401)
+
     else:
-        # Fallback (Agar test karna ho purane tarike se)
-        target_user = User.objects.filter(username='ajay160380').first() or User.objects.first()
+        # ── MODE 2: WhatsApp — phone number se user dhoondo ───────────────────
+        # Sirf digits rakho, leading zeros hatao
+        normalized_phone = re.sub(r'[^0-9]', '', incoming_phone).lstrip("0")
 
-    if not target_user:
-        return JsonResponse({"status": "error", "message": "User nahi mila!"})
+        # Try both: with and without "91" country code
+        if normalized_phone.startswith("91") and len(normalized_phone) > 10:
+            phone_without_cc = normalized_phone[2:]   # "919876543210" → "9876543210"
+            phone_with_cc    = normalized_phone        # "919876543210"
+        else:
+            phone_without_cc = normalized_phone        # "9876543210"
+            phone_with_cc    = "91" + normalized_phone # "919876543210"
 
-    today = date.today()
-    normalized_text = normalize_hinglish_numbers(spoken_text)
+        print(f"DEBUG: Trying phone formats → {phone_with_cc!r} or {phone_without_cc!r}")
 
+        profile = UserProfile.objects.filter(
+            Q(phone_number=phone_with_cc) | Q(phone_number=phone_without_cc)
+        ).select_related("user").first()
+
+        if not profile or not profile.user:
+            logger.warning(
+                "Voice expense failed: unknown phone %s (tried: %s, %s)",
+                incoming_phone, phone_with_cc, phone_without_cc
+            )
+            return JsonResponse({
+                "status":  "error",
+                "message": "Bhai, pehle website par register karke apna WhatsApp number save karo! 🚫"
+            }, status=404)
+
+        target_user = profile.user
+        logger.info("Voice expense via WhatsApp uid=%s phone=%s", target_user.id, incoming_phone)
+
+    # ── AI se expense data extract karo ──────────────────────────────────────
     try:
-        prompt   = build_voice_ai_prompt(normalized_text, today)
+        today           = date.today()
+        normalized_text = normalize_hinglish_numbers(spoken_text)
+        prompt          = build_voice_ai_prompt(normalized_text, today)
+
         response = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
             model="llama-3.3-70b-versatile",
@@ -917,20 +990,29 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             max_tokens=150,
         )
         raw_response = response.choices[0].message.content.strip()
-        
-        json_match = re.search(r'\{[^{}]+\}', raw_response, re.DOTALL)
-        if not json_match: raise ValueError("No JSON")
-        ai_data = json.loads(json_match.group(0))
+        print(f"DEBUG AI raw response: {raw_response!r}")
 
+        json_match = re.search(r'\{[^{}]+\}', raw_response, re.DOTALL)
+        if not json_match:
+            raise ValueError("No JSON found in AI response")
+
+        ai_data    = json.loads(json_match.group(0))
         amount_raw = ai_data.get("amount", 0)
-        if isinstance(amount_raw, str): amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
+
+        if isinstance(amount_raw, str):
+            amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
+
         amount = Decimal(str(amount_raw))
 
         if amount <= 0:
-            return JsonResponse({"status": "error", "message": "Amount samajh nahi aaya. Try: '500 petrol'"})
+            return JsonResponse({
+                "status":  "error",
+                "message": "Amount samajh nahi aaya. Try karo: '500 petrol' ⛽"
+            }, status=400)
 
         category = str(ai_data.get("category", "other")).strip().lower()
-        if category not in VALID_CATEGORIES: category = _keyword_category_fallback(spoken_text)
+        if category not in VALID_CATEGORIES:
+            category = _keyword_category_fallback(spoken_text)
 
         expense = Expense.objects.create(
             user=target_user,
@@ -941,15 +1023,23 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         )
 
         icon = CAT_ICONS.get(category, "📦")
+        logger.info("Voice expense saved uid=%s id=%s amount=%s cat=%s",
+                    target_user.id, expense.pk, amount, category)
+
         return JsonResponse({
-            "status": "success",
-            "message": f"{icon} ₹{amount:,} — {category.title()} saved! ✅",
-            "expense_id": expense.pk
+            "status":     "success",
+            "message":    f"{icon} ₹{amount:,} — {category.title()} saved! ✅",
+            "expense_id": expense.pk,
         })
 
+    except json.JSONDecodeError as e:
+        logger.error("Voice expense JSON parse error: %s", e)
+        return JsonResponse({"status": "error", "message": "AI response parse nahi hua."}, status=500)
+
     except Exception as e:
-        logger.error("Voice error uid=%s error=%s", target_user.id, e)
-        return JsonResponse({"status": "error", "message": "Save nahi ho paya. Please retry."})
+        logger.error("Voice expense error uid=%s error=%s", target_user.id if target_user else "unknown", e)
+        print(f"CRITICAL ERROR in voice_expense: {e}")
+        return JsonResponse({"status": "error", "message": "Kuch galat hua bhai. 😅"}, status=500)
 
 
 def _keyword_category_fallback(text: str) -> str:
@@ -1465,22 +1555,24 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
         "date":       exp_date.isoformat(),
     }, status=201)
 
+
 @login_required
 def check_updates(request):
-    # User ka sabse latest expense dhoondo
     latest_expense = Expense.objects.filter(user=request.user).order_by('-id').first()
     latest_id = latest_expense.id if latest_expense else 0
     return JsonResponse({'latest_id': latest_id})
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # SMART HABIT PREDICTION & WARNINGS 🧠
 # ══════════════════════════════════════════════════════════════════════════════
+
 @csrf_exempt
 def habit_warnings(request):
-    # Ajay ka account dhoondo
     target_user = User.objects.filter(username='ajayvishwakarma').first()
-    if not target_user: target_user = User.objects.first()
+    if not target_user:
+        target_user = User.objects.first()
 
-    # Pichle 14 din ka data nikalo
     two_weeks_ago = date.today() - timedelta(days=14)
     expenses = Expense.objects.filter(user=target_user, date__gte=two_weeks_ago).order_by('date')
 
@@ -1489,7 +1581,6 @@ def habit_warnings(request):
             "warning": "Bhai abhi data bohot kam hai habit samajhne ke liye. Thode aur kharche track kar! 📉"
         })
 
-    # Data ko AI ke samajhne laayak format mein banao
     data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
 
     prompt = f"""
