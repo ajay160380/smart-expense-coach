@@ -189,6 +189,15 @@
 
   <form method="POST" class="django-form" autocomplete="off">
     {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div style="color: #ff4757; background: #ffeaa7; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+            {% for error in form.non_field_errors %}
+                <p style="margin: 0;">⚠️ {{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     {{ form.as_p }}
     <div class="auth-divider"></div>
     <button type="submit" class="submit-btn" id="submit-btn">Sign Up — It's free</button>
