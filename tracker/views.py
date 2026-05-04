@@ -38,7 +38,8 @@ from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 from groq import Groq
-
+from django.http import JsonResponse
+import json
 from django.conf import settings
 from .models import Expense, Subscription, UserProfile
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
@@ -1610,3 +1611,62 @@ def habit_warnings(request):
         return JsonResponse({"warning": warning_msg})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+@csrf_exempt
+def whatsapp_summary(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            phone = data.get("phone", "").strip()
+            
+            # WhatsApp format fix (919876543210 -> 9876543210)
+            clean_phone = phone[-10:] if len(phone) >= 10 else phone
+            profile = UserProfile.objects.filter(phone_number__icontains=clean_phone).first()
+            
+            if not profile:
+                return JsonResponse({"status": "error", "message": "Bhai, pehle website par register karke apna WhatsApp number save karo! 🚫"})
+            
+            user = profile.user
+            today = timezone.now().date()
+            budget = getattr(profile, 'monthly_budget', 20000)
+            
+            # 1. 🚨 AABI TAK KA POORA DATA (Lifetime)
+            all_expenses = Expense.objects.filter(user=user)
+            lifetime_spent = all_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+            
+            # 2. IS MAHINE KA DATA
+            this_month_expenses = all_expenses.filter(date__year=today.year, date__month=today.month)
+            month_spent = this_month_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+            remaining = max(budget - month_spent, 0)
+            
+            # 3. TOP 3 CATEGORIES (Kahan sabse zyada paisa gaya hai aaj tak)
+            top_cats = all_expenses.values('category').annotate(cat_total=Sum('amount')).order_by('-cat_total')[:3]
+            cat_breakdown = "\n".join([f"  🔸 {c['category'].title()}: ₹{c['cat_total']:,.0f}" for c in top_cats])
+            
+            if not cat_breakdown:
+                cat_breakdown = "  Koi kharcha nahi hai abhi tak!"
+            
+            # 4. WHATSAPP REPORT MESSAGE
+            report_msg = f"📊 *PaisaMitra Lifetime Report*\n\n"
+            report_msg += f"💸 *Aabi Tak Ka Total Kharcha:* ₹{lifetime_spent:,.0f}\n"
+            report_msg += f"📅 *Is Mahine Ka Kharcha:* ₹{month_spent:,.0f} (Budget: ₹{budget:,.0f})\n"
+            report_msg += f"✅ *Bacha Hua Budget:* ₹{remaining:,.0f}\n\n"
+            report_msg += f"🔥 *Top 3 Kharcho Ki Jagah (Lifetime):*\n{cat_breakdown}\n\n"
+            
+            # 5. AI SUGGESTION (Groq API call)
+            try:
+                # Tumhara helper function AI insight lene ke liye
+                ai_suggestion = get_ai_insight(user.id, all_expenses, budget, lifetime_spent)
+            except Exception as e:
+                print(f"AI Insight fail hua: {e}")
+                ai_suggestion = "Bhai, AI server thoda busy hai, par apne top kharcho par thoda control rakho! 💸"
+
+            report_msg += f"🤖 *AI Analysis:*\n_{ai_suggestion}_"
+            
+            return JsonResponse({"status": "success", "message": report_msg})
+            
+        except Exception as e:
+            print(f"WhatsApp Summary Error: {e}")
+            return JsonResponse({"status": "error", "message": f"Server mein gadbad hai: {str(e)}"})
+            
+    return JsonResponse({"status": "error", "message": "Only POST requests allowed"}, status=405)
