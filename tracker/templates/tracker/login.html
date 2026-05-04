@@ -1,27 +1,72 @@
 {% extends 'tracker/base.html' %}
-
 {% block extra_css %}
 <style>
-    .auth-container { max-width: 400px; margin: 50px auto; background: var(--card-bg); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
-    .auth-container h2 { text-align: center; margin-top: 0; color: var(--text-main); }
-    .django-form p { display: flex; flex-direction: column; margin-bottom: 15px; }
-    .django-form label { font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; font-size: 0.9rem; }
-    .django-form input { padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; width: 100%; box-sizing: border-box; }
-    .django-form input:focus { outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
-    .submit-btn { width: 100%; background: var(--primary-gradient); color: white; border: none; padding: 14px; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; margin-top: 10px; }
-    .auth-link { display: block; text-align: center; margin-top: 20px; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
-    .auth-link:hover { color: var(--primary); }
+.auth-wrap{animation:up .5s cubic-bezier(.22,.68,0,1.2) both}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.auth-container{max-width:460px;margin:60px auto;background:#fff;border:1px solid #E9E4FF;border-radius:24px;padding:40px 36px 32px}
+.auth-logo{display:flex;align-items:center;gap:9px;justify-content:center;margin-bottom:28px}
+.auth-logo-box{width:36px;height:36px;border-radius:10px;background:#7C3AED;display:flex;align-items:center;justify-content:center}
+.auth-logo-box svg{width:20px;height:20px;fill:#fff}
+.auth-logo-name{font-size:1rem;font-weight:700;color:#3B1FA0}
+.auth-container h2{text-align:center;font-size:1.65rem;font-weight:700;color:#1E1347;letter-spacing:-.5px;margin-bottom:5px}
+.auth-container p.subtitle{text-align:center;font-size:.83rem;color:#6B7280;line-height:1.6;margin-bottom:28px}
+.django-form p{display:flex;flex-direction:column;margin-bottom:15px;animation:up .4s cubic-bezier(.22,.68,0,1.2) both}
+.django-form p:nth-child(1){animation-delay:.08s}
+.django-form p:nth-child(2){animation-delay:.14s}
+.django-form label{font-size:.73rem;font-weight:700;color:#6D28D9;margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase}
+.django-form input{padding:12px 14px;background:#FAFAFA;border:1.5px solid #EDE9FE;border-radius:12px;color:#1E1347;font-size:.93rem;transition:border-color .2s,box-shadow .2s;width:100%}
+.django-form input:focus{outline:none;border-color:#7C3AED;background:#fff;box-shadow:0 0 0 4px #EDE9FE}
+.form-bottom{display:flex;align-items:center;justify-content:space-between;margin:14px 0 4px}
+.remember-me{display:flex;align-items:center;gap:7px;font-size:.78rem;color:#6B7280;cursor:pointer}
+.remember-me input{width:15px;height:15px;accent-color:#7C3AED}
+.forgot-link{font-size:.78rem;color:#7C3AED;text-decoration:none;font-weight:700}
+.forgot-link:hover{text-decoration:underline}
+.submit-btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:.95rem;font-weight:700;cursor:pointer;color:#fff;background:#7C3AED;position:relative;overflow:hidden;transition:background .18s,transform .15s;margin-top:8px}
+.submit-btn:hover{background:#6D28D9;transform:translateY(-2px)}
+.submit-btn:active{transform:scale(.98)}
+.auth-link{display:block;text-align:center;margin-top:22px;font-size:.82rem;color:#9CA3AF;text-decoration:none}
+.auth-link a{color:#7C3AED;font-weight:700;text-decoration:none}
+.auth-link a:hover{text-decoration:underline}
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="auth-wrap">
 <div class="auth-container">
-    <h2>Welcome Back 👋</h2>
-    <form method="POST" class="django-form">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="submit-btn">Login</button>
-    </form>
-    <a href="{% url 'register' %}" class="auth-link">Don't have an account? Register here</a>
+  <div class="auth-logo">
+    <div class="auth-logo-box">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.93V18h-2v-1.07C9.35 16.56 8 15.3 8 13h2c0 1.1.9 1.5 2 1.5s2-.4 2-1.5c0-.64-.35-1.5-2-1.5-2.1 0-4-1.12-4-3.5C8 6.7 9.35 5.44 11 5.07V4h2v1.07c1.65.37 3 1.63 3 3.93h-2c0-1.1-.9-1.5-2-1.5s-2 .4-2 1.5c0 .9.8 1.5 2 1.5 2.1 0 4 1.12 4 3.5 0 1.8-1.35 3.06-3 3.43z"/></svg>
+    </div>
+    <span class="auth-logo-name">PaisaMitra</span>
+  </div>
+
+  <h2>Welcome back</h2>
+  <p class="subtitle">Login to continue tracking your expenses via WhatsApp.</p>
+
+  <form method="POST" class="django-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-bottom">
+      <label class="remember-me">
+        <input type="checkbox"/> Remember me
+      </label>
+      <a href="#" class="forgot-link">Forgot password?</a>
+    </div>
+    <button type="submit" class="submit-btn" id="login-btn">Login</button>
+  </form>
+
+  <p class="auth-link">Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
 </div>
+</div>
+
+<script>
+document.getElementById('login-btn').addEventListener('click',function(e){
+  const r=document.createElement('span');
+  const rect=this.getBoundingClientRect(),sz=Math.max(rect.width,rect.height)*2;
+  r.style.cssText=`position:absolute;border-radius:50%;background:rgba(255,255,255,.2);width:${sz}px;height:${sz}px;left:${e.clientX-rect.left-sz/2}px;top:${e.clientY-rect.top-sz/2}px;transform:scale(0);animation:rp .5s ease-out;pointer-events:none`;
+  this.appendChild(r);
+  const s=document.createElement('style');s.textContent='@keyframes rp{to{transform:scale(1);opacity:0}}';
+  document.head.appendChild(s);setTimeout(()=>{ r.remove();s.remove()},600);
+});
+</script>
 {% endblock %}
