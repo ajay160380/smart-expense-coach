@@ -20,7 +20,7 @@ from typing import Optional
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -40,8 +40,13 @@ from django.views.decorators.http import require_POST, require_GET
 from groq import Groq
 
 from django.conf import settings
-from .models import Expense, Subscription
-from .forms import ExpenseForm, SubscriptionForm
+from .models import Expense, Subscription, UserProfile
+from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import RegisterSerializer
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -621,21 +626,34 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 # AUTHENTICATION VIEWS
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ─── NAYA: API Based Registration (Phone Link ke saath) ───
+class RegisterAPIView(APIView):
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "status": "success", 
+                "message": "Registration done! Ab apna WhatsApp number se kharcha track karo."
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 def register(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect("dashboard")
 
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = CustomRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             logger.info("New user registered uid=%s username=%s", user.id, user.username)
-            messages.success(request, "Account created successfully! Welcome to PaisaMitra 🎉")
+            messages.success(request, "Account created! Ab WhatsApp par message karein 🎉")
             return redirect("dashboard")
-        messages.error(request, "There was an issue — please review the form and try again.")
+        messages.error(request, "Kuch detail galat hai, dubara check karein.")
     else:
-        form = UserCreationForm()
+        form = CustomRegistrationForm()
 
     return render(request, "tracker/register.html", {"form": form})
 
@@ -862,21 +880,30 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "POST requests only."}, status=405)
 
-    import os
-    django_username = os.environ.get('DJANGO_USERNAME', 'ajay160380')
-    target_user = User.objects.filter(username=django_username).first() or User.objects.first()
-
-    if not target_user:
-        return JsonResponse({"status": "error", "message": "User nahi mila!"})
-
-    body        = getattr(request, "_json_body", {})
+    body = getattr(request, "_json_body", {})
+    
+    # ─── NAYA: Sender ka phone number nikalna ───
+    incoming_phone = body.get("phone", "").strip()
     spoken_text = body.get("text", "").strip()
 
     if not spoken_text:
         return JsonResponse({"status": "error", "message": "No text received."}, status=400)
 
-    if len(spoken_text) > VOICE_MAX_TEXT_LEN:
-        spoken_text = spoken_text[:VOICE_MAX_TEXT_LEN]
+    # User Detection Logic (Database check)
+    target_user = None
+    if incoming_phone:
+        # Phone se user profile dhoondo
+        profile = UserProfile.objects.filter(phone_number=incoming_phone).first()
+        if profile:
+            target_user = profile.user
+        else:
+            return JsonResponse({"status": "error", "message": "Bhai, pehle website par register karke apna WhatsApp number save karo! 🚫"})
+    else:
+        # Fallback (Agar test karna ho purane tarike se)
+        target_user = User.objects.filter(username='ajay160380').first() or User.objects.first()
+
+    if not target_user:
+        return JsonResponse({"status": "error", "message": "User nahi mila!"})
 
     today = date.today()
     normalized_text = normalize_hinglish_numbers(spoken_text)
@@ -890,62 +917,34 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             max_tokens=150,
         )
         raw_response = response.choices[0].message.content.strip()
-        print(f"[AI RAW] {raw_response}")
         
         json_match = re.search(r'\{[^{}]+\}', raw_response, re.DOTALL)
-        if not json_match:
-            raise ValueError(f"No JSON in response: {raw_response}")
+        if not json_match: raise ValueError("No JSON")
         ai_data = json.loads(json_match.group(0))
-        print(f"[AI PARSED] {ai_data}")
 
         amount_raw = ai_data.get("amount", 0)
-        if isinstance(amount_raw, str):
-            amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
+        if isinstance(amount_raw, str): amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
         amount = Decimal(str(amount_raw))
 
         if amount <= 0:
-            return JsonResponse({
-                "status": "error",
-                "message": "Amount samajh nahi aaya. Try: '500 petrol'",
-            })
+            return JsonResponse({"status": "error", "message": "Amount samajh nahi aaya. Try: '500 petrol'"})
 
         category = str(ai_data.get("category", "other")).strip().lower()
-        if category not in VALID_CATEGORIES:
-            category = _keyword_category_fallback(spoken_text)
-
-        try:
-            exp_date = date.fromisoformat(str(ai_data.get("date", today.isoformat())))
-        except (ValueError, TypeError):
-            exp_date = today
-
-        if exp_date > today:
-            exp_date = today
-
-        description = str(ai_data.get("description", "")).strip()[:100]
+        if category not in VALID_CATEGORIES: category = _keyword_category_fallback(spoken_text)
 
         expense = Expense.objects.create(
             user=target_user,
             amount=amount,
             category=category,
-            date=exp_date,
-            description=description,
-        )
-        logger.info(
-            "Voice expense saved uid=%s id=%s amount=%s cat=%s date=%s",
-            target_user.id, expense.pk, amount, category, exp_date
+            date=today,
+            description=str(ai_data.get("description", "")).strip()[:100],
         )
 
-        icon       = CAT_ICONS.get(category, "📦")
-        confirm = f"{icon} ₹{amount:,} — {category.title()} saved! ✅"
-
+        icon = CAT_ICONS.get(category, "📦")
         return JsonResponse({
-            "status":        "success",
-            "message":       confirm,
-            "expense_id":    expense.pk,
-            "amount":        float(amount),
-            "category":      category,
-            "icon":          icon,
-            "date":          exp_date.isoformat(),
+            "status": "success",
+            "message": f"{icon} ₹{amount:,} — {category.title()} saved! ✅",
+            "expense_id": expense.pk
         })
 
     except Exception as e:

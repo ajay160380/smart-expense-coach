@@ -7,6 +7,10 @@
 
 from django.urls import path
 from . import views
+from .views import RegisterAPIView 
+
+
+
 
 urlpatterns = [
 
@@ -101,4 +105,6 @@ urlpatterns = [
     # urls.py ke urlpatterns array mein ye line add karo:
     path('api/check-updates/', views.check_updates, name='check_updates'),
     path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
+    path('api/register/', RegisterAPIView.as_view(), name='api_register'),
+
 ]
