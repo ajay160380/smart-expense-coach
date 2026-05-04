@@ -106,5 +106,6 @@ urlpatterns = [
     path('api/check-updates/', views.check_updates, name='check_updates'),
     path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
     path('api/register/', RegisterAPIView.as_view(), name='api_register'),
+    path('api/whatsapp-summary/', views.whatsapp_summary, name='whatsapp_summary'),
 
 ]

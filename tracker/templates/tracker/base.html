@@ -59,6 +59,23 @@
         /* Theme Toggle Button */
         #theme-toggle { background: var(--item-bg); border: 1px solid var(--border-color); font-size: 1.2rem; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         #theme-toggle:hover { background: var(--item-hover); transform: scale(1.1); }
+
+        /* Profile Dropdown Styles */
+        .profile-container { position: relative; display: inline-block; }
+        .profile-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 8px; transition: 0.3s; }
+        .profile-btn:hover { background: var(--item-bg); }
+        .profile-avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+        .profile-menu { display: none; position: absolute; right: 0; top: 50px; width: 240px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: slideDown 0.2s ease; }
+        .profile-menu.active { display: block; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .profile-header { padding: 16px; border-bottom: 1px solid var(--border-color); background: var(--item-bg); }
+        .profile-header p { margin: 0; color: var(--text-main); font-weight: 700; font-size: 0.95rem; }
+        .profile-header small { color: var(--text-secondary); display: block; margin-top: 4px; }
+        .profile-menu-item { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); transition: background 0.2s; }
+        .profile-menu-item:hover { background: var(--item-bg); }
+        .profile-menu-item a { text-decoration: none; color: var(--text-main); flex: 1; display: flex; align-items: center; gap: 10px; }
+        .profile-menu-item.logout:hover { background: rgba(220, 38, 38, 0.1); }
+        .profile-menu-item.logout a { color: #DC2626; font-weight: 600; }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -68,13 +85,46 @@
         <div class="nav-links">
             {% if user.is_authenticated %}
                 <button id="theme-toggle" title="Toggle Dark Mode">🌙</button>
-                <span style="color: var(--primary); font-weight: 600;"><span id="smart-greeting">Hi</span>, {{ user.username }}! 👋</span>
-                <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'dashboard' %}" style="display: none;">Dashboard</a>
                 <a href="#" onclick="if(document.getElementById('expenseModal')) { document.getElementById('expenseModal').style.display='flex'; return false; }" class="nav-btn">+ Add Expense</a>
-                <form action="{% url 'logout' %}" method="post" style="display:inline; margin:0;">
-                    {% csrf_token %}
-                    <button type="submit" class="logout-btn">Logout</button>
-                </form>
+                
+                <!-- Profile Dropdown -->
+                <div class="profile-container">
+                    <button class="profile-btn" onclick="toggleProfileMenu(event)">
+                        <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=6c5ce7&color=fff&bold=true" class="profile-avatar" alt="Profile">
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">{{ user.username }}</span>
+                    </button>
+
+                    <div class="profile-menu" id="profileMenu">
+                        <div class="profile-header">
+                            <p>{{ user.username }}</p>
+                            <small>{{ user.email }}</small>
+                        </div>
+
+                        <div class="profile-menu-item" onclick="toggleDarkMode()">
+                            <a href="javascript:void(0)">🌓 <span id="darkModeLabel">Dark Mode</span></a>
+                            <input type="checkbox" id="darkModeToggle" style="cursor: pointer; margin: 0;">
+                        </div>
+
+                        {% if user.userprofile %}
+                        <div class="profile-menu-item">
+                            <a href="javascript:void(0)">📱 WhatsApp</a>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">{{ user.userprofile.phone_number }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="profile-menu-item">
+                            <a href="{% url 'dashboard' %}">⚙️ Settings</a>
+                        </div>
+
+                        <div class="profile-menu-item logout">
+                            <form action="{% url 'logout' %}" method="post" style="width: 100%; margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" style="background: none; border: none; cursor: pointer; width: 100%; text-align: left; color: #DC2626; font-weight: 600; padding: 0;">🚪 Logout</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             {% else %}
                 <a href="{% url 'login' %}">Login</a>
                 <a href="{% url 'register' %}" class="nav-btn">Register</a>
@@ -98,24 +148,53 @@
 
             // 2. Dark Mode Toggle
             const themeBtn = document.getElementById('theme-toggle');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            
+            if(localStorage.getItem('theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if(themeBtn) themeBtn.innerText = '☀️';
+                if(darkModeToggle) darkModeToggle.checked = true;
+            }
+            
             if(themeBtn) {
-                if(localStorage.getItem('theme') === 'dark') {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    themeBtn.innerText = '☀️';
-                }
                 themeBtn.addEventListener('click', () => {
                     if(document.documentElement.getAttribute('data-theme') === 'dark') {
                         document.documentElement.setAttribute('data-theme', 'light');
                         localStorage.setItem('theme', 'light');
                         themeBtn.innerText = '🌙';
+                        if(darkModeToggle) darkModeToggle.checked = false;
                     } else {
                         document.documentElement.setAttribute('data-theme', 'dark');
                         localStorage.setItem('theme', 'dark');
                         themeBtn.innerText = '☀️';
+                        if(darkModeToggle) darkModeToggle.checked = true;
                     }
                 });
             }
         });
+
+        // Profile Dropdown Toggle
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('active');
+        }
+
+        // Close profile menu on outside click
+        document.addEventListener('click', (event) => {
+            const profileContainer = document.querySelector('.profile-container');
+            const menu = document.getElementById('profileMenu');
+            if (!profileContainer || !menu) return;
+            if (!profileContainer.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // Toggle Dark Mode from menu
+        function toggleDarkMode() {
+            const themeBtn = document.getElementById('theme-toggle');
+            if(themeBtn) themeBtn.click();
+        }
     </script>
 </body>
 </html>
