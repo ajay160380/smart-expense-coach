@@ -1,103 +1,212 @@
 {% extends 'tracker/base.html' %}
-
 {% block extra_css %}
 <style>
-    .auth-container {
-        max-width: 520px;
-        margin: 60px auto;
-        background: var(--card-bg);
-        padding: 40px 36px;
-        border-radius: 22px;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-        border: 1px solid rgba(148, 163, 184, 0.18);
-    }
-    .auth-container h2 {
-        text-align: center;
-        margin-top: 0;
-        margin-bottom: 14px;
-        color: var(--text-main);
-        font-size: 1.9rem;
-    }
-    .auth-container p.subtitle {
-        text-align: center;
-        margin: 0 auto 28px;
-        max-width: 420px;
-        color: var(--text-secondary);
-        line-height: 1.6;
-    }
-    .django-form p {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 16px;
-    }
-    .django-form label {
-        font-weight: 700;
-        color: var(--text-secondary);
-        margin-bottom: 8px;
-        font-size: 0.95rem;
-    }
-    .django-form input {
-        padding: 14px 16px;
-        border: 1px solid #CBD5E1;
-        border-radius: 12px;
-        width: 100%;
-        background: var(--bg);
-        color: var(--text-main);
-        font-size: 1rem;
-        transition: border-color 160ms ease, box-shadow 160ms ease;
-    }
-    .django-form input:focus {
-        outline: none;
-        border-color: #4F46E5;
-        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
-    }
-    .django-form .helptext,
-    .django-form ul {
-        font-size: 0.82rem;
-        color: #64748B;
-        margin: 6px 0 0;
-        padding-left: 18px;
-    }
-    .submit-btn {
-        width: 100%;
-        background: linear-gradient(135deg, #5B21B6, #7C3AED);
-        color: white;
-        border: none;
-        padding: 15px;
-        font-size: 1rem;
-        font-weight: 700;
-        border-radius: 12px;
-        cursor: pointer;
-        margin-top: 10px;
-        transition: transform 160ms ease, opacity 160ms ease;
-    }
-    .submit-btn:hover {
-        transform: translateY(-1px);
-        opacity: 0.98;
-    }
-    .auth-link {
-        display: block;
-        text-align: center;
-        margin-top: 22px;
-        color: var(--text-secondary);
-        text-decoration: none;
-        font-size: 0.95rem;
-    }
-    .auth-link:hover {
-        color: var(--primary);
-    }
+.auth-wrap {
+  animation: rise .5s cubic-bezier(.22,.68,0,1.2) both;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-container {
+  max-width: 480px;
+  margin: 60px auto;
+  background: var(--card-bg);
+  padding: 40px 36px 32px;
+  border-radius: 22px;
+  border: 1px solid rgba(148,163,184,.18);
+  box-shadow: 0 12px 36px rgba(15,23,42,.07);
+  position: relative;
+  overflow: hidden;
+}
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: #EDE9FE;
+  opacity: .45;
+  pointer-events: none;
+}
+.auth-container::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: -40px;
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: #EDE9FE;
+  opacity: .25;
+  pointer-events: none;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.auth-logo-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6D28D9, #8B5CF6);
+  display: flex; align-items: center; justify-content: center;
+}
+.auth-logo-icon svg { width: 22px; height: 22px; fill: white; }
+.auth-logo-text { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
+
+.auth-badge {
+  display: flex; align-items: center; gap: 5px;
+  justify-content: center; width: fit-content;
+  margin: 0 auto 16px;
+  background: #EDE9FE; color: #6D28D9;
+  font-size: .72rem; font-weight: 700;
+  padding: 3px 12px; border-radius: 20px;
+}
+
+.auth-container h2 {
+  text-align: center;
+  margin: 0 0 8px;
+  color: var(--text-main);
+  font-size: 1.65rem;
+}
+.auth-container p.subtitle {
+  text-align: center;
+  margin: 0 auto 26px;
+  color: var(--text-secondary);
+  font-size: .88rem;
+  line-height: 1.6;
+  max-width: 360px;
+}
+
+/* Staggered field animations */
+.django-form p {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+  animation: rise .45s cubic-bezier(.22,.68,0,1.2) both;
+}
+.django-form p:nth-child(1) { animation-delay: .08s; }
+.django-form p:nth-child(2) { animation-delay: .13s; }
+.django-form p:nth-child(3) { animation-delay: .18s; }
+.django-form p:nth-child(4) { animation-delay: .23s; }
+
+.django-form label {
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 7px;
+  font-size: .82rem;
+}
+.django-form input {
+  padding: 13px 14px;
+  border: 1px solid #CBD5E1;
+  border-radius: 12px;
+  width: 100%;
+  background: var(--bg);
+  color: var(--text-main);
+  font-size: .95rem;
+  transition: border-color .18s, box-shadow .18s, background .18s;
+}
+.django-form input:focus {
+  outline: none;
+  border-color: #7C3AED;
+  box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+  background: var(--card-bg);
+}
+.django-form .helptext, .django-form ul {
+  font-size: .75rem;
+  color: #64748B;
+  margin: 5px 0 0;
+  padding-left: 16px;
+}
+
+.auth-divider {
+  height: 1px;
+  background: rgba(148,163,184,.2);
+  margin: 8px 0 20px;
+}
+
+.submit-btn {
+  width: 100%;
+  background: #6D28D9;
+  color: white;
+  border: none;
+  padding: 14px;
+  font-size: .95rem;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background .18s, transform .15s;
+  animation: rise .45s .3s cubic-bezier(.22,.68,0,1.2) both;
+}
+.submit-btn:hover { background: #7C3AED; transform: translateY(-1px); }
+.submit-btn:active { transform: scale(.98); }
+.submit-btn .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  transform: scale(0);
+  animation: rip .5s linear;
+  pointer-events: none;
+}
+@keyframes rip { to { transform: scale(4); opacity: 0; } }
+
+.auth-link {
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: .85rem;
+}
+.auth-link a { color: #7C3AED; font-weight: 700; }
+.auth-link a:hover { text-decoration: underline; }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="auth-wrap">
 <div class="auth-container">
-    <h2>Create your PaisaMitra account</h2>
-    <p class="subtitle">Register with your username, password and WhatsApp number so your expenses can be tracked directly via voice or chat.</p>
-    <form method="POST" class="django-form" autocomplete="off">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="submit-btn">Sign Up</button>
-    </form>
-    <a href="{% url 'login' %}" class="auth-link">Already have an account? Login here</a>
+
+  <div class="auth-logo">
+    <div class="auth-logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.93V18h-2v-1.07C9.35 16.56 8 15.3 8 13h2c0 1.1.9 1.5 2 1.5s2-.4 2-1.5c0-.64-.35-1.5-2-1.5-2.1 0-4-1.12-4-3.5C8 6.7 9.35 5.44 11 5.07V4h2v1.07c1.65.37 3 1.63 3 3.93h-2c0-1.1-.9-1.5-2-1.5s-2 .4-2 1.5c0 .9.8 1.5 2 1.5 2.1 0 4 1.12 4 3.5 0 1.8-1.35 3.06-3 3.43z"/></svg>
+    </div>
+    <span class="auth-logo-text">PaisaMitra</span>
+  </div>
+
+  <div class="auth-badge">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="#6D28D9"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+    Track expenses via WhatsApp
+  </div>
+
+  <h2>Create your account</h2>
+  <p class="subtitle">Register to start tracking expenses by voice or chat — right from WhatsApp.</p>
+
+  <form method="POST" class="django-form" autocomplete="off">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="auth-divider"></div>
+    <button type="submit" class="submit-btn" id="submit-btn">Sign Up — It's free</button>
+  </form>
+
+  <p class="auth-link">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
 </div>
+</div>
+
+<script>
+document.getElementById('submit-btn').addEventListener('click', function(e) {
+  const r = document.createElement('span');
+  const rect = this.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.className = 'ripple';
+  r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+  this.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+});
+</script>
 {% endblock %}
