@@ -92,6 +92,7 @@
 .django-form p:nth-child(2) { animation-delay: .13s; }
 .django-form p:nth-child(3) { animation-delay: .18s; }
 .django-form p:nth-child(4) { animation-delay: .23s; }
+.django-form p:nth-child(5) { animation-delay: .28s; }
 
 .django-form label {
   font-weight: 700;
@@ -108,6 +109,7 @@
   color: var(--text-main);
   font-size: .95rem;
   transition: border-color .18s, box-shadow .18s, background .18s;
+  box-sizing: border-box;
 }
 .django-form input:focus {
   outline: none;
@@ -165,6 +167,28 @@
 }
 .auth-link a { color: #7C3AED; font-weight: 700; }
 .auth-link a:hover { text-decoration: underline; }
+
+/* 🚨 Error & Success Boxes styling */
+.alert-box {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    animation: rise .3s cubic-bezier(.22,.68,0,1.2) both;
+}
+.alert-error {
+    background: #FEF2F2;
+    border-left: 4px solid #EF4444;
+    color: #991B1B;
+}
+.alert-error h3 { margin: 0 0 5px 0; font-size: 0.9rem; font-weight: 700; }
+.alert-error ul { margin: 0; padding-left: 20px; color: #B91C1C; }
+.alert-success {
+    background: #ECFDF5;
+    border-left: 4px solid #10B981;
+    color: #065F46;
+    font-weight: 600;
+}
 </style>
 {% endblock %}
 
@@ -190,15 +214,58 @@
   <form method="POST" class="django-form" autocomplete="off">
     {% csrf_token %}
 
-    {% if form.non_field_errors %}
-        <div style="color: #ff4757; background: #ffeaa7; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-            {% for error in form.non_field_errors %}
-                <p style="margin: 0;">⚠️ {{ error }}</p>
-            {% endfor %}
+    <!-- 🚨 ALL ERRORS DISPLAY BOX -->
+    {% if form.errors %}
+        <div class="alert-box alert-error">
+            <h3>⚠️ Registration failed:</h3>
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
         </div>
     {% endif %}
 
-    {{ form.as_p }}
+    <!-- ✅ SUCCESS/GENERAL MESSAGES BOX -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-box {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Fields wrapped in <p> tag for CSS Animation -->
+    <p>
+      {{ form.username.label_tag }}
+      {{ form.username }}
+    </p>
+
+    <p>
+      <label for="id_email">Email Address:</label>
+      <input type="email" name="email" id="id_email" required>
+    </p>
+
+    <p>
+      <label for="id_phone_number">WhatsApp Number:</label>
+      <input type="text" name="phone_number" id="id_phone_number" placeholder="e.g. 917905...">
+    </p>
+
+    <p>
+      {{ form.password1.label_tag }}
+      {{ form.password1 }}
+    </p>
+    
+    <p>
+      {{ form.password2.label_tag }}
+      {{ form.password2 }}
+    </p>
+
     <div class="auth-divider"></div>
     <button type="submit" class="submit-btn" id="submit-btn">Sign Up — It's free</button>
   </form>
