@@ -1,3 +1,4 @@
+{% load mathfilters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -423,7 +424,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
           </div>
           <div class="pd-stat-row">
             <div class="pd-stat">
-              <div class="pd-stat-v" id="pd-txn-count">—</div>
+              <div class="pd-stat-v" id="pd-txn-count">{{ request.user.expense_set.count }}</div>
               <div class="pd-stat-l">Transactions</div>
             </div>
             <div class="pd-stat">
@@ -436,7 +437,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
           <!-- ✅ NEW ADDITIONS: WhatsApp & Dark Mode -->
           <div class="pd-item no-hover" style="cursor:default;">
             <span style="font-size: 16px;">📱</span> 
-            <span>{{ request.user.userprofile.phone_number|default:"No WhatsApp Linked" }}</span>
+            {% if request.user.userprofile.phone_number %}
+                {{ request.user.userprofile.phone_number }}
+            {% else %}
+                No WhatsApp Linked
+            {% endif %}
           </div>
           
           <button class="pd-item" onclick="toggleTheme(); toggleProfile();">
@@ -500,50 +505,52 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       <div class="h-stat"><div class="h-stat-l">Remaining</div><div class="h-stat-v" id="hero-rem">₹0</div></div>
       <div class="h-stat"><div class="h-stat-l">Transactions</div><div class="h-stat-v" id="hero-count">0</div></div>
     </div>
-    <div class="badges-wrap">
+    <!-- <div class="badges-wrap">
       <div class="badge-label">🏆 Trophies:</div>
       <div id="badge-container" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
     </div>
-  </div>
+  </div> -->
 
-  <!-- GAMIFICATION -->
+  <!-- GAMIFICATION
   <div class="game-section">
-    <div class="game-header">
-      <div class="game-title">🎮 Player Progress</div>
-      <div style="font-size:11px;color:var(--primary);font-weight:700;" id="xp-display">1,240 XP</div>
-    </div>
-    <div class="level-row">
-      <div class="level-badge">
-        <div class="level-num" id="lvl-num">7</div>
-        <div class="level-lbl">Level</div>
+      <div class="game-header">
+        <div class="game-title">🎮 Player Progress</div>
+        <div style="font-size:11px;color:var(--primary);font-weight:700;" id="xp-display">{{ request.user.userprofile.xp }} XP</div>
       </div>
-      <div class="level-info">
-        <div class="level-title-txt" id="lvl-title">Finance Ninja ⚔️</div>
-        <div class="xp-label-row"><span>XP Progress</span><span id="xp-prog-lbl">1,240 / 2,000</span></div>
-        <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:62%"></div></div>
+      <div class="level-row">
+        <div class="level-badge">
+          <div class="level-num" id="lvl-num">{{ request.user.userprofile.level }}</div>
+          <div class="level-lbl">Level</div>
+        </div>
+        <div class="level-info">
+          <div class="level-title-txt" id="lvl-title">Finance Ninja ⚔️</div>
+          <div class="xp-label-row"><span>XP Progress</span><span id="xp-prog-lbl">{{ request.user.userprofile.xp }} / {{ request.user.userprofile.level|add:'-1'|mul:100|add:100 }}</span></div>
+          <div class="xp-track">
+            <div class="xp-fill" id="xp-fill" style="width:{% widthratio request.user.userprofile.xp 100 request.user.userprofile.level|add:'-1'|mul:100|add:100 %}%"></div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="game-grid">
-      <div class="game-stat">
-        <div class="gs-val">🔥</div>
-        <div class="gs-val" id="streak-val" style="color:var(--amber);">5</div>
-        <div class="gs-lbl">Day Streak</div>
+      <div class="game-grid">
+        <div class="game-stat">
+          <div class="gs-val">🔥</div>
+          <div class="gs-val" id="streak-val" style="color:var(--amber);">{{ request.user.userprofile.streak }}</div>
+          <div class="gs-lbl">Day Streak</div>
+        </div>
+        <div class="game-stat">
+          <div class="gs-val" id="quest-done-val" style="color:var(--green);">2/4</div>
+          <div class="gs-lbl">Quests Done</div>
+        </div>
+        <div class="game-stat">
+          <div class="gs-val" id="badge-count-val" style="color:var(--primary);">3</div>
+          <div class="gs-lbl">Badges</div>
+        </div>
       </div>
-      <div class="game-stat">
-        <div class="gs-val" id="quest-done-val" style="color:var(--green);">2/4</div>
-        <div class="gs-lbl">Quests Done</div>
-      </div>
-      <div class="game-stat">
-        <div class="gs-val" id="badge-count-val" style="color:var(--primary);">3</div>
-        <div class="gs-lbl">Badges</div>
-      </div>
-    </div>
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px;">📋 Daily Quests</div>
     <div class="quests-row" id="quests-row"></div>
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px;">🔥 Streak</div>
     <div class="streak-days" id="streak-days"></div>
     <div style="font-size:11px;color:var(--text3);margin-top:6px;font-weight:500;" id="streak-label">5 days in a row — keep it up!</div>
-  </div>
+  </div> -->
 
   <!-- STAT ROW -->
   <div class="stat-row">
