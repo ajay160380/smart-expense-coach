@@ -14,18 +14,23 @@ class SubscriptionForm(forms.ModelForm):
         fields = ['name', 'amount', 'category', 'next_billing_date']
 
 class CustomRegistrationForm(UserCreationForm):
+    email = forms.EmailField(
+        required=True,
+        help_text="Valid email address"
+    )
     phone_number = forms.CharField(
         max_length=15,
         required=True,
-        help_text="Apna WhatsApp number daalein (e.g., 917905398965)"
+        help_text="Apna WhatsApp number daalein (e.g., 910123456789)"
     )
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = UserCreationForm.Meta.fields + ('phone_number',)
+        fields = UserCreationForm.Meta.fields + ('email', 'phone_number')
 
     def save(self, commit=True):
         user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
         if commit:
             user.save()
             UserProfile.objects.create(

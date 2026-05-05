@@ -408,7 +408,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   <div class="nav">
     <div class="nav-brand">Paisa<span>Tracker</span><sub id="month-label"></sub></div>
     <div class="nav-actions">
-      <!-- Removed Theme toggle from here, moved to dropdown -->
       <button class="voice-btn" id="mic-btn" onclick="startVoice()">🎙️ Record expense</button>
       <button class="add-btn" onclick="openModal('addModal')">+ Add expense</button>
 
@@ -428,21 +427,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
               <div class="pd-stat-l">Transactions</div>
             </div>
             <div class="pd-stat">
-              <div class="pd-stat-v" id="pd-days">—</div>
-              <div class="pd-stat-l">Days Active</div>
+              <div class="pd-stat-v">{{ request.user.date_joined|timesince|truncatewords:2|cut:"..." }}</div>
+              <div class="pd-stat-l">Active Time</div>
             </div>
           </div>
           <div class="pd-divider"></div>
-          
-          <!-- ✅ NEW ADDITIONS: WhatsApp & Dark Mode -->
-          <div class="pd-item no-hover" style="cursor:default;">
-            <span style="font-size: 16px;">📱</span> 
-            {% if request.user.userprofile.phone_number %}
-                {{ request.user.userprofile.phone_number }}
-            {% else %}
-                No WhatsApp Linked
-            {% endif %}
-          </div>
           
           <button class="pd-item" onclick="toggleTheme(); toggleProfile();">
             <span style="font-size: 16px;" id="pd-theme-icon">🌙</span>
@@ -482,7 +471,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <div class="ai-avatar">🤖</div>
     <div class="ai-banner-text">
       <div class="ai-banner-label">AI Financial Coach</div>
-      <div class="ai-banner-msg" id="banner-msg">{{ ai_main_tip|default:"Hello! I am PaisaMitra — ask me anything about your finances!" }}</div>    </div>
+      <div class="ai-banner-msg" id="banner-msg">{{ ai_main_tip|default:"Hello! I am PaisaMitra — ask me anything about your finances!" }}</div>
+    </div>
     <span class="ai-banner-caret">›</span>
   </div>
 <!-- Sub Tip (Category Alert) -->
