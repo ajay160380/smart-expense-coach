@@ -786,11 +786,40 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         raw     = get_ai_insight(user.id, expenses_qs, budget, stats["total_spent"])
         insight = f"<strong>AI Coach:</strong> {raw}"
 
+    # ──────────────────────────────────────────────────────────────────────────
+    # 🔥 PAISAMITRA AI TIPS LOGIC (Added by Ajay's Backend setup)
+    # ──────────────────────────────────────────────────────────────────────────
+    ai_main_tip = "Hello! I am PaisaMitra — ask me anything about your finances!"
+    ai_sub_tip = ""
+
+    if budget > 0 and current_total_spent > 0:
+        # 1. Main Tip Logic (Budget Check)
+        if budget_percent < 50:
+            ai_main_tip = f"Great job! You used only {budget_percent:.1f}% of your budget — you can comfortably save ₹{remaining_budget:,.0f} more. 🌟"
+        elif budget_percent <= 80:
+            ai_main_tip = f"You are on track! You've used {budget_percent:.1f}% of your budget."
+        else:
+            ai_main_tip = f"Alert! 🚨 You've used {budget_percent:.1f}% of your budget. Time to cut back!"
+
+        # 2. Sub Tip Logic (Highest Category Check)
+        top_category = expenses_qs.values('category').annotate(total=Sum('amount')).order_by('-total').first()
+        
+        if top_category and top_category['total']:
+            cat_name = top_category['category'].capitalize()
+            cat_percent = (float(top_category['total']) / current_total_spent) * 100
+            
+            if cat_percent > 40:
+                ai_sub_tip = f"{cat_name} accounts for {cat_percent:.0f}% of your spending. Too much in one category — diversify."
+            else:
+                ai_sub_tip = f"Your spending is well diversified! Highest is {cat_name} at {cat_percent:.0f}%."
+
     monthly_trend = build_monthly_trend(user, months=CHART_MONTHS)
 
     context = {
         "budget":               budget,
         "insight":              insight,
+        "ai_main_tip":          ai_main_tip,   # <-- Ye yahan add kiya
+        "ai_sub_tip":           ai_sub_tip,    # <-- Ye yahan add kiya
         "anomaly_alerts":       anomaly_alerts,
         "category_data_list":   category_data_list,
         "chart_data":           chart_data,
