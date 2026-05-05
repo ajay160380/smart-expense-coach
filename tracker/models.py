@@ -7,7 +7,14 @@ class UserProfile(models.Model):
     # Default User se 1-to-1 connection
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     
+
     phone_number = models.CharField(max_length=15, unique=True)
+
+    # --- Gamification Fields ---
+    xp = models.IntegerField(default=0)
+    level = models.IntegerField(default=1)
+    streak = models.IntegerField(default=0)
+    last_expense_date = models.DateField(blank=True, null=True) # Streak track karne ke liye
 
     def __str__(self):
         return f"{self.user.username} - {self.phone_number}"

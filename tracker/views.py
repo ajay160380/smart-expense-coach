@@ -853,6 +853,27 @@ def add_expense(request: HttpRequest) -> HttpResponse:
     )
     logger.info("Expense added uid=%s id=%s amount=%s cat=%s",
                 request.user.id, expense.pk, amount, category)
+
+    # --- Gamification Logic ---
+    from datetime import date, timedelta
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    today = date.today()
+
+    # 1. Streak Logic 🔥
+    if profile.last_expense_date == today - timedelta(days=1):
+        profile.streak += 1
+    elif profile.last_expense_date != today:
+        profile.streak = 1
+    profile.last_expense_date = today
+
+    # 2. XP Logic ⭐️ (Har entry par 20 XP)
+    profile.xp += 20
+
+    # 3. Level Logic 🚀 (Har 100 XP par naya Level)
+    profile.level = (profile.xp // 100) + 1
+
+    profile.save()
+
     messages.success(request, f"{CAT_ICONS.get(category,'📦')} ₹{amount:,} added! ✅")
     return redirect("dashboard")
 
