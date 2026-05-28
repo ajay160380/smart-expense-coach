@@ -1,0 +1,85 @@
+{% extends 'tracker/base.html' %}
+
+{% block extra_css %}
+<style>
+.static-page {
+    width: 100%;
+    padding: 40px 20px;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.4s ease-out;
+}
+.static-card {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    padding: 50px;
+    color: var(--text-main);
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 20px;
+    transition: color 0.2s, transform 0.2s;
+}
+.back-btn:hover {
+    color: var(--primary);
+    transform: translateX(-4px);
+}
+.static-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+.static-content p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+.static-content h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: var(--text-main);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <div class="static-card">
+        <a href="#" onclick="history.back(); return false;" class="back-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back
+        </a>
+        <h1 class="static-title">About PaisaMitra</h1>
+        <div class="static-content">
+            <p>Welcome to PaisaMitra, the smartest way to manage your budget directly from WhatsApp without opening any app.</p>
+            <p>Our mission is to simplify personal finance for everyone. We believe that tracking expenses shouldn't be a chore that requires logging into complex apps. With PaisaMitra, you just text what you spent, and our AI takes care of the rest.</p>
+            
+            <h3>Our Story</h3>
+            <p>PaisaMitra was built to solve a common problem: people want to track their money, but they forget to log it in apps. Since everyone uses WhatsApp daily, we decided to bring the expense tracker directly to where people already are.</p>
+            
+            <h3>How it Works</h3>
+            <p>Simply register an account, link your WhatsApp number, and start messaging our bot. It categorizes your expenses automatically, updates your remaining budget, and gives you actionable financial advice.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

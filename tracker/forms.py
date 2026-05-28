@@ -33,8 +33,11 @@ class CustomRegistrationForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         if commit:
             user.save()
+            import re
+            raw_phone = self.cleaned_data['phone_number']
+            clean_phone = re.sub(r'[^0-9]', '', raw_phone).lstrip("0")
             UserProfile.objects.create(
                 user=user,
-                phone_number=self.cleaned_data['phone_number']
+                phone_number=clean_phone
             )
         return user

@@ -1,0 +1,15 @@
+{
+  "name": "paisa-mitra-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp Bot for Paisa Mitra",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "pg": "^8.21.0",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.23.0",
+    "wwebjs-postgres": "^1.0.0"
+  }
+}
