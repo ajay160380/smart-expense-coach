@@ -1,0 +1,100 @@
+{% extends 'tracker/base.html' %}
+
+{% block extra_css %}
+<style>
+.static-page {
+    width: 100%;
+    padding: 40px 20px;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.4s ease-out;
+}
+.static-card {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    padding: 50px;
+    color: var(--text-main);
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 20px;
+    transition: color 0.2s, transform 0.2s;
+}
+.back-btn:hover {
+    color: var(--primary);
+    transform: translateX(-4px);
+}
+.static-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+.static-content p, .static-content li {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+.static-content h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: var(--text-main);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <div class="static-card">
+        <a href="#" onclick="history.back(); return false;" class="back-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back
+        </a>
+        <h1 class="static-title">Privacy Policy</h1>
+        <div class="static-content">
+            <p>Last updated: May 2026</p>
+            <p>At PaisaMitra, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your personal information.</p>
+            
+            <h3>Information We Collect</h3>
+            <ul>
+                <li><strong>Account Information:</strong> Your username, email address, and encrypted password.</li>
+                <li><strong>WhatsApp Data:</strong> Your linked phone number and the expense messages you send to our bot.</li>
+                <li><strong>Financial Data:</strong> The budgets you set and the expenses you record to provide you with insights.</li>
+            </ul>
+            
+            <h3>How We Use Your Information</h3>
+            <p>We use the collected information to:</p>
+            <ul>
+                <li>Provide and maintain our expense tracking services.</li>
+                <li>Analyze spending habits through our AI to offer personalized financial coaching.</li>
+                <li>Communicate with you regarding your account and service updates.</li>
+            </ul>
+            
+            <h3>Data Security</h3>
+            <p>We implement industry-standard security measures to protect your data. Your financial records are strictly confidential and are only accessed by our automated AI systems to generate insights for your dashboard.</p>
+            
+            <h3>Contact Us</h3>
+            <p>If you have any questions about this Privacy Policy, please reach out via our Contact Support page.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

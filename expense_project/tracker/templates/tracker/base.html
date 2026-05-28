@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Expense Coach</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --primary:#4F46E5;
+      --primary-gradient:linear-gradient(135deg,#4F46E5,#7C3AED);
+      --bg-color:#F3F4F6;
+      --card-bg:#FFFFFF;
+      --text-main:#111827;
+      --text-secondary:#4B5563;
+      --item-bg:#F9FAFB;
+      --item-hover:#FFFFFF;
+      --border-color:#E5E7EB;
+      --nav-bg:#FFFFFF;
+    }
+
+    [data-theme="dark"]{
+      --bg-color:#0F172A;
+      --card-bg:#1E293B;
+      --text-main:#F8FAFC;
+      --text-secondary:#94A3B8;
+      --item-bg:#334155;
+      --item-hover:#475569;
+      --border-color:#334155;
+      --nav-bg:#1E293B;
+    }
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
+    html,body{
+      width:100%;
+      min-height:100%;
+      font-family:'Inter',sans-serif;
+      background:var(--bg-color);
+      color:var(--text-main);
+    }
+
+    body{
+      transition:background-color .3s ease,color .3s ease;
+    }
+
+    .navbar{
+      height:72px;
+      background:var(--nav-bg);
+      padding:0 40px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      box-shadow:0 4px 14px rgba(15,23,42,.06);
+      border-bottom:1px solid var(--border-color);
+      position:relative;
+      z-index:1000;
+    }
+
+    .navbar-brand{
+      font-size:1.5rem;
+      font-weight:900;
+      color:var(--primary);
+      text-decoration:none;
+      letter-spacing:-.04em;
+    }
+
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:20px;
+    }
+
+    .nav-links a{
+      text-decoration:none;
+      color:var(--text-secondary);
+      font-weight:600;
+      transition:.2s;
+    }
+
+    .nav-links a:hover{
+      color:var(--primary);
+    }
+
+    .nav-btn{
+      background:var(--primary-gradient);
+      color:white!important;
+      padding:10px 18px;
+      border-radius:12px;
+      font-weight:800;
+      border:none;
+      cursor:pointer;
+      box-shadow:0 10px 24px rgba(79,70,229,.18);
+    }
+
+    #theme-toggle{
+      background:var(--item-bg);
+      border:1px solid var(--border-color);
+      font-size:1.1rem;
+      cursor:pointer;
+      border-radius:50%;
+      width:40px;
+      height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:.25s;
+    }
+
+    #theme-toggle:hover{
+      background:var(--item-hover);
+      transform:scale(1.08);
+    }
+
+    .container{
+      max-width:1100px;
+      margin:0 auto;
+      padding:30px 20px;
+    }
+
+    /* IMPORTANT: login/register full-screen pages */
+    .container:has(.auth-page){
+      max-width:none;
+      width:100%;
+      margin:0;
+      padding:0;
+    }
+
+    body:has(.auth-page){
+      overflow:hidden;
+    }
+
+    .profile-container{
+      position:relative;
+      display:inline-block;
+    }
+
+    .profile-btn{
+      background:none;
+      border:none;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 12px;
+      border-radius:10px;
+      transition:.25s;
+    }
+
+    .profile-btn:hover{
+      background:var(--item-bg);
+    }
+
+    .profile-avatar{
+      width:36px;
+      height:36px;
+      border-radius:50%;
+      border:2px solid var(--primary);
+      object-fit:cover;
+    }
+
+    .profile-menu{
+      display:none;
+      position:absolute;
+      right:0;
+      top:50px;
+      width:250px;
+      background:var(--card-bg);
+      border:1px solid var(--border-color);
+      border-radius:14px;
+      overflow:hidden;
+      z-index:2000;
+      box-shadow:0 14px 34px rgba(0,0,0,.14);
+    }
+
+    .profile-menu.active{
+      display:block;
+    }
+
+    .profile-header{
+      padding:16px;
+      border-bottom:1px solid var(--border-color);
+      background:var(--item-bg);
+    }
+
+    .profile-header p{
+      margin:0;
+      color:var(--text-main);
+      font-weight:800;
+      font-size:.95rem;
+    }
+
+    .profile-header small{
+      color:var(--text-secondary);
+      display:block;
+      margin-top:4px;
+    }
+
+    .profile-menu-item{
+      padding:13px 16px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom:1px solid var(--border-color);
+      transition:.2s;
+    }
+
+    .profile-menu-item:hover{
+      background:var(--item-bg);
+    }
+
+    .profile-menu-item a{
+      text-decoration:none;
+      color:var(--text-main);
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .profile-menu-item.logout:hover{
+      background:rgba(220,38,38,.1);
+    }
+
+    @media(max-width:768px){
+      .navbar{
+        padding:0 18px;
+      }
+
+      .nav-links{
+        gap:12px;
+      }
+
+      .navbar-brand{
+        font-size:1.25rem;
+      }
+    }
+  </style>
+
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+  <nav class="navbar">
+    <a href="{% url 'dashboard' %}" class="navbar-brand">💰 SmartCoach</a>
+
+    <div class="nav-links">
+      {% if user.is_authenticated %}
+        <button id="theme-toggle" title="Toggle Dark Mode">🌙</button>
+
+        <a href="{% url 'dashboard' %}" style="display:none;">Dashboard</a>
+
+        <a href="#" onclick="if(document.getElementById('expenseModal')) { document.getElementById('expenseModal').style.display='flex'; return false; }" class="nav-btn">
+          + Add Expense
+        </a>
+
+        <div class="profile-container">
+          <button class="profile-btn" onclick="toggleProfileMenu(event)">
+            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=6c5ce7&color=fff&bold=true" class="profile-avatar" alt="Profile">
+            <span style="color:var(--text-secondary);font-size:.9rem;">{{ user.username }}</span>
+          </button>
+
+          <div class="profile-menu" id="profileMenu">
+            <div class="profile-header">
+              <p>{{ user.username }}</p>
+              <small>{{ user.email }}</small>
+            </div>
+
+            <div class="profile-menu-item" onclick="toggleDarkMode()">
+              <a href="javascript:void(0)">🌓 <span id="darkModeLabel">Dark Mode</span></a>
+              <input type="checkbox" id="darkModeToggle" style="cursor:pointer;margin:0;">
+            </div>
+
+            {% if user.userprofile %}
+            <div class="profile-menu-item">
+              <a href="javascript:void(0)">📱 WhatsApp</a>
+              <span style="font-size:.85rem;color:var(--text-secondary);">{{ user.userprofile.phone_number }}</span>
+            </div>
+            {% endif %}
+
+            <div class="profile-menu-item">
+              <a href="{% url 'dashboard' %}">⚙️ Settings</a>
+            </div>
+
+            <div class="profile-menu-item logout">
+              <form action="{% url 'logout' %}" method="post" style="width:100%;margin:0;">
+                {% csrf_token %}
+                <button type="submit" style="background:none;border:none;cursor:pointer;width:100%;text-align:left;color:#DC2626;font-weight:700;padding:0;">
+                  🚪 Logout
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+        <a href="{% url 'register' %}" class="nav-btn">Register</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const hour = new Date().getHours();
+      let greeting = "Good Evening";
+      if(hour < 12) greeting = "Good Morning";
+      else if(hour < 17) greeting = "Good Afternoon";
+
+      const greetingElement = document.getElementById('smart-greeting');
+      if(greetingElement) greetingElement.innerText = greeting;
+
+      const themeBtn = document.getElementById('theme-toggle');
+      const darkModeToggle = document.getElementById('darkModeToggle');
+
+      if(localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme','dark');
+        if(themeBtn) themeBtn.innerText = '☀️';
+        if(darkModeToggle) darkModeToggle.checked = true;
+      }
+
+      if(themeBtn) {
+        themeBtn.addEventListener('click', () => {
+          if(document.documentElement.getAttribute('data-theme') === 'dark') {
+            document.documentElement.setAttribute('data-theme','light');
+            localStorage.setItem('theme','light');
+            themeBtn.innerText = '🌙';
+            if(darkModeToggle) darkModeToggle.checked = false;
+          } else {
+            document.documentElement.setAttribute('data-theme','dark');
+            localStorage.setItem('theme','dark');
+            themeBtn.innerText = '☀️';
+            if(darkModeToggle) darkModeToggle.checked = true;
+          }
+        });
+      }
+    });
+
+    function toggleProfileMenu(event){
+      event.stopPropagation();
+      const menu = document.getElementById('profileMenu');
+      if(menu) menu.classList.toggle('active');
+    }
+
+    document.addEventListener('click', (event) => {
+      const profileContainer = document.querySelector('.profile-container');
+      const menu = document.getElementById('profileMenu');
+      if(!profileContainer || !menu) return;
+
+      if(!profileContainer.contains(event.target)){
+        menu.classList.remove('active');
+      }
+    });
+
+    function toggleDarkMode(){
+      const themeBtn = document.getElementById('theme-toggle');
+      if(themeBtn) themeBtn.click();
+    }
+  </script>
+</body>
+</html>

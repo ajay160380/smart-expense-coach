@@ -4,6 +4,8 @@
 ![Python](https://img.shields.io/badge/Python-3.14-3776ab?style=for-the-badge&logo=python)
 ![Status](https://img.shields.io/badge/Status-Actively_Developing-brightgreen?style=for-the-badge)
 
+**🚀 Live Demo:** [https://ajay160380-paisa-mitra.hf.space](https://ajay160380-paisa-mitra.hf.space)
+
 A premium, highly intuitive personal finance tracker built with **Django**. This project acts as a smart financial assistant that manages recurring bills automatically and provides real-time analytics with a high-end dark theme.
 
 ---

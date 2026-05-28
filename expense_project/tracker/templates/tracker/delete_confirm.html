@@ -1,0 +1,13 @@
+{% extends 'tracker/base.html' %}
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 50px auto; text-align: center;">
+    <h2>⚠️ Are you sure?</h2>
+    <p>Do you really want to delete the expense for <strong>{{ expense.category }} (₹{{ expense.amount }})</strong>?</p>
+    
+    <form method="POST" style="margin-top: 20px;">
+        {% csrf_token %}
+        <button type="submit" style="background: #DC2626; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Yes, Delete</button>
+        <a href="{% url 'dashboard' %}" style="margin-left: 15px; color: #4B5563; text-decoration: none;">Cancel</a>
+    </form>
+</div>
+{% endblock %}

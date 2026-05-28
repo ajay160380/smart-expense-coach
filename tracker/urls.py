@@ -15,9 +15,15 @@ from .views import RegisterAPIView
 urlpatterns = [
 
     # ══════════════════════════════════════════════════════════════════════
-    # DASHBOARD
+    # DASHBOARD & STATIC PAGES
     # ══════════════════════════════════════════════════════════════════════
-    path('', views.dashboard, name='dashboard'),
+    path('', views.landing_view, name='landing'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('about/', views.about_view, name='about'),
+    path('features/', views.features_view, name='features'),
+    path('privacy/', views.privacy_view, name='privacy'),
+    path('terms/', views.terms_view, name='terms'),
+    path('contact/', views.contact_view, name='contact'),
 
     # ══════════════════════════════════════════════════════════════════════
     # AUTHENTICATION
@@ -107,5 +113,7 @@ urlpatterns = [
     path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
     path('api/register/', RegisterAPIView.as_view(), name='api_register'),
     path('api/whatsapp-summary/', views.whatsapp_summary, name='whatsapp_summary'),
+    path('api/latest-update-time/', views.get_latest_update_time, name='get_latest_update_time'),
+
 
 ]

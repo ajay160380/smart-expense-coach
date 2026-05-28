@@ -1,0 +1,90 @@
+{% extends 'tracker/base.html' %}
+
+{% block extra_css %}
+<style>
+.static-page {
+    width: 100%;
+    padding: 40px 20px;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.4s ease-out;
+}
+.static-card {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    padding: 50px;
+    color: var(--text-main);
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 20px;
+    transition: color 0.2s, transform 0.2s;
+}
+.back-btn:hover {
+    color: var(--primary);
+    transform: translateX(-4px);
+}
+.static-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+.static-content p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+.static-content h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: var(--text-main);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <div class="static-card">
+        <a href="#" onclick="history.back(); return false;" class="back-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back
+        </a>
+        <h1 class="static-title">Features</h1>
+        <div class="static-content">
+            <p>PaisaMitra is packed with intelligent features designed to make tracking expenses as frictionless as possible.</p>
+            
+            <h3>💬 WhatsApp Integration</h3>
+            <p>Don't want to install another app? No problem. Simply message our WhatsApp bot with your expense, like "500 for lunch", and it instantly gets logged to your dashboard.</p>
+            
+            <h3>🧠 AI-Powered Categorization</h3>
+            <p>Our intelligent AI analyzes your messages and automatically categorizes your spending. Whether it's groceries, petrol, or entertainment, the bot knows where it belongs.</p>
+            
+            <h3>📊 Real-time Dashboard</h3>
+            <p>Visit your secure web dashboard to see a beautiful visual breakdown of your monthly spending, remaining budget, and category-wise analysis.</p>
+
+            <h3>🤖 Brutally Honest Coach</h3>
+            <p>Our AI acts as your personal financial coach. If you're spending too much, it won't hold back. It will analyze your habits and send you personalized, sarcastic, yet helpful advice to keep you on track.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

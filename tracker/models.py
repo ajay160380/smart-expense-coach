@@ -16,6 +16,9 @@ class UserProfile(models.Model):
     streak = models.IntegerField(default=0)
     last_expense_date = models.DateField(blank=True, null=True) # Streak track karne ke liye
 
+    # --- Budget Field ---
+    monthly_budget = models.DecimalField(max_digits=10, decimal_places=2, default=20000)
+
     def __str__(self):
         return f"{self.user.username} - {self.phone_number}"
 

@@ -232,25 +232,39 @@ def normalize_hinglish_numbers(text: str) -> str:
     return text
 
 
-def build_voice_ai_prompt(spoken_text, today):
+def build_conversational_ai_prompt(spoken_text: str, today, user_context: dict) -> str:
     return f"""
-    You are a strict data extractor bot. Extract the EXACT number from the text.
-    Input: "{spoken_text}"
-    Today: {today}
-
-    Rules:
-    - If user says "700 ka transport", amount is 700.
-    - NEVER guess a number. Use ONLY what is in the text.
-    - If no number is found, amount is 0.
-    - Pick category ONLY from: food, transport, shopping, health, entertainment, education, utilities, other.
+    You are PaisaMitra, a smart, brutally honest, funny Indian financial AI coach.
+    You analyze the user's message and decide if they want to LOG an expense, OR just chat/ask a question.
     
-    Response MUST be strict JSON ONLY:
+    User Message: "{spoken_text}"
+    Today's Date: {today}
+    
+    User Context:
+    - Monthly Budget: ₹{user_context.get('budget', 20000)}
+    - Total Spent This Month: ₹{user_context.get('spent', 0)}
+    - Remaining Budget: ₹{user_context.get('remaining', 0)}
+    - Recent Expenses: {user_context.get('recent_expenses', 'None')}
+
+    Rules for Routing:
+    1. If the message contains an expense (e.g. "500 ki chai", "petrol 200", "bought a shirt for 1000"):
+       - action = "log_expense"
+       - amount = exact number extracted.
+       - category = one of: food, transport, shopping, health, entertainment, education, utilities, other.
+       - description = short description (e.g. "chai", "petrol").
+    2. If the message is a question, greeting, or request for advice (e.g. "hi", "mera hisab batao", "kaise ho", "how much did I spend?"):
+       - action = "chat"
+       - chat_response = your natural, conversational, sarcastic but helpful Hinglish reply answering their question using the User Context provided above. Keep it under 50 words.
+
+    Response MUST be strict JSON ONLY. No markdown, no extra text.
     {{
-        "amount": <number>,
-        "category": "<string>",
-        "date": "{today}",
-        "description": "<string>",
-        "confidence": <float>
+        "action": "log_expense" | "chat",
+        "expense_details": {{
+            "amount": 0,
+            "category": "other",
+            "description": ""
+        }},
+        "chat_response": ""
     }}
     """
 
@@ -532,9 +546,9 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
             f"Budget: ₹{budget:,.0f} | Spent: ₹{total_spent:,.0f} | "
             f"Remaining: ₹{remaining:,.0f} | Days left this month: {days_left}\n"
             f"Recent expenses: {summary}\n\n"
-            f"Write ONE punchy Hinglish sentence (Roman script). Rules:\n"
+            f"Write ONE punchy English sentence. Rules:\n"
             f"- Sarcastic but loving\n"
-            f"- Include a specific Indian pop-culture or relatable reference\n"
+            f"- Include a specific relatable pop-culture reference\n"
             f"- Under 30 words\n"
             f"- End with a practical micro-tip\n"
             f"- ONLY return the sentence, nothing else."
@@ -568,8 +582,8 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
             f"User spent ₹{cat_total:,.0f} on {category} this {period}.\n"
             f"That's {share_pct:.1f}% of their total budget.\n"
             f"Average per transaction: ₹{avg_txn:,.0f}.\n\n"
-            f"Write ONE Hinglish sentence that:\n"
-            f"- Roasts this {category} spending with a funny Indian reference\n"
+            f"Write ONE English sentence that:\n"
+            f"- Roasts this {category} spending with a funny reference\n"
             f"- Gives ONE specific saving hack for {category}\n"
             f"- Is under 35 words\n"
             f"- ONLY return the sentence."
@@ -604,7 +618,7 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
             f"Total spent: ₹{month_data['total']:,.0f} | Budget: ₹{month_data['budget']:,.0f}\n"
             f"Top categories: {top_cats or 'None'}\n"
             f"Transactions: {month_data['count']}\n\n"
-            f"Write a 2-sentence Hinglish monthly report:\n"
+            f"Write a 2-sentence English monthly report:\n"
             f"Sentence 1: Summary of how the month went (honest, slightly funny)\n"
             f"Sentence 2: One specific action for next month\n"
             f"ONLY return the 2 sentences. No headings."
@@ -637,7 +651,7 @@ class RegisterAPIView(APIView):
             serializer.save()
             return Response({
                 "status": "success", 
-                "message": "Registration done! Ab apna WhatsApp number se kharcha track karo."
+                "message": "Registration done! You can now track your expenses using your WhatsApp number."
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -651,12 +665,13 @@ def register(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             user = form.save()
             login(request, user)
+            request.session['show_wa_banner'] = True
             logger.info("New user registered uid=%s username=%s", user.id, user.username)
-            messages.success(request, "Account created! Ab WhatsApp par message karein 🎉")
+            messages.success(request, "Account created! Send a message on WhatsApp 🎉")
             return redirect("dashboard")
         else:
             print("FORM ERRORS:", form.errors)
-            messages.error(request, "Kuch detail galat hai, dubara check karein.")
+            messages.error(request, "Some details are incorrect, please check again.")
     else:
         form = CustomRegistrationForm()
 
@@ -672,6 +687,7 @@ def user_login(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            request.session['show_wa_banner'] = True
             logger.info("User login uid=%s", user.id)
             messages.success(request, f"Welcome back {user.username}! 👋")
             return redirect(request.GET.get("next", "dashboard"))
@@ -714,11 +730,11 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             logger.info("Budget updated uid=%s budget=%.0f", user.id, nb)
             messages.success(request, f"Budget set: ₹{nb:,.0f} 💰")
         except (ValueError, TypeError):
-            messages.error(request, "Valid budget daalo (positive number).")
+            messages.error(request, "Please enter a valid budget (positive number).")
         return redirect("dashboard")
 
     # Fallback default agar profile mein budget na ho
-    budget = getattr(profile, 'monthly_budget', 20000) 
+    budget = float(getattr(profile, 'monthly_budget', 20000)) 
     today  = date.today()
 
     debits = process_subscriptions(user)
@@ -815,6 +831,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 
     monthly_trend = build_monthly_trend(user, months=CHART_MONTHS)
 
+    show_wa_banner = request.session.pop('show_wa_banner', False)
+
     context = {
         "budget":               budget,
         "insight":              insight,
@@ -824,6 +842,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "category_data_list":   category_data_list,
         "chart_data":           chart_data,
         "monthly_trend":        monthly_trend,
+        "show_wa_banner":       show_wa_banner,
         
         # Ab expenses mein page object nahi, direct queryset jayega JS ke liye
         "expenses":             expenses_qs, 
@@ -859,7 +878,7 @@ def add_expense(request: HttpRequest) -> HttpResponse:
         if amount <= 0:
             raise InvalidOperation("Non-positive amount")
     except (InvalidOperation, ValueError):
-        messages.error(request, "Valid amount daalo yaar (e.g., 150 or 1500.50).")
+        messages.error(request, "Please enter a valid amount (e.g., 150 or 1500.50).")
         return redirect("dashboard")
 
     category = request.POST.get("category", "other").strip().lower()
@@ -884,7 +903,6 @@ def add_expense(request: HttpRequest) -> HttpResponse:
                 request.user.id, expense.pk, amount, category)
 
     # --- Gamification Logic ---
-    from datetime import date, timedelta
     profile, created = UserProfile.objects.get_or_create(user=request.user)
     today = date.today()
 
@@ -982,115 +1000,149 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     if not spoken_text:
         return JsonResponse({"status": "error", "message": "No text received."}, status=400)
 
+    # ── Handle special "link" command ─────────────────────────────────────────
+    if spoken_text.lower().startswith("link "):
+        token = spoken_text[5:].strip()
+        
+        # Security: ensure they are texting from the number they are trying to link
+        normalized_token = re.sub(r'[^0-9]', '', token).lstrip("0")
+        normalized_incoming = re.sub(r'[^0-9]', '', incoming_phone).lstrip("0")
+        
+        if normalized_token != normalized_incoming:
+            return JsonResponse({
+                "status": "error",
+                "message": "❌ Security Alert: You can only link the WhatsApp number that you are currently messaging from!"
+            })
+            
+        if normalized_token.startswith("91") and len(normalized_token) > 10:
+            token_without_cc = normalized_token[2:]
+            token_with_cc = normalized_token
+        else:
+            token_without_cc = normalized_token
+            token_with_cc = "91" + normalized_token
+
+        profile = UserProfile.objects.filter(
+            Q(phone_number=token_with_cc) | Q(phone_number=token_without_cc)
+        ).first()
+        
+        if profile:
+            # Token is valid and matches incoming phone, trust it
+            profile.phone_number = incoming_phone
+            profile.save()
+            return JsonResponse({
+                "status": "success",
+                "message": f"✅ Verified! Your WhatsApp account has been successfully linked. You can start tracking expenses now! (e.g., '500 petrol')"
+            })
+        else:
+            return JsonResponse({"status": "error", "message": "❌ This number is not registered to any account on the website. Please check your profile."})
+
     # ── Dual-mode user resolution ─────────────────────────────────────────────
     target_user = None
 
     if not incoming_phone:
-        # ── MODE 1: Browser — logged-in session user ──────────────────────────
         if request.user.is_authenticated:
             target_user = request.user
-            logger.info("Voice expense via browser uid=%s", target_user.id)
         else:
-            return JsonResponse({
-                "status":  "error",
-                "message": "Login karein ya WhatsApp number bhejein. 🔐"
-            }, status=401)
-
+            return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
     else:
-        # ── MODE 2: WhatsApp — phone number se user dhoondo ───────────────────
-        # Sirf digits rakho, leading zeros hatao
         normalized_phone = re.sub(r'[^0-9]', '', incoming_phone).lstrip("0")
-
-        # Try both: with and without "91" country code
         if normalized_phone.startswith("91") and len(normalized_phone) > 10:
-            phone_without_cc = normalized_phone[2:]   # "919876543210" → "9876543210"
-            phone_with_cc    = normalized_phone        # "919876543210"
+            phone_without_cc = normalized_phone[2:]
+            phone_with_cc    = normalized_phone
         else:
-            phone_without_cc = normalized_phone        # "9876543210"
-            phone_with_cc    = "91" + normalized_phone # "919876543210"
-
-        print(f"DEBUG: Trying phone formats → {phone_with_cc!r} or {phone_without_cc!r}")
+            phone_without_cc = normalized_phone
+            phone_with_cc    = "91" + normalized_phone
 
         profile = UserProfile.objects.filter(
             Q(phone_number=phone_with_cc) | Q(phone_number=phone_without_cc)
         ).select_related("user").first()
 
         if not profile or not profile.user:
-            logger.warning(
-                "Voice expense failed: unknown phone %s (tried: %s, %s)",
-                incoming_phone, phone_with_cc, phone_without_cc
-            )
             return JsonResponse({
                 "status":  "error",
-                "message": "Bhai, pehle website par register karke apna WhatsApp number save karo! 🚫"
-            }, status=404)
-
+                "message": "Please link your account first by sending 'Link <number>' from the dashboard! 🚫"
+            })
         target_user = profile.user
-        logger.info("Voice expense via WhatsApp uid=%s phone=%s", target_user.id, incoming_phone)
 
-    # ── AI se expense data extract karo ──────────────────────────────────────
+    # Collect User Context
+    budget = float(getattr(target_user.profile, 'monthly_budget', 20000))
+    today = date.today()
+    first_day = today.replace(day=1)
+    spent = Expense.objects.filter(user=target_user, date__gte=first_day).aggregate(Sum('amount'))['amount__sum'] or 0
+    recent_qs = Expense.objects.filter(user=target_user).order_by('-date')[:5]
+    recent_str = ", ".join([f"{e.category}: ₹{e.amount}" for e in recent_qs]) or "No recent expenses"
+    
+    user_context = {
+        "budget": budget,
+        "spent": float(spent),
+        "remaining": max(0, budget - float(spent)),
+        "recent_expenses": recent_str
+    }
+
+    # ── AI Conversations & Expense Routing ────────────────────────────────────
     try:
-        today           = date.today()
         normalized_text = normalize_hinglish_numbers(spoken_text)
-        prompt          = build_voice_ai_prompt(normalized_text, today)
+        prompt = build_conversational_ai_prompt(normalized_text, today, user_context)
 
         response = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
             model="llama-3.3-70b-versatile",
-            temperature=0.0,
-            max_tokens=150,
+            temperature=0.2,
+            max_tokens=200,
         )
         raw_response = response.choices[0].message.content.strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
 
-        json_match = re.search(r'\{[^{}]+\}', raw_response, re.DOTALL)
-        if not json_match:
+        start_idx = raw_response.find('{')
+        end_idx = raw_response.rfind('}')
+        if start_idx == -1 or end_idx == -1:
             raise ValueError("No JSON found in AI response")
 
-        ai_data    = json.loads(json_match.group(0))
-        amount_raw = ai_data.get("amount", 0)
+        json_str = raw_response[start_idx:end_idx+1]
+        ai_data = json.loads(json_str)
+        action = ai_data.get("action", "chat")
 
-        if isinstance(amount_raw, str):
-            amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
+        if action == "log_expense":
+            expense_details = ai_data.get("expense_details", {})
+            amount_raw = expense_details.get("amount", 0)
+            if isinstance(amount_raw, str):
+                amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
+            amount = Decimal(str(amount_raw))
 
-        amount = Decimal(str(amount_raw))
+            if amount <= 0:
+                return JsonResponse({"status": "error", "message": "Could not understand the amount. Try: '500 petrol' ⛽"})
 
-        if amount <= 0:
+            category = str(expense_details.get("category", "other")).strip().lower()
+            if category not in VALID_CATEGORIES:
+                category = _keyword_category_fallback(spoken_text)
+
+            expense = Expense.objects.create(
+                user=target_user,
+                amount=amount,
+                category=category,
+                date=today,
+                description=str(expense_details.get("description", "")).strip()[:100],
+            )
+
+            icon = CAT_ICONS.get(category, "📦")
             return JsonResponse({
-                "status":  "error",
-                "message": "Amount samajh nahi aaya. Try karo: '500 petrol' ⛽"
-            }, status=400)
-
-        category = str(ai_data.get("category", "other")).strip().lower()
-        if category not in VALID_CATEGORIES:
-            category = _keyword_category_fallback(spoken_text)
-
-        expense = Expense.objects.create(
-            user=target_user,
-            amount=amount,
-            category=category,
-            date=today,
-            description=str(ai_data.get("description", "")).strip()[:100],
-        )
-
-        icon = CAT_ICONS.get(category, "📦")
-        logger.info("Voice expense saved uid=%s id=%s amount=%s cat=%s",
-                    target_user.id, expense.pk, amount, category)
-
-        return JsonResponse({
-            "status":     "success",
-            "message":    f"{icon} ₹{amount:,} — {category.title()} saved! ✅",
-            "expense_id": expense.pk,
-        })
+                "status": "success",
+                "message": f"{icon} ₹{amount:,} — {category.title()} saved! ✅",
+                "expense_id": expense.pk,
+            })
+        else:
+            chat_response = ai_data.get("chat_response", "Mujhe samajh nahi aaya, bhai.")
+            return JsonResponse({
+                "status": "success",
+                "message": chat_response
+            })
 
     except json.JSONDecodeError as e:
         logger.error("Voice expense JSON parse error: %s", e)
-        return JsonResponse({"status": "error", "message": "AI response parse nahi hua."}, status=500)
-
+        return JsonResponse({"status": "error", "message": "AI could not understand. Please try again!"})
     except Exception as e:
         logger.error("Voice expense error uid=%s error=%s", target_user.id if target_user else "unknown", e)
-        print(f"CRITICAL ERROR in voice_expense: {e}")
-        return JsonResponse({"status": "error", "message": "Kuch galat hua bhai. 😅"}, status=500)
+        return JsonResponse({"status": "error", "message": "An unexpected technical error occurred. 😅"})
 
 
 def _keyword_category_fallback(text: str) -> str:
@@ -1141,7 +1193,7 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
     ).days
 
     system = f"""You are "PaisaMitra" — a friendly, witty, and brutally honest Indian personal finance coach.
-Speak in Hinglish (Roman script). Be warm, sometimes sarcastic, always practical and helpful.
+Analyze the user's language. If they speak in Hinglish (Hindi written in English alphabet), reply in warm, conversational Hinglish. If they speak in English, reply in natural, practical English. Be sometimes sarcastic, but always practical and helpful.
 
 ══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
 Budget:         ₹{budget:,.0f}
@@ -1158,7 +1210,7 @@ TOP SPENDING CATEGORIES:
 {cat_lines or '  (No data available yet)'}
 
 ══ YOUR RULES ══
-1. Always respond in Hinglish naturally.
+1. Always respond in the same language as the user (English or Hinglish).
 2. Keep responses concise — max 100 words.
 3. If user asks for calculations, do them correctly.
 4. Never make up numbers you don't have.
@@ -1629,7 +1681,7 @@ def habit_warnings(request):
 
     if expenses.count() < 3:
         return JsonResponse({
-            "warning": "Bhai abhi data bohot kam hai habit samajhne ke liye. Thode aur kharche track kar! 📉"
+            "warning": "Not enough data yet. Track more expenses for at least a few days so I can analyze your habits! 📉"
         })
 
     data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
@@ -1642,7 +1694,7 @@ def habit_warnings(request):
     Task:
     1. Analyze the exact numbers and find a HIDDEN PATTERN or BAD HABIT (e.g., "spending too much on transport regularly", "huge food expenses on weekends").
     2. Predict what will happen to his budget if he continues this exact habit.
-    3. Give a strict, funny, and highly personalized Hinglish warning message to send via WhatsApp.
+    3. Give a strict, funny, and highly personalized warning message to send via WhatsApp. Detect the user's natural language and reply in the same language (English or Hinglish).
     
     Rules:
     - Only give the final message text. No intro, no quotes, no markdown.
@@ -1720,3 +1772,32 @@ def whatsapp_summary(request):
             return JsonResponse({"status": "error", "message": f"Server mein gadbad hai: {str(e)}"})
             
     return JsonResponse({"status": "error", "message": "Only POST requests allowed"}, status=405)
+
+@login_required(login_url="login")
+def get_latest_update_time(request: HttpRequest) -> JsonResponse:
+    latest = Expense.objects.filter(user=request.user).order_by('-id').first()
+    if latest:
+        return JsonResponse({"latest_id": latest.id})
+    return JsonResponse({"latest_id": 0})
+
+# ── Static Pages ─────────────────────────────────────────────────────────
+
+def landing_view(request: HttpRequest) -> HttpResponse:
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, "tracker/landing.html")
+
+def about_view(request: HttpRequest) -> HttpResponse:
+    return render(request, "tracker/about.html")
+
+def features_view(request: HttpRequest) -> HttpResponse:
+    return render(request, "tracker/features.html")
+
+def privacy_view(request: HttpRequest) -> HttpResponse:
+    return render(request, "tracker/privacy.html")
+
+def terms_view(request: HttpRequest) -> HttpResponse:
+    return render(request, "tracker/terms.html")
+
+def contact_view(request: HttpRequest) -> HttpResponse:
+    return render(request, "tracker/contact.html")
