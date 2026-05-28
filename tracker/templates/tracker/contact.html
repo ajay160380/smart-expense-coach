@@ -1,0 +1,105 @@
+{% extends 'tracker/base.html' %}
+
+{% block extra_css %}
+<style>
+.static-page {
+    width: 100%;
+    padding: 40px 20px;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.4s ease-out;
+}
+.static-card {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    padding: 50px;
+    color: var(--text-main);
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 20px;
+    transition: color 0.2s, transform 0.2s;
+}
+.back-btn:hover {
+    color: var(--primary);
+    transform: translateX(-4px);
+}
+.static-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+.static-content p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+.static-content h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: var(--text-main);
+}
+.contact-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 20px var(--primary-glow);
+    margin-top: 10px;
+}
+.contact-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px var(--primary-glow);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <div class="static-card">
+        <a href="#" onclick="history.back(); return false;" class="back-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back
+        </a>
+        <h1 class="static-title">Contact Support</h1>
+        <div class="static-content">
+            <p>Need help with your account? Have a feature request? Or just want to say hi? We'd love to hear from you!</p>
+            
+            <h3>Email Support</h3>
+            <p>For general inquiries and technical support, please drop us an email. We typically respond within 24 hours.</p>
+            <p><strong>Email:</strong> support@paisamitra.com</p>
+            
+            <h3>WhatsApp Support</h3>
+            <p>If you're facing issues with the bot, you can also reach out to our dedicated human support line via WhatsApp.</p>
+            
+            <a href="mailto:support@paisamitra.com" class="contact-btn">Send us an Email</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
