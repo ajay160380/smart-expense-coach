@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Client, RemoteAuth } = require('whatsapp-web.js');
 const { PostgresStore } = require('wwebjs-postgres');
 const { Pool } = require('pg');
@@ -48,9 +49,14 @@ pool.connect().then(() => {
 
     client.on('message', async (msg) => {
         const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:7860";
-        const phone = msg.from.split('@')[0];
+        
+        // WhatsApp ke naye privacy features mein msg.from kabhi kabhi @lid (Local ID) bhejta hai
+        // Isliye hum contact fetch karke uska actual number nikalenge
+        const contact = await msg.getContact();
+        const phone = contact.number || msg.from.split('@')[0];
+        
         const text = msg.body;
-        console.log(`Received message from ${phone}: ${text}`);
+        console.log(`Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
         
         try {
             const response = await fetch(`${SPACE_URL}/api/voice-expense/`, {
