@@ -114,6 +114,5 @@ urlpatterns = [
     path('api/register/', RegisterAPIView.as_view(), name='api_register'),
     path('api/whatsapp-summary/', views.whatsapp_summary, name='whatsapp_summary'),
     path('api/latest-update-time/', views.get_latest_update_time, name='get_latest_update_time'),
-
-
+    path('api/wa-link-status/', views.wa_link_status, name='wa_link_status'),
 ]

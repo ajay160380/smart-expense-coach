@@ -9,6 +9,12 @@ class UserProfile(models.Model):
     
 
     phone_number = models.CharField(max_length=15, unique=True)
+    
+    # --- WhatsApp Linking Fields ---
+    whatsapp_number = models.CharField(max_length=20, blank=True, null=True)
+    whatsapp_linked = models.BooleanField(default=False)
+    whatsapp_link_token = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    whatsapp_link_expires = models.DateTimeField(blank=True, null=True)
 
     # --- Gamification Fields ---
     xp = models.IntegerField(default=0)

@@ -232,29 +232,37 @@ def normalize_hinglish_numbers(text: str) -> str:
     return text
 
 
-def build_conversational_ai_prompt(spoken_text: str, today, user_context: dict) -> str:
+def build_conversational_ai_prompt(today, user_context: dict) -> str:
     return f"""
-    You are PaisaMitra, a smart, brutally honest, funny Indian financial AI coach.
+    You are PaisaMitra, an insanely smart, brutally honest, funny, and extremely helpful Indian financial AI coach.
+    You understand WhatsApp Hinglish slang perfectly (e.g., 'khrcha', 'sb', 'btvo', 'kaha', 'kaisa', 'kitan').
     You analyze the user's message and decide if they want to LOG an expense, OR just chat/ask a question.
     
-    User Message: "{spoken_text}"
     Today's Date: {today}
     
     User Context:
     - Monthly Budget: ₹{user_context.get('budget', 20000)}
     - Total Spent This Month: ₹{user_context.get('spent', 0)}
     - Remaining Budget: ₹{user_context.get('remaining', 0)}
+    - Category-wise Breakdown: {user_context.get('category_breakdown', 'None')}
     - Recent Expenses: {user_context.get('recent_expenses', 'None')}
 
     Rules for Routing:
-    1. If the message contains an expense (e.g. "500 ki chai", "petrol 200", "bought a shirt for 1000"):
+    1. If the user explicitly gives an AMOUNT to log an expense (e.g. "500 ki chai", "petrol 200", "bought a shirt for 1000"):
        - action = "log_expense"
        - amount = exact number extracted.
        - category = one of: food, transport, shopping, health, entertainment, education, utilities, other.
        - description = short description (e.g. "chai", "petrol").
-    2. If the message is a question, greeting, or request for advice (e.g. "hi", "mera hisab batao", "kaise ho", "how much did I spend?"):
+    2. If the user is ASKING a question, requesting a summary, complaining, or chatting (e.g. "khrcha kitan kiya maine", "kaha kaha khrcha kiya", "summary", "hi", "mai garib hu"):
        - action = "chat"
-       - chat_response = your natural, conversational, sarcastic but helpful Hinglish reply answering their question using the User Context provided above. Keep it under 50 words.
+       - chat_response = your natural, conversational, sarcastic but helpful English reply.
+         CRITICAL FORMATTING RULES FOR CHAT_RESPONSE:
+         - You MUST ALWAYS reply in pure English, even if the user speaks in Hindi or Hinglish.
+         - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
+         - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
+         - Use bullet points (`• `) when listing expenses or details.
+         - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
+         - Ensure the message looks premium, attractive, and well-spaced. Keep it concise but deeply informative.
 
     Response MUST be strict JSON ONLY. No markdown, no extra text.
     {{
@@ -556,7 +564,7 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             temperature=0.85,
             max_tokens=90,
         )
@@ -591,7 +599,7 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             temperature=0.85,
             max_tokens=100,
         )
@@ -626,7 +634,7 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             temperature=0.75,
             max_tokens=120,
         )
@@ -664,7 +672,7 @@ def register(request: HttpRequest) -> HttpResponse:
         form = CustomRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             request.session['show_wa_banner'] = True
             logger.info("New user registered uid=%s username=%s", user.id, user.username)
             messages.success(request, "Account created! Send a message on WhatsApp 🎉")
@@ -716,6 +724,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     
     # UserProfile fetch karo taaki budget DB mein permanently save ho sake
     profile, created = UserProfile.objects.get_or_create(user=user)
+
+    # WhatsApp token logic removed for simpler phone linking
 
     # ──────────────────────────────────────────────────────────────────────────
     # FIX 1: Budget update logic ab Database use karega, Session nahi
@@ -797,10 +807,10 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     # Ab 'expenses_qs' direct pass ho raha hai (sirf array mein bhejne ke liye)
     # ──────────────────────────────────────────────────────────────────────────
     if stats.get("transaction_count", 0) == 0:
-        insight = "<strong>Get started!</strong> Add your first expense to receive AI guidance. 🚀"
+        insight = "<strong>Get started!</strong> Add your first expense to receive guidance. 🚀"
     else:
-        raw     = get_ai_insight(user.id, expenses_qs, budget, stats["total_spent"])
-        insight = f"<strong>AI Coach:</strong> {raw}"
+        # Fast rule-based insight fallback to avoid slow Groq API calls on page load
+        insight = f"<strong>Smart Tracker:</strong> You have spent ₹{current_total_spent:,.0f} so far. Keep it under ₹{budget:,.0f}!"
 
     # ──────────────────────────────────────────────────────────────────────────
     # 🔥 PAISAMITRA AI TIPS LOGIC (Added by Ajay's Backend setup)
@@ -844,10 +854,12 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "monthly_trend":        monthly_trend,
         "show_wa_banner":       show_wa_banner,
         
-        # Ab expenses mein page object nahi, direct queryset jayega JS ke liye
         "expenses":             expenses_qs, 
         
         "current_filter":       filter_type,
+        "whatsapp_linked":      profile.whatsapp_linked,
+        "whatsapp_number":      profile.whatsapp_number,
+        "user_phone":           profile.phone_number,
         "search_query":         search_query,
         "form":                 ExpenseForm(),
         "sub_form":             SubscriptionForm(),
@@ -1002,39 +1014,24 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
     # ── Handle special "link" command ─────────────────────────────────────────
     if spoken_text.lower().startswith("link "):
-        token = spoken_text[5:].strip()
+        mobile_to_link = spoken_text.split(" ", 1)[-1].strip()
         
-        # Security: ensure they are texting from the number they are trying to link
-        normalized_token = re.sub(r'[^0-9]', '', token).lstrip("0")
-        normalized_incoming = re.sub(r'[^0-9]', '', incoming_phone).lstrip("0")
+        # 1. Find profile by mobile number
+        profile = UserProfile.objects.filter(phone_number=mobile_to_link).first()
         
-        if normalized_token != normalized_incoming:
-            return JsonResponse({
-                "status": "error",
-                "message": "❌ Security Alert: You can only link the WhatsApp number that you are currently messaging from!"
-            })
-            
-        if normalized_token.startswith("91") and len(normalized_token) > 10:
-            token_without_cc = normalized_token[2:]
-            token_with_cc = normalized_token
-        else:
-            token_without_cc = normalized_token
-            token_with_cc = "91" + normalized_token
+        if not profile:
+            return JsonResponse({"status": "error", "message": f"❌ Could not find an account with mobile number: {mobile_to_link}. Please check the number and try again."})
 
-        profile = UserProfile.objects.filter(
-            Q(phone_number=token_with_cc) | Q(phone_number=token_without_cc)
-        ).first()
+        # 2. Link the incoming WhatsApp JID/LID to this profile
+        profile.whatsapp_number = incoming_phone
+        profile.whatsapp_linked = True
+        profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
+        logger.info("WhatsApp linked for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
         
-        if profile:
-            # Token is valid and matches incoming phone, trust it
-            profile.phone_number = incoming_phone
-            profile.save()
-            return JsonResponse({
-                "status": "success",
-                "message": f"✅ Verified! Your WhatsApp account has been successfully linked. You can start tracking expenses now! (e.g., '500 petrol')"
-            })
-        else:
-            return JsonResponse({"status": "error", "message": "❌ This number is not registered to any account on the website. Please check your profile."})
+        return JsonResponse({
+            "status": "success",
+            "message": "✅ Verified! Your WhatsApp account has been successfully linked. You can start tracking expenses now! (e.g., '500 petrol')"
+        })
 
     # ── Dual-mode user resolution ─────────────────────────────────────────────
     target_user = None
@@ -1045,26 +1042,25 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         else:
             return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
     else:
-        normalized_phone = re.sub(r'[^0-9]', '', incoming_phone).lstrip("0")
-        if normalized_phone.startswith("91") and len(normalized_phone) > 10:
-            phone_without_cc = normalized_phone[2:]
-            phone_with_cc    = normalized_phone
-        else:
-            phone_without_cc = normalized_phone
-            phone_with_cc    = "91" + normalized_phone
-
-        profile = UserProfile.objects.filter(
-            Q(phone_number=phone_with_cc) | Q(phone_number=phone_without_cc)
-        ).select_related("user").first()
+        import phonenumbers
+        # Try exact match first (supports raw LIDs or unformatted numbers)
+        profile = UserProfile.objects.filter(whatsapp_number=incoming_phone).select_related("user").first()
+        
+        if not profile:
+            # Fallback to E164 formatting
+            try:
+                incoming_parsed = phonenumbers.parse("+" + incoming_phone.lstrip("+"), None)
+                incoming_e164 = phonenumbers.format_number(incoming_parsed, phonenumbers.PhoneNumberFormat.E164)
+                profile = UserProfile.objects.filter(whatsapp_number=incoming_e164).select_related("user").first()
+            except phonenumbers.NumberParseException:
+                pass
 
         if not profile or not profile.user:
             return JsonResponse({
                 "status":  "error",
-                "message": "Please link your account first by sending 'Link <number>' from the dashboard! 🚫"
+                "message": "❌ Account not linked. Please log into the dashboard and click 'Connect WhatsApp' to securely link this number."
             })
         target_user = profile.user
-
-    # Collect User Context
     budget = float(getattr(target_user.profile, 'monthly_budget', 20000))
     today = date.today()
     first_day = today.replace(day=1)
@@ -1072,21 +1068,120 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     recent_qs = Expense.objects.filter(user=target_user).order_by('-date')[:5]
     recent_str = ", ".join([f"{e.category}: ₹{e.amount}" for e in recent_qs]) or "No recent expenses"
     
+    category_breakdown = Expense.objects.filter(user=target_user, date__gte=first_day).values('category').annotate(total=Sum('amount')).order_by('-total')
+    cat_str = ", ".join([f"{c['category'].title()}: ₹{c['total']}" for c in category_breakdown]) if category_breakdown else "No expenses this month."
+    
     user_context = {
         "budget": budget,
         "spent": float(spent),
         "remaining": max(0, budget - float(spent)),
-        "recent_expenses": recent_str
+        "recent_expenses": recent_str,
+        "category_breakdown": cat_str
     }
 
     # ── AI Conversations & Expense Routing ────────────────────────────────────
     try:
         normalized_text = normalize_hinglish_numbers(spoken_text)
-        prompt = build_conversational_ai_prompt(normalized_text, today, user_context)
+
+        # ──────────────────────────────────────────────────────────────────────
+        # FAST PATH (Bypass slow AI for standard "[Amount] [Description]" format)
+        # ──────────────────────────────────────────────────────────────────────
+        fast_match = re.match(r'^(\d+(?:\.\d+)?)\s+(.+)$', normalized_text.strip())
+        if fast_match:
+            amount_raw = fast_match.group(1)
+            desc_raw = fast_match.group(2).strip()
+            amount = Decimal(amount_raw)
+            if amount > 0:
+                category = _keyword_category_fallback(desc_raw)
+                
+                expense = Expense.objects.create(
+                    user=target_user,
+                    amount=amount,
+                    category=category,
+                    date=today,
+                    description=desc_raw[:100],
+                )
+
+                icon = CAT_ICONS.get(category, "📦")
+                new_spent = float(spent) + float(amount)
+                new_rem = max(0, budget - new_spent)
+                
+                msg_lines = [
+                    f"✅ *Expense Logged (⚡ Instant)*",
+                    f"━━━━━━━━━━━━━━━━━━",
+                    f"{icon} *Amount:* ₹{amount:,}",
+                    f"🏷️ *Category:* {category.title()}",
+                    f"📝 *Note:* {expense.description or 'None'}",
+                    f"━━━━━━━━━━━━━━━━━━",
+                    f"💰 *Total Spent (Month):* ₹{new_spent:,.0f}",
+                    f"🎯 *Remaining Budget:* ₹{new_rem:,.0f}"
+                ]
+                
+                if new_rem == 0:
+                    msg_lines.append("⚠️ *Warning:* You have exceeded your monthly budget! 🛑")
+                    
+                final_message = "\n".join(msg_lines)
+                
+                return JsonResponse({
+                    "status": "success",
+                    "message": final_message,
+                    "expense_id": expense.pk,
+                })
+
+        # ──────────────────────────────────────────────────────────────────────
+        # FAST PATH 2 (Bypass AI entirely for Summary & Queries)
+        # ──────────────────────────────────────────────────────────────────────
+        query_keywords = ["summary", "kitna", "kharcha", "khrcha", "karcha", "batao", "batvo", "kaha", "bacha", "hisab", "report", "stats", "balance"]
+        if any(kw in normalized_text.lower() for kw in query_keywords):
+            rem = max(0, budget - float(spent))
+            
+            category_breakdown = list(Expense.objects.filter(user=target_user, date__gte=first_day).values('category').annotate(total=Sum('amount')).order_by('-total'))
+            
+            if category_breakdown:
+                cat_lines = []
+                for c in category_breakdown:
+                    cat_name = c['category'].title()
+                    cat_total = c['total']
+                    cat_icon = CAT_ICONS.get(c['category'], "📦")
+                    cat_lines.append(f"• {cat_icon} {cat_name}: ₹{cat_total:,.0f}")
+                cat_formatted = "\n".join(cat_lines)
+            else:
+                cat_formatted = "No expenses this month."
+                
+            msg_lines = [
+                f"📊 *Monthly Expense Report (⚡ Instant)*",
+                f"━━━━━━━━━━━━━━━━━━",
+                f"💰 *Total Spent:* ₹{float(spent):,.0f}",
+                f"🎯 *Monthly Budget:* ₹{budget:,.0f}",
+                f"💸 *Remaining:* ₹{rem:,.0f}",
+                f"━━━━━━━━━━━━━━━━━━",
+                f"🧾 *Category-wise Breakdown:*",
+                cat_formatted
+            ]
+            
+            if rem <= 0:
+                msg_lines.append("\n⚠️ *Warning:* Budget Exceeded! 🛑")
+                
+            return JsonResponse({
+                "status": "success",
+                "message": "\n".join(msg_lines)
+            })
+
+        # ──────────────────────────────────────────────────────────────────────
+        # AI PATH (Fallback for chatting and unknown questions)
+        # ──────────────────────────────────────────────────────────────────────
+        system_prompt = build_conversational_ai_prompt(today, user_context)
+        
+        chat_key = f"whatsapp_chat_history_{target_user.id}"
+        chat_history = cache.get(chat_key, [])
+
+        messages = [{"role": "system", "content": system_prompt}]
+        messages.extend(chat_history)
+        messages.append({"role": "user", "content": normalized_text})
 
         response = _groq_client().chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            messages=messages,
+            model="llama-3.1-8b-instant",
             temperature=0.2,
             max_tokens=200,
         )
@@ -1099,6 +1194,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             raise ValueError("No JSON found in AI response")
 
         json_str = raw_response[start_idx:end_idx+1]
+        
+        # Save history back to cache
+        chat_history.append({"role": "user", "content": normalized_text})
+        chat_history.append({"role": "assistant", "content": json_str})
+        cache.set(chat_key, chat_history[-10:], timeout=86400) # Keep last 10 messages for 24h
         ai_data = json.loads(json_str)
         action = ai_data.get("action", "chat")
 
@@ -1125,9 +1225,28 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             )
 
             icon = CAT_ICONS.get(category, "📦")
+            new_spent = float(spent) + float(amount)
+            new_rem = max(0, budget - new_spent)
+            
+            msg_lines = [
+                f"✅ *Expense Logged Successfully!*",
+                f"━━━━━━━━━━━━━━━━━━",
+                f"{icon} *Amount:* ₹{amount:,}",
+                f"🏷️ *Category:* {category.title()}",
+                f"📝 *Note:* {expense.description or 'None'}",
+                f"━━━━━━━━━━━━━━━━━━",
+                f"💰 *Total Spent (Month):* ₹{new_spent:,.0f}",
+                f"🎯 *Remaining Budget:* ₹{new_rem:,.0f}"
+            ]
+            
+            if new_rem == 0:
+                msg_lines.append("⚠️ *Warning:* You have exceeded your monthly budget! 🛑")
+                
+            final_message = "\n".join(msg_lines)
+            
             return JsonResponse({
                 "status": "success",
-                "message": f"{icon} ₹{amount:,} — {category.title()} saved! ✅",
+                "message": final_message,
                 "expense_id": expense.pk,
             })
         else:
@@ -1230,7 +1349,7 @@ TOP SPENDING CATEGORIES:
     try:
         resp = _groq_client().chat.completions.create(
             messages=messages_payload,
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             temperature=0.7,
             max_tokens=200,
         )
@@ -1705,7 +1824,7 @@ def habit_warnings(request):
     try:
         response = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             temperature=0.8,
             max_tokens=150,
         )
@@ -1801,3 +1920,14 @@ def terms_view(request: HttpRequest) -> HttpResponse:
 
 def contact_view(request: HttpRequest) -> HttpResponse:
     return render(request, "tracker/contact.html")
+
+@login_required(login_url="login")
+def wa_link_status(request: HttpRequest) -> JsonResponse:
+    try:
+        profile = request.user.userprofile
+        return JsonResponse({
+            "linked": profile.whatsapp_linked,
+            "whatsapp_number": profile.whatsapp_number
+        })
+    except Exception:
+        return JsonResponse({"linked": False, "whatsapp_number": None})
