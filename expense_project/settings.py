@@ -133,9 +133,15 @@ USE_TZ = True
 STATIC_URL = 'static/'
 CSRF_TRUSTED_ORIGINS = ['https://ajay160380-paisa-mitra.hf.space', 'https://*.hf.space', 'https://huggingface.co']
 
-# Hugging Face iframe cookie settings
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Hugging Face iframe cookie settings (Only enable these in production with HTTPS)
+# SESSION_COOKIE_SAMESITE = 'None'
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SAMESITE = 'None'
+# CSRF_COOKIE_SECURE = True
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+AUTHENTICATION_BACKENDS = [
+    'tracker.backends.PhoneAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
