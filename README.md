@@ -1,3 +1,11 @@
+---
+title: Paisa Mitra
+emoji: 💰
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+---
 # 💸 Smart Wallet & Expense Coach
 
 ![Django](https://img.shields.io/badge/Django-6.0.4-092e20?style=for-the-badge&logo=django)
