@@ -8,3 +8,7 @@ node_modules/
 .wwebjs_auth/
 .wwebjs_cache/
 .DS_Store
+
+RemoteAuth-paisa-mitra/
+db.sqlite3
+
