@@ -1021,7 +1021,6 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         mobile_to_link = spoken_text.split(" ", 1)[-1].strip()
         
         # Check if it looks like a phone number (only +, -, digits, and spaces)
-        import re
         if re.match(r'^\+?[\d\s\-]+$', mobile_to_link):
             # 1. Find profile by mobile number
             profile = UserProfile.objects.filter(phone_number=mobile_to_link).first()
@@ -1033,8 +1032,6 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             profile.whatsapp_number = incoming_phone
             profile.whatsapp_linked = True
             profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
-            import logging
-            logger = logging.getLogger(__name__)
             logger.info("WhatsApp linked for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
             
             return JsonResponse({

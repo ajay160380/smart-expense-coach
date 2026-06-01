@@ -16,7 +16,7 @@ pool.connect().then(() => {
         authStrategy: new RemoteAuth({
             store: store,
             backupSyncIntervalMs: 300000, // Backup every 5 minutes
-            clientId: "paisa-mitra",
+            clientId: "paisa-mitra-v2",
             dataPath: './'
         }),
         puppeteer: {
