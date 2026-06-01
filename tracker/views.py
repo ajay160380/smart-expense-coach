@@ -233,6 +233,7 @@ def normalize_hinglish_numbers(text: str) -> str:
 
 
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
+    user_name = user_context.get('name', 'User')
     return f"""
     You are PaisaMitra, an insanely smart, brutally honest, funny, and extremely helpful Indian financial AI coach.
     You understand WhatsApp Hinglish slang perfectly (e.g., 'khrcha', 'sb', 'btvo', 'kaha', 'kaisa', 'kitan').
@@ -241,6 +242,8 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     Today's Date: {today}
     
     User Context:
+    - Name: {user_name}
+    - Dashboard Link: https://ajay160380-paisa-mitra.hf.space
     - Monthly Budget: ₹{user_context.get('budget', 20000)}
     - Total Spent This Month: ₹{user_context.get('spent', 0)}
     - Remaining Budget: ₹{user_context.get('remaining', 0)}
@@ -256,12 +259,13 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     2. If the user is ASKING a question, requesting a summary, complaining, or chatting (e.g. "khrcha kitan kiya maine", "kaha kaha khrcha kiya", "summary", "hi", "mai garib hu"):
        - action = "chat"
        - chat_response = your natural, conversational, sarcastic but helpful English reply.
-         CRITICAL FORMATTING RULES FOR CHAT_RESPONSE:
          - You MUST ALWAYS reply in pure English, even if the user speaks in Hindi or Hinglish.
+         - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
          - Use bullet points (`• `) when listing expenses or details.
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
+         - If the user asks who created/made you (e.g. "kisne banaya", "who is your creator", "developer"), introduce Ajay Vishwakarma professionally. Mention his Portfolio (https://ajay-portfolio-r176.onrender.com), GitHub (https://github.com/ajay160380), and Email (ajaykumar160380@gmail.com). Ensure the intro is premium and proud!
          - Ensure the message looks premium, attractive, and well-spaced. Keep it concise but deeply informative.
 
     Response MUST be strict JSON ONLY. No markdown, no extra text.
@@ -1016,22 +1020,27 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     if spoken_text.lower().startswith("link "):
         mobile_to_link = spoken_text.split(" ", 1)[-1].strip()
         
-        # 1. Find profile by mobile number
-        profile = UserProfile.objects.filter(phone_number=mobile_to_link).first()
-        
-        if not profile:
-            return JsonResponse({"status": "error", "message": f"❌ Could not find an account with mobile number: {mobile_to_link}. Please check the number and try again."})
-
-        # 2. Link the incoming WhatsApp JID/LID to this profile
-        profile.whatsapp_number = incoming_phone
-        profile.whatsapp_linked = True
-        profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
-        logger.info("WhatsApp linked for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
-        
-        return JsonResponse({
-            "status": "success",
-            "message": "✅ Verified! Your WhatsApp account has been successfully linked. You can start tracking expenses now! (e.g., '500 petrol')"
-        })
+        # Check if it looks like a phone number (only +, -, digits, and spaces)
+        import re
+        if re.match(r'^\+?[\d\s\-]+$', mobile_to_link):
+            # 1. Find profile by mobile number
+            profile = UserProfile.objects.filter(phone_number=mobile_to_link).first()
+            
+            if not profile:
+                return JsonResponse({"status": "error", "message": f"❌ Could not find an account with mobile number: {mobile_to_link}. Please check the number and try again."})
+    
+            # 2. Link the incoming WhatsApp JID/LID to this profile
+            profile.whatsapp_number = incoming_phone
+            profile.whatsapp_linked = True
+            profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info("WhatsApp linked for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
+            
+            return JsonResponse({
+                "status": "success",
+                "message": "✅ Verified! Your WhatsApp account has been successfully linked. You can start tracking expenses now! (e.g., '500 petrol')"
+            })
 
     # ── Dual-mode user resolution ─────────────────────────────────────────────
     target_user = None
@@ -1071,7 +1080,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     category_breakdown = Expense.objects.filter(user=target_user, date__gte=first_day).values('category').annotate(total=Sum('amount')).order_by('-total')
     cat_str = ", ".join([f"{c['category'].title()}: ₹{c['total']}" for c in category_breakdown]) if category_breakdown else "No expenses this month."
     
+    user_name = target_user.first_name.title() if target_user.first_name else target_user.username.title()
+    
     user_context = {
+        "name": user_name,
         "budget": budget,
         "spent": float(spent),
         "remaining": max(0, budget - float(spent)),
@@ -1108,7 +1120,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 
                 month_name = today.strftime("%B")
                 msg_lines = [
-                    f"✅ *Expense Logged (⚡ Instant)*",
+                    f"✅ *Hi {user_name}, Expense Logged (⚡ Instant)*",
                     f"━━━━━━━━━━━━━━━━━━",
                     f"{icon} *Amount:* ₹{amount:,}",
                     f"🏷️ *Category:* {category.title()}",
@@ -1149,14 +1161,14 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 cat_qs = Expense.objects.filter(user=target_user, date__range=(first_day_prev, last_day_prev))
                 
                 month_name = last_day_prev.strftime("%B %Y")
-                title = f"📊 *{month_name} Expense Report (Past Data)*"
+                title = f"📊 *{user_name}'s {month_name} Expense Report (Past)*"
             else:
                 spent_val = float(spent)
                 rem_val = max(0, budget - float(spent))
                 cat_qs = Expense.objects.filter(user=target_user, date__gte=first_day)
                 
                 month_name = today.strftime("%B %Y")
-                title = f"📊 *{month_name} Expense Report (⚡ Instant)*"
+                title = f"📊 *{user_name}'s {month_name} Expense Report (⚡ Instant)*"
                 
             category_breakdown = list(cat_qs.values('category').annotate(total=Sum('amount')).order_by('-total'))
             
@@ -1260,7 +1272,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             
             month_name = today.strftime("%B")
             msg_lines = [
-                f"✅ *Expense Logged Successfully!*",
+                f"✅ *Hi {user_name}, Expense Logged Successfully!*",
                 f"━━━━━━━━━━━━━━━━━━",
                 f"{icon} *Amount:* ₹{amount:,}",
                 f"🏷️ *Category:* {category.title()}",
