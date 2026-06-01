@@ -1106,6 +1106,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 new_spent = float(spent) + float(amount)
                 new_rem = max(0, budget - new_spent)
                 
+                month_name = today.strftime("%B")
                 msg_lines = [
                     f"✅ *Expense Logged (⚡ Instant)*",
                     f"━━━━━━━━━━━━━━━━━━",
@@ -1113,7 +1114,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     f"🏷️ *Category:* {category.title()}",
                     f"📝 *Note:* {expense.description or 'None'}",
                     f"━━━━━━━━━━━━━━━━━━",
-                    f"💰 *Total Spent (Month):* ₹{new_spent:,.0f}",
+                    f"💰 *Total Spent ({month_name}):* ₹{new_spent:,.0f}",
                     f"🎯 *Remaining Budget:* ₹{new_rem:,.0f}"
                 ]
                 
@@ -1132,7 +1133,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # FAST PATH 2 (Bypass AI entirely for Summary & Queries)
         # ──────────────────────────────────────────────────────────────────────
         query_keywords = ["summary", "kitna", "kharcha", "khrcha", "karcha", "batao", "batvo", "kaha", "bacha", "hisab", "report", "stats", "balance"]
-        if any(kw in normalized_text.lower() for kw in query_keywords):
+        if any(kw in normalized_text.lower() for kw in query_keywords) or normalized_text.strip() in ["?", "help"]:
             rem = max(0, budget - float(spent))
             
             category_breakdown = list(Expense.objects.filter(user=target_user, date__gte=first_day).values('category').annotate(total=Sum('amount')).order_by('-total'))
@@ -1148,8 +1149,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             else:
                 cat_formatted = "No expenses this month."
                 
+            month_name = today.strftime("%B %Y")
             msg_lines = [
-                f"📊 *Monthly Expense Report (⚡ Instant)*",
+                f"📊 *{month_name} Expense Report (⚡ Instant)*",
                 f"━━━━━━━━━━━━━━━━━━",
                 f"💰 *Total Spent:* ₹{float(spent):,.0f}",
                 f"🎯 *Monthly Budget:* ₹{budget:,.0f}",
@@ -1199,7 +1201,14 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         chat_history.append({"role": "user", "content": normalized_text})
         chat_history.append({"role": "assistant", "content": json_str})
         cache.set(chat_key, chat_history[-10:], timeout=86400) # Keep last 10 messages for 24h
-        ai_data = json.loads(json_str)
+        
+        try:
+            ai_data = json.loads(json_str, strict=False)
+        except json.JSONDecodeError:
+            # Fallback for unescaped newlines and common issues
+            clean_str = json_str.replace('\n', '\\n').replace('\r', '')
+            ai_data = json.loads(clean_str, strict=False)
+            
         action = ai_data.get("action", "chat")
 
         if action == "log_expense":
@@ -1228,6 +1237,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             new_spent = float(spent) + float(amount)
             new_rem = max(0, budget - new_spent)
             
+            month_name = today.strftime("%B")
             msg_lines = [
                 f"✅ *Expense Logged Successfully!*",
                 f"━━━━━━━━━━━━━━━━━━",
@@ -1235,7 +1245,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 f"🏷️ *Category:* {category.title()}",
                 f"📝 *Note:* {expense.description or 'None'}",
                 f"━━━━━━━━━━━━━━━━━━",
-                f"💰 *Total Spent (Month):* ₹{new_spent:,.0f}",
+                f"💰 *Total Spent ({month_name}):* ₹{new_spent:,.0f}",
                 f"🎯 *Remaining Budget:* ₹{new_rem:,.0f}"
             ]
             
