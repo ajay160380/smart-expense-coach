@@ -1133,10 +1133,32 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # FAST PATH 2 (Bypass AI entirely for Summary & Queries)
         # ──────────────────────────────────────────────────────────────────────
         query_keywords = ["summary", "kitna", "kharcha", "khrcha", "karcha", "batao", "batvo", "kaha", "bacha", "hisab", "report", "stats", "balance"]
-        if any(kw in normalized_text.lower() for kw in query_keywords) or normalized_text.strip() in ["?", "help"]:
-            rem = max(0, budget - float(spent))
-            
-            category_breakdown = list(Expense.objects.filter(user=target_user, date__gte=first_day).values('category').annotate(total=Sum('amount')).order_by('-total'))
+        past_keywords = ["pichle", "pichli", "pichla", "purana", "purane", "last", "previous", "old", "past"]
+        
+        is_past_query = any(kw in normalized_text.lower() for kw in past_keywords)
+        is_query = any(kw in normalized_text.lower() for kw in query_keywords) or normalized_text.strip() in ["?", "help"]
+
+        if is_query or is_past_query:
+            if is_past_query:
+                from datetime import timedelta
+                last_day_prev = first_day - timedelta(days=1)
+                first_day_prev = last_day_prev.replace(day=1)
+                
+                spent_val = Expense.objects.filter(user=target_user, date__range=(first_day_prev, last_day_prev)).aggregate(Sum('amount'))['amount__sum'] or 0
+                rem_val = max(0, budget - float(spent_val))
+                cat_qs = Expense.objects.filter(user=target_user, date__range=(first_day_prev, last_day_prev))
+                
+                month_name = last_day_prev.strftime("%B %Y")
+                title = f"📊 *{month_name} Expense Report (Past Data)*"
+            else:
+                spent_val = float(spent)
+                rem_val = max(0, budget - float(spent))
+                cat_qs = Expense.objects.filter(user=target_user, date__gte=first_day)
+                
+                month_name = today.strftime("%B %Y")
+                title = f"📊 *{month_name} Expense Report (⚡ Instant)*"
+                
+            category_breakdown = list(cat_qs.values('category').annotate(total=Sum('amount')).order_by('-total'))
             
             if category_breakdown:
                 cat_lines = []
@@ -1147,21 +1169,20 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     cat_lines.append(f"• {cat_icon} {cat_name}: ₹{cat_total:,.0f}")
                 cat_formatted = "\n".join(cat_lines)
             else:
-                cat_formatted = "No expenses this month."
+                cat_formatted = "No expenses found for this period."
                 
-            month_name = today.strftime("%B %Y")
             msg_lines = [
-                f"📊 *{month_name} Expense Report (⚡ Instant)*",
+                title,
                 f"━━━━━━━━━━━━━━━━━━",
-                f"💰 *Total Spent:* ₹{float(spent):,.0f}",
+                f"💰 *Total Spent:* ₹{float(spent_val):,.0f}",
                 f"🎯 *Monthly Budget:* ₹{budget:,.0f}",
-                f"💸 *Remaining:* ₹{rem:,.0f}",
+                f"💸 *Remaining:* ₹{rem_val:,.0f}",
                 f"━━━━━━━━━━━━━━━━━━",
                 f"🧾 *Category-wise Breakdown:*",
                 cat_formatted
             ]
             
-            if rem <= 0:
+            if not is_past_query and rem_val <= 0:
                 msg_lines.append("\n⚠️ *Warning:* Budget Exceeded! 🛑")
                 
             return JsonResponse({
