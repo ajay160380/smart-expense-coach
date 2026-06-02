@@ -1,12 +1,24 @@
 require('dotenv').config();
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, RemoteAuth } = require('whatsapp-web.js');
+const { PostgresStore } = require('wwebjs-postgres');
+const { Pool } = require('pg');
 const qrcode = require('qrcode-terminal');
 
-const client = new Client({
-    authStrategy: new LocalAuth({
-        clientId: "paisa-mitra",
-        dataPath: './.wwebjs_auth'
-    }),
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+pool.connect().then(() => {
+    console.log("Connected to PostgreSQL for WhatsApp session storage.");
+    const store = new PostgresStore({ pool });
+
+    const client = new Client({
+        authStrategy: new RemoteAuth({
+            store: store,
+            backupSyncIntervalMs: 60000, // Backup every 1 minute instead of 5 minutes to prevent loss
+            clientId: "paisa-mitra-v3", // Fresh session ID so it gets saved properly
+            dataPath: './'
+        }),
         puppeteer: {
             args: [
                 '--no-sandbox', 
@@ -75,3 +87,6 @@ const client = new Client({
     });
 
     client.initialize();
+}).catch(err => {
+    console.error("Failed to connect to PostgreSQL:", err);
+});
