@@ -266,7 +266,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
          - Use bullet points (`• `) when listing expenses or details.
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
          - If the user asks who created/made you (e.g. "kisne banaya", "who is your creator", "developer"), reply EXACTLY with this text:
-*Hello {user_name}!* 🙋‍♂️ I'm PaisaMitra, your personal financial AI coach. I was created by the brilliant *Ajay Vishwakarma*, a seasoned AI/ML & Full Stack Developer with a passion for finance and technology. 🤖
+*Hello {user_name}!* 🙋‍♂️ I'm PaisaMitra, your personal financial AI coach. I was created by *Ajay Vishwakarma*, a seasoned AI/ML & Full Stack Developer with a passion for finance and technology. 🤖
 
 You can learn more about my creator's work here:
 🌐 *Portfolio:* https://ajay-portfolio-r176.onrender.com
@@ -1149,14 +1149,52 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # ──────────────────────────────────────────────────────────────────────
         # FAST PATH 2 (Bypass AI entirely for Summary & Queries)
         # ──────────────────────────────────────────────────────────────────────
-        query_keywords = ["summary", "kitna", "kharcha", "khrcha", "karcha", "batao", "batvo", "kaha", "bacha", "hisab", "report", "stats", "balance"]
+        query_keywords = ["summary", "kitna", "kharcha", "khrcha", "karcha", "batao", "batvo", "kaha", "bacha", "hisab", "report", "stats", "balance", "expense", "expenses", "expance"]
         past_keywords = ["pichle", "pichli", "pichla", "purana", "purane", "last", "previous", "old", "past"]
         
-        is_past_query = any(kw in normalized_text.lower() for kw in past_keywords)
-        is_query = any(kw in normalized_text.lower() for kw in query_keywords) or normalized_text.strip() in ["?", "help"]
+        months_map = {
+            "january": 1, "jan": 1,
+            "february": 2, "feb": 2,
+            "march": 3, "mar": 3,
+            "april": 4, "apr": 4,
+            "may": 5,
+            "june": 6, "jun": 6,
+            "july": 7, "jul": 7,
+            "august": 8, "aug": 8,
+            "september": 9, "sep": 9, "sept": 9,
+            "october": 10, "oct": 10,
+            "november": 11, "nov": 11,
+            "december": 12, "dec": 12
+        }
 
-        if is_query or is_past_query:
-            if is_past_query:
+        lower_text = normalized_text.lower()
+        target_month = None
+        target_year = today.year
+        
+        for m_name, m_num in months_map.items():
+            if re.search(rf'\b{m_name}\b', lower_text):
+                target_month = m_num
+                if target_month > today.month:
+                    target_year -= 1
+                break
+
+        is_past_query = any(kw in lower_text for kw in past_keywords)
+        is_query = any(kw in lower_text for kw in query_keywords) or lower_text.strip() in ["?", "help"] or target_month is not None
+
+        if is_query or is_past_query or target_month is not None:
+            if target_month is not None:
+                import calendar
+                first_day_target = date(target_year, target_month, 1)
+                last_day_target = date(target_year, target_month, calendar.monthrange(target_year, target_month)[1])
+                
+                spent_val = Expense.objects.filter(user=target_user, date__range=(first_day_target, last_day_target)).aggregate(Sum('amount'))['amount__sum'] or 0
+                rem_val = max(0, budget - float(spent_val))
+                cat_qs = Expense.objects.filter(user=target_user, date__range=(first_day_target, last_day_target))
+                
+                month_name_str = first_day_target.strftime("%B %Y")
+                title = f"📊 *{user_name}'s {month_name_str} Expense Report*"
+                
+            elif is_past_query:
                 from datetime import timedelta
                 last_day_prev = first_day - timedelta(days=1)
                 first_day_prev = last_day_prev.replace(day=1)
@@ -1165,15 +1203,15 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 rem_val = max(0, budget - float(spent_val))
                 cat_qs = Expense.objects.filter(user=target_user, date__range=(first_day_prev, last_day_prev))
                 
-                month_name = last_day_prev.strftime("%B %Y")
-                title = f"📊 *{user_name}'s {month_name} Expense Report (Past)*"
+                month_name_str = last_day_prev.strftime("%B %Y")
+                title = f"📊 *{user_name}'s {month_name_str} Expense Report (Past)*"
             else:
                 spent_val = float(spent)
                 rem_val = max(0, budget - float(spent))
                 cat_qs = Expense.objects.filter(user=target_user, date__gte=first_day)
                 
-                month_name = today.strftime("%B %Y")
-                title = f"📊 *{user_name}'s {month_name} Expense Report (⚡ Instant)*"
+                month_name_str = today.strftime("%B %Y")
+                title = f"📊 *{user_name}'s {month_name_str} Expense Report (⚡ Instant)*"
                 
             category_breakdown = list(cat_qs.values('category').annotate(total=Sum('amount')).order_by('-total'))
             
@@ -1186,7 +1224,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     cat_lines.append(f"• {cat_icon} {cat_name}: ₹{cat_total:,.0f}")
                 cat_formatted = "\n".join(cat_lines)
             else:
-                cat_formatted = "No expenses found for this period."
+                just_month = month_name_str.split(' ')[0]
+                cat_formatted = f"No expenses found for {just_month}."
                 
             msg_lines = [
                 title,
@@ -1199,7 +1238,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 cat_formatted
             ]
             
-            if not is_past_query and rem_val <= 0:
+            if target_month is None and not is_past_query and rem_val <= 0:
                 msg_lines.append("\n⚠️ *Warning:* Budget Exceeded! 🛑")
                 
             return JsonResponse({
