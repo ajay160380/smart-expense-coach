@@ -9,6 +9,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
     <style>
         /* 🎨 STUNNING THEME VARIABLES */
         :root {
@@ -639,6 +643,17 @@
             const pt = document.getElementById('profile-trigger');
             if (pd && pt && !pt.contains(e.target) && !pd.contains(e.target)) {
                 pd.classList.remove('active');
+            }
+        });
+
+        // Initialize AOS
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    duration: 800,
+                    once: true,
+                    offset: 100,
+                });
             }
         });
     </script>

@@ -22,5 +22,4 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 django-mathfilters==1.0.0
 dj-database-url==2.1.0
-psycopg2-binary==2.9.9
 phonenumbers==9.0.31

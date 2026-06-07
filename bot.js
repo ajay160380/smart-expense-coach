@@ -19,6 +19,10 @@ pool.connect().then(() => {
             clientId: "paisa-mitra-v3", // Fresh session ID so it gets saved properly
             dataPath: './'
         }),
+        webVersionCache: {
+            type: 'remote',
+            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+        },
         puppeteer: {
             args: [
                 '--no-sandbox', 
@@ -45,6 +49,20 @@ pool.connect().then(() => {
 
     client.on('remote_session_saved', () => {
         console.log('✅ WhatsApp Session successfully saved to PostgreSQL!');
+    });
+
+    client.on('authenticated', () => {
+        console.log('✅ Authenticated successfully!');
+    });
+
+    client.on('auth_failure', msg => {
+        console.error('❌ Authentication failure:', msg);
+    });
+
+    client.on('disconnected', (reason) => {
+        console.log('⚠️ WhatsApp Client was logged out / disconnected!');
+        console.log('Reason:', reason);
+        // Sometimes you need to destroy and reinitialize or clear the DB
     });
 
     client.on('message', async (msg) => {
