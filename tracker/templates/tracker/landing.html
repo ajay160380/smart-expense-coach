@@ -395,6 +395,43 @@
     @keyframes float-card { 0% { transform: translateY(0) rotate(var(--rot, 0deg)); } 100% { transform: translateY(-20px) rotate(calc(var(--rot) * 1.5)); } }
     @keyframes popIn { 0% { opacity: 0; transform: scale(0.8) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 
+    /* FAQ Section */
+    .faq-section { max-width: 800px; margin: 0 auto 100px; padding: 0 20px; }
+    .faq-item {
+        background: var(--bg-glass);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        margin-bottom: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    .faq-item:hover { border-color: var(--primary); }
+    .faq-question {
+        padding: 20px 24px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--text-main);
+    }
+    .faq-answer {
+        padding: 0 24px;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    .faq-item.active .faq-answer {
+        padding: 0 24px 20px;
+        max-height: 200px;
+    }
+    .faq-item.active .faq-icon { transform: rotate(45deg); color: var(--primary); }
+    .faq-icon { font-size: 1.5rem; transition: transform 0.3s; }
+
     /* Responsive */
     @media (max-width: 1024px) { .bento-grid { grid-template-columns: repeat(2, 1fr); } .float-item { display: none; } }
     @media (max-width: 768px) {
@@ -419,7 +456,7 @@
     <div class="orb orb-3"></div>
 
     <!-- Hero Section -->
-    <section class="hero-section">
+    <section class="hero-section" data-aos="zoom-in" data-aos-duration="1000">
         <div class="hero-badge">
             <span class="pulse"></span> AI Financial Coach Online
         </div>
@@ -452,7 +489,7 @@
     </section>
 
     <!-- Interactive Mockup Showcase -->
-    <section class="showcase-container">
+    <section class="showcase-container" data-aos="fade-up" data-aos-delay="200">
         <!-- Floating UI Elements -->
         <div class="float-item float-1" style="--rot: -5deg;">
             <div class="float-icon fi-1">🍔</div>
@@ -527,12 +564,12 @@
 
     <!-- Bento Grid Features -->
     <section class="bento-section" id="features">
-        <h2 class="section-title">Everything you need.<br><span style="color: var(--border-light);">Nothing you
+        <h2 class="section-title" data-aos="fade-up">Everything you need.<br><span style="color: var(--border-light);">Nothing you
                 don't.</span></h2>
 
         <div class="bento-grid">
             <!-- Large Card -->
-            <div class="bento-card bento-wide">
+            <div class="bento-card bento-wide" data-aos="fade-up" data-aos-delay="100">
                 <div class="bento-content">
                     <div class="bento-icon" style="color: #25D366; border-color: rgba(37,211,102,0.3);">
                         <i class="fab fa-whatsapp"></i>
@@ -545,7 +582,7 @@
             </div>
 
             <!-- Tall Card -->
-            <div class="bento-card bento-tall">
+            <div class="bento-card bento-tall" data-aos="fade-up" data-aos-delay="200">
                 <div class="bento-content">
                     <div class="bento-icon" style="color: #818CF8; border-color: rgba(129,140,248,0.3);">
                         🧠
@@ -568,7 +605,7 @@
             </div>
 
             <!-- Normal Card -->
-            <div class="bento-card">
+            <div class="bento-card" data-aos="fade-up" data-aos-delay="300">
                 <div class="bento-content">
                     <div class="bento-icon" style="color: #F43F5E; border-color: rgba(244,63,94,0.3);">
                         🎯
@@ -580,7 +617,7 @@
             </div>
 
             <!-- Normal Card -->
-            <div class="bento-card">
+            <div class="bento-card" data-aos="fade-up" data-aos-delay="400">
                 <div class="bento-content">
                     <div class="bento-icon" style="color: #FBBF24; border-color: rgba(251,191,36,0.3);">
                         📊
@@ -589,6 +626,38 @@
                     <p class="bento-desc">When texts aren't enough, log into your beautiful glassmorphic web dashboard
                         to view stunning visual charts, trends, and detailed analytics.</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section" data-aos="fade-up">
+        <h2 class="section-title" style="margin-bottom: 40px; font-size: 2.5rem;">Common Questions</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                How does the AI categorization work? <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                We use an advanced Large Language Model (LLM) that understands natural language. When you text "150 for coffee", it knows to classify it under "Food & Dining". It learns from context, so you don't have to manually select categories.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                Is my financial data secure? <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes, absolutely. We use industry-standard encryption to protect your data. Your messages are only processed for expense tracking and are never sold to third parties or advertisers.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
+                Do I need to download an app? <span class="faq-icon">+</span>
+            </div>
+            <div class="faq-answer">
+                No! That's the best part. PaisaMitra lives directly inside your WhatsApp. You can track your expenses instantly without opening a separate app or waiting for it to load.
             </div>
         </div>
     </section>
@@ -655,6 +724,16 @@
             card.style.setProperty('--mouse-x', `${x}%`);
             card.style.setProperty('--mouse-y', `${y}%`);
         });
+    });
+
+    // 🔮 Orb Parallax on Mouse Move
+    document.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 40;
+        const y = (e.clientY / window.innerHeight - 0.5) * 40;
+        
+        document.querySelector('.orb-1').style.transform = `translate(${x}px, ${y}px)`;
+        document.querySelector('.orb-2').style.transform = `translate(${-x * 1.5}px, ${-y * 1.5}px)`;
+        document.querySelector('.orb-3').style.transform = `translate(${x * 2}px, ${-y}px)`;
     });
 </script>
 {% endblock %}
