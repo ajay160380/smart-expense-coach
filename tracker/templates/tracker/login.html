@@ -145,6 +145,47 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Typing Animation */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 0 12px 12px 12px;
+    width: fit-content;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    animation: hideTyping 0s forwards 1.5s;
+}
+
+.typing-dot {
+    width: 6px; height: 6px;
+    background: #9ca3af;
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out;
+}
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+@keyframes hideTyping {
+    to { display: none; width: 0; height: 0; padding: 0; opacity: 0; overflow: hidden; }
+}
+
+.reply-delayed {
+    opacity: 0;
+    animation: showReply 0.3s forwards 1.6s;
+}
+
+@keyframes showReply {
+    to { opacity: 1; }
+}
+
 /* Right Side - Form */
 .auth-right {
     flex: 1;
@@ -175,6 +216,7 @@ body {
 /* Form Styles */
 .form-group {
     margin-bottom: 20px;
+    position: relative;
 }
 
 .form-label {
@@ -205,6 +247,19 @@ body {
     box-shadow: 0 0 0 4px var(--primary-glow);
     background: rgba(15, 23, 42, 0.8) !important;
 }
+
+.pwd-toggle {
+    position: absolute;
+    right: 16px;
+    top: 38px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0;
+}
+.pwd-toggle:hover { color: var(--primary-light); }
 
 .auth-actions {
     display: flex;
@@ -325,14 +380,17 @@ body {
             
             <div class="wa-mockup">
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-                    <div style="width:10px; height:10px; background:#4ade80; border-radius:50%;"></div>
+                    <div style="width:10px; height:10px; background:#4ade80; border-radius:50%; box-shadow: 0 0 10px #4ade80;"></div>
                     <span style="font-weight:600; font-family:'Outfit'; font-size:1.1rem;">PaisaMitra Bot</span>
                 </div>
                 <div style="text-align: right;">
                     <div class="wa-msg">500 petrol</div>
                 </div>
                 <div>
-                    <div class="wa-reply">💸 ₹500 for petrol saved! You have ₹14,500 remaining in your budget. 🚗</div>
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+                    </div>
+                    <div class="wa-reply reply-delayed">💸 ₹500 for petrol saved! You have ₹14,500 remaining in your budget. 🚗</div>
                 </div>
             </div>
         </div>
@@ -354,7 +412,8 @@ body {
                 
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+                    <input type="password" id="id_password" name="password" class="form-input" placeholder="••••••••" required>
+                    <button type="button" class="pwd-toggle" onclick="togglePwd('id_password', this)">👁️</button>
                 </div>
 
                 <div class="auth-actions">
@@ -386,4 +445,17 @@ body {
         <a href="{% url 'contact' %}">Contact Support</a>
     </div>
 </footer>
+
+<script>
+function togglePwd(id, btn) {
+    const input = document.getElementById(id);
+    if(input.type === 'password') {
+        input.type = 'text';
+        btn.innerText = '🔒';
+    } else {
+        input.type = 'password';
+        btn.innerText = '👁️';
+    }
+}
+</script>
 {% endblock %}
