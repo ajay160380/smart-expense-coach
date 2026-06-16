@@ -10,7 +10,7 @@
     "dotenv": "^17.4.2",
     "pg": "^8.21.0",
     "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "^1.23.0",
+    "whatsapp-web.js": "^1.34.7",
     "wwebjs-postgres": "^1.0.0"
   }
 }
