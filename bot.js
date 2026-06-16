@@ -19,10 +19,6 @@ pool.connect().then(() => {
             clientId: "paisa-mitra-v3", // Fresh session ID so it gets saved properly
             dataPath: './'
         }),
-        webVersionCache: {
-            type: 'remote',
-            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-        },
         puppeteer: {
             args: [
                 '--no-sandbox', 
@@ -103,6 +99,22 @@ pool.connect().then(() => {
             console.log("Error sending to Django:", err);
         }
     });
+
+    // Graceful shutdown handlers for Hugging Face Spaces / Docker
+    const gracefulShutdown = async () => {
+        console.log('Shutting down gracefully...');
+        try {
+            await client.destroy();
+            console.log('Client destroyed. Exiting...');
+            process.exit(0);
+        } catch (err) {
+            console.error('Error during shutdown:', err);
+            process.exit(1);
+        }
+    };
+
+    process.on('SIGINT', gracefulShutdown);
+    process.on('SIGTERM', gracefulShutdown);
 
     client.initialize();
 }).catch(err => {
