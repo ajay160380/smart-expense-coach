@@ -3,6 +3,7 @@ const { Client, RemoteAuth } = require('whatsapp-web.js');
 const { PostgresStore } = require('wwebjs-postgres');
 const { Pool } = require('pg');
 const qrcode = require('qrcode-terminal');
+const cron = require('node-cron');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
@@ -42,6 +43,51 @@ pool.connect().then(() => {
 
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
+
+        // ── 💡 DAILY TIP CRON JOB (8:00 AM IST = 2:30 AM UTC) ──
+        cron.schedule('30 2 * * *', async () => {
+            console.log('⏰ Running daily tip cron job...');
+            const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:7860";
+            const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
+            
+            try {
+                const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secret: DAILY_TIP_SECRET })
+                });
+                const data = await response.json();
+                
+                if (data.tips && data.tips.length > 0) {
+                    console.log(`💡 Sending ${data.tips.length} daily tips...`);
+                    
+                    for (const tip of data.tips) {
+                        try {
+                            // Try sending to the WhatsApp number
+                            const chatId = tip.whatsapp_number.includes('@') 
+                                ? tip.whatsapp_number 
+                                : `${tip.whatsapp_number}@c.us`;
+                            
+                            await client.sendMessage(chatId, tip.message);
+                            console.log(`✅ Daily tip sent to ${tip.whatsapp_number}`);
+                            
+                            // Small delay between messages to avoid rate limiting
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        } catch (sendErr) {
+                            console.error(`❌ Failed to send tip to ${tip.whatsapp_number}:`, sendErr.message);
+                        }
+                    }
+                    console.log(`💡 Daily tips batch complete! Sent: ${data.count}`);
+                } else {
+                    console.log('💡 No tips to send today (all already sent or no linked users).');
+                }
+            } catch (err) {
+                console.error('❌ Daily tip cron failed:', err.message);
+            }
+        }, {
+            timezone: "Asia/Kolkata"
+        });
+        console.log('📅 Daily tip cron scheduled for 8:00 AM IST');
     });
 
     client.on('remote_session_saved', () => {
