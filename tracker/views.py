@@ -41,7 +41,7 @@ from groq import Groq
 from django.http import JsonResponse
 import json
 from django.conf import settings
-from .models import Expense, Subscription, UserProfile
+from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
 
 from rest_framework import status
@@ -853,6 +853,22 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 
     monthly_trend = build_monthly_trend(user, months=CHART_MONTHS)
 
+    # ──────────────────────────────────────────────────────────────────────────
+    # NAYA FEATURE: Monthly Comparison Data
+    # ──────────────────────────────────────────────────────────────────────────
+    comparison = build_monthly_comparison(user)
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # NAYA FEATURE: Savings Goals
+    # ──────────────────────────────────────────────────────────────────────────
+    savings_goals = SavingsGoal.objects.filter(user=user, is_completed=False)[:5]
+    completed_goals = SavingsGoal.objects.filter(user=user, is_completed=True).count()
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # NAYA FEATURE: Split Groups
+    # ──────────────────────────────────────────────────────────────────────────
+    active_splits = SplitGroup.objects.filter(creator=user, is_settled=False)[:5]
+
     show_wa_banner = request.session.pop('show_wa_banner', False)
 
     context = {
@@ -886,6 +902,10 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "total_spent":          current_total_spent,
         "remaining_budget":     remaining_budget,
         "budget_percent":       budget_percent,
+        "comparison":            comparison,
+        "savings_goals":         savings_goals,
+        "completed_goals_count": completed_goals,
+        "active_splits":         active_splits,
         **stats,  
     }
     return render(request, "tracker/dashboard.html", context)
@@ -1137,6 +1157,12 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 
                 if new_rem == 0:
                     msg_lines.append("⚠️ *Warning:* You have exceeded your monthly budget! 🛑")
+
+                # 🔔 Smart Spending Alert
+                smart_alert = check_and_generate_alert(target_user, expense)
+                if smart_alert:
+                    msg_lines.append("")
+                    msg_lines.append(smart_alert)
                     
                 final_message = "\n".join(msg_lines)
                 
@@ -1328,6 +1354,12 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             
             if new_rem == 0:
                 msg_lines.append("⚠️ *Warning:* You have exceeded your monthly budget! 🛑")
+
+            # 🔔 Smart Spending Alert
+            smart_alert = check_and_generate_alert(target_user, expense)
+            if smart_alert:
+                msg_lines.append("")
+                msg_lines.append(smart_alert)
                 
             final_message = "\n".join(msg_lines)
             
@@ -2018,3 +2050,633 @@ def wa_link_status(request: HttpRequest) -> JsonResponse:
         })
     except Exception:
         return JsonResponse({"linked": False, "whatsapp_number": None})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 1: MONTHLY COMPARISON REPORT 📊
+# ══════════════════════════════════════════════════════════════════════════════
+
+def build_monthly_comparison(user) -> dict:
+    """Compare current month vs previous month spending."""
+    today = date.today()
+    cur_year, cur_month = today.year, today.month
+
+    # Previous month
+    if cur_month == 1:
+        prev_year, prev_month = cur_year - 1, 12
+    else:
+        prev_year, prev_month = cur_year, cur_month - 1
+
+    cur_qs = Expense.objects.filter(user=user, date__year=cur_year, date__month=cur_month)
+    prev_qs = Expense.objects.filter(user=user, date__year=prev_year, date__month=prev_month)
+
+    cur_total = _safe_float(cur_qs.aggregate(t=Sum("amount"))["t"])
+    prev_total = _safe_float(prev_qs.aggregate(t=Sum("amount"))["t"])
+
+    cur_count = cur_qs.count()
+    prev_count = prev_qs.count()
+
+    # Days elapsed calculation for fair comparison
+    days_elapsed = today.day
+    prev_days = calendar.monthrange(prev_year, prev_month)[1]
+
+    cur_daily_avg = cur_total / max(days_elapsed, 1)
+    prev_daily_avg = prev_total / max(prev_days, 1)
+
+    # Change percentage
+    if prev_total > 0:
+        total_change_pct = ((cur_total - prev_total) / prev_total) * 100
+    else:
+        total_change_pct = 100 if cur_total > 0 else 0
+
+    if prev_daily_avg > 0:
+        daily_avg_change_pct = ((cur_daily_avg - prev_daily_avg) / prev_daily_avg) * 100
+    else:
+        daily_avg_change_pct = 100 if cur_daily_avg > 0 else 0
+
+    # Category comparison
+    cur_cats = {c["category"]: _safe_float(c["total"]) for c in
+                cur_qs.values("category").annotate(total=Sum("amount")).order_by("-total")}
+    prev_cats = {c["category"]: _safe_float(c["total"]) for c in
+                 prev_qs.values("category").annotate(total=Sum("amount")).order_by("-total")}
+
+    all_cats = set(list(cur_cats.keys()) + list(prev_cats.keys()))
+    category_comparison = []
+    for cat in all_cats:
+        cur_val = cur_cats.get(cat, 0)
+        prev_val = prev_cats.get(cat, 0)
+        if prev_val > 0:
+            change = ((cur_val - prev_val) / prev_val) * 100
+        else:
+            change = 100 if cur_val > 0 else 0
+        category_comparison.append({
+            "name": cat,
+            "title": cat.title(),
+            "icon": CAT_ICONS.get(cat, "📦"),
+            "color": CAT_COLORS.get(cat, "#888"),
+            "current": cur_val,
+            "previous": prev_val,
+            "change_pct": round(change, 1),
+            "direction": "up" if cur_val > prev_val else ("down" if cur_val < prev_val else "same"),
+        })
+    category_comparison.sort(key=lambda x: abs(x["change_pct"]), reverse=True)
+
+    # Verdict
+    if total_change_pct < -10:
+        verdict = "excellent"
+        verdict_msg = "Bahut badhiya! Spending kam hui hai! 🎉"
+    elif total_change_pct < 5:
+        verdict = "good"
+        verdict_msg = "Stable spending — keep it up! 👍"
+    elif total_change_pct < 25:
+        verdict = "warning"
+        verdict_msg = "Spending badh rahi hai — watch out! ⚠️"
+    else:
+        verdict = "danger"
+        verdict_msg = "Alert! Spending bahut zyada badh gayi! 🚨"
+
+    prev_month_name = MONTH_NAMES[prev_month - 1]
+
+    return {
+        "cur_total": cur_total,
+        "prev_total": prev_total,
+        "total_change_pct": round(total_change_pct, 1),
+        "cur_daily_avg": round(cur_daily_avg, 0),
+        "prev_daily_avg": round(prev_daily_avg, 0),
+        "daily_avg_change_pct": round(daily_avg_change_pct, 1),
+        "cur_count": cur_count,
+        "prev_count": prev_count,
+        "categories": category_comparison[:6],
+        "verdict": verdict,
+        "verdict_msg": verdict_msg,
+        "prev_month_name": prev_month_name,
+        "has_prev_data": prev_total > 0,
+    }
+
+
+@login_required(login_url="login")
+def api_monthly_comparison(request: HttpRequest) -> JsonResponse:
+    comparison = build_monthly_comparison(request.user)
+    return JsonResponse(comparison)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 2: SAVINGS GOALS TRACKER 🎯
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url="login")
+def api_savings_goals(request: HttpRequest) -> JsonResponse:
+    goals = SavingsGoal.objects.filter(user=request.user)
+    data = []
+    for g in goals:
+        # Estimate months to complete
+        budget = float(getattr(request.user.profile, 'monthly_budget', 20000))
+        month_qs = Expense.objects.filter(
+            user=request.user,
+            date__year=date.today().year,
+            date__month=date.today().month
+        )
+        month_spent = _safe_float(month_qs.aggregate(t=Sum("amount"))["t"])
+        monthly_savings = max(budget - month_spent, 0)
+        remaining = max(float(g.target_amount) - float(g.saved_amount), 0)
+
+        if monthly_savings > 0 and remaining > 0:
+            months_needed = math_ceil(remaining / monthly_savings)
+        else:
+            months_needed = None
+
+        data.append({
+            "id": g.pk,
+            "name": g.name,
+            "icon": g.icon,
+            "target_amount": float(g.target_amount),
+            "saved_amount": float(g.saved_amount),
+            "progress_percent": round(g.progress_percent, 1),
+            "deadline": g.deadline.isoformat() if g.deadline else None,
+            "is_completed": g.is_completed,
+            "months_needed": months_needed,
+            "created_at": g.created_at.isoformat(),
+        })
+    return JsonResponse({"goals": data, "count": len(data)})
+
+
+@login_required(login_url="login")
+@require_POST
+@json_required
+def api_add_goal(request: HttpRequest) -> JsonResponse:
+    body = getattr(request, "_json_body", {})
+    name = str(body.get("name", "")).strip()
+    target = body.get("target_amount", 0)
+    icon = str(body.get("icon", "🎯")).strip()
+    deadline_str = body.get("deadline", "")
+
+    if not name or len(name) > 100:
+        return JsonResponse({"error": "Valid goal name required (max 100 chars)"}, status=400)
+
+    try:
+        target = Decimal(str(target))
+        if target <= 0:
+            raise ValueError
+    except (InvalidOperation, ValueError, TypeError):
+        return JsonResponse({"error": "Valid target amount required"}, status=400)
+
+    # Max 5 active goals
+    active_count = SavingsGoal.objects.filter(user=request.user, is_completed=False).count()
+    if active_count >= 5:
+        return JsonResponse({"error": "Maximum 5 active goals allowed!"}, status=400)
+
+    deadline = None
+    if deadline_str:
+        try:
+            deadline = date.fromisoformat(str(deadline_str))
+        except ValueError:
+            pass
+
+    goal = SavingsGoal.objects.create(
+        user=request.user,
+        name=name,
+        target_amount=target,
+        icon=icon,
+        deadline=deadline,
+    )
+    return JsonResponse({
+        "status": "success",
+        "message": f"🎯 Goal '{name}' created! Target: ₹{target:,}",
+        "goal_id": goal.pk,
+    }, status=201)
+
+
+@login_required(login_url="login")
+@require_POST
+@json_required
+def api_update_goal(request: HttpRequest, pk: int) -> JsonResponse:
+    goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
+    body = getattr(request, "_json_body", {})
+
+    add_amount = body.get("add_amount", 0)
+    try:
+        add_amount = Decimal(str(add_amount))
+        if add_amount <= 0:
+            raise ValueError
+    except (InvalidOperation, ValueError, TypeError):
+        return JsonResponse({"error": "Valid amount required"}, status=400)
+
+    goal.saved_amount = min(goal.saved_amount + add_amount, goal.target_amount)
+    if goal.saved_amount >= goal.target_amount:
+        goal.is_completed = True
+    goal.save()
+
+    return JsonResponse({
+        "status": "success",
+        "message": f"💰 ₹{add_amount:,} added to '{goal.name}'!" + (
+            " 🎉 Goal completed!" if goal.is_completed else ""),
+        "saved_amount": float(goal.saved_amount),
+        "progress_percent": round(goal.progress_percent, 1),
+        "is_completed": goal.is_completed,
+    })
+
+
+@login_required(login_url="login")
+@require_POST
+def api_delete_goal(request: HttpRequest, pk: int) -> JsonResponse:
+    goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
+    name = goal.name
+    goal.delete()
+    return JsonResponse({"status": "success", "message": f"🗑️ Goal '{name}' deleted."})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 3: DAILY MONEY TIP 💡
+# ══════════════════════════════════════════════════════════════════════════════
+
+def generate_daily_tip(user) -> str:
+    """Generate a personalized AI money tip based on user's spending patterns."""
+    today = date.today()
+    week_ago = today - timedelta(days=7)
+
+    week_expenses = Expense.objects.filter(user=user, date__gte=week_ago)
+    week_total = _safe_float(week_expenses.aggregate(t=Sum("amount"))["t"])
+
+    top_cat = (week_expenses.values("category")
+               .annotate(total=Sum("amount"))
+               .order_by("-total").first())
+
+    budget = float(getattr(user.profile, 'monthly_budget', 20000))
+    month_qs = Expense.objects.filter(user=user, date__year=today.year, date__month=today.month)
+    month_spent = _safe_float(month_qs.aggregate(t=Sum("amount"))["t"])
+    budget_pct = (month_spent / budget * 100) if budget > 0 else 0
+
+    cat_name = top_cat["category"].title() if top_cat else "General"
+    cat_total = _safe_float(top_cat["total"]) if top_cat else 0
+
+    day_of_week = today.strftime("%A")
+
+    try:
+        prompt = (
+            f"You are PaisaMitra, a witty Indian financial coach.\n"
+            f"Today is {day_of_week}.\n"
+            f"User's weekly spending: ₹{week_total:,.0f}\n"
+            f"Top category this week: {cat_name} (₹{cat_total:,.0f})\n"
+            f"Monthly budget used: {budget_pct:.0f}%\n"
+            f"Monthly spent: ₹{month_spent:,.0f} / ₹{budget:,.0f}\n\n"
+            f"Write ONE short, actionable English money-saving tip (under 30 words) that is:\n"
+            f"- Specific to this {day_of_week}\n"
+            f"- Relevant to the user's top category ({cat_name})\n"
+            f"- Funny, relatable, and practical\n"
+            f"- Includes 1-2 emojis\n"
+            f"ONLY return the tip text."
+        )
+
+        r = _groq_client().chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.1-8b-instant",
+            temperature=0.85,
+            max_tokens=80,
+        )
+        return r.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error("Daily tip generation error: %s", e)
+        tips_fallback = [
+            f"💡 {day_of_week} tip: Skip ordering out today and cook something simple. Your wallet will thank you! 🍳",
+            f"💡 {day_of_week} tip: Before buying anything, wait 24 hours. If you still want it tomorrow, go ahead! ⏰",
+            f"💡 {day_of_week} tip: Check your subscriptions — cancel anything you haven't used in 30 days! 🔍",
+        ]
+        import random
+        return random.choice(tips_fallback)
+
+
+@login_required(login_url="login")
+def api_daily_tip(request: HttpRequest) -> JsonResponse:
+    """Get today's personalized money tip."""
+    ck = f"daily_tip_{request.user.id}_{date.today().isoformat()}"
+    cached = cache.get(ck)
+    if cached:
+        return JsonResponse({"tip": cached, "cached": True})
+
+    tip = generate_daily_tip(request.user)
+    cache.set(ck, tip, 86400)  # Cache for 24 hours
+    return JsonResponse({"tip": tip, "cached": False})
+
+
+@csrf_exempt
+def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
+    """Cron endpoint — bot calls this to get tips for all linked users."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    # Simple secret key auth
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        body = {}
+
+    secret = body.get("secret", "")
+    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', 'paisamitra-daily-2025')
+    if secret != expected_secret:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    linked_profiles = UserProfile.objects.filter(
+        whatsapp_linked=True
+    ).exclude(
+        whatsapp_number__isnull=True
+    ).exclude(
+        whatsapp_number=''
+    ).select_related('user')
+
+    tips = []
+    for profile in linked_profiles:
+        ck = f"daily_tip_sent_{profile.user.id}_{date.today().isoformat()}"
+        if cache.get(ck):
+            continue  # Already sent today
+
+        tip = generate_daily_tip(profile.user)
+        user_name = profile.user.first_name.title() if profile.user.first_name else profile.user.username.title()
+
+        msg = (
+            f"🌅 *Good Morning, {user_name}!*\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"💡 *PaisaMitra Daily Tip*\n\n"
+            f"{tip}\n\n"
+            f"_Have a great day! Track your expenses wisely._ 🚀"
+        )
+
+        tips.append({
+            "whatsapp_number": profile.whatsapp_number,
+            "message": msg,
+            "user_id": profile.user.id,
+        })
+        cache.set(ck, True, 86400)  # Mark as sent for 24 hours
+
+    return JsonResponse({"tips": tips, "count": len(tips)})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 4: SMART SPENDING ALERTS 🔔
+# ══════════════════════════════════════════════════════════════════════════════
+
+def check_and_generate_alert(user, expense) -> str:
+    """Check if the new expense triggers any smart alert. Returns alert msg or empty string."""
+    alerts = []
+    today = date.today()
+    budget = float(getattr(user.profile, 'monthly_budget', 20000))
+
+    # 1. Check daily spending spike
+    month_qs = Expense.objects.filter(user=user, date__year=today.year, date__month=today.month)
+    month_total = _safe_float(month_qs.aggregate(t=Sum("amount"))["t"])
+    active_days = max(month_qs.values("date").distinct().count(), 1)
+    avg_daily = month_total / active_days
+
+    today_total = _safe_float(
+        month_qs.filter(date=today).aggregate(t=Sum("amount"))["t"]
+    )
+
+    if avg_daily > 0 and today_total > avg_daily * 2:
+        alerts.append(
+            f"🚨 *Spending Alert!* Today you've spent ₹{today_total:,.0f} — "
+            f"that's {today_total/avg_daily:.1f}x your daily average!"
+        )
+
+    # 2. Check budget threshold
+    budget_pct = (month_total / budget * 100) if budget > 0 else 0
+    if budget_pct >= 90 and budget_pct < 100:
+        alerts.append(
+            f"⚠️ *Budget Warning!* You've used {budget_pct:.0f}% of your ₹{budget:,.0f} budget. "
+            f"Only ₹{max(budget - month_total, 0):,.0f} remaining!"
+        )
+    elif budget_pct >= 100:
+        alerts.append(
+            f"🛑 *Budget Exceeded!* You've spent ₹{month_total:,.0f} against ₹{budget:,.0f} budget. "
+            f"Overspent by ₹{month_total - budget:,.0f}!"
+        )
+
+    # 3. Check category repetition (3+ times same category today)
+    cat = expense.category
+    today_cat_count = month_qs.filter(date=today, category=cat).count()
+    if today_cat_count >= 3:
+        today_cat_total = _safe_float(
+            month_qs.filter(date=today, category=cat).aggregate(t=Sum("amount"))["t"]
+        )
+        alerts.append(
+            f"🔄 *Pattern Detected!* You've spent on {cat.title()} {today_cat_count} times today "
+            f"(₹{today_cat_total:,.0f} total). Need to cut back?"
+        )
+
+    if alerts:
+        return "\n\n".join(alerts)
+    return ""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE 5: EXPENSE SPLIT 📱
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url="login")
+def api_split_groups(request: HttpRequest) -> JsonResponse:
+    groups = SplitGroup.objects.filter(creator=request.user)
+    data = []
+    for g in groups:
+        members = list(g.members.values_list('name', flat=True))
+        total = _safe_float(g.expenses.aggregate(t=Sum("amount"))["t"])
+        expense_count = g.expenses.count()
+        per_person = total / max(len(members), 1)
+
+        data.append({
+            "id": g.pk,
+            "name": g.name,
+            "members": members,
+            "member_count": len(members),
+            "total": total,
+            "per_person": round(per_person, 2),
+            "expense_count": expense_count,
+            "is_settled": g.is_settled,
+            "created_at": g.created_at.isoformat(),
+        })
+    return JsonResponse({"groups": data, "count": len(data)})
+
+
+@login_required(login_url="login")
+@require_POST
+@json_required
+def api_create_split(request: HttpRequest) -> JsonResponse:
+    body = getattr(request, "_json_body", {})
+    name = str(body.get("name", "")).strip()
+    members = body.get("members", [])
+
+    if not name:
+        return JsonResponse({"error": "Group name required"}, status=400)
+    if not isinstance(members, list) or len(members) < 2:
+        return JsonResponse({"error": "At least 2 members required"}, status=400)
+    if len(members) > 20:
+        return JsonResponse({"error": "Maximum 20 members allowed"}, status=400)
+
+    group = SplitGroup.objects.create(creator=request.user, name=name)
+
+    for m in members:
+        m_name = str(m.get("name", "") if isinstance(m, dict) else m).strip()
+        m_phone = str(m.get("phone", "") if isinstance(m, dict) else "").strip()
+        if m_name:
+            SplitMember.objects.create(group=group, name=m_name, phone=m_phone or None)
+
+    return JsonResponse({
+        "status": "success",
+        "message": f"👥 Split group '{name}' created with {group.members.count()} members!",
+        "group_id": group.pk,
+    }, status=201)
+
+
+@login_required(login_url="login")
+@require_POST
+@json_required
+def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
+    group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
+
+    if group.is_settled:
+        return JsonResponse({"error": "This group is already settled!"}, status=400)
+
+    body = getattr(request, "_json_body", {})
+    paid_by = str(body.get("paid_by", "")).strip()
+    description = str(body.get("description", "")).strip()
+    amount = body.get("amount", 0)
+
+    if not paid_by:
+        return JsonResponse({"error": "'paid_by' name required"}, status=400)
+    if not description:
+        return JsonResponse({"error": "Description required"}, status=400)
+
+    # Verify paid_by is a member
+    if not group.members.filter(name=paid_by).exists():
+        return JsonResponse({"error": f"'{paid_by}' is not a member of this group"}, status=400)
+
+    try:
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            raise ValueError
+    except (InvalidOperation, ValueError, TypeError):
+        return JsonResponse({"error": "Valid amount required"}, status=400)
+
+    exp_date_str = body.get("date", "")
+    try:
+        exp_date = date.fromisoformat(str(exp_date_str)) if exp_date_str else date.today()
+    except ValueError:
+        exp_date = date.today()
+
+    expense = SplitExpense.objects.create(
+        group=group,
+        paid_by=paid_by,
+        description=description,
+        amount=amount,
+        date=exp_date,
+    )
+
+    total = _safe_float(group.expenses.aggregate(t=Sum("amount"))["t"])
+    per_person = total / max(group.members.count(), 1)
+
+    return JsonResponse({
+        "status": "success",
+        "message": f"💸 ₹{amount:,} added to '{group.name}' (paid by {paid_by})",
+        "expense_id": expense.pk,
+        "group_total": total,
+        "per_person": round(per_person, 2),
+    }, status=201)
+
+
+@login_required(login_url="login")
+def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
+    """Calculate who owes whom — minimized transactions."""
+    group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
+    members = list(group.members.values_list('name', flat=True))
+    expenses = group.expenses.all()
+
+    total = _safe_float(expenses.aggregate(t=Sum("amount"))["t"])
+    per_person = total / max(len(members), 1)
+
+    # Calculate balances (positive = owed money, negative = owes money)
+    balances = {m: 0.0 for m in members}
+    for exp in expenses:
+        if exp.paid_by in balances:
+            balances[exp.paid_by] += float(exp.amount)
+
+    # Each person's net = paid - share
+    net = {m: balances[m] - per_person for m in members}
+
+    # Minimize transactions
+    settlements = []
+    debtors = [(m, -amt) for m, amt in net.items() if amt < -0.01]  # owes money
+    creditors = [(m, amt) for m, amt in net.items() if amt > 0.01]  # owed money
+
+    debtors.sort(key=lambda x: x[1], reverse=True)
+    creditors.sort(key=lambda x: x[1], reverse=True)
+
+    i, j = 0, 0
+    while i < len(debtors) and j < len(creditors):
+        debtor, debt = debtors[i]
+        creditor, credit = creditors[j]
+        transfer = min(debt, credit)
+
+        if transfer > 0.01:
+            settlements.append({
+                "from": debtor,
+                "to": creditor,
+                "amount": round(transfer, 2),
+            })
+
+        debtors[i] = (debtor, debt - transfer)
+        creditors[j] = (creditor, credit - transfer)
+
+        if debtors[i][1] < 0.01:
+            i += 1
+        if creditors[j][1] < 0.01:
+            j += 1
+
+    # Per-member breakdown
+    member_breakdown = []
+    for m in members:
+        paid = balances[m]
+        share = per_person
+        member_breakdown.append({
+            "name": m,
+            "paid": round(paid, 2),
+            "share": round(share, 2),
+            "net": round(net[m], 2),
+            "status": "gets_back" if net[m] > 0.01 else ("owes" if net[m] < -0.01 else "settled"),
+        })
+
+    # Build WhatsApp share message
+    settle_lines = [f"• {s['from']} ➡️ {s['to']}: ₹{s['amount']:,.0f}" for s in settlements]
+    wa_msg = (
+        f"📱 *{group.name} — Split Summary*\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"💰 Total: ₹{total:,.0f}\n"
+        f"👥 Per Person: ₹{per_person:,.0f}\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"🔄 *Settlements:*\n" + "\n".join(settle_lines or ["All settled! ✅"])
+    )
+
+    return JsonResponse({
+        "group_name": group.name,
+        "total": total,
+        "per_person": round(per_person, 2),
+        "member_count": len(members),
+        "members": member_breakdown,
+        "settlements": settlements,
+        "is_settled": group.is_settled,
+        "whatsapp_message": wa_msg,
+    })
+
+
+@login_required(login_url="login")
+@require_POST
+def api_settle_split(request: HttpRequest, pk: int) -> JsonResponse:
+    group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
+    group.is_settled = True
+    group.save(update_fields=["is_settled"])
+    return JsonResponse({"status": "success", "message": f"✅ '{group.name}' settled!"})
+
+
+@login_required(login_url="login")
+@require_POST
+def api_delete_split(request: HttpRequest, pk: int) -> JsonResponse:
+    group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
+    name = group.name
+    group.delete()
+    return JsonResponse({"status": "success", "message": f"🗑️ Split group '{name}' deleted."})
