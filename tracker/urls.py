@@ -115,4 +115,33 @@ urlpatterns = [
     path('api/whatsapp-summary/', views.whatsapp_summary, name='whatsapp_summary'),
     path('api/latest-update-time/', views.get_latest_update_time, name='get_latest_update_time'),
     path('api/wa-link-status/', views.wa_link_status, name='wa_link_status'),
+
+    # ══════════════════════════════════════════════════════════════════════
+    # FEATURE 1: MONTHLY COMPARISON
+    # ══════════════════════════════════════════════════════════════════════
+    path('api/monthly-comparison/',     views.api_monthly_comparison, name='api_monthly_comparison'),
+
+    # ══════════════════════════════════════════════════════════════════════
+    # FEATURE 2: SAVINGS GOALS
+    # ══════════════════════════════════════════════════════════════════════
+    path('api/savings-goals/',              views.api_savings_goals,  name='api_savings_goals'),
+    path('api/savings-goals/add/',          views.api_add_goal,       name='api_add_goal'),
+    path('api/savings-goals/<int:pk>/update/', views.api_update_goal, name='api_update_goal'),
+    path('api/savings-goals/<int:pk>/delete/', views.api_delete_goal, name='api_delete_goal'),
+
+    # ══════════════════════════════════════════════════════════════════════
+    # FEATURE 3: DAILY MONEY TIP
+    # ══════════════════════════════════════════════════════════════════════
+    path('api/daily-tip/',              views.api_daily_tip,           name='api_daily_tip'),
+    path('api/trigger-daily-tips/',     views.api_trigger_daily_tips,  name='api_trigger_daily_tips'),
+
+    # ══════════════════════════════════════════════════════════════════════
+    # FEATURE 5: EXPENSE SPLIT
+    # ══════════════════════════════════════════════════════════════════════
+    path('api/splits/',                         views.api_split_groups,       name='api_split_groups'),
+    path('api/splits/create/',                  views.api_create_split,       name='api_create_split'),
+    path('api/splits/<int:pk>/add-expense/',    views.api_add_split_expense,  name='api_add_split_expense'),
+    path('api/splits/<int:pk>/summary/',        views.api_split_summary,      name='api_split_summary'),
+    path('api/splits/<int:pk>/settle/',         views.api_settle_split,       name='api_settle_split'),
+    path('api/splits/<int:pk>/delete/',         views.api_delete_split,       name='api_delete_split'),
 ]
