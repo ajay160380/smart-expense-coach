@@ -51,3 +51,63 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.name} - ₹{self.amount} (User: {self.user.username})"
+
+# ─── NAYA FEATURE: Savings Goals ───
+class SavingsGoal(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='savings_goals')
+    name = models.CharField(max_length=100)           # "iPhone 16 Pro", "Goa Trip"
+    target_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    saved_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    icon = models.CharField(max_length=10, default="🎯")
+    deadline = models.DateField(blank=True, null=True)
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} - ₹{self.saved_amount}/₹{self.target_amount} ({self.user.username})"
+
+    @property
+    def progress_percent(self):
+        if self.target_amount <= 0:
+            return 0
+        return min(float(self.saved_amount) / float(self.target_amount) * 100, 100)
+
+# ─── NAYA FEATURE: Expense Split ───
+class SplitGroup(models.Model):
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='split_groups')
+    name = models.CharField(max_length=100)           # "Goa Trip", "Office Lunch"
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_settled = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} (by {self.creator.username})"
+
+class SplitMember(models.Model):
+    group = models.ForeignKey(SplitGroup, on_delete=models.CASCADE, related_name='members')
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        unique_together = ('group', 'name')
+
+    def __str__(self):
+        return f"{self.name} in {self.group.name}"
+
+class SplitExpense(models.Model):
+    group = models.ForeignKey(SplitGroup, on_delete=models.CASCADE, related_name='expenses')
+    paid_by = models.CharField(max_length=100)        # Name of person who paid
+    description = models.CharField(max_length=200)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField(default=date.today)
+
+    class Meta:
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.description} - ₹{self.amount} (paid by {self.paid_by})"
