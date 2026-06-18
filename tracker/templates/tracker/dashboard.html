@@ -1815,8 +1815,208 @@ async function sendVoiceToBackend(text) {
   }
 }
 
+// ── SAVINGS GOALS ─────────────────────────────────────────────────────
+async function saveGoal() {
+  const name = document.getElementById('goal-name').value;
+  const amount = document.getElementById('goal-amount').value;
+  const deadline = document.getElementById('goal-deadline').value;
+  const icon = document.getElementById('goal-icon').value || '🎯';
+  if (!name || !amount || !deadline) return showToast('Please fill all fields', 'error');
+
+  try {
+    const res = await fetch('/api/savings-goals/add/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({name, target_amount: amount, target_date: deadline, icon})
+    });
+    if (res.ok) {
+      showToast('Goal created! 🎉', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      const data = await res.json();
+      showToast(data.error || 'Failed to create goal', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+let activeGoalId = null;
+function openAddSavings(id) {
+  activeGoalId = id;
+  document.getElementById('addSavingsAmount').value = '';
+  openModal('addSavingsModal');
+}
+
+async function addSavings() {
+  if (!activeGoalId) return;
+  const amount = document.getElementById('addSavingsAmount').value;
+  if (!amount || amount <= 0) return showToast('Enter valid amount', 'error');
+
+  try {
+    const res = await fetch(`/api/savings-goals/${activeGoalId}/update/`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({add_amount: amount})
+    });
+    if (res.ok) {
+      showToast('Savings added! 💰', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast('Failed to add savings', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function deleteGoal(id) {
+  if (!confirm('Are you sure you want to delete this goal?')) return;
+  try {
+    const res = await fetch(`/api/savings-goals/${id}/delete/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCsrf()}
+    });
+    if (res.ok) {
+      showToast('Goal deleted.', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast('Failed to delete goal', 'error');
+    }
+  } catch(err) {
+    showToast('Network error', 'error');
+  }
+}
+
+// ── SPLIT EXPENSES ────────────────────────────────────────────────────
+async function createSplit() {
+  const name = document.getElementById('split-name').value;
+  const membersTxt = document.getElementById('split-members').value;
+  if (!name || !membersTxt) return showToast('Please fill all fields', 'error');
+  
+  const members = membersTxt.split('\n').map(m => m.trim()).filter(m => m);
+  if (members.length < 2) return showToast('Need at least 2 members', 'error');
+
+  try {
+    const res = await fetch('/api/splits/create/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({name, members})
+    });
+    if (res.ok) {
+      showToast('Split group created! 👥', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      const data = await res.json();
+      showToast(data.error || 'Failed to create group', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+let activeSplitId = null;
+function openAddSplitExpense(id, name) {
+  activeSplitId = id;
+  openModal('splitExpModal');
+}
+
+async function addSplitExpense() {
+  if (!activeSplitId) return;
+  const amount = document.getElementById('split-amt').value;
+  const description = document.getElementById('split-desc').value;
+  const paidBy = document.getElementById('split-paid-by').value;
+  if (!amount || !description || !paidBy) return showToast('Please fill all fields', 'error');
+
+  try {
+    const res = await fetch(`/api/splits/${activeSplitId}/add-expense/`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({amount, description, paid_by_name: paidBy})
+    });
+    if (res.ok) {
+      showToast('Expense added to group!', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      const data = await res.json();
+      showToast(data.error || 'Failed to add expense', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function viewSplitSummary(id) {
+  try {
+    const res = await fetch(`/api/splits/${id}/summary/`);
+    if (res.ok) {
+      const data = await res.json();
+      let html = `<div style="padding:15px;background:var(--bg3);border-radius:12px;margin-bottom:15px;">`;
+      html += `<div style="color:var(--text2);margin-bottom:10px;">Total Group Expense: ₹${data.total_expense}</div>`;
+      if (data.settlements.length === 0) {
+        html += `<div style="color:var(--green);">Everyone is settled up! 🎉</div>`;
+      } else {
+        data.settlements.forEach(s => {
+          html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+            <span><b>${s.from}</b> owes <b>${s.to}</b></span>
+            <span style="color:var(--red);">₹${s.amount}</span>
+          </div>`;
+        });
+      }
+      html += `</div>`;
+      
+      const summaryText = data.settlements.length ? 
+        encodeURIComponent(`*${data.group_name} Settlements*\n` + data.settlements.map(s => `${s.from} owes ${s.to}: ₹${s.amount}`).join('\n')) :
+        encodeURIComponent(`*${data.group_name}* is completely settled up! 🎉`);
+        
+      html += `<button class="submit-btn" style="background:#25D366;color:#fff;" onclick="window.open('https://wa.me/?text=${summaryText}', '_blank')">Share via WhatsApp 💬</button>`;
+      
+      document.getElementById('settlement-results').innerHTML = html;
+      openModal('settleModal');
+    }
+  } catch(err) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function settleSplit(id) {
+  if (!confirm('Mark all expenses in this group as fully settled?')) return;
+  try {
+    const res = await fetch(`/api/splits/${id}/settle/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCsrf()}
+    });
+    if (res.ok) {
+      showToast('Group settled! 🎉', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast('Failed to settle group', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+// ── DAILY MONEY TIP ───────────────────────────────────────────────────
+async function fetchDailyTip() {
+  const tipEl = document.getElementById('daily-tip-text');
+  if (!tipEl) return;
+  try {
+    const res = await fetch('/api/daily-tip/');
+    if (res.ok) {
+      const data = await res.json();
+      tipEl.textContent = data.tip || "Save more today!";
+    } else {
+      tipEl.textContent = "Log more expenses to get personalized tips! 💡";
+    }
+  } catch (err) {
+    tipEl.textContent = "Ready to start saving? 💸";
+  }
+}
+
 // ── INITIAL RENDER ────────────────────────────────────────────────────
 render();
+fetchDailyTip();
 
 // ── REAL-TIME POLLING ─────────────────────────────────────────────────
 let currentLatestId = expenses.length > 0 ? Math.max(...expenses.map(e => parseInt(e.id))) : 0;
