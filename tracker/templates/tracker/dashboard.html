@@ -430,6 +430,105 @@ body::before {
 .voice-text-preview{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--text);min-height:36px;text-align:left;border:1px solid var(--border);font-style:italic;}
 .voice-cancel{margin-top:16px;background:none;border:1px solid var(--border2);color:var(--text2);padding:8px 20px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);}
 .voice-cancel:hover{background:var(--red-bg);color:var(--red);border-color:transparent;}
+
+/* ── MONTHLY COMPARISON ── */
+.compare-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);}
+.compare-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.compare-verdict{padding:4px 14px;border-radius:var(--radius-pill);font-size:11px;font-weight:700;}
+.verdict-excellent{background:var(--green-bg);color:var(--green);}
+.verdict-good{background:var(--primary-l);color:var(--primary);}
+.verdict-warning{background:var(--amber-bg);color:var(--amber);}
+.verdict-danger{background:var(--red-bg);color:var(--red);}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;}
+.compare-stat{background:var(--surface2);border-radius:var(--radius-sm);padding:14px;text-align:center;border:1px solid var(--border);}
+.cs-val{font-size:20px;font-weight:600;font-family:var(--mono);margin-bottom:2px;}
+.cs-change{font-size:11px;font-weight:600;margin-top:4px;}
+.cs-change.up{color:var(--red);}
+.cs-change.down{color:var(--green);}
+.cs-change.same{color:var(--text3);}
+.cs-lbl{font-size:10px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
+.compare-cats{display:flex;flex-direction:column;gap:8px;}
+.cc-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);}
+.cc-icon{font-size:16px;flex-shrink:0;}
+.cc-info{flex:1;min-width:0;}
+.cc-name{font-size:12px;font-weight:600;margin-bottom:2px;}
+.cc-amounts{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.cc-change{font-size:12px;font-weight:700;font-family:var(--mono);flex-shrink:0;}
+
+/* ── SAVINGS GOALS ── */
+.goals-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);}
+.goals-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.goal-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;position:relative;transition:all .2s;overflow:hidden;}
+.goal-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.goal-card.completed{border-color:rgba(16,185,129,.3);background:var(--green-bg);}
+.goal-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.goal-icon{font-size:24px;}
+.goal-name{font-size:13px;font-weight:600;flex:1;}
+.goal-progress-ring{position:relative;width:48px;height:48px;flex-shrink:0;}
+.goal-progress-ring svg{transform:rotate(-90deg);}
+.goal-progress-ring circle{fill:none;stroke-width:4;}
+.goal-progress-ring .track{stroke:var(--surface);}
+.goal-progress-ring .fill{stroke:var(--primary);stroke-linecap:round;transition:stroke-dashoffset 1.5s cubic-bezier(.34,1.56,.64,1);}
+.goal-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--mono);color:var(--primary);}
+.goal-amounts{display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;}
+.goal-saved{font-weight:600;color:var(--primary);font-family:var(--mono);}
+.goal-target{color:var(--text3);font-family:var(--mono);}
+.goal-bar{height:6px;background:var(--surface);border-radius:6px;overflow:hidden;margin-bottom:8px;}
+.goal-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--primary),#a78bfa);transition:width 1.2s cubic-bezier(.34,1.56,.64,1);}
+.goal-eta{font-size:10px;color:var(--text3);font-weight:500;}
+.goal-actions{display:flex;gap:6px;margin-top:10px;}
+.goal-action-btn{padding:5px 10px;border-radius:var(--radius-pill);font-size:10px;font-weight:600;border:1px solid var(--border2);background:transparent;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .2s;}
+.goal-action-btn:hover{background:var(--primary-l);color:var(--primary);border-color:var(--primary);}
+.goal-action-btn.danger:hover{background:var(--red-bg);color:var(--red);border-color:var(--red);}
+.goal-complete-anim{animation:goalPop .6s cubic-bezier(.34,1.56,.64,1);}
+@keyframes goalPop{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+
+/* ── DAILY TIP ── */
+.tip-section{background:linear-gradient(135deg,#059669 0%,#10b981 50%,#34d399 100%);border-radius:var(--radius);padding:18px 22px;margin-bottom:16px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(16,185,129,.25);}
+.tip-section::after{content:'';position:absolute;top:-30px;right:-10px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);}
+.tip-icon{font-size:28px;flex-shrink:0;}
+.tip-content{flex:1;position:relative;z-index:1;}
+.tip-label{font-size:10px;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+.tip-text{font-size:13px;font-weight:500;color:#fff;line-height:1.5;}
+.tip-refresh{background:rgba(255,255,255,.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.tip-refresh:hover{background:rgba(255,255,255,.3);transform:rotate(180deg);}
+
+/* ── EXPENSE SPLIT ── */
+.split-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);}
+.split-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.split-scroll::-webkit-scrollbar{display:none;}
+.split-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;min-width:220px;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.split-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--primary);}
+.split-card.settled{opacity:.6;border-color:var(--green);}
+.split-top{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.split-emoji{font-size:24px;}
+.split-name{font-size:13px;font-weight:700;flex:1;}
+.split-members-badge{font-size:10px;background:var(--primary-l);color:var(--primary);padding:2px 8px;border-radius:var(--radius-pill);font-weight:600;}
+.split-total{font-size:22px;font-weight:500;font-family:var(--mono);margin-bottom:4px;}
+.split-pp{font-size:11px;color:var(--text3);margin-bottom:10px;}
+.split-actions-row{display:flex;gap:6px;}
+.split-action{padding:5px 10px;border-radius:var(--radius-pill);font-size:10px;font-weight:600;border:1px solid var(--border2);background:transparent;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .2s;}
+.split-action:hover{background:var(--primary-l);color:var(--primary);border-color:var(--primary);}
+.split-action.wa{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;}
+.split-action.wa:hover{opacity:.9;}
+
+/* ── SPLIT SUMMARY MODAL ── */
+.settle-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.settle-item:last-child{border:none;}
+.settle-arrow{color:var(--primary);font-weight:700;}
+.settle-amount{font-weight:600;font-family:var(--mono);margin-left:auto;color:var(--red);}
+.member-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.member-row:last-child{border:none;}
+.member-status{padding:3px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:600;}
+.member-status.gets-back{background:var(--green-bg);color:var(--green);}
+.member-status.owes{background:var(--red-bg);color:var(--red);}
+.member-status.even{background:var(--primary-l);color:var(--primary);}
+
+/* ── RESPONSIVE FIXES ── */
+@media(max-width:768px){
+  .compare-grid{grid-template-columns:1fr;}
+  .goals-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -634,6 +733,141 @@ body::before {
     <div class="bills-scroll" id="bills-list"></div>
   </div>
 
+  <!-- 📊 MONTHLY COMPARISON -->
+  {% if comparison.has_prev_data %}
+  <div class="compare-section" id="compare-section">
+    <div class="compare-header">
+      <div class="section-title">📊 vs {{ comparison.prev_month_name }}</div>
+      <span class="compare-verdict verdict-{{ comparison.verdict }}">{{ comparison.verdict_msg }}</span>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-stat">
+        <div class="cs-lbl">This Month</div>
+        <div class="cs-val">₹{{ comparison.cur_total|floatformat:0 }}</div>
+        <div class="cs-change {% if comparison.total_change_pct > 0 %}up{% elif comparison.total_change_pct < 0 %}down{% else %}same{% endif %}">
+          {% if comparison.total_change_pct > 0 %}↑{% elif comparison.total_change_pct < 0 %}↓{% else %}→{% endif %} {{ comparison.total_change_pct }}%
+        </div>
+      </div>
+      <div class="compare-stat">
+        <div class="cs-lbl">Last Month</div>
+        <div class="cs-val">₹{{ comparison.prev_total|floatformat:0 }}</div>
+        <div class="cs-change same">{{ comparison.prev_month_name }}</div>
+      </div>
+      <div class="compare-stat">
+        <div class="cs-lbl">Daily Avg Change</div>
+        <div class="cs-val">₹{{ comparison.cur_daily_avg|floatformat:0 }}</div>
+        <div class="cs-change {% if comparison.daily_avg_change_pct > 0 %}up{% elif comparison.daily_avg_change_pct < 0 %}down{% else %}same{% endif %}">
+          {% if comparison.daily_avg_change_pct > 0 %}↑{% elif comparison.daily_avg_change_pct < 0 %}↓{% else %}→{% endif %} {{ comparison.daily_avg_change_pct }}%
+        </div>
+      </div>
+    </div>
+    {% if comparison.categories %}
+    <div class="compare-cats">
+      {% for cat in comparison.categories %}
+      <div class="cc-item">
+        <span class="cc-icon">{{ cat.icon }}</span>
+        <div class="cc-info">
+          <div class="cc-name">{{ cat.title }}</div>
+          <div class="cc-amounts">₹{{ cat.previous|floatformat:0 }} → ₹{{ cat.current|floatformat:0 }}</div>
+        </div>
+        <span class="cc-change {% if cat.direction == 'up' %}up{% elif cat.direction == 'down' %}down{% else %}same{% endif %}">
+          {% if cat.direction == 'up' %}↑{% elif cat.direction == 'down' %}↓{% else %}→{% endif %}{{ cat.change_pct }}%
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- 💡 DAILY TIP -->
+  <div class="tip-section" id="tip-section">
+    <span class="tip-icon">💡</span>
+    <div class="tip-content">
+      <div class="tip-label">Today's Money Tip</div>
+      <div class="tip-text" id="daily-tip-text">Loading your personalized tip...</div>
+    </div>
+    <button class="tip-refresh" onclick="loadDailyTip(true)" title="Refresh tip">🔄</button>
+  </div>
+
+  <!-- 🎯 SAVINGS GOALS -->
+  <div class="goals-section">
+    <div class="bills-header">
+      <div class="section-title">🎯 Savings Goals</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        {% if completed_goals_count > 0 %}
+        <span style="font-size:10px;color:var(--green);font-weight:600;">✅ {{ completed_goals_count }} completed</span>
+        {% endif %}
+        <button class="add-small-btn" onclick="openModal('goalModal')">+ Add Goal</button>
+      </div>
+    </div>
+    <div class="goals-grid" id="goals-grid">
+      {% for goal in savings_goals %}
+      <div class="goal-card" id="goal-card-{{ goal.pk }}">
+        <div class="goal-top">
+          <span class="goal-icon">{{ goal.icon }}</span>
+          <span class="goal-name">{{ goal.name }}</span>
+          <div class="goal-progress-ring">
+            <svg width="48" height="48" viewBox="0 0 48 48">
+              <circle class="track" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--surface)"/>
+              <circle class="fill" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--primary)"
+                      stroke-dasharray="125.66" stroke-dashoffset="{{ goal.progress_percent|floatformat:0 }}"
+                      style="stroke-dashoffset: calc(125.66 - (125.66 * {{ goal.progress_percent|floatformat:0 }} / 100))"/>
+            </svg>
+            <span class="goal-pct">{{ goal.progress_percent|floatformat:0 }}%</span>
+          </div>
+        </div>
+        <div class="goal-amounts">
+          <span class="goal-saved">₹{{ goal.saved_amount|floatformat:0 }}</span>
+          <span class="goal-target">/ ₹{{ goal.target_amount|floatformat:0 }}</span>
+        </div>
+        <div class="goal-bar"><div class="goal-bar-fill" style="width:{{ goal.progress_percent|floatformat:0 }}%"></div></div>
+        {% if goal.deadline %}
+        <div class="goal-eta">📅 Deadline: {{ goal.deadline|date:"d M Y" }}</div>
+        {% endif %}
+        <div class="goal-actions">
+          <button class="goal-action-btn" onclick="addToGoal({{ goal.pk }})">+ Add Savings</button>
+          <button class="goal-action-btn danger" onclick="deleteGoal({{ goal.pk }})">Delete</button>
+        </div>
+      </div>
+      {% empty %}
+      <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text3);font-size:13px;">
+        No savings goals yet. Set a goal to start saving! 🌟
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 📱 EXPENSE SPLIT -->
+  <div class="split-section">
+    <div class="bills-header">
+      <div class="section-title">📱 Split Expenses</div>
+      <button class="add-small-btn" onclick="openModal('splitModal')">+ New Split</button>
+    </div>
+    <div class="split-scroll" id="split-list">
+      {% for split in active_splits %}
+      <div class="split-card {% if split.is_settled %}settled{% endif %}" id="split-card-{{ split.pk }}">
+        <div class="split-top">
+          <span class="split-emoji">👥</span>
+          <span class="split-name">{{ split.name }}</span>
+          <span class="split-members-badge">{{ split.members.count }} members</span>
+        </div>
+        <div class="split-total" id="split-total-{{ split.pk }}">₹0</div>
+        <div class="split-pp" id="split-pp-{{ split.pk }}">Per person: calculating...</div>
+        <div class="split-actions-row">
+          <button class="split-action" onclick="openAddSplitExpense({{ split.pk }}, '{{ split.name|escapejs }}')">+ Expense</button>
+          <button class="split-action" onclick="viewSplitSummary({{ split.pk }})">Summary</button>
+          <button class="split-action" onclick="settleSplit({{ split.pk }})">Settle</button>
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;width:100%;">
+        No split groups yet. Create one for your next trip! ✈️
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
   <!-- ✅ TRANSACTIONS — SCROLLABLE VERSION -->
   <div class="txn-section">
     <div class="txn-header">
@@ -759,6 +993,101 @@ body::before {
   </div>
 </div>
 
+<!-- 🎯 GOAL MODAL -->
+<div class="overlay" id="goalModal" onclick="if(event.target===this)closeModal('goalModal')">
+  <div class="modal">
+    <div class="modal-title">🎯 New Savings Goal <button class="modal-close" onclick="closeModal('goalModal')" type="button">✕</button></div>
+    <div class="form-group">
+      <label class="form-label">Goal Name</label>
+      <input class="form-input" id="goal-name" placeholder="e.g. iPhone 16, Goa Trip" maxlength="100">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Target Amount (₹)</label>
+        <input class="form-input" id="goal-target" type="number" min="1" placeholder="50000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline (optional)</label>
+        <input class="form-input" id="goal-deadline" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Icon</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="goal-icon-picker">
+        {% for icon in "\U0001f3af\U0001f4f1\u2708\ufe0f\U0001f3e0\U0001f697\U0001f4bb\U0001f3d3\U0001f393\U0001f48d\U0001f381" %}
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="{{ icon }}" style="font-size:18px;padding:8px 12px;">{{ icon }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="submit-btn" onclick="createGoal()" type="button">Create Goal 🎯</button>
+  </div>
+</div>
+
+<!-- 📱 SPLIT CREATE MODAL -->
+<div class="overlay" id="splitModal" onclick="if(event.target===this)closeModal('splitModal')">
+  <div class="modal">
+    <div class="modal-title">👥 Create Split Group <button class="modal-close" onclick="closeModal('splitModal')" type="button">✕</button></div>
+    <div class="form-group">
+      <label class="form-label">Group Name</label>
+      <input class="form-input" id="split-name" placeholder="e.g. Goa Trip, Office Lunch" maxlength="100">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Members (one per line)</label>
+      <textarea class="form-input" id="split-members" rows="4" placeholder="Ajay&#10;Rahul&#10;Priya&#10;Sneha" style="resize:vertical;min-height:80px;"></textarea>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">Min 2 members required. Include yourself!</div>
+    </div>
+    <button class="submit-btn" onclick="createSplit()" type="button">Create Split 👥</button>
+  </div>
+</div>
+
+<!-- 💸 SPLIT ADD EXPENSE MODAL -->
+<div class="overlay" id="splitExpModal" onclick="if(event.target===this)closeModal('splitExpModal')">
+  <div class="modal">
+    <div class="modal-title">💸 Add Split Expense <button class="modal-close" onclick="closeModal('splitExpModal')" type="button">✕</button></div>
+    <input type="hidden" id="split-exp-group-id">
+    <div class="form-group">
+      <label class="form-label">Group</label>
+      <input class="form-input" id="split-exp-group-name" readonly style="opacity:.7;">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Amount (₹)</label>
+        <input class="form-input" id="split-exp-amount" type="number" min="1" placeholder="500">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Paid By</label>
+        <input class="form-input" id="split-exp-paid-by" placeholder="Who paid?">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input class="form-input" id="split-exp-desc" placeholder="e.g. Hotel booking, Dinner">
+    </div>
+    <button class="submit-btn" onclick="addSplitExpense()" type="button">Add Expense 💸</button>
+  </div>
+</div>
+
+<!-- 🔄 SPLIT SUMMARY MODAL -->
+<div class="overlay" id="splitSummaryModal" onclick="if(event.target===this)closeModal('splitSummaryModal')">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title"><span id="summary-group-name">🔄 Settlement</span> <button class="modal-close" onclick="closeModal('splitSummaryModal')" type="button">✕</button></div>
+    <div id="split-summary-content">Loading...</div>
+  </div>
+</div>
+
+<!-- 💰 ADD TO GOAL MODAL -->
+<div class="overlay" id="addToGoalModal" onclick="if(event.target===this)closeModal('addToGoalModal')">
+  <div class="modal">
+    <div class="modal-title">💰 Add Savings <button class="modal-close" onclick="closeModal('addToGoalModal')" type="button">✕</button></div>
+    <input type="hidden" id="add-goal-id">
+    <div class="form-group">
+      <label class="form-label">Amount to Save (₹)</label>
+      <input class="form-input" id="add-goal-amount" type="number" min="1" placeholder="1000">
+    </div>
+    <button class="submit-btn" onclick="submitAddToGoal()" type="button">Add Savings 💰</button>
+  </div>
+</div>
+
 <!-- ✅ PROFILE MODAL -->
 <div class="overlay" id="profileModal" onclick="if(event.target===this)closeModal('profileModal')">
   <div class="profile-modal-wrap">
@@ -824,6 +1153,11 @@ const URL_CAT_INSIGHT = '{% url "api_category_insight" %}';
 const URL_DEL_EXP     = '{% url "delete_expense" 999999 %}'.replace('999999/', '');
 const URL_DEL_BILL    = '{% url "delete_subscription" 999999 %}'.replace('999999/', '');
 const URL_CHECK_UPDATES = '{% url "check_updates" %}';
+const URL_DAILY_TIP = '{% url "api_daily_tip" %}';
+const URL_GOALS = '{% url "api_savings_goals" %}';
+const URL_ADD_GOAL = '{% url "api_add_goal" %}';
+const URL_SPLITS = '{% url "api_split_groups" %}';
+const URL_CREATE_SPLIT = '{% url "api_create_split" %}';
 
 let expenses = [
   {% for exp in expenses %}
