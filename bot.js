@@ -108,42 +108,95 @@ pool.connect().then(() => {
         // Sometimes you need to destroy and reinitialize or clear the DB
     });
 
+    // ── Helper: Safe reply with fallback ──────────────────────────────────
+    // WhatsApp LID (Local ID) format mein msg.reply() fail ho sakta hai
+    // Isliye pehle reply try karo, fail ho toh client.sendMessage() use karo
+    async function safeReply(msg, text) {
+        try {
+            await msg.reply(text);
+        } catch (replyErr) {
+            console.warn('⚠️ msg.reply() failed, trying client.sendMessage():', replyErr.message);
+            try {
+                // Fallback: Direct send via chat ID
+                const chat = await msg.getChat();
+                await client.sendMessage(chat.id._serialized, text);
+            } catch (sendErr) {
+                console.error('❌ Both reply methods failed:', sendErr.message);
+            }
+        }
+    }
+
     client.on('message', async (msg) => {
         const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:7860";
         
-        // WhatsApp ke naye privacy features mein msg.from kabhi kabhi @lid (Local ID) bhejta hai
-        // Isliye hum contact fetch karke uska actual number nikalenge
-        const contact = await msg.getContact();
-        const phone = contact.number || msg.from.split('@')[0];
+        // Skip group messages, status updates, and media-only messages
+        if (msg.from === 'status@broadcast') return;
+        if (!msg.body || msg.body.trim() === '') return;
         
-        const text = msg.body;
-        console.log(`Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
+        let phone = msg.from.split('@')[0]; // Default fallback
         
         try {
+            // WhatsApp ke naye privacy features mein msg.from kabhi kabhi @lid (Local ID) bhejta hai
+            // Isliye hum contact fetch karke uska actual number nikalenge
+            const contact = await msg.getContact();
+            if (contact.number) {
+                phone = contact.number;
+            }
+        } catch (contactErr) {
+            console.warn('⚠️ Could not fetch contact, using raw from:', contactErr.message);
+        }
+        
+        const text = msg.body;
+        console.log(`📩 Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
+        
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
             const response = await fetch(`${SPACE_URL}/api/voice-expense/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, text })
+                body: JSON.stringify({ phone, text }),
+                signal: controller.signal
             });
-            const data = await response.json();
+            clearTimeout(timeout);
             
-            if (data.chat_response) {
-                msg.reply(data.chat_response);
-            } else if (data.status === 'success') {
-                if (data.message) {
-                    msg.reply(data.message);
-                } else if (data.expense) {
-                    msg.reply(`✅ Kharcha Add Ho Gaya!\n\n💰 Amount: ₹${data.expense.amount}\n📂 Category: ${data.expense.category}\n📝 Note: ${data.expense.description}\n\nBalance/Insight aap dashboard pe dekh sakte hain!`);
-                } else {
-                    msg.reply("✅ Action successful!");
-                }
-            } else if (data.status === 'error' && data.message) {
-                msg.reply(data.message);
-            } else {
-                msg.reply("Thoda confusion ho gaya. Pura detail batao, kya aur kitne ka liya?");
+            const data = await response.json();
+            console.log(`📤 Django response status=${response.status}:`, JSON.stringify(data).substring(0, 200));
+            
+            // Priority 1: Direct message field (covers both success and error cases)
+            if (data.message) {
+                await safeReply(msg, data.message);
+            }
+            // Priority 2: Chat response from AI (legacy field)
+            else if (data.chat_response) {
+                await safeReply(msg, data.chat_response);
+            }
+            // Priority 3: Expense object fallback
+            else if (data.expense) {
+                await safeReply(msg, `✅ Kharcha Add Ho Gaya!\n\n💰 Amount: ₹${data.expense.amount}\n📂 Category: ${data.expense.category}\n📝 Note: ${data.expense.description}`);
+            }
+            // Priority 4: Unknown response
+            else if (data.error) {
+                await safeReply(msg, `❌ ${data.error}`);
+            }
+            else {
+                console.warn('⚠️ Unexpected response format:', JSON.stringify(data));
+                await safeReply(msg, "Thoda confusion ho gaya. Pura detail batao, kya aur kitne ka liya?");
             }
         } catch (err) {
-            console.log("Error sending to Django:", err);
+            console.error('❌ Error processing message:', err.message);
+            // Send error message back to user so they know something went wrong
+            try {
+                if (err.name === 'AbortError') {
+                    await safeReply(msg, '⏰ Server response slow hai. Thoda wait karo aur phir try karo!');
+                } else {
+                    await safeReply(msg, '😅 Technical issue aa gayi. Thoda baad mein try karo!');
+                }
+            } catch (_) {
+                // Last resort - can't even send error message
+                console.error('❌ Could not send error message to user');
+            }
         }
     });
 
