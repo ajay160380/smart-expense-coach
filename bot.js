@@ -105,7 +105,11 @@ pool.connect().then(() => {
     client.on('disconnected', (reason) => {
         console.log('⚠️ WhatsApp Client was logged out / disconnected!');
         console.log('Reason:', reason);
-        // Sometimes you need to destroy and reinitialize or clear the DB
+        // Auto-reconnect after 5 seconds
+        console.log('🔄 Attempting to reconnect in 5 seconds...');
+        setTimeout(() => {
+            client.initialize();
+        }, 5000);
     });
 
     // ── Helper: Safe reply with fallback ──────────────────────────────────
