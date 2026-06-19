@@ -70,7 +70,7 @@ CAT_CACHE_TIMEOUT    = 180
 ANALYTICS_TIMEOUT    = 120
 HEATMAP_TIMEOUT      = 600
 
-AI_RATE_LIMIT_CALLS  = 15
+AI_RATE_LIMIT_CALLS  = 60
 AI_RATE_LIMIT_WINDOW = 3600
 
 VOICE_MAX_TEXT_LEN   = 500
@@ -1090,10 +1090,18 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 pass
 
         if not profile or not profile.user:
-            return JsonResponse({
-                "status":  "error",
-                "message": "❌ Account not linked. Please log into the dashboard and click 'Connect WhatsApp' to securely link this number."
-            })
+            # Last resort: try matching by phone_number (registration number)
+            clean_phone = incoming_phone.lstrip('+').lstrip('0')
+            # Try last 10 digits match for Indian numbers
+            if len(clean_phone) >= 10:
+                last10 = clean_phone[-10:]
+                profile = UserProfile.objects.filter(phone_number__endswith=last10).select_related("user").first()
+            
+            if not profile or not profile.user:
+                return JsonResponse({
+                    "status":  "error",
+                    "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://ajay160380-paisa-mitra.hf.space/register/"
+                })
         target_user = profile.user
     budget = float(getattr(target_user.profile, 'monthly_budget', 20000))
     today = date.today()
@@ -1377,10 +1385,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
     except json.JSONDecodeError as e:
         logger.error("Voice expense JSON parse error: %s", e)
-        return JsonResponse({"status": "error", "message": "AI could not understand. Please try again!"})
+        return JsonResponse({"status": "error", "message": "AI ka jawab samajh nahi aaya. Ek baar phir try karo! 🔄"})
     except Exception as e:
-        logger.error("Voice expense error uid=%s error=%s", target_user.id if target_user else "unknown", e)
-        return JsonResponse({"status": "error", "message": "An unexpected technical error occurred. 😅"})
+        user_id = target_user.id if target_user else "unknown"
+        logger.error("Voice expense error uid=%s error=%s", user_id, e, exc_info=True)
+        return JsonResponse({"status": "error", "message": "😅 Server mein thodi gadbad hui. Thoda baad mein try karo!"})
 
 
 def _keyword_category_fallback(text: str) -> str:
@@ -2043,7 +2052,7 @@ def contact_view(request: HttpRequest) -> HttpResponse:
 @login_required(login_url="login")
 def wa_link_status(request: HttpRequest) -> JsonResponse:
     try:
-        profile = request.user.userprofile
+        profile = request.user.profile
         return JsonResponse({
             "linked": profile.whatsapp_linked,
             "whatsapp_number": profile.whatsapp_number
