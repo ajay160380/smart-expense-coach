@@ -136,6 +136,10 @@ pool.connect().then(() => {
         // Skip group messages, status updates, and media-only messages
         if (msg.from === 'status@broadcast') return;
         if (!msg.body || msg.body.trim() === '') return;
+        if (msg.from.includes('@g.us')) {
+            // Group messages mein bot respond nahi karega — sirf private chats
+            return;
+        }
         
         let phone = msg.from.split('@')[0]; // Default fallback
         
