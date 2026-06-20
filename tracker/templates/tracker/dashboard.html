@@ -1864,8 +1864,9 @@ async function saveGoal() {
       body: JSON.stringify({name, target_amount: amount, target_date: deadline, icon})
     });
     if (res.ok) {
+      closeModal('goalModal');
       showToast('Goal created! 🎉', 'success');
-      setTimeout(() => location.reload(), 1000);
+      location.reload();
     } else {
       const data = await res.json();
       showToast(data.error || 'Failed to create goal', 'error');
@@ -1902,7 +1903,7 @@ async function submitAddToGoal() {
     if (res.ok) {
       showToast('Savings added! 💰', 'success');
       closeModal('addToGoalModal');
-      setTimeout(() => location.reload(), 1000);
+      location.reload();
     } else {
       showToast('Failed to add savings', 'error');
     }
@@ -1924,7 +1925,7 @@ async function addSavings() {
     });
     if (res.ok) {
       showToast('Savings added! 💰', 'success');
-      setTimeout(() => location.reload(), 1000);
+      location.reload();
     } else {
       showToast('Failed to add savings', 'error');
     }
@@ -1941,8 +1942,9 @@ async function deleteGoal(id) {
       headers: {'X-CSRFToken': getCsrf()}
     });
     if (res.ok) {
-      showToast('Goal deleted.', 'success');
-      setTimeout(() => location.reload(), 1000);
+      const card = document.getElementById('goal-card-' + id);
+      if (card) { card.style.transition='opacity 0.2s'; card.style.opacity='0'; setTimeout(() => card.remove(), 200); }
+      showToast('Goal deleted! 🗑️', 'success');
     } else {
       showToast('Failed to delete goal', 'error');
     }
@@ -1967,8 +1969,9 @@ async function createSplit() {
       body: JSON.stringify({name, members})
     });
     if (res.ok) {
+      closeModal('splitModal');
       showToast('Split group created! 👥', 'success');
-      setTimeout(() => location.reload(), 1000);
+      location.reload();
     } else {
       const data = await res.json();
       showToast(data.error || 'Failed to create group', 'error');
@@ -1998,8 +2001,9 @@ async function addSplitExpense() {
       body: JSON.stringify({amount, description, paid_by_name: paidBy})
     });
     if (res.ok) {
+      closeModal('splitExpModal');
       showToast('Expense added to group!', 'success');
-      setTimeout(() => location.reload(), 1000);
+      location.reload();
     } else {
       const data = await res.json();
       showToast(data.error || 'Failed to add expense', 'error');
@@ -2017,8 +2021,9 @@ async function deleteSplit(id) {
       headers: {'X-CSRFToken': getCsrf()}
     });
     if (res.ok) {
+      const card = document.getElementById('split-card-' + id);
+      if (card) { card.style.transition='opacity 0.2s'; card.style.opacity='0'; setTimeout(() => card.remove(), 200); }
       showToast('Split group deleted! 🗑️', 'success');
-      setTimeout(() => location.reload(), 1000);
     } else {
       showToast('Failed to delete split group', 'error');
     }
@@ -2069,7 +2074,7 @@ async function settleSplit(id) {
     });
     if (res.ok) {
       showToast('Group settled! 🎉', 'success');
-      setTimeout(() => location.reload(), 1000);
+      location.reload();
     } else {
       showToast('Failed to settle group', 'error');
     }
