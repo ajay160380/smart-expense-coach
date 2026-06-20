@@ -1833,9 +1833,9 @@ function selectGoalIcon(btn) {
 async function saveGoal() {
   const name = document.getElementById('goal-name').value;
   const amount = document.getElementById('goal-amount').value;
-  const deadline = document.getElementById('goal-deadline').value;
+  const deadline = document.getElementById('goal-deadline').value || null;
   const icon = document.getElementById('goal-icon').value || '🎯';
-  if (!name || !amount || !deadline) return showToast('Please fill all fields', 'error');
+  if (!name || !amount) return showToast('Please fill required fields', 'error');
 
   try {
     const res = await fetch('/api/savings-goals/add/', {
