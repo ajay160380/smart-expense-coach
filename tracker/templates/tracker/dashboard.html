@@ -1998,7 +1998,7 @@ async function addSplitExpense() {
     const res = await fetch(`/api/splits/${activeSplitId}/add-expense/`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
-      body: JSON.stringify({amount, description, paid_by_name: paidBy})
+      body: JSON.stringify({amount, description, paid_by: paidBy})
     });
     if (res.ok) {
       closeModal('splitExpModal');
