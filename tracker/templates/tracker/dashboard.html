@@ -859,6 +859,7 @@ body::before {
           <button class="split-action" onclick="openAddSplitExpense({{ split.pk }}, '{{ split.name|escapejs }}')">+ Expense</button>
           <button class="split-action" onclick="viewSplitSummary({{ split.pk }})">Summary</button>
           <button class="split-action" onclick="settleSplit({{ split.pk }})">Settle</button>
+          <button class="split-action" style="color:var(--red);" onclick="deleteSplit({{ split.pk }})">Delete</button>
         </div>
       </div>
       {% empty %}
@@ -2002,6 +2003,24 @@ async function addSplitExpense() {
     } else {
       const data = await res.json();
       showToast(data.error || 'Failed to add expense', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function deleteSplit(id) {
+  if (!confirm('Ye split group delete karna chahte ho?')) return;
+  try {
+    const res = await fetch(`/api/splits/${id}/delete/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCsrf()}
+    });
+    if (res.ok) {
+      showToast('Split group deleted! 🗑️', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast('Failed to delete split group', 'error');
     }
   } catch (err) {
     showToast('Network error', 'error');
