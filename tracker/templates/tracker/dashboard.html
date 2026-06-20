@@ -1004,7 +1004,7 @@ body::before {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Target Amount (₹)</label>
-        <input class="form-input" id="goal-target" type="number" min="1" placeholder="50000">
+        <input class="form-input" id="goal-amount" type="number" min="1" placeholder="50000">
       </div>
       <div class="form-group">
         <label class="form-label">Deadline (optional)</label>
@@ -1026,7 +1026,8 @@ body::before {
         <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🎁" style="font-size:18px;padding:8px 12px;">🎁</button>
       </div>
     </div>
-    <button class="submit-btn" onclick="createGoal()" type="button">Create Goal 🎯</button>
+    <input type="hidden" id="goal-icon" value="🎯">
+    <button class="submit-btn" onclick="saveGoal()" type="button">Create Goal 🎯</button>
   </div>
 </div>
 
@@ -1823,6 +1824,12 @@ async function sendVoiceToBackend(text) {
 }
 
 // ── SAVINGS GOALS ─────────────────────────────────────────────────────
+function selectGoalIcon(btn) {
+  document.querySelectorAll('#goal-icon-picker .ftag').forEach(el => el.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('goal-icon').value = btn.getAttribute('data-icon');
+}
+
 async function saveGoal() {
   const name = document.getElementById('goal-name').value;
   const amount = document.getElementById('goal-amount').value;
