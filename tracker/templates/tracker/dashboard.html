@@ -1014,9 +1014,16 @@ body::before {
     <div class="form-group">
       <label class="form-label">Icon</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;" id="goal-icon-picker">
-        {% for icon in "\U0001f3af\U0001f4f1\u2708\ufe0f\U0001f3e0\U0001f697\U0001f4bb\U0001f3d3\U0001f393\U0001f48d\U0001f381" %}
-        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="{{ icon }}" style="font-size:18px;padding:8px 12px;">{{ icon }}</button>
-        {% endfor %}
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🎯" style="font-size:18px;padding:8px 12px;">🎯</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="📱" style="font-size:18px;padding:8px 12px;">📱</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="✈️" style="font-size:18px;padding:8px 12px;">✈️</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🏠" style="font-size:18px;padding:8px 12px;">🏠</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🚗" style="font-size:18px;padding:8px 12px;">🚗</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="💻" style="font-size:18px;padding:8px 12px;">💻</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🏓" style="font-size:18px;padding:8px 12px;">🏓</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🎓" style="font-size:18px;padding:8px 12px;">🎓</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="💍" style="font-size:18px;padding:8px 12px;">💍</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🎁" style="font-size:18px;padding:8px 12px;">🎁</button>
       </div>
     </div>
     <button class="submit-btn" onclick="createGoal()" type="button">Create Goal 🎯</button>
