@@ -151,6 +151,7 @@ body::before {
 .anomaly-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
 .anomaly-item{padding:12px 16px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;display:flex;align-items:flex-start;gap:10px;border:1px solid transparent;animation:slideIn .3s ease;}
 @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(100px)}}
 .anomaly-item.critical{background:var(--red-bg);border-color:rgba(192,57,43,.15);color:var(--red);}
 .anomaly-item.high{background:var(--amber-bg);border-color:rgba(184,92,16,.15);color:var(--amber);}
 .anomaly-item.warning{background:var(--primary-l);border-color:rgba(91,79,232,.15);color:var(--primary);}
@@ -1142,7 +1143,25 @@ body::before {
   </div>
 </div>
 
+<!-- TOAST CONTAINER -->
+<div id="toast-container" style="position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;"></div>
+
 <script>
+// ── TOAST NOTIFICATION ────────────────────────────────────────────────
+function showToast(message, type='info', duration=3000) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  const colors = {success:'#10b981',error:'#ef4444',info:'#6366f1',warning:'#f59e0b'};
+  const icons = {success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
+  toast.style.cssText = `background:${colors[type]||colors.info};color:#fff;padding:12px 20px;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.3);display:flex;align-items:center;gap:8px;animation:slideIn 0.3s ease;min-width:250px;max-width:400px;`;
+  toast.innerHTML = `<span>${icons[type]||''}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
 // ── CONSTANTS ─────────────────────────────────────────────────────────
 const COLORS = {food:'#7C6FF7',transport:'#34D399',shopping:'#F472B6',health:'#60A5FA',entertainment:'#FBBF24',education:'#A78BFA',utilities:'#FB923C',other:'#94A3B8'};
 const ICONS  = {food:'🍜',transport:'🚗',shopping:'🛍️',health:'💊',entertainment:'🎬',education:'📚',utilities:'⚡',other:'📦'};
@@ -1862,6 +1881,35 @@ function openAddSavings(id) {
   openModal('addSavingsModal');
 }
 
+function addToGoal(id) {
+  activeGoalId = id;
+  document.getElementById('add-goal-amount').value = '';
+  document.getElementById('add-goal-id').value = id;
+  openModal('addToGoalModal');
+}
+
+async function submitAddToGoal() {
+  const id = document.getElementById('add-goal-id').value;
+  const amount = document.getElementById('add-goal-amount').value;
+  if (!id || !amount || amount <= 0) return showToast('Enter valid amount', 'error');
+  try {
+    const res = await fetch(`/api/savings-goals/${id}/update/`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({add_amount: amount})
+    });
+    if (res.ok) {
+      showToast('Savings added! 💰', 'success');
+      closeModal('addToGoalModal');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast('Failed to add savings', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
 async function addSavings() {
   if (!activeGoalId) return;
   const amount = document.getElementById('addSavingsAmount').value;
@@ -1937,9 +1985,9 @@ function openAddSplitExpense(id, name) {
 
 async function addSplitExpense() {
   if (!activeSplitId) return;
-  const amount = document.getElementById('split-amt').value;
-  const description = document.getElementById('split-desc').value;
-  const paidBy = document.getElementById('split-paid-by').value;
+  const amount = document.getElementById('split-exp-amount').value;
+  const description = document.getElementById('split-exp-desc').value;
+  const paidBy = document.getElementById('split-exp-paid-by').value;
   if (!amount || !description || !paidBy) return showToast('Please fill all fields', 'error');
 
   try {
@@ -1985,8 +2033,8 @@ async function viewSplitSummary(id) {
         
       html += `<button class="submit-btn" style="background:#25D366;color:#fff;" onclick="window.open('https://wa.me/?text=${summaryText}', '_blank')">Share via WhatsApp 💬</button>`;
       
-      document.getElementById('settlement-results').innerHTML = html;
-      openModal('settleModal');
+      document.getElementById('split-summary-content').innerHTML = html;
+      openModal('splitSummaryModal');
     }
   } catch(err) {
     showToast('Network error', 'error');
