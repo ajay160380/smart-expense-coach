@@ -6,12 +6,36 @@ const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  connectionString: process.env.DATABASE_URL,
+  max: 2,                // Only 2 connections — Supabase free tier is limited to 15 total
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
-pool.connect().then(() => {
+// Graceful cleanup on exit
+process.on('SIGINT', async () => { await pool.end(); process.exit(0); });
+process.on('SIGTERM', async () => { await pool.end(); process.exit(0); });
+
+async function startBot(retryCount = 0) {
+  const MAX_RETRIES = 5;
+  const BACKOFF_MS = Math.min(5000 * Math.pow(2, retryCount), 60000); // 5s, 10s, 20s, 40s, 60s
+
+  try {
+    await pool.connect();
     console.log("Connected to PostgreSQL for WhatsApp session storage.");
-    const store = new PostgresStore({ pool });
+  } catch (err) {
+    console.error(`Failed to connect to PostgreSQL (attempt ${retryCount + 1}/${MAX_RETRIES}):`, err.message);
+    if (retryCount < MAX_RETRIES - 1) {
+      console.log(`⏳ Retrying in ${BACKOFF_MS / 1000}s...`);
+      await new Promise(r => setTimeout(r, BACKOFF_MS));
+      return startBot(retryCount + 1);
+    }
+    console.error('❌ Max retries reached. Exiting gracefully (will not crash-loop).');
+    await pool.end();
+    process.exit(0); // Exit 0 so supervisord doesn't immediately restart
+  }
+
+  const store = new PostgresStore({ pool });
 
     const client = new Client({
         authStrategy: new RemoteAuth({
@@ -213,6 +237,7 @@ pool.connect().then(() => {
         console.log('Shutting down gracefully...');
         try {
             await client.destroy();
+            await pool.end();
             console.log('Client destroyed. Exiting...');
             process.exit(0);
         } catch (err) {
@@ -225,6 +250,6 @@ pool.connect().then(() => {
     process.on('SIGTERM', gracefulShutdown);
 
     client.initialize();
-}).catch(err => {
-    console.error("Failed to connect to PostgreSQL:", err);
-});
+}
+
+startBot();
