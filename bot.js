@@ -1,48 +1,20 @@
 require('dotenv').config();
-const { Client, RemoteAuth } = require('whatsapp-web.js');
-const { PostgresStore } = require('wwebjs-postgres');
-const { Pool } = require('pg');
+const fs = require('fs');
+const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 2,                // Only 2 connections — Supabase free tier is limited to 15 total
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
+// Determine the best path for storing the session persistently.
+// If /data exists (e.g., Hugging Face persistent storage), use it.
+const authPath = fs.existsSync('/data') ? '/data/.wwebjs_auth' : './.wwebjs_auth';
 
-// Graceful cleanup on exit
-process.on('SIGINT', async () => { await pool.end(); process.exit(0); });
-process.on('SIGTERM', async () => { await pool.end(); process.exit(0); });
-
-async function startBot(retryCount = 0) {
-  const MAX_RETRIES = 5;
-  const BACKOFF_MS = Math.min(5000 * Math.pow(2, retryCount), 60000); // 5s, 10s, 20s, 40s, 60s
-
-  try {
-    await pool.connect();
-    console.log("Connected to PostgreSQL for WhatsApp session storage.");
-  } catch (err) {
-    console.error(`Failed to connect to PostgreSQL (attempt ${retryCount + 1}/${MAX_RETRIES}):`, err.message);
-    if (retryCount < MAX_RETRIES - 1) {
-      console.log(`⏳ Retrying in ${BACKOFF_MS / 1000}s...`);
-      await new Promise(r => setTimeout(r, BACKOFF_MS));
-      return startBot(retryCount + 1);
-    }
-    console.error('❌ Max retries reached. Exiting gracefully (will not crash-loop).');
-    await pool.end();
-    process.exit(0); // Exit 0 so supervisord doesn't immediately restart
-  }
-
-  const store = new PostgresStore({ pool });
+async function startBot() {
+    console.log(`Starting WhatsApp Bot... Session will be saved to ${authPath}`);
 
     const client = new Client({
-        authStrategy: new RemoteAuth({
-            store: store,
-            backupSyncIntervalMs: 60000, // Backup every 1 minute instead of 5 minutes to prevent loss
-            clientId: "paisa-mitra-v3", // Fresh session ID so it gets saved properly
-            dataPath: './'
+        authStrategy: new LocalAuth({
+            clientId: "paisa-mitra-v3",
+            dataPath: authPath
         }),
         puppeteer: {
             args: [
@@ -237,7 +209,6 @@ async function startBot(retryCount = 0) {
         console.log('Shutting down gracefully...');
         try {
             await client.destroy();
-            await pool.end();
             console.log('Client destroyed. Exiting...');
             process.exit(0);
         } catch (err) {
