@@ -1,20 +1,80 @@
 require('dotenv').config();
 const fs = require('fs');
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, RemoteAuth } = require('whatsapp-web.js');
+const { PostgresStore } = require('wwebjs-postgres');
+const { Pool } = require('pg');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 
-// Determine the best path for storing the session persistently.
-// If /data exists (e.g., Hugging Face persistent storage), use it.
-const authPath = fs.existsSync('/data') ? '/data/.wwebjs_auth' : './.wwebjs_auth';
+// We subclass RemoteAuth to prevent session deletion on casual disconnects/restarts.
+class SafeRemoteAuth extends RemoteAuth {
+    constructor(options) {
+        super(options);
+        this.isLoggingOut = false;
+    }
 
-async function startBot() {
-    console.log(`Starting WhatsApp Bot... Session will be saved to ${authPath}`);
+    async logout() {
+        this.isLoggingOut = true;
+        await super.logout();
+    }
+
+    async disconnect() {
+        if (this.isLoggingOut) {
+            console.log("🔒 SafeRemoteAuth: Explicit logout detected. Deleting remote session...");
+            await this.deleteRemoteSession();
+            let pathExists = await this.isValidPath(this.userDataDir);
+            if (pathExists) {
+                await fs.promises
+                    .rm(this.userDataDir, {
+                        recursive: true,
+                        force: true,
+                        maxRetries: this.rmMaxRetries,
+                    })
+                    .catch(() => {});
+            }
+        } else {
+            console.log("⚠️ SafeRemoteAuth: Casual disconnect detected. Preserving remote and local session files.");
+        }
+        clearInterval(this.backupSync);
+    }
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 2,                // Only 2 connections — Supabase free tier is limited to 15 total
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
+
+async function startBot(retryCount = 0) {
+    const MAX_RETRIES = 5;
+    const BACKOFF_MS = Math.min(5000 * Math.pow(2, retryCount), 60000); // 5s, 10s, 20s, 40s, 60s
+
+    try {
+        await pool.connect();
+        console.log("Connected to PostgreSQL for WhatsApp session storage.");
+    } catch (err) {
+        console.error(`Failed to connect to PostgreSQL (attempt ${retryCount + 1}/${MAX_RETRIES}):`, err.message);
+        if (retryCount < MAX_RETRIES - 1) {
+            console.log(`⏳ Retrying in ${BACKOFF_MS / 1000}s...`);
+            await new Promise(r => setTimeout(r, BACKOFF_MS));
+            return startBot(retryCount + 1);
+        }
+        console.error('❌ Max retries reached. Exiting gracefully (will not crash-loop).');
+        try { await pool.end(); } catch (_) {}
+        process.exit(0); // Exit 0 so supervisord doesn't immediately restart
+    }
+
+    const store = new PostgresStore({ pool });
+
+    console.log("Starting WhatsApp Bot with SafeRemoteAuth...");
 
     const client = new Client({
-        authStrategy: new LocalAuth({
-            clientId: "paisa-mitra-v3",
-            dataPath: authPath
+        authStrategy: new SafeRemoteAuth({
+            store: store,
+            backupSyncIntervalMs: 60000, // Backup every 1 minute
+            clientId: "paisa-mitra-v3", // Same clientId as before
+            dataPath: './'
         }),
         puppeteer: {
             args: [
@@ -101,11 +161,8 @@ async function startBot() {
     client.on('disconnected', (reason) => {
         console.log('⚠️ WhatsApp Client was logged out / disconnected!');
         console.log('Reason:', reason);
-        // Auto-reconnect after 5 seconds
-        console.log('🔄 Attempting to reconnect in 5 seconds...');
-        setTimeout(() => {
-            client.initialize();
-        }, 5000);
+        console.log('🔄 Exiting process to allow supervisord / container manager to restart it clean...');
+        process.exit(1);
     });
 
     // ── Helper: Safe reply with fallback ──────────────────────────────────
@@ -157,12 +214,29 @@ async function startBot() {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
-            const response = await fetch(`${SPACE_URL}/api/voice-expense/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, text }),
-                signal: controller.signal
-            });
+            let response;
+            try {
+                response = await fetch(`${SPACE_URL}/api/voice-expense/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, text }),
+                    signal: controller.signal
+                });
+            } catch (fetchErr) {
+                // If it fails (e.g. connection refused on port 7860 locally), try port 8000
+                if (SPACE_URL.includes("7860") && (fetchErr.code === 'ECONNREFUSED' || fetchErr.message.includes('fetch failed') || fetchErr.message.includes('connect ECONNREFUSED'))) {
+                    console.log("⚠️ Failed to connect to SPACE_URL, trying local fallback on port 8000...");
+                    const localUrl = SPACE_URL.replace("7860", "8000");
+                    response = await fetch(`${localUrl}/api/voice-expense/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone, text }),
+                        signal: controller.signal
+                    });
+                } else {
+                    throw fetchErr;
+                }
+            }
             clearTimeout(timeout);
             
             const data = await response.json();
@@ -209,10 +283,12 @@ async function startBot() {
         console.log('Shutting down gracefully...');
         try {
             await client.destroy();
-            console.log('Client destroyed. Exiting...');
+            console.log('Client destroyed. Closing pg pool...');
+            try { await pool.end(); } catch (_) {}
             process.exit(0);
         } catch (err) {
             console.error('Error during shutdown:', err);
+            try { await pool.end(); } catch (_) {}
             process.exit(1);
         }
     };
