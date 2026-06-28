@@ -867,7 +867,16 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     # ──────────────────────────────────────────────────────────────────────────
     # NAYA FEATURE: Split Groups
     # ──────────────────────────────────────────────────────────────────────────
-    active_splits = SplitGroup.objects.filter(creator=user, is_settled=False)[:5]
+    active_splits_qs = SplitGroup.objects.filter(creator=user, is_settled=False).annotate(
+        total_expense=Sum('expenses__amount')
+    )[:5]
+    
+    active_splits = []
+    for s in active_splits_qs:
+        s.tot = s.total_expense or 0
+        mc = s.members.count()
+        s.pp = s.tot / mc if mc > 0 else 0
+        active_splits.append(s)
 
     show_wa_banner = request.session.pop('show_wa_banner', False)
 
