@@ -145,10 +145,10 @@ async function startBot(retryCount = 0) {
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
 
-        // ── 💡 DAILY TIP CRON JOB (8:00 AM IST = 2:30 AM UTC) ──
-        cron.schedule('30 2 * * *', async () => {
-            console.log('⏰ Running daily tip cron job...');
-            const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:7860";
+        // ── 💡 DAILY TIP CRON JOB (8:00 AM IST) ──
+        cron.schedule('0 8 * * *', async () => {
+            console.log('⏰ Running daily tip cron job (8 AM)...');
+            const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:8000";
             const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
             
             try {
