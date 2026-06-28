@@ -120,6 +120,7 @@ async function startBot(retryCount = 0) {
             dataPath: './'
         }),
         puppeteer: {
+            timeout: 60000, // Increase navigation timeout to 60s
             args: [
                 '--no-sandbox', 
                 '--disable-setuid-sandbox',
@@ -128,6 +129,7 @@ async function startBot(retryCount = 0) {
                 '--no-first-run',
                 '--no-zygote',
                 '--disable-gpu',
+                '--disable-ipv6', // Bypass potential IPv6 issues
                 '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
             ]
         }
