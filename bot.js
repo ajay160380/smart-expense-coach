@@ -46,6 +46,10 @@ const pool = new Pool({
   connectionTimeoutMillis: 10000,
 });
 
+pool.on('error', (err, client) => {
+    console.error('❌ Unexpected error on idle PostgreSQL client:', err.message);
+});
+
 async function startBot(retryCount = 0) {
     const MAX_RETRIES = 5;
     const BACKOFF_MS = Math.min(5000 * Math.pow(2, retryCount), 60000); // 5s, 10s, 20s, 40s, 60s
