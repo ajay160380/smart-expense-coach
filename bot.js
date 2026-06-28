@@ -45,6 +45,37 @@ class SafeRemoteAuth extends RemoteAuth {
             console.error("❌ Failed to store remote session (ignoring to prevent crash):", err.message);
         }
     }
+
+    async copyByRequiredDirs(from, to) {
+        const path = require('path');
+        for (const d of this.requiredDirs) {
+            const src = path.join(from, d);
+            if (await this.isValidPath(src)) {
+                const dest = path.join(to, path.basename(src));
+                // Using a safe manual copy strategy to avoid Node 20's ENOENT bug with fs.cp
+                await this.safeCopyDir(src, dest);
+            }
+        }
+    }
+    
+    async safeCopyDir(src, dest) {
+        const path = require('path');
+        await fs.promises.mkdir(dest, { recursive: true });
+        const entries = await fs.promises.readdir(src, { withFileTypes: true });
+        for (const entry of entries) {
+            const srcPath = path.join(src, entry.name);
+            const destPath = path.join(dest, entry.name);
+            if (entry.isDirectory()) {
+                await this.safeCopyDir(srcPath, destPath);
+            } else {
+                try {
+                    await fs.promises.copyFile(srcPath, destPath);
+                } catch (e) {
+                    if (e.code !== 'ENOENT') throw e; // Ignore ENOENT (e.g. temporary leveldb locks deleted while copying)
+                }
+            }
+        }
+    }
 }
 
 const pool = new Pool({
