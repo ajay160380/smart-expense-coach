@@ -203,9 +203,22 @@ async function startBot(retryCount = 0) {
         console.error('❌ Authentication failure:', msg);
     });
 
-    client.on('disconnected', (reason) => {
+    client.on('disconnected', async (reason) => {
         console.log('⚠️ WhatsApp Client was logged out / disconnected!');
         console.log('Reason:', reason);
+        
+        if (reason === 'LOGOUT') {
+            console.log('🗑️ WhatsApp invalidated the session. Clearing invalid session from PostgreSQL...');
+            try {
+                if (client.authStrategy && client.authStrategy.sessionName) {
+                    await store.delete({ session: client.authStrategy.sessionName });
+                    console.log('✅ Invalid session cleared successfully. Bot will ask for a fresh QR code scan upon restart.');
+                }
+            } catch (err) {
+                console.error('❌ Failed to clear invalid session from DB:', err.message);
+            }
+        }
+        
         console.log('🔄 Exiting process to allow supervisord / container manager to restart it clean...');
         process.exit(1);
     });
