@@ -341,7 +341,11 @@ async function startBot(retryCount = 0) {
     process.on('SIGINT', gracefulShutdown);
     process.on('SIGTERM', gracefulShutdown);
 
-    client.initialize();
+    client.initialize().catch(err => {
+        console.error('❌ Client initialization failed:', err.message);
+        console.log('🔄 Restarting bot due to initialization failure...');
+        setTimeout(() => process.exit(1), 2000);
+    });
 }
 
 startBot();
