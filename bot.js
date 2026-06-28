@@ -37,6 +37,14 @@ class SafeRemoteAuth extends RemoteAuth {
         }
         clearInterval(this.backupSync);
     }
+
+    async storeRemoteSession(options) {
+        try {
+            await super.storeRemoteSession(options);
+        } catch (err) {
+            console.error("❌ Failed to store remote session (ignoring to prevent crash):", err.message);
+        }
+    }
 }
 
 const pool = new Pool({
