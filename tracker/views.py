@@ -2393,6 +2393,8 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
     if secret != expected_secret:
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
+    tip_type = body.get("type", "morning")
+    
     linked_profiles = UserProfile.objects.filter(
         whatsapp_linked=True
     ).exclude(
@@ -2401,22 +2403,38 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
         whatsapp_number=''
     ).select_related('user')
 
+    seen_numbers = set()
     tips = []
+    
     for profile in linked_profiles:
-        ck = f"daily_tip_sent_{profile.user.id}_{date.today().isoformat()}"
+        number = profile.whatsapp_number
+        if number in seen_numbers:
+            continue
+        seen_numbers.add(number)
+        
+        ck = f"{tip_type}_tip_sent_{profile.user.id}_{date.today().isoformat()}"
         if cache.get(ck):
             continue  # Already sent today
 
         tip = generate_daily_tip(profile.user)
         user_name = profile.user.first_name.title() if profile.user.first_name else profile.user.username.title()
 
-        msg = (
-            f"🌅 *Good Morning, {user_name}!*\n"
-            f"━━━━━━━━━━━━━━━━━━\n"
-            f"💡 *PaisaMitra Daily Tip*\n\n"
-            f"{tip}\n\n"
-            f"_Have a great day! Track your expenses wisely._ 🚀"
-        )
+        if tip_type == "night":
+            msg = (
+                f"🌙 *Good Night, {user_name}!* ✨\n"
+                f"━━━━━━━━━━━━━━━━━━━\n"
+                f"🦉 *PaisaMitra Night Tip*\n\n"
+                f"_{tip}_\n\n"
+                f"🌟 _Rest well! Tomorrow is a new day to save._ 💤"
+            )
+        else:
+            msg = (
+                f"🌅 *Good Morning, {user_name}!* ☀️\n"
+                f"━━━━━━━━━━━━━━━━━━━\n"
+                f"💎 *PaisaMitra Daily Tip*\n\n"
+                f"_{tip}_\n\n"
+                f"🚀 _Have a fantastic day! Track your expenses wisely._ 📈"
+            )
 
         tips.append({
             "whatsapp_number": profile.whatsapp_number,
