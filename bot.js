@@ -145,9 +145,9 @@ async function startBot(retryCount = 0) {
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
 
-        // ── 💡 DAILY TIP CRON JOB (10:58 AM IST) ──
-        cron.schedule('58 10 * * *', async () => {
-            console.log('⏰ Running daily tip cron job (10:58 AM)...');
+        // ── 💡 DAILY TIP CRON JOB (8:00 AM IST) ──
+        cron.schedule('0 8 * * *', async () => {
+            console.log('⏰ Running daily tip cron job (8 AM)...');
             const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:8000";
             const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
             
@@ -155,7 +155,7 @@ async function startBot(retryCount = 0) {
                 const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: DAILY_TIP_SECRET })
+                    body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: 'morning' })
                 });
                 const data = await response.json();
                 
@@ -201,6 +201,61 @@ async function startBot(retryCount = 0) {
             timezone: "Asia/Kolkata"
         });
         console.log('📅 Daily tip cron scheduled for 8:00 AM IST');
+
+        // ── 🌙 NIGHT TIP CRON JOB (10:00 PM IST) ──
+        cron.schedule('0 22 * * *', async () => {
+            console.log('⏰ Running night tip cron job (10 PM)...');
+            const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:8000";
+            const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
+            
+            try {
+                const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: 'night' })
+                });
+                const data = await response.json();
+                
+                if (data.tips && data.tips.length > 0) {
+                    console.log(`🌙 Sending ${data.tips.length} night tips...`);
+                    
+                    for (const tip of data.tips) {
+                        try {
+                            const chatId = tip.whatsapp_number.includes('@') 
+                                ? tip.whatsapp_number 
+                                : `${tip.whatsapp_number}@c.us`;
+                            
+                            try {
+                                await client.sendMessage(chatId, tip.message);
+                                console.log(`✅ Night tip sent to ${tip.whatsapp_number}`);
+                            } catch (sendErr) {
+                                console.warn(`⚠️ Failed to send night tip to ${chatId}: ${sendErr.message}`);
+                                if (!tip.whatsapp_number.includes('@')) {
+                                    console.log(`🔄 Trying @lid fallback for ${tip.whatsapp_number}...`);
+                                    const fallbackChatId = `${tip.whatsapp_number}@lid`;
+                                    await client.sendMessage(fallbackChatId, tip.message);
+                                    console.log(`✅ Night tip sent via fallback to ${fallbackChatId}`);
+                                } else {
+                                    throw sendErr;
+                                }
+                            }
+                            
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        } catch (err) {
+                            console.error(`❌ Failed to send night tip to ${tip.whatsapp_number}:`, err.message);
+                        }
+                    }
+                    console.log(`🌙 Night tips batch complete! Sent: ${data.count}`);
+                } else {
+                    console.log('🌙 No night tips to send today.');
+                }
+            } catch (err) {
+                console.error('❌ Night tip cron failed:', err.message);
+            }
+        }, {
+            timezone: "Asia/Kolkata"
+        });
+        console.log('📅 Night tip cron scheduled for 10:00 PM IST');
     });
 
     client.on('remote_session_saved', () => {
