@@ -7,10 +7,10 @@
 <title>PaisaMitra Dashboard</title>
 <script>
   let theme = localStorage.getItem('theme');
-  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  } else {
+  if (theme === 'light') {
     document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
   }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,53 +19,57 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root {
-  --bg: #F8FAFC;
-  --surface: rgba(255, 255, 255, 0.7);
-  --surface2: rgba(255, 255, 255, 0.9);
-  --surface3: #E8E4DE;
-  --border: rgba(148, 163, 184, 0.15);
-  --border2: rgba(148, 163, 184, 0.25);
+  --bg: #F0F4F8;
+  --surface: rgba(255, 255, 255, 0.75);
+  --surface2: rgba(255, 255, 255, 0.92);
+  --surface3: #E2E8F0;
+  --border: rgba(148, 163, 184, 0.2);
+  --border2: rgba(148, 163, 184, 0.3);
   --text: #0F172A;
   --text2: #475569;
   --text3: #94A3B8;
-  --primary: #6366F1;
-  --primary-l: rgba(99, 102, 241, 0.1);
-  --primary-d: #4F46E5;
+  --primary: #06B6D4;
+  --primary-l: rgba(6, 182, 212, 0.1);
+  --primary-d: #0891B2;
+  --accent: #8B5CF6;
   --green: #10B981;
   --green-bg: rgba(16, 185, 129, 0.1);
   --amber: #F59E0B;
   --amber-bg: rgba(245, 158, 11, 0.1);
   --red: #EF4444;
   --red-bg: rgba(239, 68, 68, 0.1);
-  --radius: 20px;
-  --radius-sm: 12px;
+  --radius: 16px;
+  --radius-sm: 10px;
   --radius-pill: 100px;
   --font: 'Inter', sans-serif;
   --mono: 'JetBrains Mono', monospace;
-  --shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
-  --shadow-md: 0 20px 40px -10px rgba(0,0,0,0.12);
-  --glass-filter: blur(20px);
+  --shadow: 0 4px 24px -4px rgba(0,0,0,0.06);
+  --shadow-md: 0 8px 32px -8px rgba(0,0,0,0.1);
+  --glass-filter: blur(24px);
 }
 [data-theme="dark"] {
-  --bg: #020617;
-  --surface: rgba(15, 23, 42, 0.6);
-  --surface2: rgba(30, 41, 59, 0.8);
-  --surface3: #2A2826;
-  --border: rgba(255, 255, 255, 0.05);
-  --border2: rgba(255, 255, 255, 0.1);
+  --bg: #050511;
+  --surface: rgba(20, 24, 44, 0.45);
+  --surface2: rgba(30, 36, 62, 0.6);
+  --surface3: rgba(45, 52, 85, 0.8);
+  --border: rgba(255, 255, 255, 0.08);
+  --border2: rgba(255, 255, 255, 0.15);
   --text: #F8FAFC;
   --text2: #CBD5E1;
-  --text3: #64748B;
-  --primary: #818CF8;
-  --primary-l: rgba(129, 140, 248, 0.15);
-  --green: #34D399;
-  --green-bg: rgba(52, 211, 153, 0.15);
-  --amber: #FBBF24;
-  --amber-bg: rgba(251, 191, 36, 0.15);
-  --red: #F87171;
-  --red-bg: rgba(248, 113, 113, 0.15);
-  --shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
-  --shadow-md: 0 20px 40px -10px rgba(0,0,0,0.6);
+  --text3: #94A3B8;
+  --primary: #00F0FF;
+  --primary-l: rgba(0, 240, 255, 0.15);
+  --primary-d: #00C4D1;
+  --accent: #B026FF;
+  --green: #00FF9D;
+  --green-bg: rgba(0, 255, 157, 0.15);
+  --amber: #FFB300;
+  --amber-bg: rgba(255, 179, 0, 0.15);
+  --red: #FF3366;
+  --red-bg: rgba(255, 51, 102, 0.15);
+  --shadow: 0 8px 32px 0 rgba(0,0,0,0.5);
+  --shadow-md: 0 12px 48px 0 rgba(0,0,0,0.6);
+  --glass-filter: blur(40px);
 }
 
 body {
@@ -79,25 +83,38 @@ body {
   position: relative;
   overflow-x: hidden;
 }
-/* Background mesh gradient for whole dashboard */
+/* Background mesh gradient */
 body::before {
     content: '';
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     z-index: -1;
     background: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(37, 211, 102, 0.05) 0px, transparent 50%);
+        radial-gradient(at 10% 10%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+        radial-gradient(at 90% 20%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+        radial-gradient(at 50% 90%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
     filter: blur(80px);
     pointer-events: none;
 }
 [data-theme="dark"] body::before {
     background: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.2) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+        radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.18), transparent 45%),
+        radial-gradient(circle at 85% 30%, rgba(176, 38, 255, 0.18), transparent 45%),
+        radial-gradient(circle at 50% 100%, rgba(0, 255, 157, 0.1), transparent 50%);
 }
 .app{max-width:1400px;width:95%;margin:0 auto;padding:24px 0 120px;}
+
+/* ── DASHBOARD 2-COLUMN LAYOUT ── */
+@media(min-width:1024px){
+  .dash-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
+  .dash-main{display:flex;flex-direction:column;gap:16px;min-width:0;}
+  .dash-side{display:flex;flex-direction:column;gap:16px;position:sticky;top:24px;}
+  .dash-main > *, .dash-side > * {margin-bottom:0 !important;}
+}
+@media(max-width:1023px){
+  .dash-layout{display:flex;flex-direction:column;gap:16px;}
+  .dash-main, .dash-side{display:contents;}
+}
 
 /* ── NAV ── */
 .nav{position:relative;z-index:1000;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px; background: var(--surface); padding: 14px 24px; border-radius: var(--radius); box-shadow: var(--shadow); backdrop-filter: var(--glass-filter); -webkit-backdrop-filter: var(--glass-filter); border: 1px solid var(--border);}
@@ -137,8 +154,8 @@ body::before {
 .tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(91,79,232,.3);}
 
 /* ── AI BANNER ── */
-.ai-banner{background:linear-gradient(130deg,#4338ca 0%,#7c3aed 50%,#a855f7 100%);border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s;box-shadow:0 8px 32px rgba(99,102,241,.3);}
-.ai-banner:hover{transform:translateY(-2px);}
+.ai-banner{background:linear-gradient(135deg,rgba(176,38,255,0.8) 0%,rgba(0,240,255,0.8) 100%);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;cursor:pointer;transition:all .3s;box-shadow:0 8px 32px rgba(176,38,255,.3);}
+.ai-banner:hover{transform:translateY(-2px) scale(1.01);box-shadow:0 12px 40px rgba(0,240,255,.4);}
 .ai-banner::after{content:'';position:absolute;top:-50px;right:-20px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.06);}
 .ai-banner::before{content:'';position:absolute;bottom:-40px;right:80px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.04);}
 .ai-avatar{width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;backdrop-filter:blur(8px);}
@@ -160,12 +177,13 @@ body::before {
 .anomaly-close:hover{opacity:1;}
 
 /* ── HERO ── */
-.hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px;margin-bottom:16px;box-shadow:var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);}
-.hero-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;}
-.hero-label{font-size:10px;font-weight:600;text-transform:uppercase;color:var(--text3);letter-spacing:.08em;margin-bottom:8px;}
-.hero-amount{font-size:44px;font-weight:300;font-family:var(--mono);line-height:1;letter-spacing:-.02em;}
-.hero-amount strong{font-weight:700;color:var(--primary);}
-.hero-budget{font-size:12px;color:var(--text3);margin-top:6px;}
+.hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;margin-bottom:16px;box-shadow:inset 0 1px 1px rgba(255,255,255,0.1), var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);transition:transform .3s,box-shadow .3s;}
+.hero:hover{transform:translateY(-2px);box-shadow:inset 0 1px 1px rgba(255,255,255,0.15), 0 12px 40px rgba(0,0,0,0.6), 0 0 40px rgba(0,240,255,0.1);}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;}
+.hero-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text3);letter-spacing:.1em;margin-bottom:10px;font-family:'Outfit',sans-serif;}
+.hero-amount{font-size:52px;font-weight:300;font-family:'Outfit',sans-serif;line-height:1;letter-spacing:-.02em;}
+.hero-amount strong{font-weight:800;background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-budget{font-size:13px;color:var(--text3);margin-top:8px;font-weight:500;}
 .budget-btn{padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .2s;}
 .budget-btn:hover{background:var(--surface2);border-color:var(--primary);color:var(--primary);}
 .progress-wrap{height:8px;background:var(--surface2);border-radius:var(--radius-pill);overflow:hidden;margin-bottom:18px;}
@@ -221,14 +239,16 @@ body::before {
 
 /* ── STAT ROW ── */
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;box-shadow:var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);}
-.sc-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;}
-.sc-val{font-size:24px;font-weight:500;font-family:var(--mono);}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px;box-shadow:inset 0 1px 1px rgba(255,255,255,0.05), var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);transition:transform .3s,box-shadow .3s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:inset 0 1px 1px rgba(255,255,255,0.1), 0 8px 32px rgba(0,0,0,0.5);}
+.sc-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-family:'Outfit',sans-serif;}
+.sc-val{font-size:28px;font-weight:600;font-family:'Outfit',sans-serif;letter-spacing:-.01em;}
 .sc-val.green{color:var(--green);}.sc-val.amber{color:var(--amber);}.sc-val.red{color:var(--red);}
 
 /* ── GRID ── */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;display:flex;flex-direction:column;box-shadow:var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px;display:flex;flex-direction:column;box-shadow:inset 0 1px 1px rgba(255,255,255,0.05), var(--shadow);backdrop-filter:var(--glass-filter);-webkit-backdrop-filter:var(--glass-filter);transition:transform .3s;}
+.card:hover{transform:translateY(-2px);}
 .card-title{font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;color:var(--text3);letter-spacing:.08em;margin-bottom:18px;}
 .cat-item{margin-bottom:12px;cursor:pointer;border-radius:var(--radius-sm);padding:10px 12px;transition:all .18s;border:1px solid transparent;}
 .cat-item:hover{background:var(--surface2);border-color:var(--border);}
@@ -341,12 +361,12 @@ body::before {
 .scroll-hint{font-size:10px;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:4px;}
 
 /* ── AI POPUP ── */
-.ai-fab{position:fixed;bottom:28px;right:24px;z-index:300;}
+.ai-fab{position:fixed;bottom:28px;right:24px;z-index:9999;}
 .ai-fab-btn{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#4338ca,#a855f7);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:23px;box-shadow:0 8px 28px rgba(99,102,241,.45);transition:transform .22s;position:relative;}
 .ai-fab-btn:hover{transform:scale(1.1) rotate(-8deg);}
 .ai-notif{position:absolute;top:-3px;right:-3px;width:18px;height:18px;background:#ef4444;border-radius:50%;border:2.5px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;animation:bounce-notif 1.5s infinite;}
 @keyframes bounce-notif{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-.ai-popup{position:fixed;bottom:100px;right:24px;width:375px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;z-index:299;display:flex;flex-direction:column;transform:scale(.88) translateY(16px);transform-origin:bottom right;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 24px 64px rgba(0,0,0,.2);}
+.ai-popup{position:fixed;bottom:100px;right:24px;width:375px;background:var(--surface);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;z-index:9998;display:flex;flex-direction:column;transform:scale(.88) translateY(16px);transform-origin:bottom right;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 24px 64px rgba(0,0,0,.4);}
 .ai-popup.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
 .ai-pop-head{background:linear-gradient(130deg,#4338ca,#7c3aed);padding:16px 18px;display:flex;align-items:center;gap:11px;}
 .ai-pop-av{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
@@ -384,7 +404,7 @@ body::before {
 .ai-error-banner.show{display:flex;}
 
 /* ── MODALS ── */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(4px);}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(4px);}
 .overlay.open{opacity:1;pointer-events:all;}
 .modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:26px;width:100%;max-width:440px;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.2,.64,1);}
 .overlay.open .modal{transform:translateY(0);}
@@ -418,7 +438,7 @@ body::before {
 .pm-logout-btn:hover{background:var(--red);color:#fff;}
 
 /* ── VOICE OVERLAY ── */
-.voice-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(6px);}
+.voice-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10010;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(6px);}
 .voice-overlay.show{opacity:1;pointer-events:all;}
 .voice-card{background:var(--surface);border-radius:24px;padding:40px;text-align:center;width:280px;box-shadow:var(--shadow-md);animation:scaleIn .3s cubic-bezier(.34,1.56,.64,1);}
 @keyframes scaleIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
@@ -529,6 +549,236 @@ body::before {
 @media(max-width:768px){
   .compare-grid{grid-template-columns:1fr;}
   .goals-grid{grid-template-columns:1fr;}
+  .hero-amount{font-size:32px;}
+  .stat-row{grid-template-columns:1fr;}
+  .grid2{grid-template-columns:1fr;}
+  .nav{flex-wrap:wrap;gap:10px;}
+  .floating-dock{bottom:14px;padding:8px 12px;gap:8px;}
+}
+
+/* ══════════════════════════════════════════════════
+   ✨ PREMIUM DASHBOARD UPGRADE
+   ══════════════════════════════════════════════════ */
+
+/* ── ANIMATED MESH BACKGROUND ── */
+body::before {
+    animation: meshMove 12s ease-in-out infinite alternate;
+}
+@keyframes meshMove {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
+}
+
+/* ── FLOATING ACTION DOCK ── */
+.floating-dock{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--surface2);
+    padding:12px 20px;
+    border-radius:var(--radius-pill);
+    display:flex;
+    gap:12px;
+    align-items:center;
+    box-shadow:0 20px 60px -10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+    backdrop-filter:blur(40px);
+    -webkit-backdrop-filter:blur(40px);
+    border:1px solid var(--border2);
+    z-index:1000;
+    animation:dockSlideUp 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes dockSlideUp{
+    from{transform:translate(-50%,80px);opacity:0;}
+    to{transform:translate(-50%,0);opacity:1;}
+}
+.floating-dock .add-btn,
+.floating-dock .voice-btn{
+    font-size:12px;
+    padding:10px 20px;
+}
+
+/* ── HERO GLOW BORDER ── */
+.hero{
+    position:relative;
+    overflow:hidden;
+    backdrop-filter:blur(40px);
+    -webkit-backdrop-filter:blur(40px);
+    border:1px solid transparent;
+    background-clip:padding-box;
+    transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s;
+}
+.hero::before{
+    content:'';
+    position:absolute;
+    top:-2px;left:-2px;right:-2px;bottom:-2px;
+    background:linear-gradient(135deg,var(--primary),#a855f7,#ec4899,var(--primary));
+    background-size:300% 300%;
+    border-radius:calc(var(--radius) + 2px);
+    z-index:-1;
+    animation:glowBorder 6s ease infinite;
+    opacity:0.5;
+}
+@keyframes glowBorder{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
+.hero::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:var(--surface);
+    border-radius:var(--radius);
+    z-index:-1;
+}
+.hero:hover{
+    transform:translateY(-4px);
+    box-shadow:0 20px 60px -15px rgba(99,102,241,0.3);
+}
+.hero-amount strong{
+    background:linear-gradient(135deg,var(--primary),#a855f7);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+}
+
+/* ── CARD HOVER TILT ── */
+.stat-card, .h-stat{
+    transition:transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+}
+.stat-card:hover, .h-stat:hover{
+    transform:translateY(-3px) scale(1.02);
+    box-shadow:var(--shadow-md);
+    border-color:var(--primary);
+}
+
+/* ── CATEGORY & CHART CARDS ── */
+.card{
+    transition:transform 0.3s, box-shadow 0.3s;
+    backdrop-filter:blur(30px);
+    -webkit-backdrop-filter:blur(30px);
+}
+.card:hover{
+    transform:translateY(-3px);
+    box-shadow:var(--shadow-md);
+}
+.cat-item{
+    transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cat-item:hover{
+    transform:translateX(6px);
+    border-color:var(--primary) !important;
+}
+
+/* ── AI BANNER UPGRADE ── */
+.ai-banner{
+    transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ai-banner:hover{
+    transform:translateY(-4px) scale(1.01);
+    box-shadow:0 16px 48px rgba(99,102,241,0.45);
+}
+
+/* ── GAMIFICATION / SECTIONS ── */
+.game-section, .compare-section, .goals-section, .bills-section, .split-section, .tip-section, .txn-section{
+    transition:transform 0.3s, box-shadow 0.3s;
+}
+.game-section:hover, .compare-section:hover, .goals-section:hover, .bills-section:hover, .split-section:hover{
+    transform:translateY(-2px);
+    box-shadow:var(--shadow-md);
+}
+
+/* ── PROGRESS BAR SHIMMER ── */
+.progress-fill{
+    position:relative;
+    overflow:hidden;
+}
+.progress-fill::after{
+    content:'';
+    position:absolute;
+    top:0;left:-50%;
+    width:50%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+    animation:shimmer 2.5s infinite;
+}
+@keyframes shimmer{
+    0%{left:-50%;}
+    100%{left:150%;}
+}
+
+/* ── BADGE POP ── */
+.badge{
+    transition:transform 0.2s;
+}
+.badge:hover{
+    transform:scale(1.12);
+}
+
+/* ── NAV UPGRADE ── */
+.nav{
+    backdrop-filter:blur(40px);
+    -webkit-backdrop-filter:blur(40px);
+    transition:box-shadow 0.3s;
+}
+.nav:hover{
+    box-shadow:var(--shadow-md);
+}
+
+/* ── NUMBER COUNTER ANIMATION ── */
+@keyframes countUp{
+    from{opacity:0;transform:translateY(10px);}
+    to{opacity:1;transform:translateY(0);}
+}
+.hero-amount, .sc-val, .h-stat-v, .gs-val, .level-num{
+    animation:countUp 0.6s ease-out forwards;
+}
+
+/* ── SCROLLBAR STYLING ── */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:var(--primary);}
+
+/* ── TIP SECTION GLOW ── */
+.tip-section{
+    transition:transform 0.3s, box-shadow 0.3s;
+}
+.tip-section:hover{
+    transform:translateY(-2px);
+    box-shadow:0 16px 48px rgba(16,185,129,0.35);
+}
+
+/* ── SPLIT CARD GLOW ── */
+.split-card:hover{
+    box-shadow:0 12px 32px rgba(99,102,241,0.2);
+}
+
+/* ── GOAL CARD ── */
+.goal-card{
+    transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.goal-card:hover{
+    transform:translateY(-4px) scale(1.02);
+    box-shadow:0 12px 32px rgba(99,102,241,0.2);
+    border-color:var(--primary);
+}
+
+/* ── QUEST CARD ── */
+.quest-card{
+    transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.quest-card:hover{
+    transform:translateY(-4px) scale(1.03);
+    box-shadow:0 8px 24px rgba(99,102,241,0.15);
+}
+
+/* ── STREAK DAY ── */
+.sd{
+    transition:transform 0.2s;
+}
+.sd:hover{
+    transform:scale(1.15);
 }
 </style>
 </head>
@@ -648,254 +898,265 @@ body::before {
     <button class="tab" onclick="setFilter('all',this)">All time</button>
   </div>
 
-  <!-- AI BANNER -->
-  <div class="ai-banner" onclick="openAI()">
-    <div class="ai-avatar">🤖</div>
-    <div class="ai-banner-text">
-      <div class="ai-banner-label">AI Financial Coach</div>
-      <div class="ai-banner-msg" id="banner-msg">{{ ai_main_tip|default:"Hello! I am PaisaMitra — ask me anything about your finances!" }}</div>
-    </div>
-    <span class="ai-banner-caret">›</span>
-  </div>
-<!-- Sub Tip (Category Alert) -->
-{% if ai_sub_tip %}
-<div style="margin-top: 10px; font-size: 12px; color: #4f46e5; background-color: #eef2ff; padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
-    <span>💡</span> {{ ai_sub_tip }}
-</div>
-{% endif %}
-  <div id="anomaly-container" class="anomaly-list"></div>
+  <!-- ═══ 2 COLUMN DASHBOARD LAYOUT ═══ -->
+  <div class="dash-layout">
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-top">
-      <div>
-        <div class="hero-label">Total spent</div>
-        <div class="hero-amount" id="hero-total">₹<strong>0</strong></div>
-        <div class="hero-budget" id="hero-budget-label">of ₹20,000 budget</div>
+    <!-- ─── LEFT: MAIN CONTENT ─── -->
+    <div class="dash-main">
+
+      <!-- HERO -->
+      <div class="hero">
+        <div class="hero-top">
+          <div>
+            <div class="hero-label">Total spent</div>
+            <div class="hero-amount" id="hero-total">₹<strong>0</strong></div>
+            <div class="hero-budget" id="hero-budget-label">of ₹20,000 budget</div>
+          </div>
+          <button class="budget-btn" onclick="openModal('budgetModal')">⚙ Set budget</button>
+        </div>
+        <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        <div class="hero-stats">
+          <div class="h-stat"><div class="h-stat-l">Used</div><div class="h-stat-v" id="hero-pct">0%</div></div>
+          <div class="h-stat"><div class="h-stat-l">Remaining</div><div class="h-stat-v" id="hero-rem">₹0</div></div>
+          <div class="h-stat"><div class="h-stat-l">Transactions</div><div class="h-stat-v" id="hero-count">0</div></div>
+        </div>
+      </div><!-- /hero -->
+
+      <!-- STAT ROW -->
+      <div class="stat-row">
+        <div class="stat-card"><div class="sc-label">Avg / day</div><div class="sc-val" id="stat-avg">₹0</div></div>
+        <div class="stat-card"><div class="sc-label">Highest single</div><div class="sc-val amber" id="stat-high">₹0</div></div>
+        <div class="stat-card"><div class="sc-label">Savings rate</div><div class="sc-val green" id="stat-save">0%</div></div>
       </div>
-      <button class="budget-btn" onclick="openModal('budgetModal')">⚙ Set budget</button>
-    </div>
-    <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-    <div class="hero-stats">
-      <div class="h-stat"><div class="h-stat-l">Used</div><div class="h-stat-v" id="hero-pct">0%</div></div>
-      <div class="h-stat"><div class="h-stat-l">Remaining</div><div class="h-stat-v" id="hero-rem">₹0</div></div>
-      <div class="h-stat"><div class="h-stat-l">Transactions</div><div class="h-stat-v" id="hero-count">0</div></div>
-    </div>
-   
 
-  <!-- STAT ROW -->
-  <div class="stat-row">
-    <div class="stat-card"><div class="sc-label">Avg / day</div><div class="sc-val" id="stat-avg">₹0</div></div>
-    <div class="stat-card"><div class="sc-label">Highest single</div><div class="sc-val amber" id="stat-high">₹0</div></div>
-    <div class="stat-card"><div class="sc-label">Savings rate</div><div class="sc-val green" id="stat-save">0%</div></div>
-  </div>
-
-  <!-- CATEGORY + CHART -->
-  <div class="grid2">
-    <div class="card">
-      <div class="card-title">📊 Spending by category</div>
-      <div id="cat-list"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">📈 Weekly trend</div>
-      <div class="chart-area" id="bar-chart"></div>
-    </div>
-  </div>
-
-  <!-- INSIGHT PANEL -->
-  <div class="insight-panel" id="insight-panel">
-    <div class="ip-head">
-      <div class="ip-icon" id="ip-icon">🍜</div>
-      <div class="ip-info">
-        <div class="ip-title" id="ip-title">Food</div>
-        <div class="ip-badge" id="ip-badge">0%</div>
-      </div>
-      <button class="ip-close" onclick="closeInsight()">✕</button>
-    </div>
-    <div class="ip-stats">
-      <div class="ip-stat"><div class="ip-stat-l">Total</div><div class="ip-stat-v" id="ip-total">—</div></div>
-      <div class="ip-stat"><div class="ip-stat-l">Txns</div><div class="ip-stat-v" id="ip-count">—</div></div>
-      <div class="ip-stat"><div class="ip-stat-l">Avg</div><div class="ip-stat-v" id="ip-avg">—</div></div>
-      <div class="ip-stat"><div class="ip-stat-l">Highest</div><div class="ip-stat-v" id="ip-high">—</div></div>
-    </div>
-    <div class="ip-recent" id="ip-recent"></div>
-    <div class="ip-tip">
-      <div class="ip-tip-label">✨ AI Insight</div>
-      <div class="ip-tip-text" id="ip-tip-text">Category select karo insight dekhne ke liye...</div>
-    </div>
-  </div>
-
-  <!-- BILLS -->
-  <div class="bills-section">
-    <div class="bills-header">
-      <div class="section-title">🗓 Upcoming Bills</div>
-      <button class="add-small-btn" onclick="openModal('billModal')">+ Add Bill</button>
-    </div>
-    <div class="bills-scroll" id="bills-list"></div>
-  </div>
-
-  <!-- 📊 MONTHLY COMPARISON -->
-  {% if comparison.has_prev_data %}
-  <div class="compare-section" id="compare-section">
-    <div class="compare-header">
-      <div class="section-title">📊 vs {{ comparison.prev_month_name }}</div>
-      <span class="compare-verdict verdict-{{ comparison.verdict }}">{{ comparison.verdict_msg }}</span>
-    </div>
-    <div class="compare-grid">
-      <div class="compare-stat">
-        <div class="cs-lbl">This Month</div>
-        <div class="cs-val">₹{{ comparison.cur_total|floatformat:0 }}</div>
-        <div class="cs-change {% if comparison.total_change_pct > 0 %}up{% elif comparison.total_change_pct < 0 %}down{% else %}same{% endif %}">
-          {% if comparison.total_change_pct > 0 %}↑{% elif comparison.total_change_pct < 0 %}↓{% else %}→{% endif %} {{ comparison.total_change_pct }}%
+      <!-- CATEGORY + CHART -->
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">📊 Spending by category</div>
+          <div id="cat-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📈 Weekly trend</div>
+          <div class="chart-area" id="bar-chart"></div>
         </div>
       </div>
-      <div class="compare-stat">
-        <div class="cs-lbl">Last Month</div>
-        <div class="cs-val">₹{{ comparison.prev_total|floatformat:0 }}</div>
-        <div class="cs-change same">{{ comparison.prev_month_name }}</div>
-      </div>
-      <div class="compare-stat">
-        <div class="cs-lbl">Daily Avg Change</div>
-        <div class="cs-val">₹{{ comparison.cur_daily_avg|floatformat:0 }}</div>
-        <div class="cs-change {% if comparison.daily_avg_change_pct > 0 %}up{% elif comparison.daily_avg_change_pct < 0 %}down{% else %}same{% endif %}">
-          {% if comparison.daily_avg_change_pct > 0 %}↑{% elif comparison.daily_avg_change_pct < 0 %}↓{% else %}→{% endif %} {{ comparison.daily_avg_change_pct }}%
+
+      <!-- INSIGHT PANEL -->
+      <div class="insight-panel" id="insight-panel">
+        <div class="ip-head">
+          <div class="ip-icon" id="ip-icon">🍜</div>
+          <div class="ip-info">
+            <div class="ip-title" id="ip-title">Food</div>
+            <div class="ip-badge" id="ip-badge">0%</div>
+          </div>
+          <button class="ip-close" onclick="closeInsight()">✕</button>
+        </div>
+        <div class="ip-stats">
+          <div class="ip-stat"><div class="ip-stat-l">Total</div><div class="ip-stat-v" id="ip-total">—</div></div>
+          <div class="ip-stat"><div class="ip-stat-l">Txns</div><div class="ip-stat-v" id="ip-count">—</div></div>
+          <div class="ip-stat"><div class="ip-stat-l">Avg</div><div class="ip-stat-v" id="ip-avg">—</div></div>
+          <div class="ip-stat"><div class="ip-stat-l">Highest</div><div class="ip-stat-v" id="ip-high">—</div></div>
+        </div>
+        <div class="ip-recent" id="ip-recent"></div>
+        <div class="ip-tip">
+          <div class="ip-tip-label">✨ AI Insight</div>
+          <div class="ip-tip-text" id="ip-tip-text">Category select karo insight dekhne ke liye...</div>
         </div>
       </div>
-    </div>
-    {% if comparison.categories %}
-    <div class="compare-cats">
-      {% for cat in comparison.categories %}
-      <div class="cc-item">
-        <span class="cc-icon">{{ cat.icon }}</span>
-        <div class="cc-info">
-          <div class="cc-name">{{ cat.title }}</div>
-          <div class="cc-amounts">₹{{ cat.previous|floatformat:0 }} → ₹{{ cat.current|floatformat:0 }}</div>
-        </div>
-        <span class="cc-change {% if cat.direction == 'up' %}up{% elif cat.direction == 'down' %}down{% else %}same{% endif %}">
-          {% if cat.direction == 'up' %}↑{% elif cat.direction == 'down' %}↓{% else %}→{% endif %}{{ cat.change_pct }}%
-        </span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
 
-  <!-- 💡 DAILY TIP -->
-  <div class="tip-section" id="tip-section">
-    <span class="tip-icon">💡</span>
-    <div class="tip-content">
-      <div class="tip-label">Today's Money Tip</div>
-      <div class="tip-text" id="daily-tip-text">Loading your personalized tip...</div>
-    </div>
-    <button class="tip-refresh" onclick="loadDailyTip(true)" title="Refresh tip">🔄</button>
-  </div>
-
-  <!-- 🎯 SAVINGS GOALS -->
-  <div class="goals-section">
-    <div class="bills-header">
-      <div class="section-title">🎯 Savings Goals</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        {% if completed_goals_count > 0 %}
-        <span style="font-size:10px;color:var(--green);font-weight:600;">✅ {{ completed_goals_count }} completed</span>
-        {% endif %}
-        <button class="add-small-btn" onclick="openModal('goalModal')">+ Add Goal</button>
-      </div>
-    </div>
-    <div class="goals-grid" id="goals-grid">
-      {% for goal in savings_goals %}
-      <div class="goal-card" id="goal-card-{{ goal.pk }}">
-        <div class="goal-top">
-          <span class="goal-icon">{{ goal.icon }}</span>
-          <span class="goal-name">{{ goal.name }}</span>
-          <div class="goal-progress-ring">
-            <svg width="48" height="48" viewBox="0 0 48 48">
-              <circle class="track" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--surface)"/>
-              <circle class="fill" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--primary)"
-                      stroke-dasharray="125.66" stroke-dashoffset="{{ goal.progress_percent|floatformat:0 }}"
-                      style="stroke-dashoffset: calc(125.66 - (125.66 * {{ goal.progress_percent|floatformat:0 }} / 100))"/>
-            </svg>
-            <span class="goal-pct">{{ goal.progress_percent|floatformat:0 }}%</span>
+      <!-- ✅ TRANSACTIONS — SCROLLABLE VERSION -->
+      <div class="txn-section">
+        <div class="txn-header">
+          <div class="card-title" style="margin:0">💳 Transactions</div>
+          <div class="export-btns">
+            <button class="export-btn" onclick="exportCSV()">CSV ↓</button>
+            <button class="export-btn" onclick="exportJSON()">JSON ↓</button>
           </div>
         </div>
-        <div class="goal-amounts">
-          <span class="goal-saved">₹{{ goal.saved_amount|floatformat:0 }}</span>
-          <span class="goal-target">/ ₹{{ goal.target_amount|floatformat:0 }}</span>
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="search-input" placeholder="Search by category or note..." oninput="renderTxns()">
         </div>
-        <div class="goal-bar"><div class="goal-bar-fill" style="width:{{ goal.progress_percent|floatformat:0 }}%"></div></div>
-        {% if goal.deadline %}
-        <div class="goal-eta">📅 Deadline: {{ goal.deadline|date:"d M Y" }}</div>
+        <div class="filter-tags" id="filter-tags"></div>
+        <div class="txn-count-label">
+          <span id="txn-count-text">Loading...</span>
+          <span class="scroll-hint" id="scroll-hint" style="display:none;">↕ Scroll to see all</span>
+        </div>
+        <div class="txn-list-container" id="txn-list-container">
+          <div id="txn-list"></div>
+        </div>
+      </div>
+
+    </div><!-- /dash-main -->
+
+    <!-- ─── RIGHT: SIDEBAR ─── -->
+    <div class="dash-side">
+
+      <!-- AI BANNER -->
+      <div class="ai-banner" onclick="openAI()">
+        <div class="ai-avatar">🤖</div>
+        <div class="ai-banner-text">
+          <div class="ai-banner-label">AI Financial Coach</div>
+          <div class="ai-banner-msg" id="banner-msg">{{ ai_main_tip|default:"Hello! I am PaisaMitra — ask me anything about your finances!" }}</div>
+        </div>
+        <span class="ai-banner-caret">›</span>
+      </div>
+      <!-- Sub Tip -->
+      {% if ai_sub_tip %}
+      <div style="font-size: 12px; color: var(--primary); background: var(--primary-l); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 8px; border: 1px solid var(--border);">
+          <span>💡</span> {{ ai_sub_tip }}
+      </div>
+      {% endif %}
+      <div id="anomaly-container" class="anomaly-list"></div>
+
+      <!-- BILLS -->
+      <div class="bills-section">
+        <div class="bills-header">
+          <div class="section-title">🗓 Upcoming Bills</div>
+          <button class="add-small-btn" onclick="openModal('billModal')">+ Add Bill</button>
+        </div>
+        <div class="bills-scroll" id="bills-list"></div>
+      </div>
+
+      <!-- 📊 MONTHLY COMPARISON -->
+      {% if comparison.has_prev_data %}
+      <div class="compare-section" id="compare-section">
+        <div class="compare-header">
+          <div class="section-title">📊 vs {{ comparison.prev_month_name }}</div>
+          <span class="compare-verdict verdict-{{ comparison.verdict }}">{{ comparison.verdict_msg }}</span>
+        </div>
+        <div class="compare-grid">
+          <div class="compare-stat">
+            <div class="cs-lbl">This Month</div>
+            <div class="cs-val">₹{{ comparison.cur_total|floatformat:0 }}</div>
+            <div class="cs-change {% if comparison.total_change_pct > 0 %}up{% elif comparison.total_change_pct < 0 %}down{% else %}same{% endif %}">
+              {% if comparison.total_change_pct > 0 %}↑{% elif comparison.total_change_pct < 0 %}↓{% else %}→{% endif %} {{ comparison.total_change_pct }}%
+            </div>
+          </div>
+          <div class="compare-stat">
+            <div class="cs-lbl">Last Month</div>
+            <div class="cs-val">₹{{ comparison.prev_total|floatformat:0 }}</div>
+            <div class="cs-change same">{{ comparison.prev_month_name }}</div>
+          </div>
+          <div class="compare-stat">
+            <div class="cs-lbl">Daily Avg Change</div>
+            <div class="cs-val">₹{{ comparison.cur_daily_avg|floatformat:0 }}</div>
+            <div class="cs-change {% if comparison.daily_avg_change_pct > 0 %}up{% elif comparison.daily_avg_change_pct < 0 %}down{% else %}same{% endif %}">
+              {% if comparison.daily_avg_change_pct > 0 %}↑{% elif comparison.daily_avg_change_pct < 0 %}↓{% else %}→{% endif %} {{ comparison.daily_avg_change_pct }}%
+            </div>
+          </div>
+        </div>
+        {% if comparison.categories %}
+        <div class="compare-cats">
+          {% for cat in comparison.categories %}
+          <div class="cc-item">
+            <span class="cc-icon">{{ cat.icon }}</span>
+            <div class="cc-info">
+              <div class="cc-name">{{ cat.title }}</div>
+              <div class="cc-amounts">₹{{ cat.previous|floatformat:0 }} → ₹{{ cat.current|floatformat:0 }}</div>
+            </div>
+            <span class="cc-change {% if cat.direction == 'up' %}up{% elif cat.direction == 'down' %}down{% else %}same{% endif %}">
+              {% if cat.direction == 'up' %}↑{% elif cat.direction == 'down' %}↓{% else %}→{% endif %}{{ cat.change_pct }}%
+            </span>
+          </div>
+          {% endfor %}
+        </div>
         {% endif %}
-        <div class="goal-actions">
-          <button class="goal-action-btn" onclick="addToGoal({{ goal.pk }})">+ Add Savings</button>
-          <button class="goal-action-btn danger" onclick="deleteGoal({{ goal.pk }})">Delete</button>
+      </div>
+      {% endif %}
+
+      <!-- 💡 DAILY TIP -->
+      <div class="tip-section" id="tip-section">
+        <span class="tip-icon">💡</span>
+        <div class="tip-content">
+          <div class="tip-label">Today's Money Tip</div>
+          <div class="tip-text" id="daily-tip-text">Loading your personalized tip...</div>
+        </div>
+        <button class="tip-refresh" onclick="loadDailyTip(true)" title="Refresh tip">🔄</button>
+      </div>
+
+      <!-- 🎯 SAVINGS GOALS -->
+      <div class="goals-section">
+        <div class="bills-header">
+          <div class="section-title">🎯 Savings Goals</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            {% if completed_goals_count > 0 %}
+            <span style="font-size:10px;color:var(--green);font-weight:600;">✅ {{ completed_goals_count }} completed</span>
+            {% endif %}
+            <button class="add-small-btn" onclick="openModal('goalModal')">+ Add Goal</button>
+          </div>
+        </div>
+        <div class="goals-grid" id="goals-grid">
+          {% for goal in savings_goals %}
+          <div class="goal-card" id="goal-card-{{ goal.pk }}">
+            <div class="goal-top">
+              <span class="goal-icon">{{ goal.icon }}</span>
+              <span class="goal-name">{{ goal.name }}</span>
+              <div class="goal-progress-ring">
+                <svg width="48" height="48" viewBox="0 0 48 48">
+                  <circle class="track" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--surface)"/>
+                  <circle class="fill" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--primary)"
+                          stroke-dasharray="125.66" stroke-dashoffset="{{ goal.progress_percent|floatformat:0 }}"
+                          style="stroke-dashoffset: calc(125.66 - (125.66 * {{ goal.progress_percent|floatformat:0 }} / 100))"/>
+                </svg>
+                <span class="goal-pct">{{ goal.progress_percent|floatformat:0 }}%</span>
+              </div>
+            </div>
+            <div class="goal-amounts">
+              <span class="goal-saved">₹{{ goal.saved_amount|floatformat:0 }}</span>
+              <span class="goal-target">/ ₹{{ goal.target_amount|floatformat:0 }}</span>
+            </div>
+            <div class="goal-bar"><div class="goal-bar-fill" style="width:{{ goal.progress_percent|floatformat:0 }}%"></div></div>
+            {% if goal.deadline %}
+            <div class="goal-eta">📅 Deadline: {{ goal.deadline|date:"d M Y" }}</div>
+            {% endif %}
+            <div class="goal-actions">
+              <button class="goal-action-btn" onclick="addToGoal({{ goal.pk }})">+ Add Savings</button>
+              <button class="goal-action-btn danger" onclick="deleteGoal({{ goal.pk }})">Delete</button>
+            </div>
+          </div>
+          {% empty %}
+          <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text3);font-size:13px;">
+            No savings goals yet. Set a goal to start saving! 🌟
+          </div>
+          {% endfor %}
         </div>
       </div>
-      {% empty %}
-      <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text3);font-size:13px;">
-        No savings goals yet. Set a goal to start saving! 🌟
-      </div>
-      {% endfor %}
-    </div>
-  </div>
 
-  <!-- 📱 EXPENSE SPLIT -->
-  <div class="split-section">
-    <div class="bills-header">
-      <div class="section-title">📱 Split Expenses</div>
-      <button class="add-small-btn" onclick="openModal('splitModal')">+ New Split</button>
-    </div>
-    <div class="split-scroll" id="split-list">
-      {% for split in active_splits %}
-      <div class="split-card {% if split.is_settled %}settled{% endif %}" id="split-card-{{ split.pk }}">
-        <div class="split-top">
-          <span class="split-emoji">👥</span>
-          <span class="split-name">{{ split.name }}</span>
-          <span class="split-members-badge">{{ split.members.count }} members</span>
+      <!-- 📱 EXPENSE SPLIT -->
+      <div class="split-section">
+        <div class="bills-header">
+          <div class="section-title">📱 Split Expenses</div>
+          <button class="add-small-btn" onclick="openModal('splitModal')">+ New Split</button>
         </div>
-        <div class="split-total" id="split-total-{{ split.pk }}">₹0</div>
-        <div class="split-pp" id="split-pp-{{ split.pk }}">Per person: calculating...</div>
-        <div class="split-actions-row">
-          <button class="split-action" onclick="openAddSplitExpense({{ split.pk }}, '{{ split.name|escapejs }}')">+ Expense</button>
-          <button class="split-action" onclick="viewSplitSummary({{ split.pk }})">Summary</button>
-          <button class="split-action" onclick="settleSplit({{ split.pk }})">Settle</button>
-          <button class="split-action" style="color:var(--red);" onclick="deleteSplit({{ split.pk }})">Delete</button>
+        <div class="split-scroll" id="split-list">
+          {% for split in active_splits %}
+          <div class="split-card {% if split.is_settled %}settled{% endif %}" id="split-card-{{ split.pk }}">
+            <div class="split-top">
+              <span class="split-emoji">👥</span>
+              <span class="split-name">{{ split.name }}</span>
+              <span class="split-members-badge">{{ split.members.count }} members</span>
+            </div>
+            <div class="split-total" id="split-total-{{ split.pk }}">₹{{ split.tot|floatformat:0 }}</div>
+            <div class="split-pp" id="split-pp-{{ split.pk }}">Per person: ₹{{ split.pp|floatformat:0 }}</div>
+            <div class="split-actions-row">
+              <button class="split-action" onclick="openAddSplitExpense({{ split.pk }}, '{{ split.name|escapejs }}', [{% for m in split.members.all %}'{{ m.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}])">+ Expense</button>
+              <button class="split-action" onclick="viewSplitSummary({{ split.pk }})">Summary</button>
+              <button class="split-action" onclick="settleSplit({{ split.pk }})">Settle</button>
+              <button class="split-action" style="color:var(--red);" onclick="deleteSplit({{ split.pk }})">Delete</button>
+            </div>
+          </div>
+          {% empty %}
+          <div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;width:100%;">
+            No split groups yet. Create one for your next trip! ✈️
+          </div>
+          {% endfor %}
         </div>
       </div>
-      {% empty %}
-      <div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;width:100%;">
-        No split groups yet. Create one for your next trip! ✈️
-      </div>
-      {% endfor %}
-    </div>
-  </div>
 
-  <!-- ✅ TRANSACTIONS — SCROLLABLE VERSION -->
-  <div class="txn-section">
-    <div class="txn-header">
-      <div class="card-title" style="margin:0">💳 Transactions</div>
-      <div class="export-btns">
-        <button class="export-btn" onclick="exportCSV()">CSV ↓</button>
-        <button class="export-btn" onclick="exportJSON()">JSON ↓</button>
-      </div>
-    </div>
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input class="search-input" id="search-input" placeholder="Search by category or note..." oninput="renderTxns()">
-    </div>
-    <div class="filter-tags" id="filter-tags"></div>
+    </div><!-- /dash-side -->
 
-    <!-- Transaction count + scroll hint -->
-    <div class="txn-count-label">
-      <span id="txn-count-text">Loading...</span>
-      <span class="scroll-hint" id="scroll-hint" style="display:none;">↕ Scroll to see all</span>
-    </div>
-
-    <!-- ✅ Scrollable container — max 420px height -->
-    <div class="txn-list-container" id="txn-list-container">
-      <div id="txn-list"></div>
-    </div>
-  </div>
+  </div><!-- /dash-layout -->
 
 </div>
 
@@ -1053,12 +1314,8 @@ body::before {
 <!-- 💸 SPLIT ADD EXPENSE MODAL -->
 <div class="overlay" id="splitExpModal" onclick="if(event.target===this)closeModal('splitExpModal')">
   <div class="modal">
-    <div class="modal-title">💸 Add Split Expense <button class="modal-close" onclick="closeModal('splitExpModal')" type="button">✕</button></div>
+    <div class="modal-title" id="split-exp-modal-title">💸 Add Split Expense <button class="modal-close" onclick="closeModal('splitExpModal')" type="button">✕</button></div>
     <input type="hidden" id="split-exp-group-id">
-    <div class="form-group">
-      <label class="form-label">Group</label>
-      <input class="form-input" id="split-exp-group-name" readonly style="opacity:.7;">
-    </div>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Amount (₹)</label>
@@ -1066,7 +1323,9 @@ body::before {
       </div>
       <div class="form-group">
         <label class="form-label">Paid By</label>
-        <input class="form-input" id="split-exp-paid-by" placeholder="Who paid?">
+        <select class="form-select" id="split-exp-paid-by">
+          <!-- Populated dynamically -->
+        </select>
       </div>
     </div>
     <div class="form-group">
@@ -1451,6 +1710,7 @@ function renderBills() {
 
 function renderBadges() {
   const container = document.getElementById('badge-container');
+  if (!container) return;
   const f     = getFiltered();
   const total = f.reduce((s,e) => s+e.amount, 0);
   const pct   = budget > 0 ? (total/budget*100) : 0;
@@ -1468,6 +1728,7 @@ function renderBadges() {
 }
 
 function renderGame() {
+  if (!document.getElementById('lvl-num')) return;
   const lvlTitle = LEVEL_TITLES[Math.min(level, LEVEL_TITLES.length-1)];
   document.getElementById('lvl-num').textContent   = level;
   document.getElementById('lvl-title').textContent = lvlTitle;
@@ -1497,6 +1758,7 @@ function renderGame() {
 
 function renderAnomalies() {
   const container = document.getElementById('anomaly-container');
+  if (!container) return;
   if (!ANOMALY_ALERTS.length) { container.innerHTML=''; return; }
   container.innerHTML = ANOMALY_ALERTS.map((a,i) =>
     `<div class="anomaly-item ${a.severity}" id="anomaly-${i}">
@@ -1816,7 +2078,10 @@ function startVoice() {
   try { recognition.start(); } catch(e) { showToast('Voice could not start: '+e.message, 'error'); }
 }
 
+let isProcessingVoice = false;
 async function sendVoiceToBackend(text) {
+  if (isProcessingVoice) return;
+  isProcessingVoice = true;
   document.getElementById('voice-status').textContent = '⚡ AI is understanding...';
   document.getElementById('voice-sub').textContent    = 'Please wait...';
   document.getElementById('mic-btn').innerHTML        = '⚡ Processing...';
@@ -1832,14 +2097,17 @@ async function sendVoiceToBackend(text) {
       showToast(data.message || '✅ Expense saved!', 'success', 4000);
       resetMicBtn();
       setTimeout(() => location.reload(), 1200);
+      // DO NOT reset isProcessingVoice here, let the page reload.
     } else {
       showToast(data.message || 'AI could not understand — please try again.', 'error');
       resetMicBtn();
+      isProcessingVoice = false;
     }
   } catch(err) {
     hideVoiceOverlay(); resetMicBtn();
     showToast('Network issue — check your connection.', 'error');
     console.error('Voice backend error:', err);
+    isProcessingVoice = false;
   }
 }
 
@@ -1982,8 +2250,14 @@ async function createSplit() {
 }
 
 let activeSplitId = null;
-function openAddSplitExpense(id, name) {
+function openAddSplitExpense(id, name, members) {
   activeSplitId = id;
+  document.getElementById('split-exp-group-id').value = id;
+  document.getElementById('split-exp-modal-title').innerHTML = `💸 Add to ${esc(name)} <button class="modal-close" onclick="closeModal('splitExpModal')" type="button">✕</button>`;
+  
+  const select = document.getElementById('split-exp-paid-by');
+  select.innerHTML = members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  
   openModal('splitExpModal');
 }
 
@@ -2038,14 +2312,25 @@ async function viewSplitSummary(id) {
     if (res.ok) {
       const data = await res.json();
       let html = `<div style="padding:15px;background:var(--bg3);border-radius:12px;margin-bottom:15px;">`;
-      html += `<div style="color:var(--text2);margin-bottom:10px;">Total Group Expense: ₹${data.total_expense}</div>`;
+      html += `<div style="color:var(--text2);margin-bottom:15px;font-size:14px;">Total Group Expense: <b style="color:var(--text);">₹${data.total}</b> (₹${data.per_person} per person)</div>`;
+      
+      html += `<div style="margin-bottom:15px;">`;
+      data.members.forEach(m => {
+        html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;">
+          <span>👤 ${esc(m.name)}</span>
+          <span style="color:var(--text3);">Paid: ₹${m.paid}</span>
+        </div>`;
+      });
+      html += `</div><hr style="border-color:var(--border);margin-bottom:15px;">`;
+
       if (data.settlements.length === 0) {
-        html += `<div style="color:var(--green);">Everyone is settled up! 🎉</div>`;
+        html += `<div style="color:var(--green);font-weight:600;text-align:center;">Everyone is settled up! 🎉</div>`;
       } else {
+        html += `<div style="font-size:12px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;letter-spacing:0.05em;">Who owes whom</div>`;
         data.settlements.forEach(s => {
-          html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
-            <span><b>${s.from}</b> owes <b>${s.to}</b></span>
-            <span style="color:var(--red);">₹${s.amount}</span>
+          html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);align-items:center;">
+            <span style="font-size:14px;"><b>${esc(s.from)}</b> owes <b>${esc(s.to)}</b></span>
+            <span style="color:var(--red);font-weight:700;font-family:var(--mono);">₹${s.amount}</span>
           </div>`;
         });
       }
@@ -2169,5 +2454,12 @@ let linkPollInterval = setInterval(async function() {
 {% endif %}
 
 </script>
+
+<!-- FLOATING ACTION DOCK -->
+<div class="floating-dock">
+  <button class="voice-btn" onclick="startVoice()">🎙️ Voice</button>
+  <button class="add-btn" onclick="openModal('addModal')">+ Add expense</button>
+</div>
+
 </body>
 </html>
