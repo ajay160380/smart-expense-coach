@@ -145,9 +145,9 @@ async function startBot(retryCount = 0) {
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
 
-        // ── 💡 DAILY TIP CRON JOB (8:00 AM IST) ──
-        cron.schedule('0 8 * * *', async () => {
-            console.log('⏰ Running daily tip cron job (8 AM)...');
+        // ── 💡 DAILY TIP CRON JOB (10:58 AM IST) ──
+        cron.schedule('58 10 * * *', async () => {
+            console.log('⏰ Running daily tip cron job (10:58 AM)...');
             const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:8000";
             const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
             
@@ -169,13 +169,25 @@ async function startBot(retryCount = 0) {
                                 ? tip.whatsapp_number 
                                 : `${tip.whatsapp_number}@c.us`;
                             
-                            await client.sendMessage(chatId, tip.message);
-                            console.log(`✅ Daily tip sent to ${tip.whatsapp_number}`);
+                            try {
+                                await client.sendMessage(chatId, tip.message);
+                                console.log(`✅ Daily tip sent to ${tip.whatsapp_number}`);
+                            } catch (sendErr) {
+                                console.warn(`⚠️ Failed to send tip to ${chatId}: ${sendErr.message}`);
+                                if (!tip.whatsapp_number.includes('@')) {
+                                    console.log(`🔄 Trying @lid fallback for ${tip.whatsapp_number}...`);
+                                    const fallbackChatId = `${tip.whatsapp_number}@lid`;
+                                    await client.sendMessage(fallbackChatId, tip.message);
+                                    console.log(`✅ Daily tip sent via fallback to ${fallbackChatId}`);
+                                } else {
+                                    throw sendErr;
+                                }
+                            }
                             
                             // Small delay between messages to avoid rate limiting
                             await new Promise(resolve => setTimeout(resolve, 2000));
-                        } catch (sendErr) {
-                            console.error(`❌ Failed to send tip to ${tip.whatsapp_number}:`, sendErr.message);
+                        } catch (err) {
+                            console.error(`❌ Failed to send tip to ${tip.whatsapp_number}:`, err.message);
                         }
                     }
                     console.log(`💡 Daily tips batch complete! Sent: ${data.count}`);
