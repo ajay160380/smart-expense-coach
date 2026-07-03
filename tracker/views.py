@@ -1194,6 +1194,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # ──────────────────────────────────────────────────────────────────────
         query_keywords = ["summary", "kitna", "kharcha", "khrcha", "karcha", "batao", "batvo", "kaha", "bacha", "hisab", "report", "stats", "balance", "expense", "expenses", "expance"]
         past_keywords = ["pichle", "pichli", "pichla", "purana", "purane", "last", "previous", "old", "past"]
+        export_keywords = ["export", "download", "csv", "excel", "pdf", "sheet", "statement", "file"]
         
         months_map = {
             "january": 1, "jan": 1,
@@ -1222,7 +1223,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 break
 
         is_past_query = any(kw in lower_text for kw in past_keywords)
-        is_query = any(kw in lower_text for kw in query_keywords) or lower_text.strip() in ["?", "help"] or target_month is not None
+        is_export_query = any(kw in lower_text for kw in export_keywords)
+        is_query = any(kw in lower_text for kw in query_keywords) or lower_text.strip() in ["?", "help"] or target_month is not None or is_export_query
 
         if is_query or is_past_query or target_month is not None:
             if target_month is not None:
@@ -1284,6 +1286,32 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             if target_month is None and not is_past_query and rem_val <= 0:
                 msg_lines.append("\n⚠️ *Warning:* Budget Exceeded! 🛑")
                 
+            if is_export_query:
+                import csv, io, base64
+                output = io.StringIO()
+                writer = csv.writer(output)
+                writer.writerow(['Date', 'Category', 'Description', 'Amount'])
+                expenses = cat_qs.order_by('-date')
+                total_export = 0
+                for exp in expenses:
+                    writer.writerow([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount}"])
+                    total_export += exp.amount
+                writer.writerow([])
+                writer.writerow(['', '', 'Total', f"{total_export}"])
+                csv_content = output.getvalue()
+                base64_csv = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+                just_month = month_name_str.replace(" ", "_")
+                
+                return JsonResponse({
+                    "status": "success",
+                    "message": f"📄 *{user_name}*, here is your detailed expense report for {month_name_str}.\n\n(Tip: Open this file in Excel or Google Sheets!)",
+                    "media": {
+                        "mimetype": "text/csv",
+                        "filename": f"PaisaMitra_{just_month}_Report.csv",
+                        "base64": base64_csv
+                    }
+                })
+
             return JsonResponse({
                 "status": "success",
                 "message": "\n".join(msg_lines)
