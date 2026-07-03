@@ -1,6 +1,6 @@
 require('dotenv').config();
 const fs = require('fs');
-const { Client, RemoteAuth } = require('whatsapp-web.js');
+const { Client, RemoteAuth, MessageMedia } = require('whatsapp-web.js');
 const { PostgresStore } = require('wwebjs-postgres');
 const { Pool } = require('pg');
 const qrcode = require('qrcode-terminal');
@@ -142,8 +142,14 @@ async function startBot(retryCount = 0) {
         console.log(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qr)}`);
     });
 
+    let isCronScheduled = false;
+
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
+
+        if (!isCronScheduled) {
+            isCronScheduled = true;
+            console.log('📅 Scheduling cron jobs...');
 
         // ── 💡 DAILY TIP CRON JOB (8:00 AM IST) ──
         cron.schedule('0 8 * * *', async () => {
@@ -256,6 +262,7 @@ async function startBot(retryCount = 0) {
             timezone: "Asia/Kolkata"
         });
         console.log('📅 Night tip cron scheduled for 10:00 PM IST');
+        } // End of isCronScheduled check
     });
 
     client.on('remote_session_saved', () => {
@@ -367,8 +374,14 @@ async function startBot(retryCount = 0) {
             const data = await response.json();
             console.log(`📤 Django response status=${response.status}:`, JSON.stringify(data).substring(0, 200));
             
+            // Priority 0: Media Attachment (e.g. Reports)
+            if (data.media) {
+                const media = new MessageMedia(data.media.mimetype, data.media.base64, data.media.filename);
+                const chat = await msg.getChat();
+                await client.sendMessage(chat.id._serialized, media, { caption: data.message || "Here is your file." });
+            }
             // Priority 1: Direct message field (covers both success and error cases)
-            if (data.message) {
+            else if (data.message) {
                 await safeReply(msg, data.message);
             }
             // Priority 2: Chat response from AI (legacy field)
