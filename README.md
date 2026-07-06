@@ -13,7 +13,15 @@ pinned: false
 ![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=node.js)
 ![Status](https://img.shields.io/badge/Status-Production-brightgreen?style=for-the-badge)
 ---
-**🚀 Live Demo:** [https://ajay160380-paisa-mitra.hf.space](https://ajay160380-paisa-mitra.hf.space)
+## 🌐 Live Website
+
+Visit the live website here:
+
+**🔗 https://ajay160380-paisa-mitra.hf.space**
+
+Or simply click below:
+
+[![Visit Website](https://img.shields.io/badge/🌐%20Visit%20Website-yellow?style=for-the-badge&logo=huggingface)](https://ajay160380-paisa-mitra.hf.space)
 ---
 A premium AI-powered personal finance tracker with **WhatsApp integration**. Track expenses via WhatsApp messages, get AI-powered spending insights, and manage your finances with a beautiful dark-themed dashboard.
 
