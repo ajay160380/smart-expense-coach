@@ -30,7 +30,7 @@ class SafeRemoteAuth extends RemoteAuth {
                         force: true,
                         maxRetries: this.rmMaxRetries,
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             }
         } else {
             console.log("⚠️ SafeRemoteAuth: Casual disconnect detected. Preserving remote and local session files.");
@@ -57,7 +57,7 @@ class SafeRemoteAuth extends RemoteAuth {
             }
         }
     }
-    
+
     async safeCopyDir(src, dest) {
         const path = require('path');
         await fs.promises.mkdir(dest, { recursive: true });
@@ -79,10 +79,10 @@ class SafeRemoteAuth extends RemoteAuth {
 }
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 2,                // Only 2 connections — Supabase free tier is limited to 15 total
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+    connectionString: process.env.DATABASE_URL,
+    max: 2,                // Only 2 connections — Supabase free tier is limited to 15 total
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
 });
 
 pool.on('error', (err, client) => {
@@ -104,7 +104,7 @@ async function startBot(retryCount = 0) {
             return startBot(retryCount + 1);
         }
         console.error('❌ Max retries reached. Exiting gracefully (will not crash-loop).');
-        try { await pool.end(); } catch (_) {}
+        try { await pool.end(); } catch (_) { }
         process.exit(0); // Exit 0 so supervisord doesn't immediately restart
     }
 
@@ -122,7 +122,7 @@ async function startBot(retryCount = 0) {
         puppeteer: {
             timeout: 60000, // Increase navigation timeout to 60s
             args: [
-                '--no-sandbox', 
+                '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
@@ -151,117 +151,117 @@ async function startBot(retryCount = 0) {
             isCronScheduled = true;
             console.log('📅 Scheduling cron jobs...');
 
-        // ── 💡 DAILY TIP CRON JOB (8:00 AM IST) ──
-        cron.schedule('0 8 * * *', async () => {
-            console.log('⏰ Running daily tip cron job (8 AM)...');
-            const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:8000";
-            const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
-            
-            try {
-                const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: 'morning' })
-                });
-                const data = await response.json();
-                
-                if (data.tips && data.tips.length > 0) {
-                    console.log(`💡 Sending ${data.tips.length} daily tips...`);
-                    
-                    for (const tip of data.tips) {
-                        try {
-                            // Try sending to the WhatsApp number
-                            const chatId = tip.whatsapp_number.includes('@') 
-                                ? tip.whatsapp_number 
-                                : `${tip.whatsapp_number}@c.us`;
-                            
-                            try {
-                                await client.sendMessage(chatId, tip.message);
-                                console.log(`✅ Daily tip sent to ${tip.whatsapp_number}`);
-                            } catch (sendErr) {
-                                console.warn(`⚠️ Failed to send tip to ${chatId}: ${sendErr.message}`);
-                                if (!tip.whatsapp_number.includes('@')) {
-                                    console.log(`🔄 Trying @lid fallback for ${tip.whatsapp_number}...`);
-                                    const fallbackChatId = `${tip.whatsapp_number}@lid`;
-                                    await client.sendMessage(fallbackChatId, tip.message);
-                                    console.log(`✅ Daily tip sent via fallback to ${fallbackChatId}`);
-                                } else {
-                                    throw sendErr;
-                                }
-                            }
-                            
-                            // Small delay between messages to avoid rate limiting
-                            await new Promise(resolve => setTimeout(resolve, 2000));
-                        } catch (err) {
-                            console.error(`❌ Failed to send tip to ${tip.whatsapp_number}:`, err.message);
-                        }
-                    }
-                    console.log(`💡 Daily tips batch complete! Sent: ${data.count}`);
-                } else {
-                    console.log('💡 No tips to send today (all already sent or no linked users).');
-                }
-            } catch (err) {
-                console.error('❌ Daily tip cron failed:', err.message);
-            }
-        }, {
-            timezone: "Asia/Kolkata"
-        });
-        console.log('📅 Daily tip cron scheduled for 8:00 AM IST');
+            // ── 💡 DAILY TIP CRON JOB (8:00 AM IST) ──
+            cron.schedule('0 8 * * *', async () => {
+                console.log('⏰ Running daily tip cron job (8 AM)...');
+                const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:8000";
+                const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
 
-        // ── 🌙 NIGHT TIP CRON JOB (10:00 PM IST) ──
-        cron.schedule('0 22 * * *', async () => {
-            console.log('⏰ Running night tip cron job (10 PM)...');
-            const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:8000";
-            const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
-            
-            try {
-                const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: 'night' })
-                });
-                const data = await response.json();
-                
-                if (data.tips && data.tips.length > 0) {
-                    console.log(`🌙 Sending ${data.tips.length} night tips...`);
-                    
-                    for (const tip of data.tips) {
-                        try {
-                            const chatId = tip.whatsapp_number.includes('@') 
-                                ? tip.whatsapp_number 
-                                : `${tip.whatsapp_number}@c.us`;
-                            
+                try {
+                    const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: 'morning' })
+                    });
+                    const data = await response.json();
+
+                    if (data.tips && data.tips.length > 0) {
+                        console.log(`💡 Sending ${data.tips.length} daily tips...`);
+
+                        for (const tip of data.tips) {
                             try {
-                                await client.sendMessage(chatId, tip.message);
-                                console.log(`✅ Night tip sent to ${tip.whatsapp_number}`);
-                            } catch (sendErr) {
-                                console.warn(`⚠️ Failed to send night tip to ${chatId}: ${sendErr.message}`);
-                                if (!tip.whatsapp_number.includes('@')) {
-                                    console.log(`🔄 Trying @lid fallback for ${tip.whatsapp_number}...`);
-                                    const fallbackChatId = `${tip.whatsapp_number}@lid`;
-                                    await client.sendMessage(fallbackChatId, tip.message);
-                                    console.log(`✅ Night tip sent via fallback to ${fallbackChatId}`);
-                                } else {
-                                    throw sendErr;
+                                // Try sending to the WhatsApp number
+                                const chatId = tip.whatsapp_number.includes('@')
+                                    ? tip.whatsapp_number
+                                    : `${tip.whatsapp_number}@c.us`;
+
+                                try {
+                                    await client.sendMessage(chatId, tip.message);
+                                    console.log(`✅ Daily tip sent to ${tip.whatsapp_number}`);
+                                } catch (sendErr) {
+                                    console.warn(`⚠️ Failed to send tip to ${chatId}: ${sendErr.message}`);
+                                    if (!tip.whatsapp_number.includes('@')) {
+                                        console.log(`🔄 Trying @lid fallback for ${tip.whatsapp_number}...`);
+                                        const fallbackChatId = `${tip.whatsapp_number}@lid`;
+                                        await client.sendMessage(fallbackChatId, tip.message);
+                                        console.log(`✅ Daily tip sent via fallback to ${fallbackChatId}`);
+                                    } else {
+                                        throw sendErr;
+                                    }
                                 }
+
+                                // Small delay between messages to avoid rate limiting
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                            } catch (err) {
+                                console.error(`❌ Failed to send tip to ${tip.whatsapp_number}:`, err.message);
                             }
-                            
-                            await new Promise(resolve => setTimeout(resolve, 2000));
-                        } catch (err) {
-                            console.error(`❌ Failed to send night tip to ${tip.whatsapp_number}:`, err.message);
                         }
+                        console.log(`💡 Daily tips batch complete! Sent: ${data.count}`);
+                    } else {
+                        console.log('💡 No tips to send today (all already sent or no linked users).');
                     }
-                    console.log(`🌙 Night tips batch complete! Sent: ${data.count}`);
-                } else {
-                    console.log('🌙 No night tips to send today.');
+                } catch (err) {
+                    console.error('❌ Daily tip cron failed:', err.message);
                 }
-            } catch (err) {
-                console.error('❌ Night tip cron failed:', err.message);
-            }
-        }, {
-            timezone: "Asia/Kolkata"
-        });
-        console.log('📅 Night tip cron scheduled for 10:00 PM IST');
+            }, {
+                timezone: "Asia/Kolkata"
+            });
+            console.log('📅 Daily tip cron scheduled for 8:00 AM IST');
+
+            // ── 🌙 NIGHT TIP CRON JOB (10:00 PM IST) ──
+            cron.schedule('0 22 * * *', async () => {
+                console.log('⏰ Running night tip cron job (10 PM)...');
+                const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:8000";
+                const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
+
+                try {
+                    const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: 'night' })
+                    });
+                    const data = await response.json();
+
+                    if (data.tips && data.tips.length > 0) {
+                        console.log(`🌙 Sending ${data.tips.length} night tips...`);
+
+                        for (const tip of data.tips) {
+                            try {
+                                const chatId = tip.whatsapp_number.includes('@')
+                                    ? tip.whatsapp_number
+                                    : `${tip.whatsapp_number}@c.us`;
+
+                                try {
+                                    await client.sendMessage(chatId, tip.message);
+                                    console.log(`✅ Night tip sent to ${tip.whatsapp_number}`);
+                                } catch (sendErr) {
+                                    console.warn(`⚠️ Failed to send night tip to ${chatId}: ${sendErr.message}`);
+                                    if (!tip.whatsapp_number.includes('@')) {
+                                        console.log(`🔄 Trying @lid fallback for ${tip.whatsapp_number}...`);
+                                        const fallbackChatId = `${tip.whatsapp_number}@lid`;
+                                        await client.sendMessage(fallbackChatId, tip.message);
+                                        console.log(`✅ Night tip sent via fallback to ${fallbackChatId}`);
+                                    } else {
+                                        throw sendErr;
+                                    }
+                                }
+
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                            } catch (err) {
+                                console.error(`❌ Failed to send night tip to ${tip.whatsapp_number}:`, err.message);
+                            }
+                        }
+                        console.log(`🌙 Night tips batch complete! Sent: ${data.count}`);
+                    } else {
+                        console.log('🌙 No night tips to send today.');
+                    }
+                } catch (err) {
+                    console.error('❌ Night tip cron failed:', err.message);
+                }
+            }, {
+                timezone: "Asia/Kolkata"
+            });
+            console.log('📅 Night tip cron scheduled for 10:00 PM IST');
         } // End of isCronScheduled check
     });
 
@@ -280,7 +280,7 @@ async function startBot(retryCount = 0) {
     client.on('disconnected', async (reason) => {
         console.log('⚠️ WhatsApp Client was logged out / disconnected!');
         console.log('Reason:', reason);
-        
+
         if (reason === 'LOGOUT') {
             console.log('🗑️ WhatsApp invalidated the session. Clearing invalid session from PostgreSQL...');
             try {
@@ -292,7 +292,7 @@ async function startBot(retryCount = 0) {
                 console.error('❌ Failed to clear invalid session from DB:', err.message);
             }
         }
-        
+
         console.log('🔄 Exiting process to allow supervisord / container manager to restart it clean...');
         process.exit(1);
     });
@@ -317,7 +317,7 @@ async function startBot(retryCount = 0) {
 
     client.on('message', async (msg) => {
         const SPACE_URL = process.env.SPACE_URL || "http://127.0.0.1:7860";
-        
+
         // Skip group messages, status updates, and media-only messages
         if (msg.from === 'status@broadcast') return;
         if (!msg.body || msg.body.trim() === '') return;
@@ -325,9 +325,9 @@ async function startBot(retryCount = 0) {
             // Group messages mein bot respond nahi karega — sirf private chats
             return;
         }
-        
+
         let phone = msg.from.split('@')[0]; // Default fallback
-        
+
         try {
             // WhatsApp ke naye privacy features mein msg.from kabhi kabhi @lid (Local ID) bhejta hai
             // Isliye hum contact fetch karke uska actual number nikalenge
@@ -338,14 +338,14 @@ async function startBot(retryCount = 0) {
         } catch (contactErr) {
             console.warn('⚠️ Could not fetch contact, using raw from:', contactErr.message);
         }
-        
+
         const text = msg.body;
         console.log(`📩 Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
-        
+
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-            
+
             let response;
             try {
                 response = await fetch(`${SPACE_URL}/api/voice-expense/`, {
@@ -370,10 +370,10 @@ async function startBot(retryCount = 0) {
                 }
             }
             clearTimeout(timeout);
-            
+
             const data = await response.json();
             console.log(`📤 Django response status=${response.status}:`, JSON.stringify(data).substring(0, 200));
-            
+
             // Priority 0: Media Attachment (e.g. Reports)
             if (data.media) {
                 const media = new MessageMedia(data.media.mimetype, data.media.base64, data.media.filename);
@@ -422,11 +422,11 @@ async function startBot(retryCount = 0) {
         try {
             await client.destroy();
             console.log('Client destroyed. Closing pg pool...');
-            try { await pool.end(); } catch (_) {}
+            try { await pool.end(); } catch (_) { }
             process.exit(0);
         } catch (err) {
             console.error('Error during shutdown:', err);
-            try { await pool.end(); } catch (_) {}
+            try { await pool.end(); } catch (_) { }
             process.exit(1);
         }
     };
