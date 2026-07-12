@@ -100,6 +100,8 @@ urlpatterns = [
     # Quick add expense via JSON (for mobile / PWA)
     # POST { "amount": 150, "category": "food", "date": "2025-05-01" }
     path('api/quick-add/',             views.api_quick_add,        name='api_quick_add'),
+    path('api/edit-expense/<int:pk>/', views.api_edit_expense,     name='api_edit_expense'),
+    path('api/delete-expense/<int:pk>/', views.api_delete_expense, name='api_delete_expense'),
 
     # User profile + lifetime stats
     path('api/profile/',               views.api_user_profile,     name='api_user_profile'),
