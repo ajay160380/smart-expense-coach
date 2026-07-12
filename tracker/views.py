@@ -164,6 +164,26 @@ MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 # DECORATORS & UTILITIES
 # ══════════════════════════════════════════════════════════════════════════════
 
+from rest_framework.authtoken.models import Token
+
+def api_login_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user and request.user.is_authenticated:
+            return view_func(request, *args, **kwargs)
+            
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Token '):
+            token_key = auth_header.split(' ')[1]
+            try:
+                token = Token.objects.get(key=token_key)
+                request.user = token.user
+                return view_func(request, *args, **kwargs)
+            except Token.DoesNotExist:
+                pass
+                
+        return JsonResponse({"error": "Authentication credentials were not provided."}, status=401)
+    return wrapper
 
 def ai_rate_limited(view_func):
     @wraps(view_func)
@@ -1027,6 +1047,7 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @csrf_exempt
+@api_login_required
 @ai_rate_limited
 @json_required
 def voice_expense(request: HttpRequest) -> JsonResponse:
@@ -1446,7 +1467,7 @@ def _keyword_category_fallback(text: str) -> str:
 # AI CHAT
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 @ai_rate_limited
 @json_required
 def ai_chat(request: HttpRequest) -> JsonResponse:
@@ -1535,8 +1556,7 @@ TOP SPENDING CATEGORIES:
 # CATEGORY INSIGHT API
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
-@ai_rate_limited
+@api_login_required
 def api_category_insight(request: HttpRequest) -> JsonResponse:
     category = request.GET.get("category", "").strip().lower()
     period   = request.GET.get("period", "month")
@@ -1615,7 +1635,7 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
 # ANALYTICS API
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 def api_analytics(request: HttpRequest) -> JsonResponse:
     period = request.GET.get("period", "month")
     if period not in VALID_PERIODS:
@@ -1665,7 +1685,7 @@ def api_analytics(request: HttpRequest) -> JsonResponse:
     return JsonResponse(payload)
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_heatmap(request: HttpRequest) -> JsonResponse:
     ck     = f"heatmap_{request.user.id}_{date.today().isoformat()}"
     cached = cache.get(ck)
@@ -1677,14 +1697,14 @@ def api_heatmap(request: HttpRequest) -> JsonResponse:
     return JsonResponse(heatmap)
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_anomalies(request: HttpRequest) -> JsonResponse:
     budget = get_user_budget(request)
     alerts = detect_anomalies(request.user, budget)
     return JsonResponse({"alerts": alerts, "count": len(alerts)})
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_summary_stats(request: HttpRequest) -> JsonResponse:
     budget   = get_user_budget(request)
     month_qs = get_filtered_expenses(request.user, "month")
@@ -1739,7 +1759,7 @@ def delete_subscription(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect("dashboard")
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_subscriptions(request: HttpRequest) -> JsonResponse:
     subs  = Subscription.objects.filter(user=request.user).order_by("next_billing_date")
     today = date.today()
@@ -1823,7 +1843,7 @@ def export_expenses(request: HttpRequest) -> HttpResponse:
 # SAVINGS GOALS
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 def api_savings_projection(request: HttpRequest) -> JsonResponse:
     try:
         goal = float(request.GET.get("goal", 0))
@@ -1878,7 +1898,7 @@ def health_check(request: HttpRequest) -> JsonResponse:
     })
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_user_profile(request: HttpRequest) -> JsonResponse:
     user    = request.user
     all_time = Expense.objects.filter(user=user)
@@ -1901,7 +1921,7 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
     })
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_quick_add(request: HttpRequest) -> JsonResponse:
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=405)
@@ -2204,7 +2224,7 @@ def build_monthly_comparison(user) -> dict:
     }
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_monthly_comparison(request: HttpRequest) -> JsonResponse:
     comparison = build_monthly_comparison(request.user)
     return JsonResponse(comparison)
@@ -2214,7 +2234,7 @@ def api_monthly_comparison(request: HttpRequest) -> JsonResponse:
 # FEATURE 2: SAVINGS GOALS TRACKER 🎯
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 def api_savings_goals(request: HttpRequest) -> JsonResponse:
     goals = SavingsGoal.objects.filter(user=request.user)
     data = []
@@ -2250,9 +2270,7 @@ def api_savings_goals(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"goals": data, "count": len(data)})
 
 
-@login_required(login_url="login")
-@require_POST
-@json_required
+@api_login_required
 def api_add_goal(request: HttpRequest) -> JsonResponse:
     body = getattr(request, "_json_body", {})
     name = str(body.get("name", "")).strip()
@@ -2296,9 +2314,7 @@ def api_add_goal(request: HttpRequest) -> JsonResponse:
     }, status=201)
 
 
-@login_required(login_url="login")
-@require_POST
-@json_required
+@api_login_required
 def api_update_goal(request: HttpRequest, pk: int) -> JsonResponse:
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     body = getattr(request, "_json_body", {})
@@ -2326,8 +2342,7 @@ def api_update_goal(request: HttpRequest, pk: int) -> JsonResponse:
     })
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 def api_delete_goal(request: HttpRequest, pk: int) -> JsonResponse:
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     name = goal.name
@@ -2395,7 +2410,7 @@ def generate_daily_tip(user) -> str:
         return random.choice(tips_fallback)
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_daily_tip(request: HttpRequest) -> JsonResponse:
     """Get today's personalized money tip."""
     ck = f"daily_tip_{request.user.id}_{date.today().isoformat()}"
@@ -2538,7 +2553,7 @@ def check_and_generate_alert(user, expense) -> str:
 # FEATURE 5: EXPENSE SPLIT 📱
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 def api_split_groups(request: HttpRequest) -> JsonResponse:
     groups = SplitGroup.objects.filter(creator=request.user)
     data = []
@@ -2562,9 +2577,7 @@ def api_split_groups(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"groups": data, "count": len(data)})
 
 
-@login_required(login_url="login")
-@require_POST
-@json_required
+@api_login_required
 def api_create_split(request: HttpRequest) -> JsonResponse:
     body = getattr(request, "_json_body", {})
     name = str(body.get("name", "")).strip()
@@ -2592,9 +2605,7 @@ def api_create_split(request: HttpRequest) -> JsonResponse:
     }, status=201)
 
 
-@login_required(login_url="login")
-@require_POST
-@json_required
+@api_login_required
 def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
 
@@ -2648,7 +2659,7 @@ def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
     }, status=201)
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
     """Calculate who owes whom — minimized transactions."""
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
@@ -2732,8 +2743,7 @@ def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
     })
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 def api_settle_split(request: HttpRequest, pk: int) -> JsonResponse:
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
     group.is_settled = True
@@ -2741,8 +2751,7 @@ def api_settle_split(request: HttpRequest, pk: int) -> JsonResponse:
     return JsonResponse({"status": "success", "message": f"✅ '{group.name}' settled!"})
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 def api_delete_split(request: HttpRequest, pk: int) -> JsonResponse:
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
     name = group.name
