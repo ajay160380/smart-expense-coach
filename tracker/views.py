@@ -1966,6 +1966,63 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
     }, status=201)
 
 
+@api_login_required
+def api_edit_expense(request: HttpRequest, pk: int) -> JsonResponse:
+    """JSON API for editing an expense from Mobile/PWA."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    expense = get_object_or_404(Expense, pk=pk, user=request.user)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "amount" in data:
+        try:
+            amount = Decimal(str(data["amount"]))
+            if amount > 0:
+                expense.amount = amount
+        except (InvalidOperation, TypeError):
+            pass
+
+    if "category" in data:
+        category = str(data["category"]).strip().lower()
+        if category in VALID_CATEGORIES:
+            expense.category = category
+
+    if "date" in data:
+        try:
+            exp_date = date.fromisoformat(str(data["date"]))
+            if exp_date <= date.today():
+                expense.date = exp_date
+        except ValueError:
+            pass
+
+    expense.save()
+
+    return JsonResponse({
+        "status": "success",
+        "message": "Expense updated successfully!",
+        "expense_id": expense.pk,
+        "amount": float(expense.amount),
+        "category": expense.category,
+        "date": expense.date.isoformat(),
+    })
+
+
+@api_login_required
+def api_delete_expense(request: HttpRequest, pk: int) -> JsonResponse:
+    """JSON API for deleting an expense from Mobile/PWA."""
+    if request.method not in ["POST", "DELETE"]:
+        return JsonResponse({"error": "POST or DELETE only"}, status=405)
+        
+    expense = get_object_or_404(Expense, pk=pk, user=request.user)
+    expense.delete()
+    return JsonResponse({"status": "success", "message": "Expense deleted."})
+
+
 @login_required
 def check_updates(request):
     latest_expense = Expense.objects.filter(user=request.user).order_by('-id').first()
