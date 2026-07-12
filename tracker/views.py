@@ -1049,28 +1049,67 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 # VOICE EXPENSE — DUAL MODE (Web Browser + WhatsApp)
 # ══════════════════════════════════════════════════════════════════════════════
 
+import tempfile
+import os
+
 @csrf_exempt
 @ai_rate_limited
-@json_required
 def voice_expense(request: HttpRequest) -> JsonResponse:
     """
     Dual-mode voice expense endpoint:
     - Browser mode: No phone needed — uses logged-in session user directly.
     - WhatsApp mode: Phone number se UserProfile dhoondo, uska user lo.
+    - Mobile App mode: Accepts audio files for speech-to-text via Whisper.
     """
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "Only POST allowed."}, status=405)
 
-    # ── Parse body ────────────────────────────────────────────────────────────
-    body = getattr(request, "_json_body", None)
-    if body is None:
+    incoming_phone = ""
+    spoken_text = ""
+
+    # ── Check Content-Type ─────────────────────────────────────────────────────
+    content_type = request.content_type
+    
+    if content_type == 'application/json':
         try:
             body = json.loads(request.body)
+            incoming_phone = str(body.get("phone", "")).strip()
+            spoken_text = str(body.get("text", "")).strip()
         except (json.JSONDecodeError, UnicodeDecodeError):
             return JsonResponse({"status": "error", "message": "Invalid JSON."}, status=400)
-
-    incoming_phone = str(body.get("phone", "")).strip()
-    spoken_text    = str(body.get("text", "")).strip()
+            
+    elif content_type.startswith('multipart/form-data'):
+        # For Mobile App Audio Uploads
+        incoming_phone = str(request.POST.get("phone", "")).strip()
+        audio_file = request.FILES.get("audio")
+        
+        if audio_file:
+            try:
+                # Save uploaded file temporarily to pass to Groq
+                with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.name)[1]) as temp_audio:
+                    for chunk in audio_file.chunks():
+                        temp_audio.write(chunk)
+                    temp_audio_path = temp_audio.name
+                
+                logger.info("Transcribing audio file via Groq Whisper...")
+                with open(temp_audio_path, "rb") as file:
+                    translation = _groq_client().audio.transcriptions.create(
+                        file=(audio_file.name, file.read()),
+                        model="whisper-large-v3",
+                    )
+                    spoken_text = translation.text.strip()
+                    logger.info("Transcription result: %s", spoken_text)
+                    
+                os.remove(temp_audio_path)
+            except Exception as e:
+                logger.error("Audio transcription failed: %s", e)
+                return JsonResponse({"status": "error", "message": "Failed to transcribe audio. Please try again."}, status=500)
+        else:
+            # If they sent multipart without an audio file, maybe they just sent text
+            spoken_text = str(request.POST.get("text", "")).strip()
+            
+    else:
+        return JsonResponse({"status": "error", "message": "Unsupported Content-Type. Use JSON or multipart/form-data."}, status=415)
 
     print(f"DEBUG voice_expense | phone={incoming_phone!r} | text={spoken_text!r}")
 
