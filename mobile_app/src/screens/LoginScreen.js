@@ -75,10 +75,7 @@ export default function LoginScreen({ navigation }) {
       const throttle2 = await checkLoginThrottle();
       const remaining = throttle2.remaining || 0;
 
-      Alert.alert(
-        'Login Failed',
-        `Invalid username or password.${remaining > 0 ? ` ${remaining} attempts remaining.` : ''}`
-      );
+      Alert.alert('Login Failed', 'Invalid username or password.');
       checkThrottle();
     } finally {
       setLoading(false);
