@@ -166,7 +166,10 @@ MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 
 from rest_framework.authtoken.models import Token
 
+from django.views.decorators.csrf import csrf_exempt
+
 def api_login_required(view_func):
+    @csrf_exempt
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if request.user and request.user.is_authenticated:
