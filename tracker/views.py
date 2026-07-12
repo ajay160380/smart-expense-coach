@@ -1047,7 +1047,6 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @csrf_exempt
-@api_login_required
 @ai_rate_limited
 @json_required
 def voice_expense(request: HttpRequest) -> JsonResponse:
