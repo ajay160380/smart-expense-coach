@@ -9,7 +9,7 @@ import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, Platform, RefreshControl, ActivityIndicator,
-  Dimensions, Linking, Alert, Modal, TextInput,
+  Dimensions, Linking, Alert, Modal, TextInput, KeyboardAvoidingView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -144,7 +144,8 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const openWhatsApp = () => {
-    Linking.openURL('https://wa.me/917379053923?text=hi');
+    const phoneParam = stats?.user_phone ? `Link ${stats.user_phone}` : 'hi';
+    Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(phoneParam)}`);
   };
 
   if (loading) {
@@ -486,7 +487,10 @@ export default function DashboardScreen({ navigation }) {
         animationType="slide"
         onRequestClose={() => setBudgetModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Set Monthly Budget</Text>
             <Text style={styles.modalSubtitle}>Define your monthly spending limit to stay on track.</Text>
@@ -526,7 +530,7 @@ export default function DashboardScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

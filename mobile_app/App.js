@@ -6,6 +6,9 @@
  */
 
 import 'react-native-gesture-handler';
+if (__DEV__) {
+  require('./src/reticle-dev');
+}
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';

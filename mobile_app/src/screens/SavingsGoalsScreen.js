@@ -9,7 +9,7 @@ import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, Platform, RefreshControl, TextInput,
-  Alert, Modal, ActivityIndicator,
+  Alert, Modal, ActivityIndicator, KeyboardAvoidingView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -263,7 +263,10 @@ export default function SavingsGoalsScreen({ navigation }) {
 
       {/* ── Add Goal Modal ── */}
       <Modal visible={showAddModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>🎯 New Savings Goal</Text>
@@ -323,7 +326,7 @@ export default function SavingsGoalsScreen({ navigation }) {
               style={{ marginTop: 20 }}
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

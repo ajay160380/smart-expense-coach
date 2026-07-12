@@ -9,7 +9,7 @@ import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, Platform, RefreshControl, TextInput,
-  Alert, Modal, ActivityIndicator,
+  Alert, Modal, ActivityIndicator, KeyboardAvoidingView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -184,7 +184,10 @@ export default function SubscriptionsScreen({ navigation }) {
 
       {/* ── Add Modal ── */}
       <Modal visible={showAddModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>📅 New Subscription</Text>
@@ -220,7 +223,7 @@ export default function SubscriptionsScreen({ navigation }) {
 
             <GradientButton title="Add Subscription" onPress={handleAddSub} loading={submitting} colors={COLORS.gradPurple} icon="📅" style={{ marginTop: 20 }} />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
