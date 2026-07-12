@@ -164,6 +164,7 @@ MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 # DECORATORS & UTILITIES
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def ai_rate_limited(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
@@ -1690,6 +1691,8 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
     stats    = calculate_stats(month_qs, budget)
     today    = date.today()
 
+    recent_qs = month_qs.values('id', 'title', 'category', 'amount', 'date', 'icon', 'description')[:10] if hasattr(Expense, 'title') else month_qs.values('id', 'category', 'amount', 'date', 'icon', 'description')[:10]
+    
     return JsonResponse({
         "budget":            budget,
         "total_spent":       round(stats["total_spent"], 2),
@@ -1700,6 +1703,7 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
         "savings_rate":      round(stats["savings_rate"], 1),
         "overspent":         stats["overspent"],
         "month":             today.strftime("%B %Y"),
+        "recent_expenses":   list(recent_qs),
         "days_left": (
             (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
         ).days,
@@ -2744,3 +2748,25 @@ def api_delete_split(request: HttpRequest, pk: int) -> JsonResponse:
     name = group.name
     group.delete()
     return JsonResponse({"status": "success", "message": f"🗑️ Split group '{name}' deleted."})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MOBILE API AUTHENTICATION
+# ══════════════════════════════════════════════════════════════════════════════
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+
+class CustomAuthToken(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'user_id': user.pk,
+            'email': user.email,
+            'username': user.username
+        })

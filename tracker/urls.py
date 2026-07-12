@@ -108,10 +108,10 @@ urlpatterns = [
     # HEALTH CHECK (no auth required — for uptime monitoring)
     # ══════════════════════════════════════════════════════════════════════
     path('health/',                    views.health_check,         name='health_check'),
-    # urls.py ke urlpatterns array mein ye line add karo:
     path('api/check-updates/', views.check_updates, name='check_updates'),
     path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
     path('api/register/', RegisterAPIView.as_view(), name='api_register'),
+    path('api/login/', views.CustomAuthToken.as_view(), name='api_login'),
     path('api/whatsapp-summary/', views.whatsapp_summary, name='whatsapp_summary'),
     path('api/latest-update-time/', views.get_latest_update_time, name='get_latest_update_time'),
     path('api/wa-link-status/', views.wa_link_status, name='wa_link_status'),
