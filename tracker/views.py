@@ -164,6 +164,29 @@ MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 # DECORATORS & UTILITIES
 # ══════════════════════════════════════════════════════════════════════════════
 
+from rest_framework.authtoken.models import Token
+
+from django.views.decorators.csrf import csrf_exempt
+
+def api_login_required(view_func):
+    @csrf_exempt
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user and request.user.is_authenticated:
+            return view_func(request, *args, **kwargs)
+            
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Token '):
+            token_key = auth_header.split(' ')[1]
+            try:
+                token = Token.objects.get(key=token_key)
+                request.user = token.user
+                return view_func(request, *args, **kwargs)
+            except Token.DoesNotExist:
+                pass
+                
+        return JsonResponse({"error": "Authentication credentials were not provided."}, status=401)
+    return wrapper
 
 def ai_rate_limited(view_func):
     @wraps(view_func)
@@ -1026,28 +1049,67 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 # VOICE EXPENSE — DUAL MODE (Web Browser + WhatsApp)
 # ══════════════════════════════════════════════════════════════════════════════
 
+import tempfile
+import os
+
 @csrf_exempt
 @ai_rate_limited
-@json_required
 def voice_expense(request: HttpRequest) -> JsonResponse:
     """
     Dual-mode voice expense endpoint:
     - Browser mode: No phone needed — uses logged-in session user directly.
     - WhatsApp mode: Phone number se UserProfile dhoondo, uska user lo.
+    - Mobile App mode: Accepts audio files for speech-to-text via Whisper.
     """
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "Only POST allowed."}, status=405)
 
-    # ── Parse body ────────────────────────────────────────────────────────────
-    body = getattr(request, "_json_body", None)
-    if body is None:
+    incoming_phone = ""
+    spoken_text = ""
+
+    # ── Check Content-Type ─────────────────────────────────────────────────────
+    content_type = request.content_type
+    
+    if content_type == 'application/json':
         try:
             body = json.loads(request.body)
+            incoming_phone = str(body.get("phone", "")).strip()
+            spoken_text = str(body.get("text", "")).strip()
         except (json.JSONDecodeError, UnicodeDecodeError):
             return JsonResponse({"status": "error", "message": "Invalid JSON."}, status=400)
-
-    incoming_phone = str(body.get("phone", "")).strip()
-    spoken_text    = str(body.get("text", "")).strip()
+            
+    elif content_type.startswith('multipart/form-data'):
+        # For Mobile App Audio Uploads
+        incoming_phone = str(request.POST.get("phone", "")).strip()
+        audio_file = request.FILES.get("audio")
+        
+        if audio_file:
+            try:
+                # Save uploaded file temporarily to pass to Groq
+                with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.name)[1]) as temp_audio:
+                    for chunk in audio_file.chunks():
+                        temp_audio.write(chunk)
+                    temp_audio_path = temp_audio.name
+                
+                logger.info("Transcribing audio file via Groq Whisper...")
+                with open(temp_audio_path, "rb") as file:
+                    translation = _groq_client().audio.transcriptions.create(
+                        file=(audio_file.name, file.read()),
+                        model="whisper-large-v3",
+                    )
+                    spoken_text = translation.text.strip()
+                    logger.info("Transcription result: %s", spoken_text)
+                    
+                os.remove(temp_audio_path)
+            except Exception as e:
+                logger.error("Audio transcription failed: %s", e)
+                return JsonResponse({"status": "error", "message": "Failed to transcribe audio. Please try again."}, status=500)
+        else:
+            # If they sent multipart without an audio file, maybe they just sent text
+            spoken_text = str(request.POST.get("text", "")).strip()
+            
+    else:
+        return JsonResponse({"status": "error", "message": "Unsupported Content-Type. Use JSON or multipart/form-data."}, status=415)
 
     print(f"DEBUG voice_expense | phone={incoming_phone!r} | text={spoken_text!r}")
 
@@ -1446,7 +1508,7 @@ def _keyword_category_fallback(text: str) -> str:
 # AI CHAT
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 @ai_rate_limited
 @json_required
 def ai_chat(request: HttpRequest) -> JsonResponse:
@@ -1535,8 +1597,7 @@ TOP SPENDING CATEGORIES:
 # CATEGORY INSIGHT API
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
-@ai_rate_limited
+@api_login_required
 def api_category_insight(request: HttpRequest) -> JsonResponse:
     category = request.GET.get("category", "").strip().lower()
     period   = request.GET.get("period", "month")
@@ -1615,7 +1676,7 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
 # ANALYTICS API
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 def api_analytics(request: HttpRequest) -> JsonResponse:
     period = request.GET.get("period", "month")
     if period not in VALID_PERIODS:
@@ -1665,7 +1726,7 @@ def api_analytics(request: HttpRequest) -> JsonResponse:
     return JsonResponse(payload)
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_heatmap(request: HttpRequest) -> JsonResponse:
     ck     = f"heatmap_{request.user.id}_{date.today().isoformat()}"
     cached = cache.get(ck)
@@ -1677,14 +1738,14 @@ def api_heatmap(request: HttpRequest) -> JsonResponse:
     return JsonResponse(heatmap)
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_anomalies(request: HttpRequest) -> JsonResponse:
     budget = get_user_budget(request)
     alerts = detect_anomalies(request.user, budget)
     return JsonResponse({"alerts": alerts, "count": len(alerts)})
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_summary_stats(request: HttpRequest) -> JsonResponse:
     budget   = get_user_budget(request)
     month_qs = get_filtered_expenses(request.user, "month")
@@ -1704,6 +1765,7 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
         "overspent":         stats["overspent"],
         "month":             today.strftime("%B %Y"),
         "recent_expenses":   list(recent_qs),
+        "user_phone":        request.user.profile.phone_number if hasattr(request.user, 'profile') else "",
         "days_left": (
             (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
         ).days,
@@ -1739,7 +1801,7 @@ def delete_subscription(request: HttpRequest, pk: int) -> HttpResponse:
     return redirect("dashboard")
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_subscriptions(request: HttpRequest) -> JsonResponse:
     subs  = Subscription.objects.filter(user=request.user).order_by("next_billing_date")
     today = date.today()
@@ -1823,7 +1885,7 @@ def export_expenses(request: HttpRequest) -> HttpResponse:
 # SAVINGS GOALS
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 def api_savings_projection(request: HttpRequest) -> JsonResponse:
     try:
         goal = float(request.GET.get("goal", 0))
@@ -1878,9 +1940,25 @@ def health_check(request: HttpRequest) -> JsonResponse:
     })
 
 
-@login_required(login_url="login")
+@api_login_required
+@json_required
 def api_user_profile(request: HttpRequest) -> JsonResponse:
     user    = request.user
+
+    if request.method == "POST":
+        body = getattr(request, "_json_body", {})
+        if "budget" in body:
+            try:
+                nb = float(body["budget"])
+                if nb <= 0:
+                    raise ValueError
+                profile, _ = UserProfile.objects.get_or_create(user=user)
+                profile.monthly_budget = nb
+                profile.save()
+                return JsonResponse({"status": "success", "message": "Budget updated successfully"})
+            except ValueError:
+                return JsonResponse({"error": "Invalid budget value"}, status=400)
+
     all_time = Expense.objects.filter(user=user)
     all_agg  = all_time.aggregate(
         total=Sum("amount"),
@@ -1901,7 +1979,7 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
     })
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_quick_add(request: HttpRequest) -> JsonResponse:
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=405)
@@ -1945,6 +2023,63 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
         "category":   category,
         "date":       exp_date.isoformat(),
     }, status=201)
+
+
+@api_login_required
+def api_edit_expense(request: HttpRequest, pk: int) -> JsonResponse:
+    """JSON API for editing an expense from Mobile/PWA."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    expense = get_object_or_404(Expense, pk=pk, user=request.user)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    if "amount" in data:
+        try:
+            amount = Decimal(str(data["amount"]))
+            if amount > 0:
+                expense.amount = amount
+        except (InvalidOperation, TypeError):
+            pass
+
+    if "category" in data:
+        category = str(data["category"]).strip().lower()
+        if category in VALID_CATEGORIES:
+            expense.category = category
+
+    if "date" in data:
+        try:
+            exp_date = date.fromisoformat(str(data["date"]))
+            if exp_date <= date.today():
+                expense.date = exp_date
+        except ValueError:
+            pass
+
+    expense.save()
+
+    return JsonResponse({
+        "status": "success",
+        "message": "Expense updated successfully!",
+        "expense_id": expense.pk,
+        "amount": float(expense.amount),
+        "category": expense.category,
+        "date": expense.date.isoformat(),
+    })
+
+
+@api_login_required
+def api_delete_expense(request: HttpRequest, pk: int) -> JsonResponse:
+    """JSON API for deleting an expense from Mobile/PWA."""
+    if request.method not in ["POST", "DELETE"]:
+        return JsonResponse({"error": "POST or DELETE only"}, status=405)
+        
+    expense = get_object_or_404(Expense, pk=pk, user=request.user)
+    expense.delete()
+    return JsonResponse({"status": "success", "message": "Expense deleted."})
 
 
 @login_required
@@ -2204,7 +2339,7 @@ def build_monthly_comparison(user) -> dict:
     }
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_monthly_comparison(request: HttpRequest) -> JsonResponse:
     comparison = build_monthly_comparison(request.user)
     return JsonResponse(comparison)
@@ -2214,7 +2349,7 @@ def api_monthly_comparison(request: HttpRequest) -> JsonResponse:
 # FEATURE 2: SAVINGS GOALS TRACKER 🎯
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 def api_savings_goals(request: HttpRequest) -> JsonResponse:
     goals = SavingsGoal.objects.filter(user=request.user)
     data = []
@@ -2250,8 +2385,7 @@ def api_savings_goals(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"goals": data, "count": len(data)})
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 @json_required
 def api_add_goal(request: HttpRequest) -> JsonResponse:
     body = getattr(request, "_json_body", {})
@@ -2296,8 +2430,7 @@ def api_add_goal(request: HttpRequest) -> JsonResponse:
     }, status=201)
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 @json_required
 def api_update_goal(request: HttpRequest, pk: int) -> JsonResponse:
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
@@ -2326,8 +2459,7 @@ def api_update_goal(request: HttpRequest, pk: int) -> JsonResponse:
     })
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 def api_delete_goal(request: HttpRequest, pk: int) -> JsonResponse:
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     name = goal.name
@@ -2395,7 +2527,7 @@ def generate_daily_tip(user) -> str:
         return random.choice(tips_fallback)
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_daily_tip(request: HttpRequest) -> JsonResponse:
     """Get today's personalized money tip."""
     ck = f"daily_tip_{request.user.id}_{date.today().isoformat()}"
@@ -2538,7 +2670,7 @@ def check_and_generate_alert(user, expense) -> str:
 # FEATURE 5: EXPENSE SPLIT 📱
 # ══════════════════════════════════════════════════════════════════════════════
 
-@login_required(login_url="login")
+@api_login_required
 def api_split_groups(request: HttpRequest) -> JsonResponse:
     groups = SplitGroup.objects.filter(creator=request.user)
     data = []
@@ -2562,8 +2694,7 @@ def api_split_groups(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"groups": data, "count": len(data)})
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 @json_required
 def api_create_split(request: HttpRequest) -> JsonResponse:
     body = getattr(request, "_json_body", {})
@@ -2592,8 +2723,7 @@ def api_create_split(request: HttpRequest) -> JsonResponse:
     }, status=201)
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 @json_required
 def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
@@ -2648,7 +2778,7 @@ def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
     }, status=201)
 
 
-@login_required(login_url="login")
+@api_login_required
 def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
     """Calculate who owes whom — minimized transactions."""
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
@@ -2732,8 +2862,7 @@ def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
     })
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 def api_settle_split(request: HttpRequest, pk: int) -> JsonResponse:
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
     group.is_settled = True
@@ -2741,8 +2870,7 @@ def api_settle_split(request: HttpRequest, pk: int) -> JsonResponse:
     return JsonResponse({"status": "success", "message": f"✅ '{group.name}' settled!"})
 
 
-@login_required(login_url="login")
-@require_POST
+@api_login_required
 def api_delete_split(request: HttpRequest, pk: int) -> JsonResponse:
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
     name = group.name
