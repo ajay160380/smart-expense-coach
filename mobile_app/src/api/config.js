@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Base URL — change for production ──
 export const BASE_URL = 'https://ajay160380-paisa-mitra.hf.space';
+console.log('🔴🔴🔴 CURRENT API URL IS:', BASE_URL);
 
 // ── Axios Instance ──
 const api = axios.create({
@@ -78,7 +79,7 @@ api.interceptors.response.use(
 
     // ── Network Error ──
     if (!error.response && error.message === 'Network Error') {
-      console.error('Network error — no connection');
+      console.error('🔴 Network error — no connection. URL WAS:', error.config ? error.config.url : 'UNKNOWN');
     }
 
     // ── Timeout ──

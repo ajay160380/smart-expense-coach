@@ -217,6 +217,13 @@ def json_required(view_func):
 
 
 def get_user_budget(request) -> float:
+    if hasattr(request, "user") and request.user.is_authenticated:
+        try:
+            profile = UserProfile.objects.get(user=request.user)
+            if profile.monthly_budget and profile.monthly_budget > 0:
+                return float(profile.monthly_budget)
+        except UserProfile.DoesNotExist:
+            pass
     try:
         budget = float(request.session.get("budget", DEFAULT_BUDGET))
         return budget if budget > 0 else DEFAULT_BUDGET
