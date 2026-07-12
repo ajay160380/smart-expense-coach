@@ -1765,6 +1765,7 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
         "overspent":         stats["overspent"],
         "month":             today.strftime("%B %Y"),
         "recent_expenses":   list(recent_qs),
+        "user_phone":        request.user.profile.phone_number if hasattr(request.user, 'profile') else "",
         "days_left": (
             (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
         ).days,
@@ -1940,8 +1941,24 @@ def health_check(request: HttpRequest) -> JsonResponse:
 
 
 @api_login_required
+@json_required
 def api_user_profile(request: HttpRequest) -> JsonResponse:
     user    = request.user
+
+    if request.method == "POST":
+        body = getattr(request, "_json_body", {})
+        if "budget" in body:
+            try:
+                nb = float(body["budget"])
+                if nb <= 0:
+                    raise ValueError
+                profile, _ = UserProfile.objects.get_or_create(user=user)
+                profile.monthly_budget = nb
+                profile.save()
+                return JsonResponse({"status": "success", "message": "Budget updated successfully"})
+            except ValueError:
+                return JsonResponse({"error": "Invalid budget value"}, status=400)
+
     all_time = Expense.objects.filter(user=user)
     all_agg  = all_time.aggregate(
         total=Sum("amount"),
@@ -2369,6 +2386,7 @@ def api_savings_goals(request: HttpRequest) -> JsonResponse:
 
 
 @api_login_required
+@json_required
 def api_add_goal(request: HttpRequest) -> JsonResponse:
     body = getattr(request, "_json_body", {})
     name = str(body.get("name", "")).strip()
@@ -2413,6 +2431,7 @@ def api_add_goal(request: HttpRequest) -> JsonResponse:
 
 
 @api_login_required
+@json_required
 def api_update_goal(request: HttpRequest, pk: int) -> JsonResponse:
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     body = getattr(request, "_json_body", {})
@@ -2676,6 +2695,7 @@ def api_split_groups(request: HttpRequest) -> JsonResponse:
 
 
 @api_login_required
+@json_required
 def api_create_split(request: HttpRequest) -> JsonResponse:
     body = getattr(request, "_json_body", {})
     name = str(body.get("name", "")).strip()
@@ -2704,6 +2724,7 @@ def api_create_split(request: HttpRequest) -> JsonResponse:
 
 
 @api_login_required
+@json_required
 def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
     group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
 

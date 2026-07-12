@@ -9,7 +9,7 @@ import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, Platform, RefreshControl, TextInput,
-  Alert, Modal, ActivityIndicator, Linking,
+  Alert, Modal, ActivityIndicator, Linking, KeyboardAvoidingView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -281,7 +281,10 @@ export default function ExpenseSplitScreen({ navigation }) {
 
       {/* ── Create Group Modal ── */}
       <Modal visible={showCreateModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>👥 New Split Group</Text>
@@ -311,12 +314,15 @@ export default function ExpenseSplitScreen({ navigation }) {
 
             <GradientButton title="Create Group" onPress={handleCreateGroup} loading={submitting} colors={COLORS.gradCyan} icon="👥" style={{ marginTop: 20 }} />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Add Expense Modal ── */}
       <Modal visible={showExpenseModal !== null} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>💸 Add Split Expense</Text>
@@ -336,7 +342,7 @@ export default function ExpenseSplitScreen({ navigation }) {
 
             <GradientButton title="Add Expense" onPress={() => handleAddExpense(showExpenseModal)} colors={COLORS.gradOrange} icon="💸" style={{ marginTop: 20 }} />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Summary Modal ── */}
