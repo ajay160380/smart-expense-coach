@@ -1,0 +1,93 @@
+{% extends 'tracker/base.html' %}
+
+{% block extra_css %}
+<style>
+.static-page {
+    width: 100%;
+    padding: 40px 20px;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.4s ease-out;
+}
+.static-card {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    padding: 50px;
+    color: var(--text-main);
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 20px;
+    transition: color 0.2s, transform 0.2s;
+}
+.back-btn:hover {
+    color: var(--primary);
+    transform: translateX(-4px);
+}
+.static-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+.static-content p, .static-content li {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+.static-content h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: var(--text-main);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="static-page">
+    <div class="static-card">
+        <a href="#" onclick="history.back(); return false;" class="back-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back
+        </a>
+        <h1 class="static-title">Terms of Service</h1>
+        <div class="static-content">
+            <p>Welcome to ExpenseTracker. By accessing or using our service, you agree to be bound by these Terms of Service.</p>
+            
+            <h3>1. Acceptance of Terms</h3>
+            <p>By registering for an account and using the ExpenseTracker WhatsApp bot, you acknowledge that you have read, understood, and agree to these terms.</p>
+            
+            <h3>2. User Responsibilities</h3>
+            <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree not to use the service for any illegal or unauthorized purpose.</p>
+            
+            <h3>3. Service Availability</h3>
+            <p>While we strive to provide 100% uptime, ExpenseTracker is provided "as is" and "as available". We do not guarantee that the service will be uninterrupted, timely, secure, or error-free.</p>
+            
+            <h3>4. AI Advice Disclaimer</h3>
+            <p>The financial insights and advice provided by our AI are for informational purposes only and do not constitute professional financial advice. Always consult with a certified financial planner for serious financial decisions.</p>
+            
+            <h3>5. Changes to Terms</h3>
+            <p>We reserve the right to modify these terms at any time. Continued use of the service constitutes acceptance of the new terms.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

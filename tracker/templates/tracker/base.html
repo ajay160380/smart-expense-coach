@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpenseTracker - Smart Expense Coach</title>
+    <!-- Modern Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <style>
+        /* 🎨 STUNNING THEME VARIABLES */
+        :root {
+            /* Light Theme Palette */
+            --primary: #6366F1;
+            --primary-light: #818CF8;
+            --primary-dark: #4F46E5;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --secondary: #A855F7;
+            
+            --bg-base: #F8FAFC;
+            --bg-glass: rgba(255, 255, 255, 0.7);
+            --bg-card: rgba(255, 255, 255, 0.95);
+            
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            
+            --border-glass: rgba(255, 255, 255, 0.6);
+            --border-light: rgba(148, 163, 184, 0.15);
+            
+            --whatsapp-green: #25D366;
+            --whatsapp-dark: #128C7E;
+            
+            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
+            
+            --radius-sm: 12px;
+            --radius-md: 20px;
+            --radius-lg: 32px;
+        }
+
+        /* 🌙 DARK MODE MASTERPIECE */
+        [data-theme="dark"] {
+            --primary: #818CF8;
+            --primary-light: #A5B4FC;
+            --primary-dark: #6366F1;
+            --primary-glow: rgba(129, 140, 248, 0.4);
+            
+            --bg-base: #020617;
+            --bg-glass: rgba(15, 23, 42, 0.6);
+            --bg-card: rgba(30, 41, 59, 0.8);
+            
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            
+            --border-glass: rgba(255, 255, 255, 0.05);
+            --border-light: rgba(255, 255, 255, 0.1);
+            
+            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.5);
+            --shadow-glow: 0 0 20px rgba(129, 140, 248, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background Mesh Gradient */
+        .bg-mesh {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(37, 211, 102, 0.1) 0px, transparent 50%);
+            filter: blur(80px);
+            opacity: 0.8;
+            transition: opacity 0.5s ease;
+        }
+
+        [data-theme="dark"] .bg-mesh {
+            opacity: 0.5;
+            background: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.25) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.25) 0px, transparent 50%);
+        }
+
+        /* Premium Floating Navbar */
+        .navbar-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 15px 20px 0;
+        }
+
+        .navbar {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+        
+        .brand-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-item {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            color: var(--primary);
+        }
+
+        /* Glassmorphic Button */
+        .btn-glass {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            color: var(--text-main);
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-glass:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        /* Solid Gradient Button */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white !important;
+            padding: 10px 24px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px var(--primary-glow);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1) rotate(15deg);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Profile Dropdown */
+        .profile-wrapper {
+            position: relative;
+        }
+
+        .profile-trigger {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 40px;
+            transition: all 0.2s;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary-light);
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.2);
+            transition: transform 0.3s;
+        }
+
+        .profile-trigger:hover .profile-avatar {
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        .profile-name {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            color: var(--text-main);
+            display: none; /* Hidden on mobile */
+        }
+
+        @media (min-width: 768px) {
+            .profile-name { display: block; }
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 15px);
+            right: 0;
+            width: 260px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-soft);
+            padding: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+        }
+
+        .dropdown-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 8px;
+        }
+
+        .dropdown-header h4 {
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .dropdown-header p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .dropdown-item:hover {
+            background: var(--border-light);
+            color: var(--primary);
+        }
+
+        .dropdown-item.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #EF4444;
+        }
+
+        /* Floating WhatsApp Widget */
+        .wa-floating-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 900;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none; /* Fix: Don't block clicks on the side */
+        }
+
+        .wa-tooltip {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-light);
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-soft);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .wa-tooltip span {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .wa-floating-widget:hover .wa-tooltip, .wa-tooltip.show-tooltip {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .wa-btn {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--whatsapp-green), var(--whatsapp-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(37, 211, 102, 0.4);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            pointer-events: auto; /* Fix: Only the button is clickable */
+        }
+        
+        .wa-btn::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid var(--whatsapp-green);
+            opacity: 0;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+
+        .wa-btn:hover {
+            transform: scale(1.1) rotate(-10deg);
+        }
+
+        .wa-btn svg {
+            width: 32px;
+            height: 32px;
+            fill: white;
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow-md);
+            animation: toastIn .3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 350px;
+            color: #fff;
+        }
+        .toast.success { background: #10B981; }
+        .toast.error { background: #EF4444; }
+        .toast.info { background: #3B82F6; }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(20px) } to { opacity: 1; transform: translateX(0) } }
+        @keyframes toastOut { from { opacity: 1; transform: translateX(0) } to { opacity: 0; transform: translateX(20px) } }
+
+        /* Container */
+        .main-container {
+            flex: 1;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Utility */
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <div class="navbar-wrapper">
+        <nav class="navbar">
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="navbar-brand">
+            {% else %}
+                <a href="{% url 'landing' %}" class="navbar-brand">
+            {% endif %}
+                <img src="{% static 'tracker/images/icon.png' %}" alt="ExpenseTracker Logo" style="height: 32px; width: 32px; border-radius: 8px;">
+                ExpenseTracker
+            </a>
+            
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+                        <span id="theme-icon">🌙</span>
+                    </button>
+                    
+                    <a href="#" onclick="if(document.getElementById('expenseModal')) { document.getElementById('expenseModal').style.display='flex'; return false; }" class="btn-primary">
+                        + Add Expense
+                    </a>
+                    
+                    <div class="profile-wrapper">
+                        <button class="profile-trigger" id="profile-trigger" onclick="toggleProfileBase(event)">
+                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=6366F1&color=fff&bold=true&rounded=true" class="profile-avatar" alt="Profile">
+                            <span class="profile-name">{{ user.username }}</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted)"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        
+                        <div class="dropdown-menu" id="profile-dropdown">
+                            <div class="dropdown-header">
+                                <h4>{{ user.username }}</h4>
+                                <p>{{ user.email }}</p>
+                            </div>
+                            
+                            {% if user.profile %}
+                            <div class="dropdown-item" style="cursor: default;">
+                                📱 <span style="font-family: monospace; color: var(--primary);">{{ user.profile.phone_number }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            <a href="{% url 'dashboard' %}" class="dropdown-item">
+                                📊 Dashboard
+                            </a>
+                            <a href="{% url 'dashboard' %}" class="dropdown-item">
+                                ⚙️ Settings
+                            </a>
+                            
+                            <hr style="border: none; border-top: 1px solid var(--border-light); margin: 8px 0;">
+                            
+                            <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item danger">
+                                    🚪 Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="nav-item">Log in</a>
+                    <a href="{% url 'register' %}" class="btn-primary">Get Started</a>
+                {% endif %}
+            </div>
+        </nav>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <main class="main-container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global WhatsApp Floating Action Button -->
+    <div class="wa-floating-widget">
+        {% if user.is_authenticated %}
+        <div class="wa-tooltip">
+            Message bot to track expense
+            <span>+91 73790 53923</span>
+        </div>
+        <a href="https://wa.me/917379053923" target="_blank" class="wa-btn" title="Track via WhatsApp">
+        {% else %}
+        <div class="wa-tooltip" id="wa-login-tooltip">
+            Login first to use WhatsApp Bot
+        </div>
+        <a href="{% url 'login' %}" onclick="event.preventDefault(); document.getElementById('wa-login-tooltip').classList.add('show-tooltip'); setTimeout(() => window.location.href=this.href, 1500);" class="wa-btn" title="Login Required">
+        {% endif %}
+            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        </a>
+    </div>
+
+    <script>
+        // Global Toast Notification System
+        function showToast(message, type='info', duration=4000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = {success:'✅', error:'❌', info:'ℹ️'};
+            toast.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'toastOut .3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Render Django Messages
+        {% if messages %}
+            {% for message in messages %}
+                showToast("{{ message|escapejs }}", "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}");
+            {% endfor %}
+        {% endif %}
+
+        // WA tooltip script
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme setup
+            const themeBtn = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            
+            const setTheme = (isDark) => {
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                if(themeBtn) themeIcon.innerText = isDark ? '☀️' : '🌙';
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            };
+
+            // Initialize theme
+            const savedTheme = localStorage.getItem('theme');
+            if(savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                setTheme(true);
+            }
+
+            // Profile Dropdown
+            const profileTrigger = document.getElementById('profile-trigger');
+            
+            if(themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    setTheme(!isDark);
+                });
+            }
+        });
+
+        // Global Profile Toggle for Base
+        function toggleProfileBase(e) {
+            e.stopPropagation();
+            const pd = document.getElementById('profile-dropdown');
+            if(pd) pd.classList.toggle('active');
+        }
+
+        document.addEventListener('click', (e) => {
+            const pd = document.getElementById('profile-dropdown');
+            const pt = document.getElementById('profile-trigger');
+            if (pd && pt && !pt.contains(e.target) && !pd.contains(e.target)) {
+                pd.classList.remove('active');
+            }
+        });
+
+        // Initialize AOS
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    duration: 800,
+                    once: true,
+                    offset: 100,
+                });
+            }
+        });
+    </script>
+</body>
+</html>
