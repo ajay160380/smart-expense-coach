@@ -479,7 +479,7 @@ function getFinancialContext() {
 
 function sendWelcome() {
   const ctx = getFinancialContext();
-  let msg = `Hello! I am PaisaMitra 🙏\n\n`;
+  let msg = `Hello! I am ExpenseTracker 🙏\n\n`;
   msg += `✅ Remaining: ${fmt(ctx.rem)}\n`;
   msg += `📊 Budget used: ${ctx.pct}%\n`;
   if (ctx.topCat) msg += `🔥 Top category: ${ctx.topCat[0].charAt(0).toUpperCase()+ctx.topCat[0].slice(1)} — ${fmt(ctx.topCat[1])}`;

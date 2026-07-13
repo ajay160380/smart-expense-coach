@@ -1,7 +1,7 @@
 {
   "name": "paisa-mitra-bot",
   "version": "1.0.0",
-  "description": "WhatsApp Bot for Paisa Mitra",
+  "description": "WhatsApp Bot for Expense Tracker",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"

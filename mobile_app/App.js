@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — APP.JS (COMPLETE NAVIGATION)
+ * EXPENSE TRACKER — APP.JS (COMPLETE NAVIGATION)
  * Bottom Tab + Stack navigation with auth flow
  * ═══════════════════════════════════════════════════════════════
  */

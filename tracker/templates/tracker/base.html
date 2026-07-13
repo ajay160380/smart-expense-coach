@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PaisaMitra - Smart Expense Coach</title>
+    <title>ExpenseTracker - Smart Expense Coach</title>
     <!-- Modern Premium Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -499,7 +500,8 @@
             {% else %}
                 <a href="{% url 'landing' %}" class="navbar-brand">
             {% endif %}
-                <span class="brand-icon">✨</span> PaisaMitra
+                <img src="{% static 'tracker/images/icon.png' %}" alt="ExpenseTracker Logo" style="height: 32px; width: 32px; border-radius: 8px;">
+                ExpenseTracker
             </a>
             
             <div class="nav-links">

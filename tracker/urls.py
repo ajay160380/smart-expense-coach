@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║          PAISA MITRA — EXPENSE TRACKER  |  urls.py  |  Production v3.0         ║
+║          EXPENSE TRACKER — EXPENSE TRACKER  |  urls.py  |  Production v3.0         ║
 ║          Complete URL Configuration matching views.py v3.0                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 """
@@ -64,7 +64,7 @@ urlpatterns = [
     # AI ENDPOINTS
     # ══════════════════════════════════════════════════════════════════════
 
-    # AI Chat — PaisaMitra bot
+    # AI Chat — ExpenseTracker bot
     # POST { "message": "...", "history": [...] }
     path('ai_chat/',                   views.ai_chat,             name='ai_chat'),
 
