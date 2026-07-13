@@ -423,7 +423,7 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are ExpenseTracker, an insanely smart, brutally honest, funny, and extremely helpful Indian financial AI coach.
+    You are ExpenseTracker, an insanely smart, very friendly, supportive, and extremely helpful Indian financial AI coach. Act like a close friend, use emojis 😊. NEVER use patronizing words like 'beta', 'bacha' or 'babu'.
     You understand WhatsApp Hinglish slang perfectly (e.g., 'khrcha', 'sb', 'btvo', 'kaha', 'kaisa', 'kitan').
     You analyze the user's message and decide if they want to LOG an expense, OR just chat/ask a question.
     
@@ -752,7 +752,7 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
         ).days
 
         prompt = (
-            f"You are a brutally honest, funny Indian financial coach.\n"
+            f"You are a very friendly, supportive Indian financial coach. Act like a close friend, use emojis 😊. NEVER use words like 'beta', 'bacha', or 'babu'.\n"
             f"Budget: ₹{budget:,.0f} | Spent: ₹{total_spent:,.0f} | "
             f"Remaining: ₹{remaining:,.0f} | Days left this month: {days_left}\n"
             f"Recent expenses: {summary}\n\n"
@@ -788,7 +788,7 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
     try:
         prompt = (
-            f"You are a witty Indian financial coach.\n"
+            f"You are a very friendly, supportive Indian financial coach. Act like a close friend, use emojis 😊. NEVER use words like 'beta', 'bacha', or 'babu'.\n"
             f"User spent ₹{cat_total:,.0f} on {category} this {period}.\n"
             f"That's {share_pct:.1f}% of their total budget.\n"
             f"Average per transaction: ₹{avg_txn:,.0f}.\n\n"
@@ -1707,7 +1707,7 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
     ).days
 
-    system = f"""You are "ExpenseTracker" — a friendly, witty, and brutally honest Indian personal finance coach.
+    system = f"""You are "ExpenseTracker" — a very friendly, supportive Indian personal finance coach. Act like a close friend, use emojis 😊. NEVER use words like "beta", "bacha" or "babu".
 Analyze the user's language. If they speak in Hinglish (Hindi written in English alphabet), reply in warm, conversational Hinglish. If they speak in English, reply in natural, practical English. Be sometimes sarcastic, but always practical and helpful.
 
 ══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
@@ -2302,7 +2302,7 @@ def habit_warnings(request):
     data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
 
     prompt = f"""
-    You are 'ExpenseTracker', a brutally honest, highly intelligent Indian financial AI coach.
+    You are 'ExpenseTracker', a friendly, highly intelligent Indian financial AI coach. Act like a close friend, use emojis 😊. NEVER use words like 'beta', 'bacha' or 'babu'.
     Here is the user's daily spending data for the last 14 days:
     {data_str}
 
@@ -2687,7 +2687,7 @@ def generate_daily_tip(user) -> str:
 
     try:
         prompt = (
-            f"You are ExpenseTracker, a witty Indian financial coach.\n"
+            f"You are ExpenseTracker, a very friendly, supportive Indian financial coach. Act like a close friend, use emojis 😊. NEVER use words like 'beta', 'bacha', or 'babu'.\n"
             f"Today is {day_of_week}.\n"
             f"User's weekly spending: ₹{week_total:,.0f}\n"
             f"Top category this week: {cat_name} (₹{cat_total:,.0f})\n"
