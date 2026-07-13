@@ -105,6 +105,7 @@ urlpatterns = [
 
     # User profile + lifetime stats
     path('api/profile/',               views.api_user_profile,     name='api_user_profile'),
+    path('api/profile/upload-photo/',  views.api_upload_profile_photo, name='api_upload_profile_photo'),
 
     # ══════════════════════════════════════════════════════════════════════
     # HEALTH CHECK (no auth required — for uptime monitoring)
@@ -146,4 +147,5 @@ urlpatterns = [
     path('api/splits/<int:pk>/summary/',        views.api_split_summary,      name='api_split_summary'),
     path('api/splits/<int:pk>/settle/',         views.api_settle_split,       name='api_settle_split'),
     path('api/splits/<int:pk>/delete/',         views.api_delete_split,       name='api_delete_split'),
+    path('api/splits/<int:pk>/delete-expense/<int:expense_id>/', views.api_delete_split_expense, name='api_delete_split_expense'),
 ]
