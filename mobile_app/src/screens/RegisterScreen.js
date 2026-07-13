@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — REGISTER SCREEN (SECURITY HARDENED)
- * Password strength meter, input validation, confirmation match
+ * PAISA MITRA — REGISTER SCREEN (COMPACT, NO SCROLL)
+ * Clean single-screen registration
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -9,18 +9,18 @@ import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, SafeAreaView, Platform,
-  ScrollView, KeyboardAvoidingView,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import Logo from '../components/Logo';
 import api from '../api/config';
 import { sanitizeInput, isValidPhone, checkPasswordStrength, saveAuthData } from '../utils/auth';
 import { COLORS } from '../utils/theme';
 
 export default function RegisterScreen({ navigation }) {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -44,34 +44,24 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true);
     try {
-      // 1. Register the new account
       await api.post('/api/register/', {
         username: cleanUsername,
         phone_number: cleanPhone,
         password: password,
       });
-
-      // 2. Auto-login using the new credentials
       const loginRes = await api.post('/api/login/', {
         username: cleanUsername,
         password: password,
       });
-
       const { token, user_id } = loginRes.data;
       await saveAuthData(token, user_id, cleanUsername);
-
-      // 3. Redirect directly to Dashboard
       navigation.replace('MainTabs');
     } catch (error) {
       console.error(error);
       const errData = error.response?.data;
       let errMsg = 'Registration failed';
       if (errData) {
-        if (typeof errData === 'object') {
-          errMsg = Object.values(errData).flat().join('\n');
-        } else {
-          errMsg = String(errData);
-        }
+        errMsg = typeof errData === 'object' ? Object.values(errData).flat().join('\n') : String(errData);
       }
       Alert.alert('Error', errMsg);
     } finally {
@@ -80,192 +70,175 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent} bounces={false} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <StatusBar style="dark" />
 
-          <View style={styles.card}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color="#111827" />
+          </TouchableOpacity>
 
-            {/* Top Gradient Area */}
-            <LinearGradient
-              colors={['#A888FF', '#9333EA']}
-              style={styles.gradientSection}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.gradientTitle}>Join PaisaMitra Today.</Text>
-              <Text style={styles.gradientSubtitle}>
-                Track expenses easily through WhatsApp. Stay within your budget effortlessly.
-              </Text>
-
-              <View style={styles.mockChat}>
-                <View style={styles.botHeader}>
-                  <View style={styles.onlineDot} />
-                  <Text style={styles.botName}>PaisaMitra Bot</Text>
-                </View>
-                <View style={styles.userBubble}>
-                  <Text style={styles.userText}>200 dinner</Text>
-                </View>
-                <View style={styles.botBubble}>
-                  <Text style={styles.botText}>💬 ₹200 for dinner saved. Keep it up!</Text>
-                </View>
-              </View>
-            </LinearGradient>
-
-            {/* Bottom Form Area */}
-            <View style={styles.formSection}>
-              <Text style={styles.formTitle}>Create Account</Text>
-              <Text style={styles.formSubtitle}>Join thousands taking control of their finances.</Text>
-
-              <View style={styles.form}>
-
-                <Text style={styles.label}>USERNAME</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Choose a username (min 3 chars)"
-                  placeholderTextColor="#64748b"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  maxLength={50}
-                />
-
-                <Text style={styles.label}>WHATSAPP NUMBER</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g., 917379053923"
-                  placeholderTextColor="#64748b"
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
-                  maxLength={15}
-                />
-
-                <Text style={styles.label}>PASSWORD</Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Min 6 characters"
-                    placeholderTextColor="#64748b"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#64748b" />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Password Strength Meter */}
-                {password.length > 0 && (
-                  <View style={styles.strengthSection}>
-                    <View style={styles.strengthBarBg}>
-                      <View style={[styles.strengthBarFill, {
-                        width: `${(pwStrength.score / 4) * 100}%`,
-                        backgroundColor: pwStrength.color,
-                      }]} />
-                    </View>
-                    <Text style={[styles.strengthLabel, { color: pwStrength.color }]}>
-                      {pwStrength.label}
-                    </Text>
-                  </View>
-                )}
-
-                <Text style={styles.label}>CONFIRM PASSWORD</Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Re-enter password"
-                    placeholderTextColor="#64748b"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                  />
-                  {confirmPassword.length > 0 && (
-                    <View style={styles.matchIndicator}>
-                      <Ionicons
-                        name={passwordsMatch ? 'checkmark-circle' : 'close-circle'}
-                        size={20}
-                        color={passwordsMatch ? COLORS.green : COLORS.red}
-                      />
-                    </View>
-                  )}
-                </View>
-                {passwordsMismatch && (
-                  <Text style={styles.mismatchText}>Passwords don't match</Text>
-                )}
-
-                <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-                  {loading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.buttonText}>Sign Up Free</Text>
-                  )}
-                </TouchableOpacity>
-
-                <View style={styles.footerRow}>
-                  <Text style={styles.footerText}>Already have an account? </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                    <Text style={styles.linkText}>Log in instead</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.logoSmall}>
+              <Logo size={0.7} circle={true} showText={false} />
             </View>
-
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join EXPANSE TRACKER — it's free!</Text>
           </View>
 
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          {/* Form */}
+          <View style={styles.formSection}>
+            <Text style={styles.label}>USERNAME</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Choose a username"
+              placeholderTextColor="#9CA3AF"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={50}
+            />
+
+            <Text style={styles.label}>WHATSAPP NUMBER</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., 917379053923"
+              placeholderTextColor="#9CA3AF"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              maxLength={15}
+            />
+
+            <Text style={styles.label}>PASSWORD</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Min 6 characters"
+                placeholderTextColor="#9CA3AF"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Password Strength */}
+            {password.length > 0 && (
+              <View style={styles.strengthRow}>
+                <View style={styles.strengthBg}>
+                  <View style={[styles.strengthFill, { width: `${(pwStrength.score / 4) * 100}%`, backgroundColor: pwStrength.color }]} />
+                </View>
+                <Text style={[styles.strengthLabel, { color: pwStrength.color }]}>{pwStrength.label}</Text>
+              </View>
+            )}
+
+            <Text style={styles.label}>CONFIRM PASSWORD</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Re-enter password"
+                placeholderTextColor="#9CA3AF"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              {confirmPassword.length > 0 && (
+                <View style={styles.matchIcon}>
+                  <Ionicons
+                    name={passwordsMatch ? 'checkmark-circle' : 'close-circle'}
+                    size={20}
+                    color={passwordsMatch ? COLORS.green : COLORS.red}
+                  />
+                </View>
+              )}
+            </View>
+            {passwordsMismatch && <Text style={styles.mismatchText}>Passwords don't match</Text>}
+
+            <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading}>
+              <LinearGradient
+                colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
+                style={styles.button}
+              >
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign Up Free</Text>}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.replace('Login')}>
+              <Text style={styles.linkText}>Log in</Text>
+            </TouchableOpacity>
+          </View>
+
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0E14', paddingTop: Platform.OS === 'android' ? 30 : 0 },
-  scrollContent: { padding: 16, flexGrow: 1, justifyContent: 'center' },
-  card: {
-    backgroundColor: '#1E293B', borderRadius: 24, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10, marginBottom: 20,
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  safeArea: { flex: 1, paddingTop: Platform.OS === 'android' ? 30 : 0 },
+  keyboardView: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
+
+  backBtn: {
+    position: 'absolute', top: 10, left: 0, zIndex: 10,
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05, shadowRadius: 10, elevation: 3,
+    justifyContent: 'center', alignItems: 'center',
   },
-  gradientSection: { padding: 28 },
-  gradientTitle: { fontSize: 26, fontWeight: '900', color: '#ffffff', marginBottom: 8 },
-  gradientSubtitle: { fontSize: 14, color: '#f8fafc', opacity: 0.9, marginBottom: 24, lineHeight: 20 },
-  mockChat: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-  botHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4ade80', marginRight: 8 },
-  botName: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  userBubble: { backgroundColor: '#dcf8c6', alignSelf: 'flex-end', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, borderBottomRightRadius: 4, marginBottom: 12 },
-  userText: { color: '#064e3b', fontWeight: '600' },
-  botBubble: { backgroundColor: '#fff', alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, borderBottomLeftRadius: 4, maxWidth: '90%' },
-  botText: { color: '#1e293b', fontSize: 13, lineHeight: 18 },
-  formSection: { padding: 28 },
-  formTitle: { fontSize: 22, fontWeight: 'bold', color: '#f8fafc', marginBottom: 6 },
-  formSubtitle: { fontSize: 13, color: '#94a3b8', marginBottom: 24 },
-  form: { gap: 12 },
-  label: { fontSize: 11, fontWeight: '700', color: '#94a3b8', marginBottom: -4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { backgroundColor: '#0f172a', borderRadius: 12, padding: 14, color: '#f8fafc', fontSize: 15, borderWidth: 1, borderColor: '#334155' },
-  passwordContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', borderRadius: 12, borderWidth: 1, borderColor: '#334155' },
-  passwordInput: { flex: 1, padding: 14, color: '#f8fafc', fontSize: 15 },
+
+  header: { alignItems: 'center', marginBottom: 28 },
+  logoSmall: { marginBottom: 14 },
+  title: { fontSize: 26, fontWeight: '900', color: '#111827', marginBottom: 4 },
+  subtitle: { fontSize: 14, color: '#6B7280' },
+
+  formSection: { gap: 10 },
+  label: { fontSize: 11, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -4 },
+  input: {
+    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14,
+    color: '#111827', fontSize: 15, borderWidth: 1, borderColor: '#E5E7EB',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
+  },
+  passwordRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#FFFFFF', borderRadius: 14,
+    borderWidth: 1, borderColor: '#E5E7EB',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
+  },
+  passwordInput: { flex: 1, padding: 14, color: '#111827', fontSize: 15 },
   eyeBtn: { padding: 14 },
-  matchIndicator: { padding: 14 },
-  strengthSection: { flexDirection: 'row', alignItems: 'center', marginTop: -4 },
-  strengthBarBg: { flex: 1, height: 4, backgroundColor: '#334155', borderRadius: 2, overflow: 'hidden', marginRight: 10 },
-  strengthBarFill: { height: '100%', borderRadius: 2 },
+  matchIcon: { padding: 14 },
+  strengthRow: { flexDirection: 'row', alignItems: 'center', marginTop: -4 },
+  strengthBg: { flex: 1, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, overflow: 'hidden', marginRight: 10 },
+  strengthFill: { height: '100%', borderRadius: 2 },
   strengthLabel: { fontSize: 11, fontWeight: 'bold' },
   mismatchText: { color: COLORS.red, fontSize: 12, marginTop: -4 },
   button: {
-    backgroundColor: '#A888FF', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8,
-    shadowColor: '#A888FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5,
+    height: 54, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
+    marginTop: 4,
+    shadowColor: '#1A73E8', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3, shadowRadius: 10, elevation: 8,
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 14 },
-  footerText: { color: '#94a3b8', fontSize: 14 },
-  linkText: { color: '#A888FF', fontSize: 14, fontWeight: 'bold' },
+  buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 22 },
+  footerText: { color: '#6B7280', fontSize: 14 },
+  linkText: { color: '#1A73E8', fontSize: 14, fontWeight: 'bold' },
 });

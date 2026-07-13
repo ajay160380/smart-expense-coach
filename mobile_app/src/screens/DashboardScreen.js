@@ -86,7 +86,13 @@ export default function DashboardScreen({ navigation }) {
     );
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isInitial = false) => {
+    // Show loading on first open, refreshing spinner on subsequent calls
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
     try {
       const name = await getUsername();
       if (name) setUsername(name);
@@ -116,12 +122,11 @@ export default function DashboardScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      fetchDashboardData();
+      fetchDashboardData(loading); // pass true only when loading is still true (initial open)
     }, [])
   );
 
   const onRefresh = () => {
-    setRefreshing(true);
     fetchDashboardData();
   };
 
@@ -144,7 +149,7 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const openWhatsApp = () => {
-    const phoneParam = stats?.user_phone ? `Link ${stats.user_phone}` : 'hi';
+    const phoneParam = stats?.user_phone ? `Link ${stats.user_phone}` : 'Link 91';
     Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(phoneParam)}`);
   };
 
@@ -226,20 +231,22 @@ export default function DashboardScreen({ navigation }) {
         )}
 
         {/* ── WHATSAPP BANNER ── */}
-        <TouchableOpacity onPress={openWhatsApp} activeOpacity={0.85}>
-          <View style={styles.waBanner}>
-            <View style={styles.waIconContainer}>
-              <FontAwesome name="whatsapp" size={24} color="#fff" />
+        {!stats?.whatsapp_linked && (
+          <TouchableOpacity onPress={openWhatsApp} activeOpacity={0.85}>
+            <View style={styles.waBanner}>
+              <View style={styles.waIconContainer}>
+                <FontAwesome name="whatsapp" size={24} color="#fff" />
+              </View>
+              <View style={styles.waTextContainer}>
+                <Text style={styles.waTitle}>Track via WhatsApp</Text>
+                <Text style={styles.waSubtitle}>Text "500 petrol" to +91 73790 53923</Text>
+              </View>
+              <View style={styles.waButton}>
+                <Text style={styles.waButtonText}>Open →</Text>
+              </View>
             </View>
-            <View style={styles.waTextContainer}>
-              <Text style={styles.waTitle}>Track via WhatsApp</Text>
-              <Text style={styles.waSubtitle}>Text "500 petrol" to +91 73790 53923</Text>
-            </View>
-            <View style={styles.waButton}>
-              <Text style={styles.waButtonText}>Open →</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        )}
 
         {/* ── MAIN BUDGET CARD ── */}
         <LinearGradient
@@ -539,10 +546,11 @@ export default function DashboardScreen({ navigation }) {
 // ── Helper Functions ──
 
 function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good Morning';
-  if (h < 17) return 'Good Afternoon';
-  return 'Good Evening';
+  const h = new Date().getHours(); // Uses device's local time automatically
+  if (h >= 5  && h < 12) return '🌅 Good Morning';
+  if (h >= 12 && h < 17) return '☀️ Good Afternoon';
+  if (h >= 17 && h < 21) return '🌆 Good Evening';
+  return '🌙 Good Night';
 }
 
 function formatDate(dateStr) {

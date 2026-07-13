@@ -19,6 +19,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
   },
 });
 
@@ -35,6 +37,11 @@ api.interceptors.request.use(
     if (config.url && !config.url.startsWith('http')) {
       const path = config.url.startsWith('/') ? config.url : `/${config.url}`;
       config.url = `${BASE_URL}${path}`;
+    }
+
+    // ── Cache-busting: add _t timestamp to every GET request ──
+    if (config.method === 'get' || config.method === 'GET') {
+      config.params = { ...config.params, _t: Date.now() };
     }
 
     try {

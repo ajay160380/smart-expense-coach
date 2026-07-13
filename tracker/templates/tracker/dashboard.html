@@ -873,7 +873,7 @@ body::before {
   </div>
 
   <!-- STUNNING WHATSAPP BANNER -->
-  {% if show_wa_banner and not whatsapp_linked %}
+  {% if not whatsapp_linked %}
   <div id="wa-banner" style="background: var(--surface2); border: 1px solid var(--border); padding: 16px 24px; border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; box-shadow: var(--shadow); backdrop-filter: var(--glass-filter);">
     <div style="display: flex; align-items: center; gap: 16px;">
         <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #25D366, #128C7E); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
@@ -1096,8 +1096,8 @@ body::before {
                 <svg width="48" height="48" viewBox="0 0 48 48">
                   <circle class="track" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--surface)"/>
                   <circle class="fill" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--primary)"
-                          stroke-dasharray="125.66" stroke-dashoffset="{{ goal.progress_percent|floatformat:0 }}"
-                          style="stroke-dashoffset: calc(125.66 - (125.66 * {{ goal.progress_percent|floatformat:0 }} / 100))"/>
+                          stroke-dasharray="125.66"
+                          data-progress="{{ goal.progress_percent|floatformat:0 }}"/>
                 </svg>
                 <span class="goal-pct">{{ goal.progress_percent|floatformat:0 }}%</span>
               </div>
@@ -1106,13 +1106,13 @@ body::before {
               <span class="goal-saved">₹{{ goal.saved_amount|floatformat:0 }}</span>
               <span class="goal-target">/ ₹{{ goal.target_amount|floatformat:0 }}</span>
             </div>
-            <div class="goal-bar"><div class="goal-bar-fill" style="width:{{ goal.progress_percent|floatformat:0 }}%"></div></div>
+            <div class="goal-bar"><div class="goal-bar-fill" data-progress="{{ goal.progress_percent|floatformat:0 }}"></div></div>
             {% if goal.deadline %}
             <div class="goal-eta">📅 Deadline: {{ goal.deadline|date:"d M Y" }}</div>
             {% endif %}
             <div class="goal-actions">
-              <button class="goal-action-btn" onclick="addToGoal({{ goal.pk }})">+ Add Savings</button>
-              <button class="goal-action-btn danger" onclick="deleteGoal({{ goal.pk }})">Delete</button>
+              <button class="goal-action-btn" onclick="addToGoal('{{ goal.pk }}')">+ Add Savings</button>
+              <button class="goal-action-btn danger" onclick="deleteGoal('{{ goal.pk }}')">Delete</button>
             </div>
           </div>
           {% empty %}
@@ -1121,6 +1121,16 @@ body::before {
           </div>
           {% endfor %}
         </div>
+        <script>
+          document.querySelectorAll('.goal-progress-ring .fill').forEach(function(el) {
+            var pct = parseFloat(el.getAttribute('data-progress')) || 0;
+            el.style.strokeDashoffset = 125.66 - (125.66 * pct / 100);
+          });
+          document.querySelectorAll('.goal-bar-fill').forEach(function(el) {
+            var pct = parseFloat(el.getAttribute('data-progress')) || 0;
+            el.style.width = pct + '%';
+          });
+        </script>
       </div>
 
       <!-- 📱 EXPENSE SPLIT -->
@@ -1140,10 +1150,14 @@ body::before {
             <div class="split-total" id="split-total-{{ split.pk }}">₹{{ split.tot|floatformat:0 }}</div>
             <div class="split-pp" id="split-pp-{{ split.pk }}">Per person: ₹{{ split.pp|floatformat:0 }}</div>
             <div class="split-actions-row">
-              <button class="split-action" onclick="openAddSplitExpense({{ split.pk }}, '{{ split.name|escapejs }}', [{% for m in split.members.all %}'{{ m.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}])">+ Expense</button>
-              <button class="split-action" onclick="viewSplitSummary({{ split.pk }})">Summary</button>
-              <button class="split-action" onclick="settleSplit({{ split.pk }})">Settle</button>
-              <button class="split-action" style="color:var(--red);" onclick="deleteSplit({{ split.pk }})">Delete</button>
+              <button class="split-action" 
+                      data-pk="{{ split.pk }}" 
+                      data-name="{{ split.name|escapejs }}" 
+                      data-members='[{% for m in split.members.all %}"{{ m.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
+                      onclick="openAddSplitExpense(this.getAttribute('data-pk'), this.getAttribute('data-name'), JSON.parse(this.getAttribute('data-members')))">+ Expense</button>
+              <button class="split-action" onclick="viewSplitSummary('{{ split.pk }}')">Summary</button>
+              <button class="split-action" onclick="settleSplit('{{ split.pk }}')">Settle</button>
+              <button class="split-action" style="color:var(--red);" onclick="deleteSplit('{{ split.pk }}')">Delete</button>
             </div>
           </div>
           {% empty %}
@@ -1447,26 +1461,26 @@ const URL_SPLITS = '{% url "api_split_groups" %}';
 const URL_CREATE_SPLIT = '{% url "api_create_split" %}';
 
 let expenses = [
-  {% for exp in expenses %}
-  {id:'{{ exp.id }}', amount:{{ exp.amount }}, cat:'{{ exp.category|lower }}', date:'{{ exp.date|date:"Y-m-d" }}', note:'{{ exp.get_title|default:""|escapejs }}'}{% if not forloop.last %},{% endif %}
-  {% endfor %}
+  /*{% for exp in expenses %}*/
+  {id:'{{ exp.id }}', amount:Number('{{ exp.amount|default:0 }}'), cat:'{{ exp.category|lower }}', date:'{{ exp.date|date:"Y-m-d" }}', note:'{{ exp.get_title|default:""|escapejs }}'},
+  /*{% endfor %}*/
 ];
 
 let bills = [
-  {% for sub in upcoming_subs %}
-  {id:'{{ sub.id }}', name:'{{ sub.name|default:sub.category|escapejs }}', amount:{{ sub.amount }}, due:'{{ sub.next_billing_date|date:"Y-m-d" }}', cat:'{{ sub.category|lower }}'}{% if not forloop.last %},{% endif %}
-  {% endfor %}
+  /*{% for sub in upcoming_subs %}*/
+  {id:'{{ sub.id }}', name:'{{ sub.name|default:sub.category|escapejs }}', amount:Number('{{ sub.amount|default:0 }}'), due:'{{ sub.next_billing_date|date:"Y-m-d" }}', cat:'{{ sub.category|lower }}'},
+  /*{% endfor %}*/
 ];
 
 const ANOMALY_ALERTS = [
-  {% for alert in anomaly_alerts %}
-  {type:'{{ alert.type }}', icon:'{{ alert.icon }}', message:'{{ alert.message|escapejs }}', severity:'{{ alert.severity }}'}{% if not forloop.last %},{% endif %}
-  {% endfor %}
+  /*{% for alert in anomaly_alerts %}*/
+  {type:'{{ alert.type }}', icon:'{{ alert.icon }}', message:'{{ alert.message|escapejs }}', severity:'{{ alert.severity }}'},
+  /*{% endfor %}*/
 ];
 
-let budget       = {{ budget|default:20000 }};
+let budget       = Number('{{ budget|default:20000 }}');
 // Try getting total directly from backend if available for accuracy, else fallback to JS sum.
-const backendTotalSpent = {{ total_spent|default:0 }}; 
+const backendTotalSpent = Number('{{ total_spent|default:0 }}'); 
 
 let activeFilter = 'month';
 let activeCatFilter = 'all';
@@ -2414,7 +2428,7 @@ setInterval(async function() {
 }, 1500);
 
 // Poll for WA Link Status if not linked yet
-{% if not whatsapp_linked %}
+/*{% if not whatsapp_linked %}*/
 let linkPollInterval = setInterval(async function() {
   if (document.hidden) return;
   try {
@@ -2451,7 +2465,7 @@ let linkPollInterval = setInterval(async function() {
     console.warn("WA link poll failed:", err);
   }
 }, 3000);
-{% endif %}
+/*{% endif %}*/
 
 </script>
 

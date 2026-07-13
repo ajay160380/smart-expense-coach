@@ -9,12 +9,13 @@ import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, Platform, RefreshControl, Alert,
-  ActivityIndicator, Linking,
+  ActivityIndicator, Linking, Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import * as ImagePicker from 'expo-image-picker';
 import api from '../api/config';
 import { clearAuthData, getUsername } from '../utils/auth';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
@@ -24,6 +25,7 @@ export default function ProfileScreen({ navigation }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -39,6 +41,42 @@ export default function ProfileScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => { fetchProfile(); }, []));
   const onRefresh = () => { setRefreshing(true); fetchProfile(); };
+
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled) {
+        setUploadingImage(true);
+        const localUri = result.assets[0].uri;
+        const filename = localUri.split('/').pop() || 'profile.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+
+        const formData = new FormData();
+        formData.append('photo', { uri: localUri, name: filename, type });
+
+        const uploadRes = await api.post('/api/profile/upload-photo/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (uploadRes.data.status === 'success') {
+          setProfile({ ...profile, profile_picture: uploadRes.data.profile_picture });
+          Alert.alert('Success', 'Profile photo updated successfully!');
+        }
+      }
+    } catch (error) {
+      console.error('Image pick/upload error:', error);
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -81,9 +119,23 @@ export default function ProfileScreen({ navigation }) {
       >
         {/* ── Profile Header ── */}
         <LinearGradient colors={COLORS.gradDeepPurp} style={styles.profileHeader}>
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarLargeText}>{username.charAt(0).toUpperCase()}</Text>
-          </View>
+          <TouchableOpacity onPress={pickImage} disabled={uploadingImage} style={{position: 'relative'}}>
+            {profile?.profile_picture ? (
+              <Image source={{ uri: profile.profile_picture }} style={styles.avatarLargeImage} />
+            ) : (
+              <View style={styles.avatarLarge}>
+                <Text style={styles.avatarLargeText}>{username.charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+            {uploadingImage && (
+              <View style={[StyleSheet.absoluteFill, styles.avatarOverlay]}>
+                <ActivityIndicator color={COLORS.cyan} />
+              </View>
+            )}
+            <View style={styles.editIconBadge}>
+              <Ionicons name="camera" size={16} color="white" />
+            </View>
+          </TouchableOpacity>
           <Text style={styles.profileName}>{username}</Text>
           <Text style={styles.profileSince}>Member since {joined}</Text>
           <View style={styles.profileBadge}>
@@ -231,6 +283,23 @@ const styles = StyleSheet.create({
     width: 80, height: 80, borderRadius: 40,
     backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 2, borderColor: COLORS.cyan,
     justifyContent: 'center', alignItems: 'center', marginBottom: 14,
+  },
+  avatarLargeImage: {
+    width: 80, height: 80, borderRadius: 40,
+    borderWidth: 2, borderColor: COLORS.cyan,
+    marginBottom: 14,
+  },
+  avatarOverlay: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 14,
+  },
+  editIconBadge: {
+    position: 'absolute', bottom: 14, right: 0,
+    backgroundColor: COLORS.cyan, width: 26, height: 26, borderRadius: 13,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: COLORS.bg,
   },
   avatarLargeText: { color: COLORS.cyan, fontSize: 32, fontWeight: 'bold' },
   profileName: { color: '#fff', fontSize: 24, fontWeight: 'bold' },

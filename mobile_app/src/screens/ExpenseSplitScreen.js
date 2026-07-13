@@ -36,6 +36,7 @@ export default function ExpenseSplitScreen({ navigation }) {
   const [expPaidBy, setExpPaidBy] = useState('');
   const [expDesc, setExpDesc] = useState('');
   const [expAmount, setExpAmount] = useState('');
+  const [submittingExpense, setSubmittingExpense] = useState(false);
 
   // Summary
   const [showSummary, setShowSummary] = useState(null);
@@ -79,6 +80,8 @@ export default function ExpenseSplitScreen({ navigation }) {
   };
 
   const handleAddExpense = async (groupId) => {
+    if (submittingExpense) return; // Prevent double-tap
+
     const paidBy = sanitizeInput(expPaidBy).trim();
     const desc = sanitizeInput(expDesc).trim();
     const amount = parseFloat(expAmount);
@@ -88,6 +91,7 @@ export default function ExpenseSplitScreen({ navigation }) {
       return;
     }
 
+    setSubmittingExpense(true);
     try {
       await api.post(`/splits/${groupId}/add-expense/`, {
         paid_by: paidBy,
@@ -102,7 +106,26 @@ export default function ExpenseSplitScreen({ navigation }) {
       Alert.alert('💸 Expense Added!', `₹${amount} paid by ${paidBy}`);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.error || 'Failed to add expense');
+    } finally {
+      setSubmittingExpense(false);
     }
+  };
+
+  const deleteExpense = (groupId, expenseId, desc) => {
+    Alert.alert('Delete Expense', `Delete "${desc}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.post(`/splits/${groupId}/delete-expense/${expenseId}/`);
+            fetchGroups();
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete expense');
+          }
+        },
+      },
+    ]);
   };
 
   const viewSummary = async (groupId) => {
@@ -225,6 +248,27 @@ export default function ExpenseSplitScreen({ navigation }) {
                 ))}
               </View>
 
+              {/* Expense list with delete */}
+              {(group.expenses || []).length > 0 && (
+                <View style={styles.expenseList}>
+                  <Text style={[styles.splitStatLabel, { marginBottom: 6 }]}>EXPENSES</Text>
+                  {group.expenses.map((exp) => (
+                    <View key={exp.id} style={styles.expenseRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.expenseDesc}>{exp.description}</Text>
+                        <Text style={styles.expenseMeta}>{exp.paid_by} paid ₹{Math.round(exp.amount).toLocaleString('en-IN')}</Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => deleteExpense(group.id, exp.id, exp.description)}
+                        style={styles.expDeleteBtn}
+                      >
+                        <Ionicons name="close-circle" size={20} color={COLORS.red || '#ef4444'} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
               <View style={styles.groupActions}>
                 <TouchableOpacity
                   style={styles.groupBtn}
@@ -332,7 +376,27 @@ export default function ExpenseSplitScreen({ navigation }) {
             </View>
 
             <Text style={styles.label}>PAID BY</Text>
-            <TextInput style={styles.input} placeholder="Who paid?" placeholderTextColor={COLORS.textMuted} value={expPaidBy} onChangeText={setExpPaidBy} />
+            <View style={styles.paidByChips}>
+              {(() => {
+                const group = groups.find((g) => g.id === showExpenseModal);
+                if (!group) return null;
+                return group.members.map((m, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[
+                      styles.paidByChip,
+                      expPaidBy === m && styles.paidByChipActive,
+                    ]}
+                    onPress={() => setExpPaidBy(m)}
+                  >
+                    <Text style={[
+                      styles.paidByChipText,
+                      expPaidBy === m && styles.paidByChipTextActive,
+                    ]}>{m}</Text>
+                  </TouchableOpacity>
+                ));
+              })()}
+            </View>
 
             <Text style={styles.label}>DESCRIPTION</Text>
             <TextInput style={styles.input} placeholder="e.g., Hotel booking" placeholderTextColor={COLORS.textMuted} value={expDesc} onChangeText={setExpDesc} />
@@ -340,7 +404,7 @@ export default function ExpenseSplitScreen({ navigation }) {
             <Text style={styles.label}>AMOUNT (₹)</Text>
             <TextInput style={styles.input} placeholder="0.00" placeholderTextColor={COLORS.textMuted} keyboardType="numeric" value={expAmount} onChangeText={(v) => setExpAmount(sanitizeAmount(v))} />
 
-            <GradientButton title="Add Expense" onPress={() => handleAddExpense(showExpenseModal)} colors={COLORS.gradOrange} icon="💸" style={{ marginTop: 20 }} />
+            <GradientButton title="Add Expense" onPress={() => handleAddExpense(showExpenseModal)} loading={submittingExpense} colors={COLORS.gradOrange} icon="💸" style={{ marginTop: 20 }} />
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -444,6 +508,17 @@ const styles = StyleSheet.create({
   memberChip: { backgroundColor: 'rgba(168,136,255,0.12)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5, marginRight: 6, marginBottom: 6 },
   memberChipText: { color: COLORS.primary, fontSize: 12, fontWeight: '600' },
 
+  // ── Expense List ──
+  expenseList: { marginBottom: 12, borderTopWidth: 1, borderTopColor: COLORS.borderLight, paddingTop: 10 },
+  expenseRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8,
+    padding: 10, marginBottom: 4,
+  },
+  expenseDesc: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '600' },
+  expenseMeta: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
+  expDeleteBtn: { padding: 6 },
+
   groupActions: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: COLORS.borderLight, paddingTop: 12 },
   groupBtn: { flexDirection: 'row', alignItems: 'center', padding: 6 },
   groupBtnText: { fontSize: 12, fontWeight: '600', marginLeft: 4 },
@@ -456,6 +531,20 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
   input: { backgroundColor: COLORS.bgInput, borderRadius: 12, padding: 14, color: COLORS.textPrimary, fontSize: 16, borderWidth: 1, borderColor: COLORS.border },
   addMemberBtn: { flexDirection: 'row', alignItems: 'center', padding: 8 },
+
+  // ── Paid By Chips ──
+  paidByChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  paidByChip: {
+    backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12,
+    paddingHorizontal: 16, paddingVertical: 10,
+    borderWidth: 1.5, borderColor: COLORS.border,
+  },
+  paidByChipActive: {
+    backgroundColor: 'rgba(168,136,255,0.2)',
+    borderColor: COLORS.primary,
+  },
+  paidByChipText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '600' },
+  paidByChipTextActive: { color: COLORS.primary },
 
   // ── Summary ──
   summaryTotals: { flexDirection: 'row', marginBottom: 8 },
