@@ -119,41 +119,137 @@ VALID_CATEGORIES = set(CAT_COLORS.keys())
 VALID_FILTERS    = {"week", "month", "all"}
 VALID_PERIODS    = {"week", "month", "quarter", "year"}
 
-HINGLISH_NUM_MAP = {
-    r'\bek\b':        '1',
-    r'\bdo\b':        '2',
-    r'\bteen\b':      '3',
-    r'\bchar\b':      '4',
-    r'\bpaanch\b':    '5',
-    r'\bchhe\b':      '6',
-    r'\bsaat\b':      '7',
-    r'\baath\b':      '8',
-    r'\bnau\b':       '9',
-    r'\bdas\b':       '10',
-    r'\bgyarah\b':    '11',
-    r'\bbaarah\b':    '12',
-    r'\bterah\b':     '13',
-    r'\bchaudah\b':   '14',
-    r'\bpandrah\b':   '15',
-    r'\bsolah\b':     '16',
-    r'\bsattrah\b':   '17',
-    r'\baathaarah\b': '18',
-    r'\bunees\b':     '19',
-    r'\bbees\b':      '20',
-    r'\bpaccheees\b': '25',
-    r'\btees\b':      '30',
-    r'\bchaalis\b':   '40',
-    r'\bpackaas\b':   '50',
-    r'\saath\b':      '60',
-    r'\bsaattar\b':   '70',
-    r'\bassee\b':     '80',
-    r'\bnabbe\b':     '90',
-    r'\bsau\b':       '00',
-    r'\bsou\b':       '00',
-    r'\bhazar\b':     '000',
-    r'\bhajaar\b':    '000',
-    r'\blakh\b':      '00000',
-    r'\bkarod\b':     '0000000',
+# ── Complete Hindi/Hinglish number words 1-100 → integer value ───────────────
+_HINDI_UNITS = {
+    # ── Devanagari digit characters ──
+    '०':0,'१':1,'२':2,'३':3,'४':4,'५':5,'६':6,'७':7,'८':8,'९':9,
+
+    # ── 1-9 ──
+    'ek':1,'eek':1,'एक':1,
+    'do':2,'doh':2,'दो':2,
+    'teen':3,'tin':3,'तीन':3,
+    'char':4,'chaar':4,'चार':4,
+    'paanch':5,'panch':5,'पांच':5,'पाँच':5,
+    'chhe':6,'chhah':6,'chah':6,'छह':6,
+    'saat':7,'सात':7,
+    'aath':8,'aat':8,'आठ':8,
+    'nau':9,'nav':9,'नौ':9,
+
+    # ── 10-19 ──
+    'das':10,'duss':10,'दस':10,
+    'gyarah':11,'gyara':11,'gyaarah':11,'ग्यारह':11,
+    'baarah':12,'barah':12,'bara':12,'बारह':12,
+    'terah':13,'teyra':13,'तेरह':13,
+    'chaudah':14,'choda':14,'chawda':14,'चौदह':14,
+    'pandrah':15,'pandra':15,'pandraha':15,'पंद्रह':15,
+    'solah':16,'sola':16,'सोलह':16,
+    'sattrah':17,'satra':17,'satrah':17,'सत्रह':17,
+    'aathaarah':18,'athara':18,'atharah':18,'अठारह':18,
+    'unees':19,'unnis':19,'उन्नीस':19,
+
+    # ── 20-29 ──
+    'bees':20,'bis':20,'बीस':20,
+    'ikkees':21,'ikees':21,'ikis':21,'इक्कीस':21,
+    'baais':22,'bais':22,'बाईस':22,
+    'teeis':23,'teis':23,'तेईस':23,
+    'chaubis':24,'chauwis':24,'चौबीस':24,
+    'pachhis':25,'pachis':25,'paccheees':25,'pacchis':25,'पच्चीस':25,
+    'chabbis':26,'chhabis':26,'छब्बीस':26,
+    'satais':27,'sataees':27,'सत्ताईस':27,
+    'athais':28,'athaees':28,'अट्ठाईस':28,
+    'unattees':29,'untees':29,'उनतीस':29,
+
+    # ── 30-39 ──
+    'tees':30,'तीस':30,
+    'iktees':31,'ikatees':31,'इकतीस':31,
+    'battees':32,'baatees':32,'बत्तीस':32,
+    'tetees':33,'taintees':33,'तैंतीस':33,
+    'chautees':34,'chauntees':34,'चौंतीस':34,
+    'paytees':35,'paintees':35,'पैंतीस':35,
+    'chhattees':36,'chattees':36,'छत्तीस':36,
+    'saintees':37,'santees':37,'सैंतीस':37,
+    'adhtees':38,'artees':38,'अड़तीस':38,
+    'untalees':39,'untaalees':39,'उनतालीस':39,
+
+    # ── 40-49 ──
+    'chaalis':40,'chalis':40,'चालीस':40,
+    'iktaalis':41,'ikataalees':41,'इकतालीस':41,
+    'bayaalis':42,'byaalis':42,'बयालीस':42,
+    'taytaalis':43,'taintaalis':43,'तैंतालीस':43,
+    'chauwaalis':44,'chauwalas':44,'चौवालीस':44,
+    'paintaalis':45,'payntaalis':45,'पैंतालीस':45,
+    'chiyaalis':46,'chhaiyaalis':46,'छियालीस':46,
+    'saintaalis':47,'sataalis':47,'सैंतालीस':47,
+    'adhtaalis':48,'artaalis':48,'अड़तालीस':48,
+    'unchaas':49,'उनचास':49,
+
+    # ── 50-59 ──
+    'pachaas':50,'pachas':50,'packaas':50,'पचास':50,
+    'ikyaavan':51,'ikyavan':51,'इक्यावन':51,
+    'baavan':52,'बावन':52,
+    'tirpan':53,'tirapan':53,'तिरपन':53,
+    'chauvan':54,'चौवन':54,
+    'pachpan':55,'पचपन':55,
+    'chhappan':56,'chappan':56,'छप्पन':56,
+    'sattavan':57,'sattawan':57,'सत्तावन':57,
+    'athavan':58,'atthavan':58,'अठावन':58,
+    'unsath':59,'unasath':59,'उनसठ':59,
+
+    # ── 60-69 ──
+    'saath':60,'साठ':60,
+    'iksath':61,'eksath':61,'इकसठ':61,
+    'basath':62,'barsath':62,'बासठ':62,
+    'tirsath':63,'तिरसठ':63,
+    'chausath':64,'चौसठ':64,
+    'painsath':65,'paisath':65,'पैंसठ':65,
+    'chhiyasath':66,'chhiasath':66,'छियासठ':66,
+    'sadsath':67,'सड़सठ':67,
+    'adsath':68,'अड़सठ':68,
+    'unhattar':69,'उनहत्तर':69,
+
+    # ── 70-79 ──
+    'saattar':70,'sattar':70,'सत्तर':70,
+    'ikhattar':71,'इकहत्तर':71,
+    'bahattar':72,'बहत्तर':72,
+    'tihattar':73,'तिहत्तर':73,
+    'chauhattar':74,'चौहत्तर':74,
+    'pachattar':75,'पचहत्तर':75,
+    'chhihattar':76,'chhiyahattar':76,'छिहत्तर':76,
+    'satahattar':77,'satthattar':77,'सतहत्तर':77,
+    'aathattar':78,'athattar':78,'अठहत्तर':78,
+    'unasi':79,'उनासी':79,
+
+    # ── 80-89 ──
+    'assee':80,'ashi':80,'assi':80,'अस्सी':80,
+    'ikyasi':81,'ikyaasi':81,'इक्यासी':81,
+    'bayasi':82,'baasi':82,'बयासी':82,
+    'tirasi':83,'तिरासी':83,
+    'chaurasi':84,'चौरासी':84,
+    'pachasi':85,'पचासी':85,
+    'chhiyasi':86,'chhiyaasi':86,'छियासी':86,
+    'sattasi':87,'सतासी':87,
+    'atthasi':88,'अट्ठासी':88,
+    'navasi':89,'नवासी':89,
+
+    # ── 90-99 ──
+    'nabbe':90,'nabhe':90,'नब्बे':90,
+    'ikyaanave':91,'ikyaanbe':91,'इक्यानवे':91,
+    'baanave':92,'baanbe':92,'बानवे':92,
+    'tiranave':93,'tiranbe':93,'तिरानवे':93,
+    'chauranave':94,'chauranbe':94,'चौरानवे':94,
+    'panchanave':95,'panchanbe':95,'पंचानवे':95,
+    'chhiyanave':96,'chhiyanbe':96,'छियानवे':96,
+    'sattanave':97,'sattanbe':97,'सत्तानवे':97,
+    'atthanave':98,'atthanbe':98,'अट्ठानवे':98,
+    'ninanave':99,'ninyanbe':99,'निन्यानवे':99,
+}
+
+# Multipliers (×100, ×1000 etc.) — used for compound number parsing
+_HINDI_MULTIPLIERS = {
+    'sau':100,'sou':100,'so':100,'सौ':100,'saw':100,'saww':100,'sow':100,
+    'hazar':1000,'hajaar':1000,'hajar':1000,'hazaar':1000,'हजार':1000,'हज़ार':1000,
+    'lakh':100000,'lac':100000,'लाख':100000,
+    'karod':10000000,'crore':10000000,'krod':10000000,'करोड़':10000000,'करोड':10000000,
 }
 
 MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -251,16 +347,77 @@ def _safe_float(value, default: float = 0.0) -> float:
 # HINGLISH VOICE PRE-PROCESSOR
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _parse_hindi_num_tokens(tokens: list) -> int:
+    """Convert a list of Hindi number-word tokens into a single integer.
+    Handles compounds like ['do', 'sau', 'pachaas'] → 250
+    """
+    result = 0
+    current = 0
+    for tok in tokens:
+        t = tok.lower().strip()
+        if t in _HINDI_MULTIPLIERS:
+            mult = _HINDI_MULTIPLIERS[t]
+            if current == 0:
+                current = 1
+            if mult >= 1000:
+                result += current * mult
+                current = 0
+            else:           # sau = ×100
+                current *= mult
+        elif t in _HINDI_UNITS:
+            current += _HINDI_UNITS[t]
+        elif re.match(r'^\d+$', t):
+            current += int(t)
+    result += current
+    return result
+
+
 def normalize_hinglish_numbers(text: str) -> str:
-    text = text.lower().strip()
-    text = re.sub(r'([a-z]+)(\d{2,})', r'\1 \2', text)
-    text = re.sub(r'(\d+)([a-z]+)', r'\1 \2', text)
-    for pattern, replacement in HINGLISH_NUM_MAP.items():
-        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
-    text = re.sub(r'(\d+)\s+(0{2,})', r'\1\2', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    logger.debug("Normalized Hinglish: %r", text)
-    return text
+    """Convert Hindi/Hinglish number words to digits, handling compounds correctly.
+    e.g. 'do sau pachaas petrol' → '250 petrol'
+         'teen hazar ka khaana' → '3000 ka khaana'
+    """
+    original = text
+    # 1. Devanagari digit characters → ASCII
+    deva_map = {'०':'0','१':'1','२':'2','३':'3','४':'4',
+                '५':'5','६':'6','७':'7','८':'8','९':'9'}
+    for d, a in deva_map.items():
+        text = text.replace(d, a)
+
+    # 2. Tokenise on whitespace, keeping whitespace tokens to preserve spacing
+    all_num_words = set(_HINDI_UNITS.keys()) | set(_HINDI_MULTIPLIERS.keys())
+    raw_tokens = re.split(r'(\s+)', text)   # alternating [word, ws, word, ws, …]
+
+    result_parts = []
+    num_buffer = []
+
+    def flush_buffer():
+        if num_buffer:
+            val = _parse_hindi_num_tokens(num_buffer)
+            result_parts.append(str(val))
+            num_buffer.clear()
+
+    for tok in raw_tokens:
+        if re.match(r'^\s+$', tok):          # whitespace token — skip into buffer gap
+            if num_buffer:                    # we're inside a number sequence, continue
+                pass                          # don't flush yet; next word may extend it
+            else:
+                result_parts.append(tok)
+        elif tok.lower() in all_num_words or re.match(r'^\d+$', tok):
+            num_buffer.append(tok.lower())
+        else:
+            flush_buffer()
+            # restore the whitespace that was swallowed before a non-number word
+            if num_buffer == [] and result_parts and not result_parts[-1].endswith(' '):
+                result_parts.append(' ')
+            result_parts.append(tok)
+
+    flush_buffer()
+
+    result = ''.join(result_parts)
+    result = re.sub(r'\s+', ' ', result).strip()
+    logger.debug("Normalized Hinglish: %r → %r", original, result)
+    return result
 
 
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
@@ -289,8 +446,10 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
        - description = short description (e.g. "chai", "petrol").
     2. If the user is ASKING a question, requesting a summary, complaining, or chatting (e.g. "khrcha kitan kiya maine", "kaha kaha khrcha kiya", "summary", "hi", "mai garib hu"):
        - action = "chat"
-       - chat_response = your natural, conversational, sarcastic but helpful English reply.
-         - You MUST ALWAYS reply in pure English, even if the user speaks in Hindi or Hinglish.
+       - chat_response = your natural, conversational, sarcastic but helpful reply.
+         - You MUST detect the language the user is speaking and reply in the SAME language.
+           • If they write in Hindi or Hinglish → reply in Hindi/Hinglish.
+           • If they write in English → reply in English.
          - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
@@ -1103,6 +1262,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     translation = _groq_client().audio.transcriptions.create(
                         file=(audio_file.name, file.read()),
                         model="whisper-large-v3",
+                        language="hi",  # Explicitly set to Hindi for better accuracy
+                        prompt="Yeh ek expense tracking app hai. User Hindi ya Hinglish mein bolta hai, jaise '500 petrol', 'teen sau rupaye khaana', 'do hazar ka shopping'.",
                     )
                     spoken_text = translation.text.strip()
                     logger.info("Transcription result: %s", spoken_text)
@@ -1773,6 +1934,7 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
         "month":             today.strftime("%B %Y"),
         "recent_expenses":   list(recent_qs),
         "user_phone":        request.user.profile.phone_number if hasattr(request.user, 'profile') else "",
+        "whatsapp_linked":   request.user.profile.whatsapp_linked if hasattr(request.user, 'profile') else False,
         "days_left": (
             (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
         ).days,
@@ -1974,6 +2136,11 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
         last_date=Max("date"),
     )
 
+    profile = UserProfile.objects.filter(user=user).first()
+    profile_pic_url = None
+    if profile and profile.profile_picture:
+        profile_pic_url = request.build_absolute_uri(profile.profile_picture.url)
+
     return JsonResponse({
         "username":       user.username,
         "joined":         user.date_joined.strftime("%d %B %Y"),
@@ -1983,7 +2150,25 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
         "last_expense":   all_agg["last_date"].isoformat()  if all_agg["last_date"]  else None,
         "budget":         get_user_budget(request),
         "member_days":    (date.today() - user.date_joined.date()).days,
+        "profile_picture": profile_pic_url,
+        "whatsapp_linked": profile.whatsapp_linked if profile else False,
     })
+
+@api_login_required
+def api_upload_profile_photo(request: HttpRequest) -> JsonResponse:
+    if request.method == "POST":
+        photo = request.FILES.get("photo")
+        if not photo:
+            return JsonResponse({"error": "No photo provided"}, status=400)
+            
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        profile.profile_picture = photo
+        profile.save()
+        
+        photo_url = request.build_absolute_uri(profile.profile_picture.url)
+        return JsonResponse({"status": "success", "profile_picture": photo_url})
+    
+    return JsonResponse({"error": "Invalid method"}, status=405)
 
 
 @api_login_required
@@ -2683,9 +2868,22 @@ def api_split_groups(request: HttpRequest) -> JsonResponse:
     data = []
     for g in groups:
         members = list(g.members.values_list('name', flat=True))
-        total = _safe_float(g.expenses.aggregate(t=Sum("amount"))["t"])
-        expense_count = g.expenses.count()
+        expenses_qs = g.expenses.all()
+        total = _safe_float(expenses_qs.aggregate(t=Sum("amount"))["t"])
+        expense_count = expenses_qs.count()
         per_person = total / max(len(members), 1)
+
+        # Include expense list for display & delete
+        expense_list = [
+            {
+                "id": exp.pk,
+                "paid_by": exp.paid_by,
+                "description": exp.description,
+                "amount": float(exp.amount),
+                "date": exp.date.isoformat(),
+            }
+            for exp in expenses_qs.order_by('-date', '-id')
+        ]
 
         data.append({
             "id": g.pk,
@@ -2695,6 +2893,7 @@ def api_split_groups(request: HttpRequest) -> JsonResponse:
             "total": total,
             "per_person": round(per_person, 2),
             "expense_count": expense_count,
+            "expenses": expense_list,
             "is_settled": g.is_settled,
             "created_at": g.created_at.isoformat(),
         })
@@ -2739,18 +2938,23 @@ def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
         return JsonResponse({"error": "This group is already settled!"}, status=400)
 
     body = getattr(request, "_json_body", {})
-    paid_by = str(body.get("paid_by", "")).strip()
+    paid_by_input = str(body.get("paid_by", "")).strip()
     description = str(body.get("description", "")).strip()
     amount = body.get("amount", 0)
 
-    if not paid_by:
+    if not paid_by_input:
         return JsonResponse({"error": "'paid_by' name required"}, status=400)
     if not description:
         return JsonResponse({"error": "Description required"}, status=400)
 
-    # Verify paid_by is a member
-    if not group.members.filter(name=paid_by).exists():
-        return JsonResponse({"error": f"'{paid_by}' is not a member of this group"}, status=400)
+    # Case-insensitive member lookup — normalize to stored name
+    member = group.members.filter(name__iexact=paid_by_input).first()
+    if not member:
+        member_names = list(group.members.values_list('name', flat=True))
+        return JsonResponse({
+            "error": f"'{paid_by_input}' is not a member of this group. Members: {', '.join(member_names)}"
+        }, status=400)
+    paid_by = member.name  # Use the exact stored name to avoid mismatches
 
     try:
         amount = Decimal(str(amount))
@@ -2795,10 +2999,18 @@ def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
     total = _safe_float(expenses.aggregate(t=Sum("amount"))["t"])
     per_person = total / max(len(members), 1)
 
+    # Build a case-insensitive lookup: lowercased name → stored name
+    name_lookup = {m.lower(): m for m in members}
+
     # Calculate balances (positive = owed money, negative = owes money)
     balances = {m: 0.0 for m in members}
     for exp in expenses:
-        if exp.paid_by in balances:
+        # Match paid_by to a member name case-insensitively
+        stored_name = name_lookup.get(exp.paid_by.lower())
+        if stored_name:
+            balances[stored_name] += float(exp.amount)
+        elif exp.paid_by in balances:
+            # Exact match fallback
             balances[exp.paid_by] += float(exp.amount)
 
     # Each person's net = paid - share
@@ -2883,6 +3095,16 @@ def api_delete_split(request: HttpRequest, pk: int) -> JsonResponse:
     name = group.name
     group.delete()
     return JsonResponse({"status": "success", "message": f"🗑️ Split group '{name}' deleted."})
+
+
+@api_login_required
+def api_delete_split_expense(request: HttpRequest, pk: int, expense_id: int) -> JsonResponse:
+    """Delete a single expense from a split group."""
+    group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
+    expense = get_object_or_404(SplitExpense, pk=expense_id, group=group)
+    desc = expense.description
+    expense.delete()
+    return JsonResponse({"status": "success", "message": f"🗑️ Expense '{desc}' deleted."})
 
 
 # ══════════════════════════════════════════════════════════════════════════════

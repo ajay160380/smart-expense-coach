@@ -1,66 +1,61 @@
 /**
  * ═══════════════════════════════════════════════════════════════
  * PAISA MITRA — NATIVE VOICE EXPENSE SCREEN
- * Speech-to-Text using expo-audio and Groq Whisper backend
+ * Push-to-Talk using expo-audio + PanResponder
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   StyleSheet, Text, View, TouchableOpacity,
   SafeAreaView, Platform, ActivityIndicator, Alert,
+  PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
 import { COLORS, SHADOW } from '../utils/theme';
 import { BASE_URL } from '../api/config';
 
 export default function VoiceExpenseScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
-  const [permissionGranted, setPermissionGranted] = useState(false);
-  
-  // Use the new expo-audio hook
+  const [isRecording, setIsRecording] = useState(false);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-
-  useEffect(() => {
-    (async () => {
-      const { granted } = await requestRecordingPermissionsAsync();
-      setPermissionGranted(granted);
-    })();
-  }, []);
+  const isPrepared = useRef(false);
+  const isRecordingRef = useRef(false); // ref for PanResponder closure
 
   const startRecording = async () => {
-    if (!permissionGranted) {
+    try {
       const { granted } = await requestRecordingPermissionsAsync();
       if (!granted) {
         Alert.alert('Permission Denied', 'Microphone access is required.');
         return;
       }
-      setPermissionGranted(true);
-    }
-    
-    try {
-      await recorder.prepareToRecordAsync();
+      if (!isPrepared.current) {
+        await recorder.prepareToRecordAsync();
+        isPrepared.current = true;
+      }
       recorder.record();
+      isRecordingRef.current = true;
+      setIsRecording(true);
     } catch (err) {
       console.error('Failed to start recording', err);
-      Alert.alert('Error', 'Failed to start recording.');
+      Alert.alert('Error', 'Failed to start recording: ' + err.message);
     }
   };
 
   const stopRecording = async () => {
-    if (!recorder.isRecording) return;
+    if (!isRecordingRef.current) return;
+    isRecordingRef.current = false;
+    setIsRecording(false);
     setLoading(true);
-
     try {
       await recorder.stop();
-      // Give a tiny delay for the file to be written
       await new Promise(r => setTimeout(r, 300));
       const uri = recorder.uri;
-      
       if (uri) {
         await uploadAudio(uri);
       } else {
@@ -73,31 +68,36 @@ export default function VoiceExpenseScreen({ navigation }) {
     }
   };
 
+  // PanResponder: start on finger down, stop on finger up (even if finger moves)
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => { startRecording(); },
+    onPanResponderRelease: () => { stopRecording(); },
+    onPanResponderTerminate: () => { stopRecording(); }, // e.g. notification pulls focus away
+  }), []);
+
   const uploadAudio = async (uri) => {
     try {
       const token = await AsyncStorage.getItem('userToken');
 
-      // React Native fetch supports FormData with {uri, type, name} objects
-      const formData = new FormData();
-      formData.append('audio', {
-        uri: uri,
-        type: 'audio/mp4',
-        name: 'expense_audio.mp4',
-      });
+      const response = await FileSystem.uploadAsync(
+        `${BASE_URL}/api/voice-expense/`,
+        uri,
+        {
+          httpMethod: 'POST',
+          uploadType: 1, // MULTIPART
+          fieldName: 'audio',
+          mimeType: 'audio/m4a',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
 
-      const response = await fetch(`${BASE_URL}/api/voice-expense/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Accept': 'application/json',
-          // Do NOT manually set Content-Type for FormData — React Native sets it with boundary
-        },
-        body: formData,
-      });
+      const data = JSON.parse(response.body);
 
-      const data = await response.json();
-
-      if (response.ok && data.status === 'success') {
+      if (response.status === 200 && data.status === 'success') {
         Alert.alert('✅ Success', data.message || 'Expense saved successfully!', [
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);
@@ -109,14 +109,6 @@ export default function VoiceExpenseScreen({ navigation }) {
       Alert.alert('Network Error', 'Failed to send audio to the server.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleMicPress = () => {
-    if (recorder.isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
     }
   };
 
@@ -138,11 +130,11 @@ export default function VoiceExpenseScreen({ navigation }) {
       {/* ── Main Content ── */}
       <View style={styles.content}>
         <Text style={styles.instructionText}>
-          {recorder.isRecording ? 'Listening...' : loading ? 'Processing your expense...' : 'Tap the microphone and speak your expense.'}
+          {isRecording ? 'Listening...' : loading ? 'Processing your expense...' : 'Tap the microphone and speak your expense.'}
         </Text>
         
         <Text style={styles.subInstructionText}>
-          {!recorder.isRecording && !loading && 'e.g., "500 petrol" or "200 ki chai"'}
+          {!isRecording && !loading && 'e.g., "500 petrol" or "200 ki chai"'}
         </Text>
 
         <View style={styles.micContainer}>
@@ -151,27 +143,28 @@ export default function VoiceExpenseScreen({ navigation }) {
               <ActivityIndicator size="large" color={COLORS.orange} />
             </View>
           ) : (
-            <TouchableOpacity 
-              activeOpacity={0.7} 
-              onPress={handleMicPress}
-              style={[styles.micButton, recorder.isRecording && styles.micButtonRecording]}
+            <View
+              {...panResponder.panHandlers}
+              style={[styles.micButton, isRecording && styles.micButtonRecording]}
             >
               <LinearGradient 
-                colors={recorder.isRecording ? ['#ef4444', '#dc2626'] : COLORS.gradOrange} 
+                colors={isRecording ? ['#ef4444', '#dc2626'] : COLORS.gradOrange} 
                 style={styles.micGradient}
               >
                 <MaterialCommunityIcons 
-                  name={recorder.isRecording ? "stop" : "microphone"} 
+                  name={isRecording ? "microphone" : "microphone-outline"} 
                   size={56} 
                   color="#fff" 
                 />
               </LinearGradient>
-            </TouchableOpacity>
+            </View>
           )}
         </View>
         
-        {recorder.isRecording && (
-          <Text style={styles.stopText}>Tap again to stop</Text>
+        {isRecording ? (
+          <Text style={styles.stopText}>🔴 Release to stop</Text>
+        ) : (
+          <Text style={styles.stopText}>Hold to speak</Text>
         )}
       </View>
     </SafeAreaView>
@@ -205,7 +198,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 60,
-    height: 24, // Fix height to prevent jumping
+    height: 24,
   },
   
   micContainer: {

@@ -17,10 +17,12 @@ import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import Logo from './src/components/Logo';
 import { setUnauthorizedHandler } from './src/api/config';
 import { getToken } from './src/utils/auth';
 
 // ── Auth Screens ──
+import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 
@@ -170,7 +172,8 @@ export default function App() {
     const checkAuth = async () => {
       try {
         const token = await getToken();
-        setIsAuthenticated(!!token);
+        // FORCE FALSE FOR TESTING WELCOME SCREEN
+        setIsAuthenticated(false);
       } catch (e) {
         console.error(e);
       } finally {
@@ -179,7 +182,6 @@ export default function App() {
     };
     checkAuth();
 
-    // Set up 401 handler for auto-logout
     setUnauthorizedHandler(() => {
       setIsAuthenticated(false);
     });
@@ -187,31 +189,11 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <StatusBar style="light" />
+      <View style={[styles.loadingContainer, { backgroundColor: '#F8F9FA' }]}>
+        <StatusBar style="dark" />
         <View style={styles.loadingContent}>
-          <View style={styles.loadingLogo}>
-            <LinearGradient
-              colors={['#A888FF', '#9333EA']}
-              style={styles.loadingLogoBg}
-            >
-              <Ionicons name="wallet" size={36} color="#fff" />
-            </LinearGradient>
-          </View>
-          <View style={styles.loadingTextRow}>
-            <View style={styles.loadingSparkle}><Ionicons name="sparkles" size={16} color="#A888FF" /></View>
-            <View>
-              <View style={styles.loadingTitleRow}>
-                <Ionicons name="sparkles" size={14} color="#A888FF" style={{ marginRight: 4 }} />
-                <View style={styles.loadingBrandBg}>
-                  <LinearGradient colors={['#A888FF', '#9333EA']} style={styles.loadingBrandGrad}>
-                    <Ionicons name="wallet" size={14} color="#fff" style={{ marginRight: 4 }} />
-                  </LinearGradient>
-                </View>
-              </View>
-            </View>
-          </View>
-          <ActivityIndicator size="small" color="#A888FF" style={{ marginTop: 24 }} />
+          <Logo size={0.7} circle={true} showText={false} />
+          <ActivityIndicator size="small" color="#1A73E8" style={{ marginTop: 24 }} />
         </View>
       </View>
     );
@@ -221,13 +203,14 @@ export default function App() {
     <NavigationContainer>
       <StatusBar style="light" />
       <Stack.Navigator
-        initialRouteName={isAuthenticated ? 'MainTabs' : 'Login'}
+        initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
         screenOptions={{
           headerShown: false,
           cardStyle: { backgroundColor: '#0B0E14' },
         }}
       >
         {/* Auth Flow */}
+        <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
 
