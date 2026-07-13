@@ -1,0 +1,16 @@
+db.sqlite3
+expense_project/db.sqlite3
+.env
+env/
+__pycache__/
+*.pyc
+node_modules/
+.wwebjs_auth/
+.wwebjs_cache/
+.DS_Store
+RemoteAuth-paisa-mitra/
+RemoteAuth-*/
+package-lock.json
+*.log
+.vscode/
+.idea/

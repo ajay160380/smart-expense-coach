@@ -1,0 +1,200 @@
+{% extends 'tracker/base.html' %}
+
+{% block extra_css %}
+<style>
+/* PREMIUM FEATURES PAGE CSS */
+.features-hero {
+    text-align: center;
+    padding: 80px 20px 60px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.features-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.1;
+    margin-bottom: 20px;
+}
+
+.features-subtitle {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+/* Zig-Zag Features */
+.feature-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 60px;
+    max-width: 1100px;
+    margin: 0 auto 120px;
+    padding: 0 20px;
+}
+
+.feature-row:nth-child(even) {
+    flex-direction: row-reverse;
+}
+
+.feature-text {
+    flex: 1;
+}
+
+.feature-tag {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tag-green { background: rgba(37, 211, 102, 0.1); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
+.tag-purple { background: rgba(168, 85, 247, 0.1); color: #A855F7; border: 1px solid rgba(168, 85, 247, 0.2); }
+.tag-blue { background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.2); }
+.tag-red { background: rgba(244, 63, 94, 0.1); color: #F43F5E; border: 1px solid rgba(244, 63, 94, 0.2); }
+
+.feature-text h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 20px;
+}
+
+.feature-text p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+.feature-visual {
+    flex: 1;
+    position: relative;
+    border-radius: 24px;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-glass);
+    padding: 40px;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 350px;
+}
+
+.feature-visual::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 26px;
+    background: linear-gradient(135deg, var(--primary), transparent, var(--secondary));
+    z-index: -1;
+    opacity: 0.3;
+}
+
+.visual-icon {
+    font-size: 5rem;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+/* CTA Section */
+.cta-section {
+    text-align: center;
+    padding: 80px 20px;
+    background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.05));
+    border-top: 1px solid var(--border-light);
+    margin-top: 50px;
+}
+
+.cta-section h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 30px;
+}
+
+@media (max-width: 900px) {
+    .feature-row, .feature-row:nth-child(even) {
+        flex-direction: column;
+        text-align: center;
+        gap: 40px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <section class="features-hero" data-aos="fade-up">
+        <h1 class="features-title">Features built for<br>real life.</h1>
+        <p class="features-subtitle">We didn't pack ExpenseTracker with confusing accounting tools. We built exactly what you need to stay on top of your money, effortlessly.</p>
+    </section>
+
+    <!-- Feature 1 -->
+    <div class="feature-row" data-aos="fade-up" data-aos-delay="100">
+        <div class="feature-text">
+            <span class="feature-tag tag-green">WhatsApp First</span>
+            <h2>Text it and forget it.</h2>
+            <p>No app to install. No login screens. Just open your favorite chat app and text our bot. Whether it's "500 for lunch" or "12k rent", we'll log it instantly. It's the lowest friction way to track expenses ever invented.</p>
+        </div>
+        <div class="feature-visual">
+            <div class="visual-icon">💬</div>
+        </div>
+    </div>
+
+    <!-- Feature 2 -->
+    <div class="feature-row" data-aos="fade-up">
+        <div class="feature-text">
+            <span class="feature-tag tag-purple">AI Powered</span>
+            <h2>Smart Categorization</h2>
+            <p>Our Large Language Model acts as your personal accountant. It understands natural language, slang, and context. It automatically sorts your spending into beautiful categories without you ever touching a dropdown menu.</p>
+        </div>
+        <div class="feature-visual">
+            <div class="visual-icon">🧠</div>
+        </div>
+    </div>
+
+    <!-- Feature 3 -->
+    <div class="feature-row" data-aos="fade-up">
+        <div class="feature-text">
+            <span class="feature-tag tag-blue">Web Dashboard</span>
+            <h2>Beautiful Analytics</h2>
+            <p>When you need the big picture, log into our stunning glassmorphic dashboard. View beautiful charts, track category trends, and see exactly where your money is going over time.</p>
+        </div>
+        <div class="feature-visual">
+            <div class="visual-icon">📊</div>
+        </div>
+    </div>
+
+    <!-- Feature 4 -->
+    <div class="feature-row" data-aos="fade-up">
+        <div class="feature-text">
+            <span class="feature-tag tag-red">Active Coaching</span>
+            <h2>Brutally Honest Bot</h2>
+            <p>Unlike other apps that just show you numbers, ExpenseTracker actively coaches you. Set a budget, and the bot will warn you when you're overspending with witty, helpful, and sometimes sarcastic advice.</p>
+        </div>
+        <div class="feature-visual">
+            <div class="visual-icon">🤖</div>
+        </div>
+    </div>
+
+    <section class="cta-section" data-aos="fade-up">
+        <h2>Ready to take control?</h2>
+        <a href="{% url 'register' %}" class="btn-primary" style="font-size: 1.2rem; padding: 15px 40px; border-radius: 100px;">Start Tracking for Free</a>
+    </section>
+</div>
+{% endblock %}
