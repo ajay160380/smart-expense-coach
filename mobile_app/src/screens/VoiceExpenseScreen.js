@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — NATIVE VOICE EXPENSE SCREEN
+ * EXPENSE TRACKER — NATIVE VOICE EXPENSE SCREEN
  * Push-to-Talk using expo-audio + PanResponder
  * ═══════════════════════════════════════════════════════════════
  */

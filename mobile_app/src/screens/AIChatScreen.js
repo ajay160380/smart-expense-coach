@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — AI CHAT SCREEN
- * Full PaisaMitra chatbot with Hinglish support
+ * EXPENSE TRACKER — AI CHAT SCREEN
+ * Full ExpenseTracker chatbot with Hinglish support
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -42,7 +42,7 @@ export default function AIChatScreen({ navigation }) {
     setMessages([{
       id: 'welcome',
       role: 'bot',
-      text: `Hey ${username}! 🤖 Main hoon PaisaMitra, tumhara personal AI financial coach.\n\nMujhse kuch bhi pucho — budget, savings tips, kaha kharcha kiya, ya koi bhi finance ka sawaal! 💰`,
+      text: `Hey ${username}! 🤖 Main hoon ExpenseTracker, tumhara personal AI financial coach.\n\nMujhse kuch bhi pucho — budget, savings tips, kaha kharcha kiya, ya koi bhi finance ka sawaal! 💰`,
       time: new Date(),
     }]);
   }, []);
@@ -138,7 +138,7 @@ export default function AIChatScreen({ navigation }) {
               <Text style={{ fontSize: 20 }}>🤖</Text>
             </View>
             <View>
-              <Text style={styles.headerTitle}>PaisaMitra AI</Text>
+              <Text style={styles.headerTitle}>ExpenseTracker AI</Text>
               <View style={styles.onlineRow}>
                 <View style={styles.onlineDot} />
                 <Text style={styles.onlineText}>Online</Text>
@@ -181,7 +181,7 @@ export default function AIChatScreen({ navigation }) {
           </View>
           <View style={styles.typingBubble}>
             <ActivityIndicator size="small" color={COLORS.cyan} />
-            <Text style={styles.typingText}>PaisaMitra is thinking...</Text>
+            <Text style={styles.typingText}>ExpenseTracker is thinking...</Text>
           </View>
         </View>
       )}

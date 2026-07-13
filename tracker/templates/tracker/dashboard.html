@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PaisaMitra Dashboard</title>
+<title>ExpenseTracker Dashboard</title>
 <script>
   let theme = localStorage.getItem('theme');
   if (theme === 'light') {
@@ -997,7 +997,7 @@ body::before {
         <div class="ai-avatar">🤖</div>
         <div class="ai-banner-text">
           <div class="ai-banner-label">AI Financial Coach</div>
-          <div class="ai-banner-msg" id="banner-msg">{{ ai_main_tip|default:"Hello! I am PaisaMitra — ask me anything about your finances!" }}</div>
+          <div class="ai-banner-msg" id="banner-msg">{{ ai_main_tip|default:"Hello! I am ExpenseTracker — ask me anything about your finances!" }}</div>
         </div>
         <span class="ai-banner-caret">›</span>
       </div>
@@ -1176,7 +1176,7 @@ body::before {
 
 <!-- AI FAB -->
 <div class="ai-fab">
-  <button class="ai-fab-btn" onclick="toggleAI()" id="ai-fab-btn" title="Open PaisaMitra AI">🤖</button>
+  <button class="ai-fab-btn" onclick="toggleAI()" id="ai-fab-btn" title="Open ExpenseTracker AI">🤖</button>
   <div class="ai-notif" id="ai-notif">1</div>
 </div>
 
@@ -1185,7 +1185,7 @@ body::before {
   <div class="ai-pop-head">
     <div class="ai-pop-av">🤖</div>
     <div>
-      <div class="ai-pop-name">PaisaMitra AI</div>
+      <div class="ai-pop-name">ExpenseTracker AI</div>
       <div class="ai-pop-status">Always online</div>
     </div>
     <button class="ai-pop-x" onclick="toggleAI()">✕</button>
@@ -1914,7 +1914,7 @@ function getFinancialContext() {
 
 function sendWelcome() {
   const ctx = getFinancialContext();
-  let msg = `Hello! I am PaisaMitra 🙏\n\n`;
+  let msg = `Hello! I am ExpenseTracker 🙏\n\n`;
   msg += `✅ Remaining: ${fmt(ctx.rem)}\n`;
   msg += `📊 Budget used: ${ctx.pct}%\n`;
   if (ctx.topCat) msg += `🔥 Top category: ${ctx.topCat[0].charAt(0).toUpperCase()+ctx.topCat[0].slice(1)} — ${fmt(ctx.topCat[1])}`;

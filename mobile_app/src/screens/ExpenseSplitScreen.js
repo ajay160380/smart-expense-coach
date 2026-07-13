@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — EXPENSE SPLIT SCREEN (SPLITWISE-STYLE)
+ * EXPENSE TRACKER — EXPENSE SPLIT SCREEN (SPLITWISE-STYLE)
  * Groups, expenses, settlements, WhatsApp share
  * ═══════════════════════════════════════════════════════════════
  */

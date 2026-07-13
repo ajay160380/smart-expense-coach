@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — ELEGANT LIGHT THEME ONBOARDING (APP SPECIFIC)
+ * EXPENSE TRACKER — ELEGANT LIGHT THEME ONBOARDING (APP SPECIFIC)
  * Filled with relevant Finance/Chat mockups, no empty spaces,
  * beautifully tying into the app's actual features.
  * ═══════════════════════════════════════════════════════════════

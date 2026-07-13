@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * SHARED UI COMPONENTS — PaisaMitra Premium
+ * SHARED UI COMPONENTS — ExpenseTracker Premium
  * Reusable components for the glassmorphic dark theme
  * ═══════════════════════════════════════════════════════════════
  */
@@ -228,7 +228,7 @@ export function LoadingScreen({ message = 'Loading...' }) {
   return (
     <View style={styles.loadingContainer}>
       <Animated.Text style={[styles.loadingLogo, { opacity: pulse }]}>✨</Animated.Text>
-      <Text style={styles.loadingBrand}>PaisaMitra</Text>
+      <Text style={styles.loadingBrand}>ExpenseTracker</Text>
       <ActivityIndicator color={COLORS.cyan} size="small" style={{ marginTop: 16 }} />
       <Text style={styles.loadingMsg}>{message}</Text>
     </View>

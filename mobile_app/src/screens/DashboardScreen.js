@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — DASHBOARD SCREEN (COMPLETE REBUILD)
+ * EXPENSE TRACKER — DASHBOARD SCREEN (COMPLETE REBUILD)
  * Full feature parity with website dashboard
  * ═══════════════════════════════════════════════════════════════
  */
@@ -157,7 +157,7 @@ export default function DashboardScreen({ navigation }) {
     return (
       <View style={[styles.container, styles.center]}>
         <Text style={{ fontSize: 40, marginBottom: 12 }}>✨</Text>
-        <Text style={{ color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' }}>PaisaMitra</Text>
+        <Text style={{ color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' }}>ExpenseTracker</Text>
         <ActivityIndicator color={COLORS.cyan} size="small" style={{ marginTop: 16 }} />
       </View>
     );
@@ -185,7 +185,7 @@ export default function DashboardScreen({ navigation }) {
       <View style={styles.navbar}>
         <View style={styles.logoContainer}>
           <Text style={styles.logoIcon}>✨</Text>
-          <Text style={styles.logoText}>PaisaMitra</Text>
+          <Text style={styles.logoText}>ExpenseTracker</Text>
         </View>
         <View style={styles.navRight}>
           <TouchableOpacity

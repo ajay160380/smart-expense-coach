@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — API CONFIGURATION (SECURED)
+ * EXPENSE TRACKER — API CONFIGURATION (SECURED)
  * Axios instance with interceptors, token refresh, and timeout
  * ═══════════════════════════════════════════════════════════════
  */
