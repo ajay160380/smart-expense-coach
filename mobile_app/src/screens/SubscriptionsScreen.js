@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — SUBSCRIPTIONS SCREEN
+ * EXPENSE TRACKER — SUBSCRIPTIONS SCREEN
  * List, add, delete subscriptions with due-soon badges
  * ═══════════════════════════════════════════════════════════════
  */

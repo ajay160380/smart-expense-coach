@@ -24,12 +24,12 @@ export default function Logo({ size = 1, showText = true, circle = true }) {
       {showText && (
         <View style={{ alignItems: 'center', marginTop: 20 * s }}>
           <Text style={{ fontFamily: 'System', fontSize: 32 * s, fontWeight: '900', color: dark, letterSpacing: 4 * s }}>
-            PAISA
+            EXPENSE
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 * s }}>
             <View style={{ width: 40 * s, height: 2 * s, backgroundColor: blue }} />
             <Text style={{ fontFamily: 'System', fontSize: 16 * s, fontWeight: '700', color: blue, letterSpacing: 8 * s, marginHorizontal: 12 * s }}>
-              MITRA
+              TRACKER
             </Text>
             <View style={{ width: 40 * s, height: 2 * s, backgroundColor: blue }} />
           </View>

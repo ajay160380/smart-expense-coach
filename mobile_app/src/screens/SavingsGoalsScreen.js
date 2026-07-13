@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — SAVINGS GOALS SCREEN
+ * EXPENSE TRACKER — SAVINGS GOALS SCREEN
  * CRUD goals with progress bars, add money, celebrate completion
  * ═══════════════════════════════════════════════════════════════
  */

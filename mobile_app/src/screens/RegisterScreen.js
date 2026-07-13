@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — REGISTER SCREEN (COMPACT, NO SCROLL)
+ * EXPENSE TRACKER — REGISTER SCREEN (COMPACT, NO SCROLL)
  * Clean single-screen registration
  * ═══════════════════════════════════════════════════════════════
  */

@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — AUTH & SECURITY UTILITIES
+ * EXPENSE TRACKER — AUTH & SECURITY UTILITIES
  * Secure token storage, input sanitization, session management
  * ═══════════════════════════════════════════════════════════════
  */

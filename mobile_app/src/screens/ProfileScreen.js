@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — PROFILE SCREEN
+ * EXPENSE TRACKER — PROFILE SCREEN
  * User stats, settings, gamification, logout
  * ═══════════════════════════════════════════════════════════════
  */
@@ -175,7 +175,7 @@ export default function ProfileScreen({ navigation }) {
             icon="📱"
             ionIcon="chatbubble-ellipses-outline"
             label="AI Financial Coach"
-            sub="Chat with PaisaMitra AI"
+            sub="Chat with ExpenseTracker AI"
             onPress={() => navigation.navigate('AIChat')}
           />
           <MenuItem

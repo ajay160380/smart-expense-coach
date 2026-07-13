@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — DESIGN SYSTEM
+ * EXPENSE TRACKER — DESIGN SYSTEM
  * Premium dark glassmorphic theme with consistent tokens
  * ═══════════════════════════════════════════════════════════════
  */

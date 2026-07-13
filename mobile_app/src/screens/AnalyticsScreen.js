@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — ANALYTICS SCREEN
+ * EXPENSE TRACKER — ANALYTICS SCREEN
  * Charts, category breakdown, AI report, anomaly alerts
  * ═══════════════════════════════════════════════════════════════
  */

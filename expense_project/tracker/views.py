@@ -730,7 +730,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         insight = f"<strong>AI Coach:</strong> {raw}"
 
     # PAISAMITRA AI TIPS LOGIC 
-    ai_main_tip = "Hello! I am PaisaMitra — ask me anything about your finances!"
+    ai_main_tip = "Hello! I am ExpenseTracker — ask me anything about your finances!"
     ai_sub_tip = ""
 
     if budget > 0 and current_total_spent > 0:
@@ -1043,7 +1043,7 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
     ).days
 
-    system = f"""You are "PaisaMitra" — a friendly, witty, and brutally honest Indian personal finance coach.
+    system = f"""You are "ExpenseTracker" — a friendly, witty, and brutally honest Indian personal finance coach.
 Speak in Hinglish (Roman script). Be warm, sometimes sarcastic, always practical and helpful.
 
 ══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
@@ -1431,7 +1431,7 @@ def api_savings_projection(request: HttpRequest) -> JsonResponse:
 def health_check(request: HttpRequest) -> JsonResponse:
     return JsonResponse({
         "status":    "ok",
-        "service":   "PaisaMitra",
+        "service":   "ExpenseTracker",
         "version":   "3.2.0",
         "timestamp": datetime.now().isoformat(),
     })
@@ -1574,7 +1574,7 @@ def habit_warnings(request):
     data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
 
     prompt = f"""
-    You are 'PaisaMitra', a brutally honest, highly intelligent Indian financial AI coach.
+    You are 'ExpenseTracker', a brutally honest, highly intelligent Indian financial AI coach.
     Here is the user's daily spending data for the last 14 days:
     {data_str}
 
@@ -1633,7 +1633,7 @@ def whatsapp_summary(request):
             if not cat_breakdown:
                 cat_breakdown = "  Koi kharcha nahi hai abhi tak!"
             
-            report_msg = f"📊 *PaisaMitra Lifetime Report*\n\n"
+            report_msg = f"📊 *ExpenseTracker Lifetime Report*\n\n"
             report_msg += f"💸 *Aabi Tak Ka Total Kharcha:* ₹{lifetime_spent:,.0f}\n"
             report_msg += f"📅 *Is Mahine Ka Kharcha:* ₹{month_spent:,.0f} (Budget: ₹{budget:,.0f})\n"
             report_msg += f"✅ *Bacha Hua Budget:* ₹{remaining:,.0f}\n\n"

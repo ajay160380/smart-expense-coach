@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║          PAISA MITRA — EXPENSE TRACKER  |  views.py  |  Production v3.2        ║
+║          EXPENSE TRACKER — EXPENSE TRACKER  |  views.py  |  Production v3.2        ║
 ║          Full-stack Django views with AI, Voice, Analytics & Smart Features     ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 """
@@ -423,7 +423,7 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are PaisaMitra, an insanely smart, brutally honest, funny, and extremely helpful Indian financial AI coach.
+    You are ExpenseTracker, an insanely smart, brutally honest, funny, and extremely helpful Indian financial AI coach.
     You understand WhatsApp Hinglish slang perfectly (e.g., 'khrcha', 'sb', 'btvo', 'kaha', 'kaisa', 'kitan').
     You analyze the user's message and decide if they want to LOG an expense, OR just chat/ask a question.
     
@@ -456,7 +456,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
          - Use bullet points (`• `) when listing expenses or details.
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
          - If the user asks who created/made you (e.g. "kisne banaya", "who is your creator", "developer"), reply EXACTLY with this text:
-*Hello {user_name}!* 🙋‍♂️ I'm PaisaMitra, your personal financial AI coach. I was created by *Ajay Vishwakarma*, a seasoned AI/ML & Full Stack Developer with a passion for finance and technology. 🤖
+*Hello {user_name}!* 🙋‍♂️ I'm ExpenseTracker, your personal financial AI coach. I was created by *Ajay Vishwakarma*, a seasoned AI/ML & Full Stack Developer with a passion for finance and technology. 🤖
 
 You can learn more about my creator's work here:
 🌐 *Portfolio:* https://ajay-portfolio-r176.onrender.com
@@ -1017,7 +1017,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     # ──────────────────────────────────────────────────────────────────────────
     # 🔥 PAISAMITRA AI TIPS LOGIC (Added by Ajay's Backend setup)
     # ──────────────────────────────────────────────────────────────────────────
-    ai_main_tip = "Hello! I am PaisaMitra — ask me anything about your finances!"
+    ai_main_tip = "Hello! I am ExpenseTracker — ask me anything about your finances!"
     ai_sub_tip = ""
 
     if budget > 0 and current_total_spent > 0:
@@ -1538,7 +1538,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     "message": f"📄 *{user_name}*, here is your detailed expense report for {month_name_str}.\n\n(Tip: Open this file in Excel or Google Sheets!)",
                     "media": {
                         "mimetype": "text/csv",
-                        "filename": f"PaisaMitra_{just_month}_Report.csv",
+                        "filename": f"ExpenseTracker_{just_month}_Report.csv",
                         "base64": base64_csv
                     }
                 })
@@ -1707,7 +1707,7 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
     ).days
 
-    system = f"""You are "PaisaMitra" — a friendly, witty, and brutally honest Indian personal finance coach.
+    system = f"""You are "ExpenseTracker" — a friendly, witty, and brutally honest Indian personal finance coach.
 Analyze the user's language. If they speak in Hinglish (Hindi written in English alphabet), reply in warm, conversational Hinglish. If they speak in English, reply in natural, practical English. Be sometimes sarcastic, but always practical and helpful.
 
 ══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
@@ -2103,7 +2103,7 @@ def math_ceil(x: float) -> int:
 def health_check(request: HttpRequest) -> JsonResponse:
     return JsonResponse({
         "status":    "ok",
-        "service":   "PaisaMitra",
+        "service":   "ExpenseTracker",
         "version":   "3.2.0",
         "timestamp": datetime.now().isoformat(),
     })
@@ -2302,7 +2302,7 @@ def habit_warnings(request):
     data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
 
     prompt = f"""
-    You are 'PaisaMitra', a brutally honest, highly intelligent Indian financial AI coach.
+    You are 'ExpenseTracker', a brutally honest, highly intelligent Indian financial AI coach.
     Here is the user's daily spending data for the last 14 days:
     {data_str}
 
@@ -2364,7 +2364,7 @@ def whatsapp_summary(request):
                 cat_breakdown = "  Koi kharcha nahi hai abhi tak!"
             
             # 4. WHATSAPP REPORT MESSAGE
-            report_msg = f"📊 *PaisaMitra Lifetime Report*\n\n"
+            report_msg = f"📊 *ExpenseTracker Lifetime Report*\n\n"
             report_msg += f"💸 *Aabi Tak Ka Total Kharcha:* ₹{lifetime_spent:,.0f}\n"
             report_msg += f"📅 *Is Mahine Ka Kharcha:* ₹{month_spent:,.0f} (Budget: ₹{budget:,.0f})\n"
             report_msg += f"✅ *Bacha Hua Budget:* ₹{remaining:,.0f}\n\n"
@@ -2687,7 +2687,7 @@ def generate_daily_tip(user) -> str:
 
     try:
         prompt = (
-            f"You are PaisaMitra, a witty Indian financial coach.\n"
+            f"You are ExpenseTracker, a witty Indian financial coach.\n"
             f"Today is {day_of_week}.\n"
             f"User's weekly spending: ₹{week_total:,.0f}\n"
             f"Top category this week: {cat_name} (₹{cat_total:,.0f})\n"
@@ -2779,7 +2779,7 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
             msg = (
                 f"🌙 *Good Night, {user_name}!* ✨\n"
                 f"━━━━━━━━━━━━━━━━━━━\n"
-                f"🦉 *PaisaMitra Night Tip*\n\n"
+                f"🦉 *ExpenseTracker Night Tip*\n\n"
                 f"_{tip}_\n\n"
                 f"🌟 _Rest well! Tomorrow is a new day to save._ 💤"
             )
@@ -2787,7 +2787,7 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
             msg = (
                 f"🌅 *Good Morning, {user_name}!* ☀️\n"
                 f"━━━━━━━━━━━━━━━━━━━\n"
-                f"💎 *PaisaMitra Daily Tip*\n\n"
+                f"💎 *ExpenseTracker Daily Tip*\n\n"
                 f"_{tip}_\n\n"
                 f"🚀 _Have a fantastic day! Track your expenses wisely._ 📈"
             )

@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — LOGIN SCREEN (COMPACT, NO SCROLL)
+ * EXPENSE TRACKER — LOGIN SCREEN (COMPACT, NO SCROLL)
  * Clean single-screen login with security features
  * ═══════════════════════════════════════════════════════════════
  */

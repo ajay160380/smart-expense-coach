@@ -1,12 +1,12 @@
 ---
-title: Paisa Mitra
+title: Expense Tracker
 emoji: 💰
 colorFrom: green
 colorTo: blue
 sdk: docker
 pinned: false
 ---
-# 💸 PaisaMitra — Smart Expense Coach
+# 💸 ExpenseTracker — Smart Expense Coach
 
 ![Django](https://img.shields.io/badge/Django-6.0.4-092e20?style=for-the-badge&logo=django)
 ![Python](https://img.shields.io/badge/Python-3.12-3776ab?style=for-the-badge&logo=python)
@@ -32,7 +32,7 @@ A premium AI-powered personal finance tracker with **WhatsApp integration**. Tra
 | Feature | Status | Description |
 | :--- | :---: | :--- |
 | **WhatsApp Bot** | ✅ | Track expenses by sending messages like "500 petrol" |
-| **AI Chat (PaisaMitra)** | ✅ | Groq LLM-powered financial coach with Hinglish support |
+| **AI Chat (ExpenseTracker)** | ✅ | Groq LLM-powered financial coach with Hinglish support |
 | **Voice Expense** | ✅ | Speech-to-expense via browser microphone |
 | **Smart Alerts** | ✅ | Budget warnings, spending spikes, category dominance |
 | **Daily Tips** | ✅ | Personalized money-saving tips via WhatsApp (8 AM IST) |

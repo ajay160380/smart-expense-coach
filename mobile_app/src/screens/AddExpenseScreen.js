@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISA MITRA — ADD EXPENSE SCREEN (ENHANCED)
+ * EXPENSE TRACKER — ADD EXPENSE SCREEN (ENHANCED)
  * Category icons with colors, date picker, premium animations
  * ═══════════════════════════════════════════════════════════════
  */
