@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════
  * EXPENSE TRACKER — REGISTER SCREEN (COMPACT, NO SCROLL)
- * Clean single-screen registration
+ * Clean single-screen registration with OTP Verification
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -25,13 +25,17 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
+  // OTP States
+  const [step, setStep] = useState(1); // 1 = Details, 2 = OTP
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
   const pwStrength = checkPasswordStrength(password);
   const passwordsMatch = password && confirmPassword && password === confirmPassword;
   const passwordsMismatch = confirmPassword && password !== confirmPassword;
 
-  const handleRegister = async () => {
+  const handleSendOTP = async () => {
     const cleanUsername = sanitizeInput(username).trim();
     const cleanPhone = phone.replace(/[^0-9]/g, '');
 
@@ -44,10 +48,37 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true);
     try {
+      const res = await api.post('/api/auth/send-otp/', {
+        identifier: cleanPhone,
+        action: 'register'
+      });
+      Alert.alert('OTP Sent', res.data.message);
+      setStep(2);
+    } catch (error) {
+      const errData = error.response?.data;
+      const errMsg = errData?.error || 'Failed to send OTP';
+      Alert.alert('Error', errMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!otp || otp.length !== 6) {
+      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+      return;
+    }
+    
+    const cleanUsername = sanitizeInput(username).trim();
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+
+    setLoading(true);
+    try {
       await api.post('/api/register/', {
         username: cleanUsername,
         phone_number: cleanPhone,
         password: password,
+        otp: otp
       });
       const loginRes = await api.post('/api/login/', {
         username: cleanUsername,
@@ -57,11 +88,10 @@ export default function RegisterScreen({ navigation }) {
       await saveAuthData(token, user_id, cleanUsername);
       navigation.replace('MainTabs');
     } catch (error) {
-      console.error(error);
       const errData = error.response?.data;
       let errMsg = 'Registration failed';
       if (errData) {
-        errMsg = typeof errData === 'object' ? Object.values(errData).flat().join('\n') : String(errData);
+        errMsg = errData.error || (typeof errData === 'object' ? Object.values(errData).flat().join('\\n') : String(errData));
       }
       Alert.alert('Error', errMsg);
     } finally {
@@ -79,7 +109,10 @@ export default function RegisterScreen({ navigation }) {
           style={styles.keyboardView}
         >
           {/* Back Button */}
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => {
+            if (step === 2) setStep(1);
+            else navigation.goBack();
+          }}>
             <Ionicons name="chevron-back" size={24} color="#111827" />
           </TouchableOpacity>
 
@@ -89,100 +122,135 @@ export default function RegisterScreen({ navigation }) {
               <Logo size={0.7} circle={true} showText={false} />
             </View>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join EXPANSE TRACKER — it's free!</Text>
+            <Text style={styles.subtitle}>Join PAISA MITRA — it's free!</Text>
           </View>
 
           {/* Form */}
           <View style={styles.formSection}>
-            <Text style={styles.label}>USERNAME</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Choose a username"
-              placeholderTextColor="#9CA3AF"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
-              maxLength={50}
-            />
+            {step === 1 ? (
+              <>
+                <Text style={styles.label}>USERNAME</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Choose a username"
+                  placeholderTextColor="#9CA3AF"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={50}
+                />
 
-            <Text style={styles.label}>WHATSAPP NUMBER</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 917379053923"
-              placeholderTextColor="#9CA3AF"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              maxLength={15}
-            />
+                <Text style={styles.label}>WHATSAPP NUMBER</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., 917379053923"
+                  placeholderTextColor="#9CA3AF"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  maxLength={15}
+                />
 
-            <Text style={styles.label}>PASSWORD</Text>
-            <View style={styles.passwordRow}>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="Min 6 characters"
-                placeholderTextColor="#9CA3AF"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Password Strength */}
-            {password.length > 0 && (
-              <View style={styles.strengthRow}>
-                <View style={styles.strengthBg}>
-                  <View style={[styles.strengthFill, { width: `${(pwStrength.score / 4) * 100}%`, backgroundColor: pwStrength.color }]} />
-                </View>
-                <Text style={[styles.strengthLabel, { color: pwStrength.color }]}>{pwStrength.label}</Text>
-              </View>
-            )}
-
-            <Text style={styles.label}>CONFIRM PASSWORD</Text>
-            <View style={styles.passwordRow}>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="Re-enter password"
-                placeholderTextColor="#9CA3AF"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
-              {confirmPassword.length > 0 && (
-                <View style={styles.matchIcon}>
-                  <Ionicons
-                    name={passwordsMatch ? 'checkmark-circle' : 'close-circle'}
-                    size={20}
-                    color={passwordsMatch ? COLORS.green : COLORS.red}
+                <Text style={styles.label}>PASSWORD</Text>
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Min 6 characters"
+                    placeholderTextColor="#9CA3AF"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
                   />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
                 </View>
-              )}
-            </View>
-            {passwordsMismatch && <Text style={styles.mismatchText}>Passwords don't match</Text>}
 
-            <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading}>
-              <LinearGradient
-                colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
-                style={styles.button}
-              >
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign Up Free</Text>}
-              </LinearGradient>
-            </TouchableOpacity>
+                {/* Password Strength */}
+                {password.length > 0 && (
+                  <View style={styles.strengthRow}>
+                    <View style={styles.strengthBg}>
+                      <View style={[styles.strengthFill, { width: `${(pwStrength.score / 4) * 100}%`, backgroundColor: pwStrength.color }]} />
+                    </View>
+                    <Text style={[styles.strengthLabel, { color: pwStrength.color }]}>{pwStrength.label}</Text>
+                  </View>
+                )}
+
+                <Text style={styles.label}>CONFIRM PASSWORD</Text>
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Re-enter password"
+                    placeholderTextColor="#9CA3AF"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                  />
+                  {confirmPassword.length > 0 && (
+                    <View style={styles.matchIcon}>
+                      <Ionicons
+                        name={passwordsMatch ? 'checkmark-circle' : 'close-circle'}
+                        size={20}
+                        color={passwordsMatch ? COLORS.green : COLORS.red}
+                      />
+                    </View>
+                  )}
+                </View>
+                {passwordsMismatch && <Text style={styles.mismatchText}>Passwords don't match</Text>}
+
+                <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading}>
+                  <LinearGradient
+                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
+                    style={styles.button}
+                  >
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.label}>ENTER 6-DIGIT OTP</Text>
+                <Text style={{fontSize: 13, color: '#6B7280', marginBottom: 10}}>
+                  Sent to {phone}
+                </Text>
+                <TextInput
+                  style={[styles.input, {fontSize: 24, textAlign: 'center', letterSpacing: 4}]}
+                  placeholder="------"
+                  placeholderTextColor="#9CA3AF"
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                />
+                
+                <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading} style={{marginTop: 10}}>
+                  <LinearGradient
+                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
+                    style={styles.button}
+                  >
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Verify & Sign Up</Text>}
+                  </LinearGradient>
+                </TouchableOpacity>
+                
+                <TouchableOpacity onPress={handleSendOTP} style={{alignItems: 'center', marginTop: 15}}>
+                  <Text style={styles.linkText}>Resend OTP</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
           {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.replace('Login')}>
-              <Text style={styles.linkText}>Log in</Text>
-            </TouchableOpacity>
-          </View>
+          {step === 1 && (
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.replace('Login')}>
+                <Text style={styles.linkText}>Log in</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
         </KeyboardAvoidingView>
       </SafeAreaView>

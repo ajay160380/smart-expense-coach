@@ -16,3 +16,4 @@ package-lock.json
 .idea/
 
 wwebjs_temp_session_*
+tracker/static/tracker/apk/app-release.apk

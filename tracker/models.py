@@ -70,6 +70,19 @@ class WhatsAppSession(models.Model):
     def __str__(self):
         return f"Session for {self.phone_number} - State: {self.state}"
 
+# ─── NAYA FEATURE: OTP Verification ───
+class OTPVerification(models.Model):
+    identifier = models.CharField(max_length=100) # Phone number or Email
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"OTP for {self.identifier} (Verified: {self.is_verified})"
+
 
 # ─── PURANE MODELS (Unchanged) ───
 class Expense(models.Model):
