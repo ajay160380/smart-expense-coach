@@ -32,6 +32,7 @@ import AnalyticsScreen from './src/screens/AnalyticsScreen';
 import AddExpenseScreen from './src/screens/AddExpenseScreen';
 import SavingsGoalsScreen from './src/screens/SavingsGoalsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import AdminPanelScreen from './src/screens/AdminPanelScreen';
 
 // ── Stack Screens (accessible from tabs) ──
 import AIChatScreen from './src/screens/AIChatScreen';
@@ -86,6 +87,7 @@ function ProfileStackScreen() {
       <ProfileStack.Screen name="ExpenseSplit" component={ExpenseSplitScreen} />
       <ProfileStack.Screen name="Subscriptions" component={SubscriptionsScreen} />
       <ProfileStack.Screen name="VoiceExpense" component={VoiceExpenseScreen} />
+      <ProfileStack.Screen name="AdminPanel" component={AdminPanelScreen} />
     </ProfileStack.Navigator>
   );
 }
