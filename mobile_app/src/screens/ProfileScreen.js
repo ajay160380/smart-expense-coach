@@ -283,8 +283,8 @@ export default function ProfileScreen({ navigation }) {
                 icon="🛡️"
                 ionIcon="shield-checkmark-outline"
                 label="Admin Panel"
-                sub="Manage users (Web)"
-                onPress={() => openLink('https://ajay160380-paisa-mitra.hf.space/admin-panel/')}
+                sub="Manage users natively"
+                onPress={() => navigation.navigate('AdminPanel')}
                 showArrow
               />
             </GlassCard>

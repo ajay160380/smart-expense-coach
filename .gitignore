@@ -14,3 +14,5 @@ package-lock.json
 *.log
 .vscode/
 .idea/
+
+wwebjs_temp_session_*
