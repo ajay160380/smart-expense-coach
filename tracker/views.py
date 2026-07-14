@@ -3244,6 +3244,7 @@ def api_admin_users(request):
         return JsonResponse({"error": "Access Denied"}, status=403)
     
     from django.contrib.auth.models import User
+    from .models import Feedback
     all_users = User.objects.all().select_related('profile').order_by('-date_joined')
     data = []
     for u in all_users:
@@ -3255,7 +3256,19 @@ def api_admin_users(request):
             "is_superuser": u.is_superuser or u.username == 'ajay',
             "is_active": u.is_active,
         })
-    return JsonResponse({"status": "success", "users": data})
+        
+    feedbacks = Feedback.objects.select_related('user').order_by('-created_at')[:50]
+    feedback_data = []
+    for f in feedbacks:
+        feedback_data.append({
+            "id": f.id,
+            "username": f.user.username if f.user else "Anonymous",
+            "text": f.text,
+            "source": f.source,
+            "created_at": f.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        })
+        
+    return JsonResponse({"status": "success", "users": data, "feedbacks": feedback_data})
 
 @api_login_required
 def api_admin_delete_user(request, user_id):
