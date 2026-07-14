@@ -41,7 +41,8 @@ from groq import Groq
 from django.http import JsonResponse
 import json
 from django.conf import settings
-from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, WhatsAppSession
+import random
+from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, WhatsAppSession, OTPVerification
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
 
 from rest_framework import status
@@ -854,9 +855,21 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 # ─── NAYA: API Based Registration (Phone Link ke saath) ───
 class RegisterAPIView(APIView):
     def post(self, request):
+        phone_number = request.data.get('phone_number')
+        otp = request.data.get('otp')
+        
+        if not phone_number or not otp:
+            return Response({"error": "Phone number and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Verify OTP
+        otp_record = OTPVerification.objects.filter(identifier=phone_number, otp_code=otp, is_verified=True).first()
+        if not otp_record:
+            return Response({"error": "Invalid or unverified OTP. Please verify your phone number first."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            otp_record.delete() # Cleanup OTP after successful registration
             return Response({
                 "status": "success", 
                 "message": "Registration done! You can now track your expenses using your WhatsApp number."
@@ -3150,14 +3163,39 @@ def api_delete_split_expense(request: HttpRequest, pk: int, expense_id: int) -> 
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from django.contrib.auth import authenticate
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data,
-                                           context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
+        identifier = request.data.get('username') or request.data.get('email') or request.data.get('phone_number')
+        password = request.data.get('password')
+        
+        if not identifier or not password:
+            return Response({'error': 'Please provide identifier (phone/email/username) and password.'}, status=400)
+            
+        user = None
+        user_qs = User.objects.filter(username=identifier)
+        if user_qs.exists():
+            user = user_qs.first()
+        else:
+            user_qs = User.objects.filter(email=identifier)
+            if user_qs.exists():
+                user = user_qs.first()
+            else:
+                profile_qs = UserProfile.objects.filter(phone_number=identifier)
+                if profile_qs.exists():
+                    user = profile_qs.first().user
+                    
+        if not user:
+            return Response({'error': 'User not found with this identifier.'}, status=404)
+            
+        authenticated_user = authenticate(request=request, username=user.username, password=password)
+        if not authenticated_user:
+            return Response({'error': 'Invalid password.'}, status=401)
+            
+        token, created = Token.objects.get_or_create(user=authenticated_user)
         
         # Track login activity
         def get_client_ip(request):
@@ -3166,14 +3204,131 @@ class CustomAuthToken(ObtainAuthToken):
                 return x_forwarded_for.split(',')[0]
             return request.META.get('REMOTE_ADDR')
         
-        UserLoginActivity.objects.create(user=user, ip_address=get_client_ip(request))
+        UserLoginActivity.objects.create(user=authenticated_user, ip_address=get_client_ip(request))
         
         return Response({
             'token': token.key,
-            'user_id': user.pk,
-            'email': user.email,
-            'username': user.username
+            'user_id': authenticated_user.pk,
+            'email': authenticated_user.email,
+            'username': authenticated_user.username,
+            'phone_number': authenticated_user.profile.phone_number if hasattr(authenticated_user, 'profile') else None
         })
+
+# ══════════════════════════════════════════════════════════════════════════════
+# OTP & PASSWORD RECOVERY APIS
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_send_otp(request):
+    identifier = request.data.get('identifier')
+    action = request.data.get('action') # 'register' or 'reset'
+    
+    if not identifier:
+        return Response({'error': 'Identifier (Phone or Email) is required.'}, status=400)
+        
+    if action == 'reset':
+        # Check if user exists
+        exists = User.objects.filter(email=identifier).exists() or UserProfile.objects.filter(phone_number=identifier).exists() or User.objects.filter(username=identifier).exists()
+        if not exists:
+            return Response({'error': 'No account found with this identifier.'}, status=404)
+    elif action == 'register':
+        # Ensure phone number isn't already taken
+        if UserProfile.objects.filter(phone_number=identifier).exists():
+            return Response({'error': 'An account with this phone number already exists.'}, status=400)
+            
+    # Basic rate limiting (max 3 OTPs in last 5 mins)
+    recent_otps = OTPVerification.objects.filter(identifier=identifier, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
+    if recent_otps >= 3:
+        return Response({'error': 'Too many OTP requests. Please wait a few minutes.'}, status=429)
+
+    # Generate 6 digit OTP
+    otp_code = str(random.randint(100000, 999999))
+    
+    OTPVerification.objects.create(
+        identifier=identifier,
+        otp_code=otp_code
+    )
+    
+    # Send OTP via local WhatsApp Bot
+    print(f"========== 📱 OTP for {identifier}: {otp_code} ==========")
+    import requests
+    try:
+        wa_message = f"🔒 *Paisa Mitra Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
+        # Call the internal bot API on port 3001
+        requests.post('http://127.0.0.1:3001/api/send-message', json={
+            'phone_number': identifier,
+            'message': wa_message
+        }, timeout=3)
+    except Exception as e:
+        print(f"⚠️ Could not send WhatsApp OTP to {identifier}:", str(e))
+    
+    return Response({'message': 'OTP sent successfully. Check your WhatsApp.'})
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_verify_otp(request):
+    identifier = request.data.get('identifier')
+    otp_code = request.data.get('otp')
+    
+    if not identifier or not otp_code:
+        return Response({'error': 'Identifier and OTP are required.'}, status=400)
+        
+    otp_record = OTPVerification.objects.filter(
+        identifier=identifier, 
+        otp_code=otp_code,
+        created_at__gte=timezone.now() - timedelta(minutes=5)
+    ).first()
+    
+    if not otp_record:
+        return Response({'error': 'Invalid or expired OTP.'}, status=400)
+        
+    otp_record.is_verified = True
+    otp_record.save()
+    
+    return Response({'message': 'OTP verified successfully.'})
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_reset_password(request):
+    identifier = request.data.get('identifier')
+    otp_code = request.data.get('otp')
+    new_password = request.data.get('new_password')
+    
+    if not identifier or not otp_code or not new_password:
+        return Response({'error': 'Identifier, OTP, and New Password are required.'}, status=400)
+        
+    otp_record = OTPVerification.objects.filter(
+        identifier=identifier, 
+        otp_code=otp_code,
+        is_verified=True
+    ).first()
+    
+    if not otp_record:
+        return Response({'error': 'OTP not verified or invalid.'}, status=400)
+        
+    # Find user
+    user = None
+    user_qs = User.objects.filter(username=identifier)
+    if user_qs.exists():
+        user = user_qs.first()
+    else:
+        user_qs = User.objects.filter(email=identifier)
+        if user_qs.exists():
+            user = user_qs.first()
+        else:
+            profile_qs = UserProfile.objects.filter(phone_number=identifier)
+            if profile_qs.exists():
+                user = profile_qs.first().user
+                
+    if not user:
+        return Response({'error': 'User not found.'}, status=404)
+        
+    user.set_password(new_password)
+    user.save()
+    otp_record.delete()
+    
+    return Response({'message': 'Password reset successfully. You can now login.'})
 
 # ══════════════════════════════════════════════════════════════════════════════
 # NEW FEATURE: ADMIN PANEL, ANALYTICS & EXPORTS

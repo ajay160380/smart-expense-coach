@@ -115,6 +115,11 @@ urlpatterns = [
     path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
     path('api/register/', RegisterAPIView.as_view(), name='api_register'),
     path('api/login/', views.CustomAuthToken.as_view(), name='api_login'),
+    
+    # ─── NAYA: OTP & Password Recovery ───
+    path('api/auth/send-otp/', views.api_send_otp, name='api_send_otp'),
+    path('api/auth/verify-otp/', views.api_verify_otp, name='api_verify_otp'),
+    path('api/auth/reset-password/', views.api_reset_password, name='api_reset_password'),
     path('api/whatsapp-summary/', views.whatsapp_summary, name='whatsapp_summary'),
     path('api/latest-update-time/', views.get_latest_update_time, name='get_latest_update_time'),
     path('api/wa-link-status/', views.wa_link_status, name='wa_link_status'),
