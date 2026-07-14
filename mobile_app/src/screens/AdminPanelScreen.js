@@ -211,5 +211,77 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  tabBtnActive: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  tabText: {
+    color: COLORS.textMuted,
+    marginLeft: 8,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: COLORS.primary,
+  },
+
+  feedbackCard: {
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  feedbackHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  feedbackUser: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  feedbackSource: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    overflow: 'hidden',
+    textTransform: 'uppercase',
+  },
+  feedbackDate: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  feedbackDivider: {
+    height: 1,
+    backgroundColor: COLORS.borderLight,
+    marginBottom: 12,
+  },
+  feedbackText: {
+    color: COLORS.textPrimary,
+    fontSize: 15,
+    lineHeight: 22,
+    fontStyle: 'italic',
   }
 });
