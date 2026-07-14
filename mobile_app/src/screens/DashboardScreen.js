@@ -9,8 +9,10 @@ import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, Platform, RefreshControl, ActivityIndicator,
-  Dimensions, Linking, Alert, Modal, TextInput, KeyboardAvoidingView,
+  Dimensions, Linking, Alert, Modal, TextInput, KeyboardAvoidingView, Image
 } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -153,6 +155,30 @@ export default function DashboardScreen({ navigation }) {
     Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(phoneParam)}`);
   };
 
+  const exportData = async (format) => {
+    try {
+      Alert.alert('Exporting', `Preparing your ${format.toUpperCase()} export...`);
+      // Use standard fetch here to download file
+      const url = `${api.defaults.baseURL}/api/export/${format}/`;
+      const token = await api.defaults.headers.common['Authorization'];
+      
+      const fileUri = FileSystem.documentDirectory + `ExpenseTracker_History.${format}`;
+      
+      const downloadRes = await FileSystem.downloadAsync(url, fileUri, {
+        headers: { Authorization: token }
+      });
+      
+      if (downloadRes.status === 200) {
+        await Sharing.shareAsync(downloadRes.uri);
+      } else {
+        Alert.alert('Export Error', 'Failed to export data.');
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Export Error', 'An error occurred during export.');
+    }
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
@@ -184,7 +210,7 @@ export default function DashboardScreen({ navigation }) {
       {/* ── TOP NAVBAR ── */}
       <View style={styles.navbar}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoIcon}>✨</Text>
+          <Image source={require('../../assets/icon.png')} style={{ width: 44, height: 44, borderRadius: 12, marginRight: 8 }} />
           <Text style={styles.logoText}>ExpenseTracker</Text>
         </View>
         <View style={styles.navRight}>
@@ -421,6 +447,14 @@ export default function DashboardScreen({ navigation }) {
           actionText="Add New +"
           onAction={() => navigation.navigate('AddExpense')}
         />
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, marginBottom: 10 }}>
+          <TouchableOpacity onPress={() => exportData('pdf')} style={{ marginRight: 15 }}>
+            <Text style={{ color: COLORS.cyan, fontWeight: 'bold' }}>📄 Export PDF</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => exportData('csv')}>
+            <Text style={{ color: COLORS.cyan, fontWeight: 'bold' }}>📊 Export CSV</Text>
+          </TouchableOpacity>
+        </View>
         {recentExpenses.length > 0 ? (
           <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
             {recentExpenses.slice(0, 6).map((exp, idx) => (

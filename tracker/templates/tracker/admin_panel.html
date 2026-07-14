@@ -1,0 +1,122 @@
+{% extends 'tracker/base.html' %}
+{% load static %}
+
+{% block title %}Admin Panel - Paisa Mitra{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 40px auto; padding: 0 20px;">
+    <h2 style="font-family: 'Outfit', sans-serif; font-size: 2rem; margin-bottom: 24px;">👑 Admin Panel - Analytics & Feedback</h2>
+
+    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+        <!-- Login Analytics -->
+        <div class="glass-panel" style="flex: 1; min-width: 300px; padding: 24px;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin-bottom: 16px; color: var(--primary);">Recent Login Activity</h3>
+            
+            <div style="max-height: 500px; overflow-y: auto;">
+                {% for login in logins %}
+                    <div style="padding: 16px 0; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 1.1rem;">{{ login.user.username }}</div>
+                            {% if login.user.profile.phone_number %}
+                                <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">📞 {{ login.user.profile.phone_number }}</div>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.85rem; padding: 4px 10px; background: var(--bg-card); border-radius: var(--radius-sm); color: var(--text-muted); border: 1px solid var(--border-light);">
+                            {{ login.timestamp|date:"M d, H:i" }}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div style="color: var(--text-muted); padding: 20px 0;">No recent logins.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Feedback -->
+        <div class="glass-panel" style="flex: 1; min-width: 300px; padding: 24px;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin-bottom: 16px; color: var(--whatsapp-green);">User Feedback</h3>
+            
+            <div style="max-height: 500px; overflow-y: auto;">
+                {% for feedback in feedbacks %}
+                    <div style="padding: 16px; margin-bottom: 16px; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <div style="font-weight: 600; font-size: 1.05rem;">
+                                {{ feedback.user.username }}
+                                <span style="font-size: 0.75rem; padding: 2px 8px; background: var(--primary-glow); color: var(--primary); border-radius: 12px; margin-left: 8px;">
+                                    {{ feedback.source|upper }}
+                                </span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">{{ feedback.created_at|date:"M d, Y" }}</div>
+                        </div>
+                        <div style="font-size: 0.95rem; line-height: 1.5;">"{{ feedback.text }}"</div>
+                    </div>
+                {% empty %}
+                    <div style="color: var(--text-muted); padding: 20px 0;">No feedback received yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- All Registered Users -->
+    <div class="glass-panel" style="margin-top: 24px; padding: 24px;">
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin-bottom: 16px; color: var(--secondary);">All Registered Users ({{ all_users.count }})</h3>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-light); color: var(--text-muted); font-size: 0.9rem;">
+                        <th style="padding: 12px 16px;">Username</th>
+                        <th style="padding: 12px 16px;">Email</th>
+                        <th style="padding: 12px 16px;">WhatsApp / Phone</th>
+                        <th style="padding: 12px 16px;">Joined Date</th>
+                        <th style="padding: 12px 16px;">Status</th>
+                        <th style="padding: 12px 16px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in all_users %}
+                    <tr style="border-bottom: 1px solid var(--border-light); font-size: 0.95rem;">
+                        <td style="padding: 12px 16px; font-weight: 600;">
+                            {{ u.username }}
+                            {% if u.is_superuser %}
+                                <span style="font-size: 0.7rem; padding: 2px 6px; background: var(--primary-glow); color: var(--primary); border-radius: 12px; margin-left: 6px;">ADMIN</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px; color: var(--text-muted);">{{ u.email|default:"-" }}</td>
+                        <td style="padding: 12px 16px; color: var(--text-muted);">
+                            {% if u.profile.phone_number %}
+                                📞 {{ u.profile.phone_number }}
+                                {% if u.profile.whatsapp_linked %}
+                                    <span style="color: var(--whatsapp-green); font-size: 0.8rem; margin-left: 4px;">(Linked ✅)</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px; color: var(--text-muted);">{{ u.date_joined|date:"M d, Y" }}</td>
+                        <td style="padding: 12px 16px;">
+                            {% if u.is_active %}
+                                <span style="color: var(--whatsapp-green); font-weight: 600; font-size: 0.85rem;">Active</span>
+                            {% else %}
+                                <span style="color: var(--text-muted); font-weight: 600; font-size: 0.85rem;">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            {% if not u.is_superuser and u.username != 'ajay' %}
+                            <form method="POST" action="{% url 'admin_delete_user' u.id %}" onsubmit="return confirm('⚠️ WARNING: Are you sure you want to permanently delete this user? This action cannot be undone.');">
+                                {% csrf_token %}
+                                <button type="submit" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                            {% else %}
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Protected</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

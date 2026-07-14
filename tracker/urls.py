@@ -148,4 +148,13 @@ urlpatterns = [
     path('api/splits/<int:pk>/settle/',         views.api_settle_split,       name='api_settle_split'),
     path('api/splits/<int:pk>/delete/',         views.api_delete_split,       name='api_delete_split'),
     path('api/splits/<int:pk>/delete-expense/<int:expense_id>/', views.api_delete_split_expense, name='api_delete_split_expense'),
+
+    # ══════════════════════════════════════════════════════════════════════
+    # NEW FEATURE: ADMIN PANEL, ANALYTICS & EXPORTS
+    # ══════════════════════════════════════════════════════════════════════
+    path('admin-panel/', views.admin_panel, name='admin_panel'),
+    path('admin-panel/delete-user/<int:user_id>/', views.admin_delete_user, name='admin_delete_user'),
+    path('api/submit-feedback/', views.api_submit_feedback, name='api_submit_feedback'),
+    path('api/export/csv/', views.export_csv, name='export_csv'),
+    path('api/export/pdf/', views.export_pdf, name='export_pdf'),
 ]

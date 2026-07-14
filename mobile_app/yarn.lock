@@ -651,7 +651,7 @@
   dependencies:
     node-forge "^1.3.3"
 
-"@expo/config-plugins@~57.0.3":
+"@expo/config-plugins@^57.0.3", "@expo/config-plugins@~57.0.3":
   version "57.0.3"
   resolved "https://registry.npmjs.org/@expo/config-plugins/-/config-plugins-57.0.3.tgz"
   integrity sha512-J3P2T7FoOE9P3TuLcJXwt8jISKRxo7UntTzbJ/Qc5F7QXenNntk/4t1XndVkLucYjpnHArPd9xzDXuxxKEHVbQ==
@@ -2582,11 +2582,6 @@ expo-audio@~57.0.0:
   resolved "https://registry.npmjs.org/expo-audio/-/expo-audio-57.0.0.tgz"
   integrity sha512-4eV3rIFksVygrnm/dxdrP3Umjsn9/1Zr6cgBzoFtm43nw65g4s3WB5nkszG3JB4a2zpQ9N/IRS5EdRqXqLdbSg==
 
-expo-av@^16.0.8:
-  version "16.0.8"
-  resolved "https://registry.npmjs.org/expo-av/-/expo-av-16.0.8.tgz"
-  integrity sha512-cmVPftGR/ca7XBgs7R6ky36lF3OC0/MM/lpgX/yXqfv0jASTsh7AYX9JxHCwFmF+Z6JEB1vne9FDx4GiLcGreQ==
-
 expo-constants@~57.0.3:
   version "57.0.3"
   resolved "https://registry.npmjs.org/expo-constants/-/expo-constants-57.0.3.tgz"
@@ -2666,6 +2661,15 @@ expo-server@^57.0.0:
   version "57.0.0"
   resolved "https://registry.npmjs.org/expo-server/-/expo-server-57.0.0.tgz"
   integrity sha512-18byjwFbHVFrGzI4IH1o2MZiiYwvO/y3d+JL3sq50Lg3Id1titwIRMh1fjbHbpM+wP6x14KJY0Ers1UYsjGq8Q==
+
+expo-sharing@~57.0.3:
+  version "57.0.3"
+  resolved "https://registry.yarnpkg.com/expo-sharing/-/expo-sharing-57.0.3.tgz#141742c2f70972090c63a09368753418b3c0f346"
+  integrity sha512-0bCVd27Hb0eokJ0UfafpfGwzePXjaxfgayQQSPXN2tsWDTYKtU2soIMF2+KkgEh7MBLq4PwdQmntPVcapAMnKA==
+  dependencies:
+    "@expo/config-plugins" "^57.0.3"
+    "@expo/config-types" "^57.0.1"
+    "@expo/plist" "^0.8.0"
 
 expo-status-bar@~57.0.0:
   version "57.0.0"
@@ -4386,7 +4390,7 @@ react-native-safe-area-context@~5.7.0:
 
 react-native-screens@4.25.2:
   version "4.25.2"
-  resolved "https://registry.yarnpkg.com/react-native-screens/-/react-native-screens-4.25.2.tgz#f12c3d8d2cb9d69e1267af1bbba1b37d1d05452d"
+  resolved "https://registry.npmjs.org/react-native-screens/-/react-native-screens-4.25.2.tgz"
   integrity sha512-1Nj1fusFd+rIMKU/qC9yGKVG+3ofh11d3OdBQKL1iVvQfKvcB8vhvTGQf2TkfxW3bamxN+hCZIXmNuU0mRkyDg==
   dependencies:
     react-freeze "^1.0.0"

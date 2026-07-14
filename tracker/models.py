@@ -29,6 +29,48 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.phone_number}"
 
+# ─── NAYA FEATURE: Feedback System ───
+class Feedback(models.Model):
+    SOURCE_CHOICES = (
+        ('app', 'App'),
+        ('web', 'Web'),
+        ('whatsapp', 'WhatsApp'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedbacks')
+    text = models.TextField()
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='web')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Feedback from {self.user.username} via {self.source}"
+
+# ─── NAYA FEATURE: Analytics (Login Activity) ───
+class UserLoginActivity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='logins')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.username} logged in at {self.timestamp}"
+
+# ─── NAYA FEATURE: WhatsApp Bot Memory ───
+class WhatsAppSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='whatsapp_sessions', null=True, blank=True)
+    phone_number = models.CharField(max_length=20, unique=True)
+    state = models.CharField(max_length=50, default='NORMAL')
+    context = models.JSONField(default=list, blank=True) # To store recent messages
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Session for {self.phone_number} - State: {self.state}"
+
+
 # ─── PURANE MODELS (Unchanged) ───
 class Expense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

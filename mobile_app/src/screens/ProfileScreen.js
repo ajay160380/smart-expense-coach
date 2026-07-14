@@ -9,7 +9,7 @@ import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, Platform, RefreshControl, Alert,
-  ActivityIndicator, Linking, Image,
+  ActivityIndicator, Linking, Image, Modal, TextInput, KeyboardAvoidingView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +26,9 @@ export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -89,6 +92,26 @@ export default function ProfileScreen({ navigation }) {
         },
       },
     ]);
+  };
+
+  const submitFeedback = async () => {
+    if (!feedbackText.trim()) return;
+    setSubmittingFeedback(true);
+    try {
+      const res = await api.post('/api/submit-feedback/', { text: feedbackText, source: 'app' });
+      if (res.data.status === 'success') {
+        Alert.alert('Success', 'Feedback submitted successfully!');
+        setFeedbackVisible(false);
+        setFeedbackText('');
+      } else {
+        Alert.alert('Error', res.data.message || 'Failed to submit feedback');
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'An error occurred while submitting feedback');
+    } finally {
+      setSubmittingFeedback(false);
+    }
   };
 
   const openLink = (url) => Linking.openURL(url);
@@ -215,6 +238,18 @@ export default function ProfileScreen({ navigation }) {
           />
         </GlassCard>
 
+        {/* ── Support & Feedback ── */}
+        <SectionHeader title="💬 Support" />
+        <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+          <MenuItem
+            icon="📝"
+            ionIcon="chatbox-ellipses-outline"
+            label="Submit Feedback"
+            sub="Tell us how we can improve"
+            onPress={() => setFeedbackVisible(true)}
+          />
+        </GlassCard>
+
         {/* ── App Info ── */}
         <SectionHeader title="ℹ️ About" />
         <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
@@ -239,6 +274,23 @@ export default function ProfileScreen({ navigation }) {
           />
         </GlassCard>
 
+        {/* ── Admin Panel ── */}
+        {profile?.username === 'ajay' && (
+          <>
+            <SectionHeader title="👑 Admin" />
+            <GlassCard style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
+              <MenuItem
+                icon="🛡️"
+                ionIcon="shield-checkmark-outline"
+                label="Admin Panel"
+                sub="Manage users (Web)"
+                onPress={() => openLink('https://ajay160380-paisa-mitra.hf.space/admin-panel/')}
+                showArrow
+              />
+            </GlassCard>
+          </>
+        )}
+
         {/* ── Logout ── */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.red} />
@@ -247,6 +299,41 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ── Feedback Modal ── */}
+      <Modal visible={feedbackVisible} transparent animationType="slide" onRequestClose={() => setFeedbackVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Submit Feedback</Text>
+              <TouchableOpacity onPress={() => setFeedbackVisible(false)}>
+                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.feedbackInput}
+              placeholder="Tell us how we can improve..."
+              placeholderTextColor={COLORS.textMuted}
+              multiline
+              numberOfLines={4}
+              value={feedbackText}
+              onChangeText={setFeedbackText}
+            />
+            <TouchableOpacity 
+              style={[styles.submitFeedbackBtn, submittingFeedback && {opacity: 0.7}]} 
+              onPress={submitFeedback}
+              disabled={submittingFeedback}
+            >
+              {submittingFeedback ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.submitFeedbackText}>Submit</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -339,4 +426,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239,68,68,0.08)',
   },
   logoutText: { color: COLORS.red, fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
+
+  // ── Modal ──
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.bg, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, padding: 24, minHeight: 300 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' },
+  feedbackInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: RADIUS.md, padding: 16, color: COLORS.textPrimary, fontSize: 16, minHeight: 120, textAlignVertical: 'top', borderWidth: 1, borderColor: COLORS.borderLight, marginBottom: 20 },
+  submitFeedbackBtn: { backgroundColor: COLORS.primary, paddingVertical: 16, borderRadius: RADIUS.md, alignItems: 'center' },
+  submitFeedbackText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
 });

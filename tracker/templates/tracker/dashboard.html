@@ -1,4 +1,5 @@
 {% load mathfilters %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,9 +29,9 @@
   --text: #0F172A;
   --text2: #475569;
   --text3: #94A3B8;
-  --primary: #06B6D4;
-  --primary-l: rgba(6, 182, 212, 0.1);
-  --primary-d: #0891B2;
+  --primary: #007AFF;
+  --primary-l: rgba(0, 122, 255, 0.1);
+  --primary-d: #0062CC;
   --accent: #8B5CF6;
   --green: #10B981;
   --green-bg: rgba(16, 185, 129, 0.1);
@@ -57,9 +58,9 @@
   --text: #F8FAFC;
   --text2: #CBD5E1;
   --text3: #94A3B8;
-  --primary: #00F0FF;
-  --primary-l: rgba(0, 240, 255, 0.15);
-  --primary-d: #00C4D1;
+  --primary: #3395FF;
+  --primary-l: rgba(51, 149, 255, 0.15);
+  --primary-d: #007AFF;
   --accent: #B026FF;
   --green: #00FF9D;
   --green-bg: rgba(0, 255, 157, 0.15);
@@ -133,7 +134,7 @@ body::before {
 .profile-wrap{position:relative; margin-left: 8px;}
 .profile-btn{width:40px;height:40px;border-radius:50%;border:2px solid var(--primary);background:var(--primary-l);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--primary);transition:all .2s;flex-shrink:0;}
 .profile-btn:hover{transform:scale(1.05);box-shadow:0 0 0 3px rgba(91,79,232,.2);}
-.profile-dropdown{position:absolute;top:calc(100% + 10px);right:0;background:var(--surface2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-width:240px;box-shadow:var(--shadow-md);z-index:500;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px) scale(.97);transform-origin:top right;transition:all .22s cubic-bezier(.34,1.56,.64,1);}
+.profile-dropdown{position:absolute;top:calc(100% + 10px);right:0;background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid var(--border2);border-radius:var(--radius);padding:8px;min-width:240px;box-shadow:0 10px 40px rgba(0,0,0,0.5);z-index:500;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px) scale(.97);transform-origin:top right;transition:all .22s cubic-bezier(.34,1.56,.64,1);}
 .profile-dropdown.open{opacity:1;visibility:visible;pointer-events:all;transform:translateY(0) scale(1);}
 .pd-header{padding:12px 14px 10px;border-bottom:1px solid var(--border);margin-bottom:6px;}
 .pd-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
@@ -806,7 +807,13 @@ body::before {
 
   <!-- NAV -->
   <div class="nav">
-    <div class="nav-brand">✨ Paisa<span>Mitra</span><sub id="month-label"></sub></div>
+    <div class="nav-brand" style="display: flex; align-items: center; gap: 12px;">
+      <img src="{% static 'tracker/images/icon.png' %}" alt="ExpenseTracker Logo" style="height: 60px; width: 60px; border-radius: 14px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+      <div style="display: flex; flex-direction: column; line-height: 1.1;">
+        <span style="font-size: 24px; font-weight: 800;">Expense<span style="color: var(--primary);">Tracker</span></span>
+        <sub id="month-label" style="font-size: 12px; font-weight: 500; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;"></sub>
+      </div>
+    </div>
     <div class="nav-actions">
       <button class="voice-btn" id="mic-btn" onclick="startVoice()">🎙️ Record expense</button>
       <button class="add-btn" onclick="openModal('addModal')">+ Add expense</button>
@@ -849,7 +856,7 @@ body::before {
           
           <button class="pd-item" onclick="toggleTheme(); toggleProfile();">
             <span style="font-size: 16px;" id="pd-theme-icon">🌙</span>
-            <span>Toggle Dark Mode</span>
+            <span id="pd-theme-text">Toggle Dark Mode</span>
           </button>
 
           <button class="pd-item" onclick="exportCSV(); toggleProfile();">
@@ -861,6 +868,18 @@ body::before {
             <span style="font-size: 16px;">💰</span>
             <span>Set Budget</span>
           </button>
+
+          <button class="pd-item" onclick="openModal('feedbackModal');toggleProfile()">
+            <span style="font-size: 16px;">📝</span>
+            <span>Submit Feedback</span>
+          </button>
+
+          {% if user.username == 'ajay' and user.profile.phone_number == '917905398965' %}
+          <a href="{% url 'admin_panel' %}" class="pd-item" style="color: #F59E0B; text-decoration: none;">
+            <span style="font-size: 16px;">👑</span>
+            <span>Admin Panel</span>
+          </a>
+          {% endif %}
 
           <div class="pd-divider"></div>
           <a href="{% url 'logout' %}" class="pd-item danger">
@@ -1492,6 +1511,7 @@ let profileOpen  = false;
 const today = new Date();
 if (darkMode) {
   if(document.getElementById('pd-theme-icon')) document.getElementById('pd-theme-icon').textContent = '☀️';
+  if(document.getElementById('pd-theme-text')) document.getElementById('pd-theme-text').textContent = 'Toggle Light Mode';
 }
 document.getElementById('month-label').textContent = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
 document.getElementById('inp-date').value = today.toISOString().split('T')[0];
@@ -1563,7 +1583,9 @@ function toggleTheme() {
   darkMode = !darkMode;
   document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : '');
   const icon = darkMode ? '☀️' : '🌙';
+  const text = darkMode ? 'Toggle Light Mode' : 'Toggle Dark Mode';
   if(document.getElementById('pd-theme-icon')) document.getElementById('pd-theme-icon').textContent = icon;
+  if(document.getElementById('pd-theme-text')) document.getElementById('pd-theme-text').textContent = text;
   localStorage.setItem('theme', darkMode ? 'dark' : 'light');
 }
 
@@ -2466,6 +2488,33 @@ let linkPollInterval = setInterval(async function() {
   }
 }, 3000);
 /*{% endif %}*/
+
+async function submitFeedback(event) {
+    event.preventDefault();
+    const text = document.getElementById('feedbackText').value;
+    if(!text.trim()) return;
+    
+    try {
+        const res = await fetch('/api/submit-feedback/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : ''
+            },
+            body: JSON.stringify({text: text, source: 'web'})
+        });
+        const data = await res.json();
+        if(data.status === 'success') {
+            showToast('Feedback submitted successfully!', 'success');
+            closeModal('feedbackModal');
+            document.getElementById('feedbackText').value = '';
+        } else {
+            showToast(data.message, 'error');
+        }
+    } catch(e) {
+        showToast('Error submitting feedback', 'error');
+    }
+}
 
 </script>
 

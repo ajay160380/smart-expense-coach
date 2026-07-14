@@ -18,10 +18,10 @@
         /* 🎨 STUNNING THEME VARIABLES */
         :root {
             /* Light Theme Palette */
-            --primary: #6366F1;
-            --primary-light: #818CF8;
-            --primary-dark: #4F46E5;
-            --primary-glow: rgba(99, 102, 241, 0.4);
+            --primary: #007AFF;
+            --primary-light: #3395FF;
+            --primary-dark: #0062CC;
+            --primary-glow: rgba(0, 122, 255, 0.4);
             --secondary: #A855F7;
             
             --bg-base: #F8FAFC;
@@ -47,10 +47,10 @@
 
         /* 🌙 DARK MODE MASTERPIECE */
         [data-theme="dark"] {
-            --primary: #818CF8;
-            --primary-light: #A5B4FC;
-            --primary-dark: #6366F1;
-            --primary-glow: rgba(129, 140, 248, 0.4);
+            --primary: #3395FF;
+            --primary-light: #66B0FF;
+            --primary-dark: #007AFF;
+            --primary-glow: rgba(51, 149, 255, 0.4);
             
             --bg-base: #020617;
             --bg-glass: rgba(15, 23, 42, 0.6);
@@ -72,14 +72,19 @@
             padding: 0;
         }
 
-        body {
+        html, body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-main);
+            background-color: var(--bg-base) !important;
+            color: var(--text-main) !important;
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        body {
             display: flex;
             flex-direction: column;
-            transition: background-color 0.4s ease, color 0.4s ease;
             position: relative;
             overflow-x: hidden;
         }
@@ -500,8 +505,10 @@
             {% else %}
                 <a href="{% url 'landing' %}" class="navbar-brand">
             {% endif %}
-                <img src="{% static 'tracker/images/icon.png' %}" alt="ExpenseTracker Logo" style="height: 32px; width: 32px; border-radius: 8px;">
-                ExpenseTracker
+                <img src="{% static 'tracker/images/icon.png' %}" alt="ExpenseTracker Logo" style="height: 60px; width: 60px; border-radius: 14px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <div style="display: flex; flex-direction: column; line-height: 1.1; margin-left: 4px;">
+                    <span style="font-size: 24px; font-weight: 800;">Expense<span style="color: var(--primary);">Tracker</span></span>
+                </div>
             </a>
             
             <div class="nav-links">
@@ -539,6 +546,14 @@
                             <a href="{% url 'dashboard' %}" class="dropdown-item">
                                 ⚙️ Settings
                             </a>
+                            <a href="#" onclick="openFeedbackModal(); return false;" class="dropdown-item">
+                                📝 Submit Feedback
+                            </a>
+                            {% if user.username == 'ajay' and user.profile.phone_number == '917905398965' %}
+                            <a href="{% url 'admin_panel' %}" class="dropdown-item" style="color: var(--primary);">
+                                👑 Admin Panel
+                            </a>
+                            {% endif %}
                             
                             <hr style="border: none; border-top: 1px solid var(--border-light); margin: 8px 0;">
                             
@@ -653,11 +668,56 @@
             if (typeof AOS !== 'undefined') {
                 AOS.init({
                     duration: 800,
-                    once: true,
-                    offset: 100,
+                    once: true
                 });
             }
         });
+
+        // Feedback Modal Logic
+        function openFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'flex';
+        }
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'none';
+        }
+        async function submitFeedback(event) {
+            event.preventDefault();
+            const text = document.getElementById('feedbackText').value;
+            if(!text.trim()) return;
+            
+            try {
+                const res = await fetch('/api/submit-feedback/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({text: text, source: 'web'})
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    showToast('Feedback submitted successfully!', 'success');
+                    closeFeedbackModal();
+                    document.getElementById('feedbackText').value = '';
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch(e) {
+                showToast('Error submitting feedback', 'error');
+            }
+        }
     </script>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+        <div class="glass-panel" style="width: 90%; max-width: 400px; padding: 24px; position: relative;">
+            <button onclick="closeFeedbackModal()" style="position: absolute; right: 16px; top: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+            <h3 style="margin-bottom: 16px; font-family: 'Outfit';">Submit Feedback</h3>
+            <form onsubmit="submitFeedback(event)">
+                <textarea id="feedbackText" rows="4" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-light); background: var(--bg-base); color: var(--text-main); margin-bottom: 16px;" placeholder="Tell us how we can improve..." required></textarea>
+                <button type="submit" class="btn-primary" style="width: 100%;">Submit</button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
