@@ -3239,6 +3239,44 @@ def admin_delete_user(request, user_id):
     return redirect('admin_panel')
 
 @api_login_required
+def api_admin_users(request):
+    if not is_super_admin(request.user):
+        return JsonResponse({"error": "Access Denied"}, status=403)
+    
+    from django.contrib.auth.models import User
+    all_users = User.objects.all().select_related('profile').order_by('-date_joined')
+    data = []
+    for u in all_users:
+        data.append({
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "date_joined": u.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
+            "is_superuser": u.is_superuser or u.username == 'ajay',
+            "is_active": u.is_active,
+        })
+    return JsonResponse({"status": "success", "users": data})
+
+@api_login_required
+def api_admin_delete_user(request, user_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+    if not is_super_admin(request.user):
+        return JsonResponse({"error": "Access Denied"}, status=403)
+        
+    from django.contrib.auth.models import User
+    try:
+        user_to_delete = User.objects.get(id=user_id)
+        if user_to_delete.is_superuser or user_to_delete.username == 'ajay':
+            return JsonResponse({"error": "Cannot delete the main admin account."}, status=400)
+        else:
+            username = user_to_delete.username
+            user_to_delete.delete()
+            return JsonResponse({"status": "success", "message": f"User '{username}' was permanently deleted."})
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found."}, status=404)
+
+@api_login_required
 def api_submit_feedback(request):
     if request.method == "POST":
         try:
