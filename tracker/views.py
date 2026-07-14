@@ -423,7 +423,7 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are ExpenseTracker, an insanely smart, very friendly, supportive, and extremely helpful Indian financial AI coach. Act like a close friend, use emojis 😊. NEVER use patronizing words like 'beta', 'bacha' or 'babu'.
+    You are ExpenseTracker, a smart and helpful financial AI. Act like a casual, close friend (like a bro). You must converse strictly in Hinglish (a natural conversational mix of Hindi and English). Completely avoid pure, complex Hindi. NEVER use weird or patronizing words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.
     You understand WhatsApp Hinglish slang perfectly (e.g., 'khrcha', 'sb', 'btvo', 'kaha', 'kaisa', 'kitan').
     You analyze the user's message and decide if they want to LOG an expense, OR just chat/ask a question.
     
@@ -447,9 +447,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     2. If the user is ASKING a question, requesting a summary, complaining, or chatting (e.g. "khrcha kitan kiya maine", "kaha kaha khrcha kiya", "summary", "hi", "mai garib hu"):
        - action = "chat"
        - chat_response = your natural, conversational, sarcastic but helpful reply.
-         - You MUST detect the language the user is speaking and reply in the SAME language.
-           • If they write in Hindi or Hinglish → reply in Hindi/Hinglish.
-           • If they write in English → reply in English.
+         - You MUST reply strictly in Hinglish, avoiding complex Hindi.
          - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
@@ -752,7 +750,7 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
         ).days
 
         prompt = (
-            f"You are a very friendly, supportive Indian financial coach. Act like a close friend, use emojis 😊. NEVER use words like 'beta', 'bacha', or 'babu'.\n"
+            f"You are a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.\n"
             f"Budget: ₹{budget:,.0f} | Spent: ₹{total_spent:,.0f} | "
             f"Remaining: ₹{remaining:,.0f} | Days left this month: {days_left}\n"
             f"Recent expenses: {summary}\n\n"
@@ -788,7 +786,7 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
     try:
         prompt = (
-            f"You are a very friendly, supportive Indian financial coach. Act like a close friend, use emojis 😊. NEVER use words like 'beta', 'bacha', or 'babu'.\n"
+            f"You are a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.\n"
             f"User spent ₹{cat_total:,.0f} on {category} this {period}.\n"
             f"That's {share_pct:.1f}% of their total budget.\n"
             f"Average per transaction: ₹{avg_txn:,.0f}.\n\n"
@@ -897,6 +895,16 @@ def user_login(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            
+            # Track login activity
+            def get_client_ip(request):
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    return x_forwarded_for.split(',')[0]
+                return request.META.get('REMOTE_ADDR')
+            
+            UserLoginActivity.objects.create(user=user, ip_address=get_client_ip(request))
+            
             request.session['show_wa_banner'] = True
             logger.info("User login uid=%s", user.id)
             messages.success(request, f"Welcome back {user.username}! 👋")
@@ -1367,6 +1375,34 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     # ── AI Conversations & Expense Routing ────────────────────────────────────
     try:
         normalized_text = normalize_hinglish_numbers(spoken_text)
+        lower_text = normalized_text.lower().strip()
+
+        # ── WhatsApp Session / Feedback Flow ──
+        session_id_str = incoming_phone if incoming_phone else str(target_user.id)
+        session, _ = WhatsAppSession.objects.get_or_create(user=target_user, phone_number=session_id_str)
+        
+        if session.state == 'AWAITING_FEEDBACK':
+            Feedback.objects.create(user=target_user, text=spoken_text, source='whatsapp')
+            session.state = 'NORMAL'
+            session.save()
+            return JsonResponse({"status": "success", "message": "Dhanyawad! Aapka feedback submit ho gaya hai. 🙏"})
+
+        if lower_text == "feedback" or lower_text == "/feedback":
+            session.state = 'AWAITING_FEEDBACK'
+            session.save()
+            return JsonResponse({"status": "success", "message": "Kripya apna feedback likhein:"})
+
+        # ── Intercept Budget ──
+        if lower_text.startswith("budget set"):
+            return JsonResponse({"status": "success", "message": "Aap App ya Website par jake apna budget set kar lijiye. Wahan easily set ho jayega! 🎯"})
+
+        # ── Intercept Remove ──
+        if lower_text.startswith("remove") or lower_text.startswith("delete"):
+            return JsonResponse({"status": "success", "message": "Aap easily kisi bhi expense ko App ya Website se remove ya delete kar sakte hain. 🗑️"})
+
+        # ── Intercept Help ──
+        if lower_text in ["help", "features", "what can i do?", "what can i do", "what can you do"]:
+            return JsonResponse({"status": "success", "message": "Main ExpenseTracker bot hoon! Main ye sab kar sakta hoon:\n\n1. Add Expense: '500 for dinner' ya 'auto 150'\n2. Show Budget: 'how much budget left'\n3. Feedback: Type 'feedback'\n\nTry it now! 🚀"})
 
         # ──────────────────────────────────────────────────────────────────────
         # FAST PATH (Bypass slow AI for standard "[Amount] [Description]" format)
@@ -1553,8 +1589,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # ──────────────────────────────────────────────────────────────────────
         system_prompt = build_conversational_ai_prompt(today, user_context)
         
-        chat_key = f"whatsapp_chat_history_{target_user.id}"
-        chat_history = cache.get(chat_key, [])
+        # Use WhatsAppSession for persistent memory
+        chat_history = session.context if isinstance(session.context, list) else []
 
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(chat_history)
@@ -1576,10 +1612,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
         json_str = raw_response[start_idx:end_idx+1]
         
-        # Save history back to cache
+        # Save history back to session
         chat_history.append({"role": "user", "content": normalized_text})
         chat_history.append({"role": "assistant", "content": json_str})
-        cache.set(chat_key, chat_history[-10:], timeout=86400) # Keep last 10 messages for 24h
+        session.context = chat_history[-10:] # Keep last 10 messages
+        session.save()
         
         try:
             ai_data = json.loads(json_str, strict=False)
@@ -1707,7 +1744,7 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
     ).days
 
-    system = f"""You are "ExpenseTracker" — a very friendly, supportive Indian personal finance coach. Act like a close friend, use emojis 😊. NEVER use words like "beta", "bacha" or "babu".
+    system = f"""You are "ExpenseTracker" — a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like "nanha dost", "beta", "bacha" or "babu". Keep it natural and casual.
 Analyze the user's language. If they speak in Hinglish (Hindi written in English alphabet), reply in warm, conversational Hinglish. If they speak in English, reply in natural, practical English. Be sometimes sarcastic, but always practical and helpful.
 
 ══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
@@ -2302,7 +2339,7 @@ def habit_warnings(request):
     data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
 
     prompt = f"""
-    You are 'ExpenseTracker', a friendly, highly intelligent Indian financial AI coach. Act like a close friend, use emojis 😊. NEVER use words like 'beta', 'bacha' or 'babu'.
+    You are 'ExpenseTracker', a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like 'nanha dost', 'beta', 'bacha' or 'babu'. Keep it natural and casual.
     Here is the user's daily spending data for the last 14 days:
     {data_str}
 
@@ -2687,7 +2724,7 @@ def generate_daily_tip(user) -> str:
 
     try:
         prompt = (
-            f"You are ExpenseTracker, a very friendly, supportive Indian financial coach. Act like a close friend, use emojis 😊. NEVER use words like 'beta', 'bacha', or 'babu'.\n"
+            f"You are ExpenseTracker, a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.\n"
             f"Today is {day_of_week}.\n"
             f"User's weekly spending: ₹{week_total:,.0f}\n"
             f"Top category this week: {cat_name} (₹{cat_total:,.0f})\n"
@@ -3121,9 +3158,144 @@ class CustomAuthToken(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
+        
+        # Track login activity
+        def get_client_ip(request):
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                return x_forwarded_for.split(',')[0]
+            return request.META.get('REMOTE_ADDR')
+        
+        UserLoginActivity.objects.create(user=user, ip_address=get_client_ip(request))
+        
         return Response({
             'token': token.key,
             'user_id': user.pk,
             'email': user.email,
             'username': user.username
         })
+
+# ══════════════════════════════════════════════════════════════════════════════
+# NEW FEATURE: ADMIN PANEL, ANALYTICS & EXPORTS
+# ══════════════════════════════════════════════════════════════════════════════
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .models import UserLoginActivity, Feedback
+from django.http import FileResponse
+import csv
+import io
+
+def is_super_admin(user):
+    # Check credentials: username: ajay, mobile: 917905398965
+    if not user.is_authenticated:
+        return False
+    if user.username == 'ajay':
+        try:
+            profile = user.profile
+            if profile.phone_number == '917905398965':
+                return True
+        except:
+            pass
+    return False
+
+@login_required
+def admin_panel(request):
+    if not is_super_admin(request.user):
+        messages.error(request, "Access Denied: You do not have permission to view the Admin Panel.")
+        return redirect('dashboard')
+    
+    logins = UserLoginActivity.objects.all().order_by('-timestamp')[:50]
+    feedbacks = Feedback.objects.all().order_by('-created_at')[:50]
+    from django.contrib.auth.models import User
+    all_users = User.objects.all().select_related('profile').order_by('-date_joined')
+    
+    return render(request, 'tracker/admin_panel.html', {
+        'logins': logins,
+        'feedbacks': feedbacks,
+        'all_users': all_users,
+    })
+
+from django.views.decorators.http import require_POST
+@login_required
+@require_POST
+def admin_delete_user(request, user_id):
+    if not is_super_admin(request.user):
+        messages.error(request, "Access Denied: You do not have permission to delete users.")
+        return redirect('dashboard')
+    
+    from django.contrib.auth.models import User
+    try:
+        user_to_delete = User.objects.get(id=user_id)
+        if user_to_delete.is_superuser or user_to_delete.username == 'ajay':
+            messages.error(request, "Cannot delete the main admin account.")
+        else:
+            username = user_to_delete.username
+            user_to_delete.delete()
+            messages.success(request, f"User '{username}' and all their data were permanently deleted.")
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        
+    return redirect('admin_panel')
+
+@api_login_required
+def api_submit_feedback(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            text = data.get("text", "").strip()
+            source = data.get("source", "app").strip()
+            if text:
+                Feedback.objects.create(user=request.user, text=text, source=source)
+                return JsonResponse({"status": "success", "message": "Feedback submitted successfully."})
+            return JsonResponse({"status": "error", "message": "Feedback text is required."})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    return JsonResponse({"status": "error", "message": "Invalid request method."})
+
+@api_login_required
+def export_csv(request):
+    expenses = Expense.objects.filter(user=request.user).order_by('-date')
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Date', 'Category', 'Description', 'Amount'])
+    for exp in expenses:
+        writer.writerow([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount}"])
+    
+    response = HttpResponse(output.getvalue(), content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="ExpenseTracker_History.csv"'
+    return response
+
+@api_login_required
+def export_pdf(request):
+    # Simple PDF generation or return CSV if PDF lib not installed
+    # To keep it robust without adding dependencies, we generate a simple HTML to PDF if possible,
+    # or just return a text file simulating PDF if reportlab is not available.
+    # We'll use basic HttpResponse with text/plain for simplicity here, but name it .pdf for download.
+    # Note: Real PDF requires reportlab. We will try reportlab.
+    try:
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        p.drawString(100, 750, f"Expense History for {request.user.username}")
+        
+        y = 700
+        expenses = Expense.objects.filter(user=request.user).order_by('-date')[:50] # Limit to 50 for simplicity
+        p.drawString(100, y, "Date | Category | Amount")
+        y -= 20
+        for exp in expenses:
+            p.drawString(100, y, f"{exp.date} | {exp.category.title()} | Rs {exp.amount}")
+            y -= 20
+            if y < 50:
+                p.showPage()
+                y = 750
+        
+        p.showPage()
+        p.save()
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename='ExpenseTracker_History.pdf')
+    except ImportError:
+        # Fallback to CSV if reportlab is missing
+        return export_csv(request)
