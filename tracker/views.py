@@ -41,7 +41,7 @@ from groq import Groq
 from django.http import JsonResponse
 import json
 from django.conf import settings
-from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember
+from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, WhatsAppSession
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
 
 from rest_framework import status
