@@ -439,6 +439,49 @@ async function startBot(retryCount = 0) {
         console.log('🔄 Restarting bot due to initialization failure...');
         setTimeout(() => process.exit(1), 2000);
     });
+    
+    // ── Internal HTTP API for Django to send OTPs via WhatsApp ──
+    const http = require('http');
+    const server = http.createServer(async (req, res) => {
+        if (req.method === 'POST' && req.url === '/api/send-message') {
+            let body = '';
+            req.on('data', chunk => { body += chunk.toString(); });
+            req.on('end', async () => {
+                try {
+                    const data = JSON.parse(body);
+                    const { phone_number, message } = data;
+                    
+                    // Format number for WhatsApp
+                    let cleanPhone = phone_number.replace(/[^0-9]/g, '');
+                    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; // Default to India if just 10 digits
+                    
+                    const chatId = `${cleanPhone}@c.us`;
+                    
+                    try {
+                        await client.sendMessage(chatId, message);
+                        console.log(`✅ Sent WhatsApp message (OTP) to ${cleanPhone}`);
+                    } catch (e) {
+                        console.log(`🔄 Trying fallback @lid for OTP to ${cleanPhone}`);
+                        await client.sendMessage(`${cleanPhone}@lid`, message);
+                    }
+                    
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true }));
+                } catch (err) {
+                    console.error('❌ Failed to send WhatsApp message via API:', err.message);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: err.message }));
+                }
+            });
+        } else {
+            res.writeHead(404);
+            res.end();
+        }
+    });
+
+    server.listen(3001, () => {
+        console.log('🌐 Internal Bot API listening on port 3001');
+    });
 }
 
 startBot();

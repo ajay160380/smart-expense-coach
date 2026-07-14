@@ -82,10 +82,10 @@ export default function LoginScreen({ navigation }) {
 
           {/* Form */}
           <View style={styles.formSection}>
-            <Text style={styles.label}>USERNAME OR PHONE</Text>
+            <Text style={styles.label}>USERNAME, EMAIL OR PHONE</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your username"
+              placeholder="Enter your identifier"
               placeholderTextColor="#9CA3AF"
               value={username}
               onChangeText={setUsername}
@@ -106,6 +106,12 @@ export default function LoginScreen({ navigation }) {
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{alignItems: 'flex-end', marginTop: -4, marginBottom: 4}}>
+              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                <Text style={{color: '#1A73E8', fontSize: 13, fontWeight: '600'}}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
 
