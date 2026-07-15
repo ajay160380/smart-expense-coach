@@ -492,6 +492,47 @@
             box-shadow: var(--shadow-soft);
         }
 
+        /* --- MOBILE RESPONSIVENESS FIXES --- */
+        @media (max-width: 768px) {
+            .navbar-wrapper {
+                padding: 10px 10px 0;
+            }
+            .navbar {
+                padding: 10px 12px;
+            }
+            .nav-links {
+                gap: 12px;
+            }
+            .navbar-brand img {
+                height: 44px !important;
+                width: 44px !important;
+                border-radius: 10px !important;
+            }
+            .navbar-brand span {
+                font-size: 18px !important;
+            }
+            .btn-primary {
+                padding: 8px 14px;
+                font-size: 14px;
+            }
+            .btn-glass {
+                padding: 8px 14px;
+                font-size: 14px;
+            }
+            .profile-avatar {
+                width: 36px;
+                height: 36px;
+            }
+            .wa-floating-widget {
+                bottom: 20px;
+                right: 20px;
+            }
+            .wa-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 26px;
+            }
+        }
         {% block extra_css %}{% endblock %}
     </style>
 </head>
@@ -505,7 +546,7 @@
             {% else %}
                 <a href="{% url 'landing' %}" class="navbar-brand">
             {% endif %}
-                <img src="{% static 'tracker/images/icon.png' %}?v=2" alt="ExpenseTracker Logo" style="height: 60px; width: 60px; border-radius: 14px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <img src="{% static 'tracker/images/icon.png' %}?v=3" alt="ExpenseTracker Logo" style="height: 60px; width: 60px; border-radius: 14px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                 <div style="display: flex; flex-direction: column; line-height: 1.1; margin-left: 4px;">
                     <span style="font-size: 24px; font-weight: 800;">Expense<span style="color: var(--primary);">Tracker</span></span>
                 </div>

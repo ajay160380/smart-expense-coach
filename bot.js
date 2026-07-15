@@ -115,12 +115,13 @@ async function startBot(retryCount = 0) {
     const client = new Client({
         authStrategy: new SafeRemoteAuth({
             store: store,
-            backupSyncIntervalMs: 60000, // Backup every 1 minute
-            clientId: "paisa-mitra-v3", // Same clientId as before
+            backupSyncIntervalMs: 60000,
+            clientId: "paisa-mitra-v3",
             dataPath: './'
         }),
         puppeteer: {
-            timeout: 120000, // Increase navigation timeout to 120s
+            timeout: 300000,       // 5 minutes navigation timeout
+            protocolTimeout: 300000,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -128,9 +129,18 @@ async function startBot(retryCount = 0) {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
+                '--single-process',
                 '--disable-gpu',
-                '--disable-ipv6', // Bypass potential IPv6 issues
-                '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+                '--disable-extensions',
+                '--disable-background-networking',
+                '--disable-default-apps',
+                '--disable-sync',
+                '--hide-scrollbars',
+                '--mute-audio',
+                '--ignore-certificate-errors',
+                '--ignore-certificate-errors-spki-list',
+                '--disable-features=IsolateOrigins,site-per-process,NetworkService',
+                '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
             ]
         }
     });
