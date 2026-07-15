@@ -38,12 +38,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://huggingface.co',
 ]
 
-# Allow cookies in cross-origin iframes (Hugging Face Spaces)
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 
@@ -146,8 +140,10 @@ USE_TZ = True
 STATIC_URL = 'static/'
 CSRF_TRUSTED_ORIGINS = ['https://ajay160380-paisa-mitra.hf.space', 'https://*.hf.space', 'https://huggingface.co']
 
-# Hugging Face iframe cookie settings (Only enable these in production with HTTPS)
-if not DEBUG:
+# Hugging Face iframe cookie settings (Required for cross-origin embedding)
+import sys
+is_hf = any('7860' in arg for arg in sys.argv)
+if is_hf or not DEBUG:
     SESSION_COOKIE_SAMESITE = 'None'
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SAMESITE = 'None'

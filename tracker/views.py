@@ -854,19 +854,28 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 
 # ─── NAYA: API Based Registration (Phone Link ke saath) ───
 class RegisterAPIView(APIView):
+    authentication_classes = []
+    
     def post(self, request):
         phone_number = request.data.get('phone_number')
+        if phone_number and len(str(phone_number)) == 10 and str(phone_number).isdigit():
+            phone_number = f"91{phone_number}"
+            
         otp = request.data.get('otp')
         
         if not phone_number or not otp:
             return Response({"error": "Phone number and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
             
         # Verify OTP
-        otp_record = OTPVerification.objects.filter(identifier=phone_number, otp_code=otp, is_verified=True).first()
+        otp_record = OTPVerification.objects.filter(identifier=phone_number, otp_code=otp, created_at__gte=timezone.now() - timedelta(minutes=5)).first()
         if not otp_record:
-            return Response({"error": "Invalid or unverified OTP. Please verify your phone number first."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid or expired OTP. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = RegisterSerializer(data=request.data)
+        data = request.data.copy()
+        if 'phone_number' in data:
+            data['phone_number'] = phone_number
+            
+        serializer = RegisterSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             otp_record.delete() # Cleanup OTP after successful registration
@@ -877,14 +886,39 @@ class RegisterAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def register(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect("dashboard")
 
     if request.method == "POST":
         form = CustomRegistrationForm(request.POST)
+        otp = request.POST.get('otp')
+        phone_number = request.POST.get('phone_number')
+        
+        if not otp:
+            messages.error(request, "OTP is required. Please verify your phone number first.")
+            return render(request, "tracker/register.html", {"form": form})
+            
+        check_phone = phone_number
+        if check_phone and len(str(check_phone)) == 10 and str(check_phone).isdigit():
+            check_phone = f"91{check_phone}"
+            
+        otp_record = OTPVerification.objects.filter(
+            identifier=check_phone, 
+            otp_code=otp,
+            created_at__gte=timezone.now() - timedelta(minutes=5)
+        ).first()
+        
+        if not otp_record:
+            messages.error(request, "Invalid or expired OTP.")
+            return render(request, "tracker/register.html", {"form": form})
+
         if form.is_valid():
             user = form.save()
+            otp_record.delete()
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             request.session['show_wa_banner'] = True
             logger.info("New user registered uid=%s username=%s", user.id, user.username)
@@ -899,6 +933,7 @@ def register(request: HttpRequest) -> HttpResponse:
     return render(request, "tracker/register.html", {"form": form})
 
 
+@csrf_exempt
 def user_login(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
         return redirect("dashboard")
@@ -935,6 +970,13 @@ def user_logout(request: HttpRequest) -> HttpResponse:
     logout(request)
     messages.info(request, "You have been logged out. See you soon! 👋")
     return redirect("login")
+@csrf_exempt
+def forgot_password(request: HttpRequest) -> HttpResponse:
+    """Renders the forgot password page with JS logic for OTP flow."""
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    return render(request, "tracker/forgot_password.html")
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -3168,8 +3210,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
 class CustomAuthToken(ObtainAuthToken):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
     def post(self, request, *args, **kwargs):
         identifier = request.data.get('username') or request.data.get('email') or request.data.get('phone_number')
+        if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
+            identifier = f"91{identifier}"
         password = request.data.get('password')
         
         if not identifier or not password:
@@ -3218,10 +3265,15 @@ class CustomAuthToken(ObtainAuthToken):
 # OTP & PASSWORD RECOVERY APIS
 # ══════════════════════════════════════════════════════════════════════════════
 
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def api_send_otp(request):
     identifier = request.data.get('identifier')
+    if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
+        identifier = f"91{identifier}"
     action = request.data.get('action') # 'register' or 'reset'
     
     if not identifier:
@@ -3251,7 +3303,7 @@ def api_send_otp(request):
     )
     
     # Send OTP via local WhatsApp Bot
-    print(f"========== 📱 OTP for {identifier}: {otp_code} ==========")
+    print(f"========== 📱 OTP for {identifier}: {otp_code} ==========", flush=True)
     import requests
     try:
         wa_message = f"🔒 *Paisa Mitra Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
@@ -3259,16 +3311,19 @@ def api_send_otp(request):
         requests.post('http://127.0.0.1:3001/api/send-message', json={
             'phone_number': identifier,
             'message': wa_message
-        }, timeout=3)
+        }, timeout=10)
     except Exception as e:
-        print(f"⚠️ Could not send WhatsApp OTP to {identifier}:", str(e))
+        print(f"⚠️ Could not send WhatsApp OTP to {identifier}:", str(e), flush=True)
     
     return Response({'message': 'OTP sent successfully. Check your WhatsApp.'})
 
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def api_verify_otp(request):
     identifier = request.data.get('identifier')
+    if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
+        identifier = f"91{identifier}"
     otp_code = request.data.get('otp')
     
     if not identifier or not otp_code:
@@ -3289,9 +3344,12 @@ def api_verify_otp(request):
     return Response({'message': 'OTP verified successfully.'})
 
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def api_reset_password(request):
     identifier = request.data.get('identifier')
+    if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
+        identifier = f"91{identifier}"
     otp_code = request.data.get('otp')
     new_password = request.data.get('new_password')
     
@@ -3435,7 +3493,7 @@ def api_admin_delete_user(request, user_id):
     from django.contrib.auth.models import User
     try:
         user_to_delete = User.objects.get(id=user_id)
-        if user_to_delete.is_superuser or user_to_delete.username == 'ajay':
+        if user_to_delete.is_superuser:
             return JsonResponse({"error": "Cannot delete the main admin account."}, status=400)
         else:
             username = user_to_delete.username

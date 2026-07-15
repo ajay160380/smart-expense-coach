@@ -120,7 +120,7 @@ async function startBot(retryCount = 0) {
             dataPath: './'
         }),
         puppeteer: {
-            timeout: 60000, // Increase navigation timeout to 60s
+            timeout: 120000, // Increase navigation timeout to 120s
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -449,17 +449,24 @@ async function startBot(retryCount = 0) {
             req.on('end', async () => {
                 try {
                     const data = JSON.parse(body);
-                    const { phone_number, message } = data;
+                    const phone_val = data.phone_number || data.phone || '';
+                    const message = data.message;
                     
                     // Format number for WhatsApp
-                    let cleanPhone = phone_number.replace(/[^0-9]/g, '');
+                    let cleanPhone = phone_val.replace(/[^0-9]/g, '');
                     if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; // Default to India if just 10 digits
                     
                     const chatId = `${cleanPhone}@c.us`;
                     
                     try {
-                        await client.sendMessage(chatId, message);
-                        console.log(`✅ Sent WhatsApp message (OTP) to ${cleanPhone}`);
+                        const numberId = await client.getNumberId(cleanPhone);
+                        if (numberId) {
+                            const res = await client.sendMessage(numberId._serialized, message);
+                            console.log(`✅ Sent WhatsApp message (OTP) to ${cleanPhone} via numberId. Msg ID:`, res.id._serialized);
+                        } else {
+                            const res = await client.sendMessage(`${cleanPhone}@c.us`, message);
+                            console.log(`✅ Sent WhatsApp message (OTP) to ${cleanPhone} via @c.us. Msg ID:`, res.id._serialized);
+                        }
                     } catch (e) {
                         console.log(`🔄 Trying fallback @lid for OTP to ${cleanPhone}`);
                         await client.sendMessage(`${cleanPhone}@lid`, message);

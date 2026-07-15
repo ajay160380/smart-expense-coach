@@ -23,5 +23,6 @@ typing_extensions==4.15.0
 django-mathfilters==1.0.0
 dj-database-url==2.1.0
 phonenumbers==9.0.31
+requests==2.32.3
 psycopg2-binary
 django-cors-headers==4.6.0
