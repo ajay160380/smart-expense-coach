@@ -175,8 +175,11 @@ export default function App() {
     const checkAuth = async () => {
       try {
         const token = await getToken();
-        // FORCE FALSE FOR TESTING WELCOME SCREEN
-        setIsAuthenticated(false);
+        if (token) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
       } catch (e) {
         console.error(e);
       } finally {

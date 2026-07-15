@@ -21,7 +21,7 @@ class CustomRegistrationForm(UserCreationForm):
     phone_number = forms.CharField(
         max_length=15,
         required=True,
-        help_text="Apna WhatsApp number daalein (e.g., 910123456789)"
+        help_text="Apna 10-digit WhatsApp number daalein"
     )
 
     class Meta(UserCreationForm.Meta):
@@ -34,6 +34,10 @@ class CustomRegistrationForm(UserCreationForm):
         clean_phone = re.sub(r'[^0-9]', '', raw_phone).lstrip("0")
         if not clean_phone:
             raise forms.ValidationError("Please enter a valid phone number.")
+            
+        if clean_phone and len(clean_phone) == 10 and clean_phone.isdigit():
+            clean_phone = f"91{clean_phone}"
+            
         if UserProfile.objects.filter(phone_number=clean_phone).exists():
             raise forms.ValidationError(
                 "This phone number is already registered. Please use a different number or login to your existing account."

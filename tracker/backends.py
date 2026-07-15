@@ -7,6 +7,9 @@ class PhoneAuthBackend(ModelBackend):
         # 'username' parameter might actually contain the phone number or the real username
         if username is None:
             username = kwargs.get('phone_number')
+            
+        if username and len(str(username)) == 10 and str(username).isdigit():
+            username = f"91{username}"
         try:
             # First try standard username
             user = User.objects.get(username=username)

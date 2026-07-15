@@ -144,7 +144,7 @@ export default function RegisterScreen({ navigation }) {
                 <Text style={styles.label}>WHATSAPP NUMBER</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., 917379053923"
+                  placeholder="Enter your 10-digit number"
                   placeholderTextColor="#9CA3AF"
                   value={phone}
                   onChangeText={setPhone}

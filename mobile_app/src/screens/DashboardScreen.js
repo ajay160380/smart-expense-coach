@@ -152,7 +152,7 @@ export default function DashboardScreen({ navigation }) {
 
   const openWhatsApp = () => {
     const phoneParam = stats?.user_phone ? `Link ${stats.user_phone}` : 'Link 91';
-    Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(phoneParam)}`);
+    Linking.openURL(`https://wa.me/YOUR_WHATSAPP_NUMBER?text=${encodeURIComponent(phoneParam)}`);
   };
 
   const exportData = async (format) => {
@@ -265,7 +265,7 @@ export default function DashboardScreen({ navigation }) {
               </View>
               <View style={styles.waTextContainer}>
                 <Text style={styles.waTitle}>Track via WhatsApp</Text>
-                <Text style={styles.waSubtitle}>Text "500 petrol" to +91 73790 53923</Text>
+                <Text style={styles.waSubtitle}>Text "500 petrol" to +91 00000 00000</Text>
               </View>
               <View style={styles.waButton}>
                 <Text style={styles.waButtonText}>Open →</Text>
