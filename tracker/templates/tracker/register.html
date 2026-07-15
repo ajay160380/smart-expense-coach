@@ -480,7 +480,7 @@
                 <p>Register your WhatsApp number to seamlessly track your daily expenses.</p>
             </div>
 
-            <form method="POST" autocomplete="off">
+            <form method="POST" autocomplete="off" id="registerForm">
                 {% csrf_token %}
 
                 {% if form.errors %}
@@ -495,42 +495,68 @@
                     </ul>
                 </div>
                 {% endif %}
-
-                <div class="form-group">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-input" placeholder="Choose a username"
-                        value="{{ form.username.value|default:'' }}" required>
+                
+                {% if messages %}
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; border-radius: 10px; margin-bottom: 16px; font-size: 0.85rem;">
+                    <ul style="margin: 0; padding-left: 20px;">
+                        {% for message in messages %}
+                        <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
                 </div>
+                {% endif %}
 
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-input" placeholder="you@example.com"
-                        value="{{ form.email.value|default:'' }}" required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">WhatsApp Number</label>
-                    <input type="text" name="phone_number" class="form-input" placeholder="e.g. 917379053923"
-                        value="{{ form.phone_number.value|default:'' }}" required>
-                </div>
-
-                <div style="display:flex; gap:16px;">
-                    <div class="form-group" style="flex:1;">
-                        <label class="form-label">Password</label>
-                        <input type="password" id="id_password1" name="password1" class="form-input"
-                            placeholder="••••••••" required>
-                        <button type="button" class="pwd-toggle" onclick="togglePwd('id_password1', this)">👁️</button>
+                <div id="step1">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-input" placeholder="Choose a username"
+                            value="{{ form.username.value|default:'' }}" required>
                     </div>
 
-                    <div class="form-group" style="flex:1;">
-                        <label class="form-label">Confirm</label>
-                        <input type="password" id="id_password2" name="password2" class="form-input"
-                            placeholder="••••••••" required>
-                        <button type="button" class="pwd-toggle" onclick="togglePwd('id_password2', this)">👁️</button>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-input" placeholder="you@example.com"
+                            value="{{ form.email.value|default:'' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">WhatsApp Number</label>
+                        <input type="text" name="phone_number" id="phone_number_input" class="form-input" placeholder="Enter your 10-digit number"
+                            value="{{ form.phone_number.value|default:'' }}" required>
+                    </div>
+
+                    <div style="display:flex; gap:16px;">
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="id_password1" name="password1" class="form-input"
+                                placeholder="••••••••" required>
+                            <button type="button" class="pwd-toggle" onclick="togglePwd('id_password1', this)">👁️</button>
+                        </div>
+
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label">Confirm</label>
+                            <input type="password" id="id_password2" name="password2" class="form-input"
+                                placeholder="••••••••" required>
+                            <button type="button" class="pwd-toggle" onclick="togglePwd('id_password2', this)">👁️</button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-submit" id="btnSendOtp" onclick="sendOTP()">Send OTP to WhatsApp</button>
+                </div>
+                
+                <div id="step2" style="display: none; margin-top: 10px;">
+                    <div class="wa-note">
+                        <p style="font-size:0.9rem; margin:0;">We've sent a 6-digit OTP to your WhatsApp.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Enter OTP</label>
+                        <input type="text" name="otp" id="otp_input" class="form-input" placeholder="------" maxlength="6" style="text-align:center; font-size: 1.5rem; letter-spacing: 10px;">
+                    </div>
+                    <button type="submit" class="btn-submit" id="btnRegister">Verify & Register</button>
+                    <div style="text-align:center; margin-top:15px;">
+                        <a href="javascript:void(0)" onclick="goBack()" style="color:var(--text-muted); font-size:0.85rem; text-decoration: underline;">Go back & edit details</a>
                     </div>
                 </div>
-
-                <button type="submit" class="btn-submit">Sign Up Free</button>
             </form>
 
             <div class="auth-footer">
@@ -563,6 +589,76 @@
             input.type = 'password';
             btn.innerText = '👁️';
         }
+    }
+    
+    async function sendOTP() {
+        // Basic validation
+        const user = document.querySelector('[name=username]').value.trim();
+        const email = document.querySelector('[name=email]').value.trim();
+        const p1 = document.querySelector('[name=password1]').value.trim();
+        const p2 = document.querySelector('[name=password2]').value.trim();
+        const phoneInput = document.getElementById('phone_number_input').value.trim();
+        
+        if (!user || !email || !p1 || !p2) {
+            alert('Please fill out all the fields first.');
+            return;
+        }
+        
+        if (p1 !== p2) {
+            alert('Passwords do not match.');
+            return;
+        }
+        
+        if (!phoneInput || phoneInput.length < 10) {
+            alert('Please enter a valid 10-digit phone number.');
+            return;
+        }
+        
+        const btn = document.getElementById('btnSendOtp');
+        const oldText = btn.innerText;
+        btn.innerText = 'Sending...';
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch('/api/auth/send-otp/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    identifier: phoneInput,
+                    action: 'register'
+                })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                document.getElementById('step1').style.display = 'none';
+                document.getElementById('step2').style.display = 'block';
+                // Remove required from step1 fields so form can submit if hidden (browsers block submit if hidden fields are required)
+                document.querySelectorAll('#step1 input[required]').forEach(el => el.removeAttribute('required'));
+                document.getElementById('otp_input').focus();
+                document.getElementById('otp_input').setAttribute('required', 'required');
+            } else {
+                alert(data.error || 'Failed to send OTP.');
+            }
+        } catch (e) {
+            alert('Network error. Please try again.');
+        } finally {
+            btn.innerText = oldText;
+            btn.disabled = false;
+        }
+    }
+    
+    function goBack() {
+        document.getElementById('step2').style.display = 'none';
+        document.getElementById('step1').style.display = 'block';
+        document.getElementById('otp_input').removeAttribute('required');
+        // Restore required
+        document.querySelectorAll('#step1 input').forEach(el => {
+            if (el.name) el.setAttribute('required', 'required');
+        });
     }
 </script>
 {% endblock %}
