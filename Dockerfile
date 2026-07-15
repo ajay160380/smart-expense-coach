@@ -40,4 +40,8 @@ RUN npm install
 
 COPY . .
 
+ENV DATABASE_URL=""
+ENV MY_WHATSAPP_NUMBER=""
+ENV GROQ_API_KEY=""
+
 CMD ["supervisord", "-c", "supervisord.conf"]

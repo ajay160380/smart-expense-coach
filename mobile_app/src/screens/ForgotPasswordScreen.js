@@ -121,7 +121,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                 <Text style={styles.label}>REGISTERED PHONE OR EMAIL</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., 917379053923 or ajay@email.com"
+                  placeholder="e.g., 0000000000 or ajay@email.com"
                   placeholderTextColor="#9CA3AF"
                   value={identifier}
                   onChangeText={setIdentifier}

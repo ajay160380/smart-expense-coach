@@ -29,7 +29,8 @@ urlpatterns = [
     # AUTHENTICATION
     # Custom views from views.py (Hinglish messages + proper redirects)
     # ══════════════════════════════════════════════════════════════════════
-    path('login/',    views.user_login,  name='login'),
+    path('login/', views.user_login, name='login'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('logout/',   views.user_logout, name='logout'),
     path('register/', views.register,    name='register'),
 
