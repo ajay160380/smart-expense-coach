@@ -548,13 +548,21 @@ body::before {
 
 /* ── RESPONSIVE FIXES ── */
 @media(max-width:768px){
+  .app { padding: 16px 0 160px; } /* More bottom padding for floating dock */
+  .nav { flex-wrap: wrap; gap: 8px; padding: 12px 14px; margin-bottom: 20px; }
+  .nav-brand { font-size: 18px; }
+  .nav-brand img { height: 40px !important; width: 40px !important; }
+  .add-btn, .voice-btn { padding: 8px 12px; font-size: 12px; }
   .compare-grid{grid-template-columns:1fr;}
   .goals-grid{grid-template-columns:1fr;}
   .hero-amount{font-size:32px;}
   .stat-row{grid-template-columns:1fr;}
   .grid2{grid-template-columns:1fr;}
-  .nav{flex-wrap:wrap;gap:10px;}
-  .floating-dock{bottom:14px;padding:8px 12px;gap:8px;}
+  .chart-card { padding: 16px; overflow-x: hidden; }
+  .tx-list { max-width: 100vw; overflow-x: hidden; }
+  .tx-item { padding: 12px; gap: 8px; flex-wrap: wrap; }
+  .tx-right { width: 100%; justify-content: space-between; margin-top: 4px; }
+  .floating-dock{bottom:14px;padding:8px 12px;gap:8px; width: 90%; max-width: 320px; justify-content: center;}
 }
 
 /* ══════════════════════════════════════════════════
