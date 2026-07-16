@@ -625,9 +625,9 @@
         {% if user.is_authenticated %}
         <div class="wa-tooltip">
             Message bot to track expense
-            <span>+91 00000 00000</span>
+            <span>+91 7379053923</span>
         </div>
-        <a href="https://wa.me/YOUR_WHATSAPP_NUMBER" target="_blank" class="wa-btn" title="Track via WhatsApp">
+        <a href="https://wa.me/917379053923" target="_blank" class="wa-btn" title="Track via WhatsApp">
         {% else %}
         <div class="wa-tooltip" id="wa-login-tooltip">
             Login first to use WhatsApp Bot
@@ -716,32 +716,40 @@
 
         // Feedback Modal Logic
         function openFeedbackModal() {
-            document.getElementById('feedbackModal').style.display = 'flex';
+            const m = document.getElementById('feedbackModal');
+            if (m) m.style.display = 'flex';
         }
         function closeFeedbackModal() {
-            document.getElementById('feedbackModal').style.display = 'none';
+            const m = document.getElementById('feedbackModal');
+            if (m) m.style.display = 'none';
+        }
+        function getCSRF() {
+            const m = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (m) return m.value;
+            const c = document.cookie.match(/csrftoken=([^;]+)/);
+            return c ? c[1] : '';
         }
         async function submitFeedback(event) {
             event.preventDefault();
-            const text = document.getElementById('feedbackText').value;
-            if(!text.trim()) return;
+            const text = document.getElementById('feedbackText');
+            if (!text || !text.value.trim()) return;
             
             try {
                 const res = await fetch('/api/submit-feedback/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
+                        'X-CSRFToken': getCSRF()
                     },
-                    body: JSON.stringify({text: text, source: 'web'})
+                    body: JSON.stringify({text: text.value, source: 'web'})
                 });
                 const data = await res.json();
                 if(data.status === 'success') {
                     showToast('Feedback submitted successfully!', 'success');
                     closeFeedbackModal();
-                    document.getElementById('feedbackText').value = '';
+                    text.value = '';
                 } else {
-                    showToast(data.message, 'error');
+                    showToast(data.message || 'Error', 'error');
                 }
             } catch(e) {
                 showToast('Error submitting feedback', 'error');
