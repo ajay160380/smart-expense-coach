@@ -314,22 +314,34 @@ def json_required(view_func):
 
 
 def get_user_budget(request) -> float:
+    budget_key = "_cached_budget"
+    if hasattr(request, budget_key):
+        return getattr(request, budget_key)
+    budget = DEFAULT_BUDGET
     if hasattr(request, "user") and request.user.is_authenticated:
         try:
             profile = UserProfile.objects.get(user=request.user)
             if profile.monthly_budget and profile.monthly_budget > 0:
-                return float(profile.monthly_budget)
+                budget = float(profile.monthly_budget)
         except UserProfile.DoesNotExist:
             pass
-    try:
-        budget = float(request.session.get("budget", DEFAULT_BUDGET))
-        return budget if budget > 0 else DEFAULT_BUDGET
-    except (ValueError, TypeError):
-        return DEFAULT_BUDGET
+    if budget == DEFAULT_BUDGET:
+        try:
+            budget = float(request.session.get("budget", DEFAULT_BUDGET))
+            if budget <= 0:
+                budget = DEFAULT_BUDGET
+        except (ValueError, TypeError):
+            budget = DEFAULT_BUDGET
+    setattr(request, budget_key, budget)
+    return budget
 
 
+_groq_client_instance = None
 def _groq_client() -> Groq:
-    return Groq(api_key=settings.GROQ_API_KEY)
+    global _groq_client_instance
+    if _groq_client_instance is None:
+        _groq_client_instance = Groq(api_key=settings.GROQ_API_KEY)
+    return _groq_client_instance
 
 
 def _cache_key(*parts) -> str:
@@ -621,22 +633,42 @@ def build_chart_data(user) -> list:
 
 def build_monthly_trend(user, months: int = 6) -> list:
     today  = date.today()
+
+    start_month = today.month - (months - 1)
+    start_year  = today.year
+    while start_month <= 0:
+        start_month += 12
+        start_year -= 1
+    start_date = date(start_year, start_month, 1)
+
+    month_data = (
+        Expense.objects
+        .filter(user=user, date__gte=start_date)
+        .annotate(month=TruncMonth("date"))
+        .values("month")
+        .annotate(total=Sum("amount"), count=Count("id"))
+        .order_by("month")
+    )
+
+    data_by_month = {}
+    for entry in month_data:
+        data_by_month[(entry["month"].year, entry["month"].month)] = entry
+
     result = []
     for i in range(months - 1, -1, -1):
         target_month = today.month - i
         target_year  = today.year
         while target_month <= 0:
             target_month += 12
-            target_year  -= 1
+            target_year -= 1
 
-        agg = (Expense.objects
-               .filter(user=user, date__year=target_year, date__month=target_month)
-               .aggregate(total=Sum("amount"), count=Count("id")))
+        entry = data_by_month.get((target_year, target_month))
+
         result.append({
             "month":  MONTH_NAMES[target_month - 1],
             "year":   target_year,
-            "total":  _safe_float(agg["total"]),
-            "count":  agg["count"] or 0,
+            "total":  _safe_float(entry["total"] if entry else 0),
+            "count":  entry["count"] if entry else 0,
             "label":  f"{MONTH_NAMES[target_month-1]} {str(target_year)[-2:]}",
         })
     return result
@@ -1030,24 +1062,18 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     anomaly_alerts     = detect_anomalies(user, budget)
 
     # ──────────────────────────────────────────────────────────────────────────
-    # PERFECT AGGREGATION (Jo tumne likha tha, ekdum mast hai)
+    # PERFECT AGGREGATION — Single query with conditional aggregation
     # ──────────────────────────────────────────────────────────────────────────
-    actual_month_total = float(
-        Expense.objects.filter(
-            user=user,
-            date__year=today.year,
-            date__month=today.month
-        ).aggregate(t=Sum("amount"))["t"] or 0
+    month_start = today.replace(day=1)
+    week_start = today - timedelta(days=7)
+    totals = Expense.objects.filter(user=user).aggregate(
+        month_total=Sum("amount", filter=Q(date__gte=month_start)),
+        week_total=Sum("amount", filter=Q(date__gte=week_start)),
+        all_total=Sum("amount"),
     )
-    actual_week_total = float(
-        Expense.objects.filter(
-            user=user,
-            date__gte=today - timedelta(days=7)
-        ).aggregate(t=Sum("amount"))["t"] or 0
-    )
-    actual_all_total = float(
-        Expense.objects.filter(user=user).aggregate(t=Sum("amount"))["t"] or 0
-    )
+    actual_month_total = float(totals["month_total"] or 0)
+    actual_week_total = float(totals["week_total"] or 0)
+    actual_all_total = float(totals["all_total"] or 0)
 
     if filter_type == "month":
         current_total_spent = actual_month_total
