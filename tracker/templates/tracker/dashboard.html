@@ -1444,6 +1444,18 @@ body::before {
   </div>
 </div>
 
+<!-- FEEDBACK MODAL -->
+<div class="overlay" id="feedbackModal" onclick="if(event.target===this)closeModal('feedbackModal')">
+  <div class="modal">
+    <div class="modal-title">Submit Feedback <button class="modal-close" onclick="closeModal('feedbackModal')" type="button">✕</button></div>
+    <form onsubmit="submitFeedback(event)">
+      {% csrf_token %}
+      <div class="form-group"><label class="form-label">Your Feedback</label><textarea id="feedbackText" rows="4" class="form-input" placeholder="Tell us how we can improve..." required style="resize:vertical;min-height:100px;"></textarea></div>
+      <button type="submit" class="submit-btn">Submit 📝</button>
+    </form>
+  </div>
+</div>
+
 <!-- TOAST CONTAINER -->
 <div id="toast-container" style="position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;"></div>
 
