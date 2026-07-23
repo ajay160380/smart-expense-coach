@@ -355,6 +355,7 @@ async function startBot(retryCount = 0) {
         // ── ADMIN BROADCAST UPDATE ──
         const allowedAdmins = [
             "917905398965@c.us", // Ajay's admin number
+            "7905398965@c.us",   // Ajay's number without 91
             "917379053923@c.us", // Fallback/Bot number
             process.env.MY_WHATSAPP_NUMBER
         ];
