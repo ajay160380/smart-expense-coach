@@ -1507,7 +1507,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # FAST PATH (Bypass slow AI for standard "[Amount] [Description]" format)
         # ──────────────────────────────────────────────────────────────────────
         fast_match = re.match(r'^(\d+(?:\.\d+)?)\s+(.+)$', normalized_text.strip())
-        if fast_match:
+        if fast_match and not any(kw in lower_text for kw in ["note", "notpad", "notepad"]):
             amount_raw = fast_match.group(1)
             desc_raw = fast_match.group(2).strip()
             amount = Decimal(amount_raw)
