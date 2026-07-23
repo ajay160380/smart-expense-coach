@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-import { API_URL } from '../config';
+import api from '../api/config';
 
 const NotepadScreen = ({ navigation }) => {
-    const { token } = useAuth();
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newNote, setNewNote] = useState('');
@@ -19,9 +16,7 @@ const NotepadScreen = ({ navigation }) => {
     const fetchNotes = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/api/notes/`, {
-                headers: { Authorization: `Token ${token}` }
-            });
+            const response = await api.get('/notes/');
             setNotes(response.data.notes || []);
         } catch (error) {
             console.error('Error fetching notes:', error);
@@ -39,8 +34,8 @@ const NotepadScreen = ({ navigation }) => {
 
         try {
             setSaving(true);
-            const response = await axios.post(`${API_URL}/api/notes/`, { text: newNote }, {
-                headers: { Authorization: `Token ${token}` }
+            const response = await api.post('/notes/', {
+                text: newNote
             });
 
             if (response.data.status === 'success') {
@@ -58,28 +53,30 @@ const NotepadScreen = ({ navigation }) => {
     };
 
     const handleDeleteNote = async (id) => {
-        Alert.alert('Delete Note', 'Are you sure you want to delete this note?', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Delete',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        const response = await axios.delete(`${API_URL}/api/notes/${id}/delete/`, {
-                            headers: { Authorization: `Token ${token}` }
-                        });
-                        if (response.data.status === 'success') {
-                            fetchNotes();
-                        } else {
-                            Alert.alert('Error', response.data.error || 'Failed to delete note');
+        Alert.alert(
+            "Delete Note",
+            "Are you sure you want to delete this note?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete", 
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const response = await api.delete(`/notes/${id}/delete/`);
+                            if (response.data.status === 'success') {
+                                setNotes(prev => prev.filter(n => n.id !== id));
+                            } else {
+                                Alert.alert('Error', response.data.error || 'Failed to delete note');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting note:', error);
+                            Alert.alert('Error', 'Failed to delete note');
                         }
-                    } catch (error) {
-                        console.error('Error deleting note:', error);
-                        Alert.alert('Error', 'Failed to delete note');
                     }
                 }
-            }
-        ]);
+            ]
+        );
     };
 
     const renderNote = ({ item }) => (

@@ -7,7 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/4973328a-1fe2-42c2-8a53-42cca33aef27"
     },
     "ios": {
       "supportsTablet": true,
@@ -17,6 +18,10 @@
       "softwareKeyboardLayoutMode": "resize",
       "package": "com.ajay160380.paisamitra",
       "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
@@ -37,6 +42,9 @@
         "projectId": "4973328a-1fe2-42c2-8a53-42cca33aef27"
       }
     },
-    "owner": "ajay160380"
+    "owner": "ajay160380",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }
