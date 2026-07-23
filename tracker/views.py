@@ -453,11 +453,11 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     💼 *LinkedIn:* https://www.linkedin.com/in/ajay-vishwakarma-71649129a/
     
     FORMATTING RULES (CRITICAL):
-    1. NEVER write a giant wall of text. 
-    2. Always use double newlines (`\n\n`) to separate paragraphs and ideas.
-    3. Use WhatsApp formatting (e.g., *bold* for emphasis).
-    4. When listing items, links, or features, ALWAYS use bullet points or numbered lists on separate lines.
-    5. Make your responses look BEAUTIFUL, spaced out, and easy to read on a mobile screen. Use emojis elegantly.
+    1. Do NOT make everything bold. Only bold *important keywords* (like amounts or names), NOT entire sentences!
+    2. Write in short, clean sentences.
+    3. Always use double newlines (`\n\n`) between different points or paragraphs.
+    4. When listing items or links, use elegant bullet points (•) on separate lines.
+    5. Make your responses look BEAUTIFUL, spaced out, and easy to read. Use 1 or 2 relevant emojis naturally.
     
     You analyze the user's message and decide if they want to LOG an expense (or multiple expenses), SAVE a note, OR just chat/ask a question.
     
