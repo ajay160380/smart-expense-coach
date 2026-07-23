@@ -94,7 +94,7 @@ async function startBot(retryCount = 0) {
     const BACKOFF_MS = Math.min(5000 * Math.pow(2, retryCount), 60000); // 5s, 10s, 20s, 40s, 60s
 
     try {
-        await pool.connect();
+        await pool.query('SELECT 1');
         console.log("Connected to PostgreSQL for WhatsApp session storage.");
     } catch (err) {
         console.error(`Failed to connect to PostgreSQL (attempt ${retryCount + 1}/${MAX_RETRIES}):`, err.message);
