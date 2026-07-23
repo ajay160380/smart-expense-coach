@@ -428,7 +428,7 @@ def normalize_hinglish_numbers(text: str) -> str:
     flush_buffer()
 
     result = ''.join(result_parts)
-    result = re.sub(r'\s+', ' ', result).strip()
+    result = re.sub(r'[^\S\n]+', ' ', result).strip()
     logger.debug("Normalized Hinglish: %r → %r", original, result)
     return result
 
@@ -451,17 +451,16 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     - Category-wise Breakdown: {user_context.get('category_breakdown', 'None')}
     - Recent Expenses: {user_context.get('recent_expenses', 'None')}
 
-    Rules for Routing:
-    1. If the user gives AMOUNTS to log expenses (e.g. "500 ki chai, 200 petrol", or a pasted list of expenses):
+    Rules for Routing (CRITICAL):
+    1. If the user EXPLICITLY asks to log expenses (e.g. "add to expenses", "is list ko expense me add karo") OR gives a simple short expense (e.g. "500 petrol"):
        - action = "log_expenses"
-       - expenses = An array of expense objects. For EACH expense in their message, extract: amount, category (food, transport, shopping, health, entertainment, education, utilities, other), and description.
-       - Note: Always extract ALL expenses if they mention multiple!
-    2. If the user explicitly asks to save something to Notepad or Notes (e.g. "save this to notepad", "notepad me add kar", "note: buy milk"):
+       - expenses = An array of expense objects. Extract EVERY SINGLE item mentioned in their message (amount, category, description). Do NOT miss any item from a list!
+    2. If the user EXPLICITLY asks to save a note (e.g. "save to notepad", "notepad me daal do", "note: buy milk"):
        - action = "save_note"
        - note = The exact text they want to save.
-    3. If the user pastes a large unformatted list WITHOUT saying what to do, OR it's ambiguous:
+    3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
        - action = "ask_clarification"
-       - chat_response = Ask them "Bhai, isko expenses me add karu ya Notepad me save karu?"
+       - chat_response = "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu?"
     4. If the user is ASKING a question, requesting a summary, complaining, or chatting:
        - action = "chat"
        - chat_response = your natural, conversational, sarcastic but helpful reply.
@@ -1734,7 +1733,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             messages=messages,
             model="llama-3.1-8b-instant",
             temperature=0.2,
-            max_tokens=200,
+            max_tokens=1024,
         )
         raw_response = response.choices[0].message.content.strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
