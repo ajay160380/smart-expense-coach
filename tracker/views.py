@@ -42,7 +42,7 @@ from django.http import JsonResponse
 import json
 from django.conf import settings
 import random
-from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, WhatsAppSession, OTPVerification
+from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, WhatsAppSession, OTPVerification, Note
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
 
 from rest_framework import status
