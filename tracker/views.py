@@ -436,8 +436,8 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are ExpenseTracker, a smart and helpful financial AI. Act like a casual, close friend (like a bro). You must converse strictly in Hinglish (a natural conversational mix of Hindi and English). Completely avoid pure, complex Hindi. NEVER use weird or patronizing words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.
-    You understand WhatsApp Hinglish slang perfectly.
+    You are Expense Tracker, a smart, friendly, and helpful financial AI assistant. Act like a knowledgeable human friend. Always converse in clear, natural, and polite English. Do not use forced Hindi/Hinglish slang like 'Bhai' unless the user uses it first. Be highly conversational, empathetic, and professional.
+    When a user says 'hello' or asks a general question, give a warm, natural English response. Do not blindly repeat their budget summary in every message unless they specifically ask for it.
     You analyze the user's message and decide if they want to LOG an expense (or multiple expenses), SAVE a note, OR just chat/ask a question.
     
     Today's Date: {today}
@@ -463,7 +463,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
        - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔" (Translate to Hinglish if user speaks Hinglish)
     4. If the user is ASKING a question, requesting a summary, complaining, or chatting:
        - action = "chat"
-       - chat_response = your natural, conversational, sarcastic but helpful reply.
+       - chat_response = your natural, conversational, polite English reply.
          - Address the user by their name ({user_name}) when appropriate!
          - IMPORTANT: Reply in the SAME LANGUAGE as the user! If they speak English, reply in English. If they speak Hinglish/Hindi, reply in Hinglish.
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
@@ -1485,11 +1485,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # FAST PATH FOR LARGE LISTS
         # ──────────────────────────────────────────────────────────────────────
         if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add to expense", "expense me", "log", "save", "note", "notepad"]):
-            hinglish_words = {"kharchi", "bhai", "hai", "kya", "nahi", "karo", "me", "yeh", "kaha", "kisko", "kitna", "de", "diya", "liye", "ka", "ki", "ke", "aur", "pe", "se", "ko", "wala"}
-            words = set(re.findall(r'\b[a-z]+\b', lower_text))
-            is_hinglish = bool(words.intersection(hinglish_words))
-            
-            msg = "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu? 🤔" if is_hinglish else "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
+            msg = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
             
             # Save to history so AI remembers the list
             chat_history = session.context if isinstance(session.context, list) else []
@@ -1879,7 +1875,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             })
             
         elif action == "ask_clarification":
-            chat_response = ai_data.get("chat_response", "Bhai, isko expenses me add karu ya Notepad me save karu?")
+            chat_response = ai_data.get("chat_response", "Should I add this to your expenses or save it to Notepad?")
             return JsonResponse({
                 "status": "success",
                 "message": f"🤔 *Wait a second...*\n\n{chat_response}"
@@ -2582,7 +2578,7 @@ def whatsapp_summary(request):
             profile = UserProfile.objects.filter(phone_number__icontains=clean_phone).first()
             
             if not profile:
-                return JsonResponse({"status": "error", "message": "Bhai, pehle website par register karke apna WhatsApp number save karo! 🚫"})
+                return JsonResponse({"status": "error", "message": "Please register on the website first to link your WhatsApp number! 🚫"})
             
             user = profile.user
             today = timezone.now().date()
@@ -2617,7 +2613,7 @@ def whatsapp_summary(request):
                 ai_suggestion = get_ai_insight(user.id, all_expenses, budget, lifetime_spent)
             except Exception as e:
                 print(f"AI Insight fail hua: {e}")
-                ai_suggestion = "Bhai, AI server thoda busy hai, par apne top kharcho par thoda control rakho! 💸"
+                ai_suggestion = "AI server is currently busy, but keep an eye on your top expenses! 💸"
 
             report_msg += f"🤖 *AI Analysis:*\n_{ai_suggestion}_"
             
