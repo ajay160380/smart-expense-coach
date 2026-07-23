@@ -437,8 +437,8 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
     You are ExpenseTracker, a smart and helpful financial AI. Act like a casual, close friend (like a bro). You must converse strictly in Hinglish (a natural conversational mix of Hindi and English). Completely avoid pure, complex Hindi. NEVER use weird or patronizing words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.
-    You understand WhatsApp Hinglish slang perfectly (e.g., 'khrcha', 'sb', 'btvo', 'kaha', 'kaisa', 'kitan').
-    You analyze the user's message and decide if they want to LOG an expense, OR just chat/ask a question.
+    You understand WhatsApp Hinglish slang perfectly.
+    You analyze the user's message and decide if they want to LOG an expense (or multiple expenses), SAVE a note, OR just chat/ask a question.
     
     Today's Date: {today}
     
@@ -452,39 +452,35 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     - Recent Expenses: {user_context.get('recent_expenses', 'None')}
 
     Rules for Routing:
-    1. If the user explicitly gives an AMOUNT to log an expense (e.g. "500 ki chai", "petrol 200", "bought a shirt for 1000"):
-       - action = "log_expense"
-       - amount = exact number extracted.
-       - category = one of: food, transport, shopping, health, entertainment, education, utilities, other.
-       - description = short description (e.g. "chai", "petrol").
-    2. If the user is ASKING a question, requesting a summary, complaining, or chatting (e.g. "khrcha kitan kiya maine", "kaha kaha khrcha kiya", "summary", "hi", "mai garib hu"):
+    1. If the user gives AMOUNTS to log expenses (e.g. "500 ki chai, 200 petrol", or a pasted list of expenses):
+       - action = "log_expenses"
+       - expenses = An array of expense objects. For EACH expense in their message, extract: amount, category (food, transport, shopping, health, entertainment, education, utilities, other), and description.
+       - Note: Always extract ALL expenses if they mention multiple!
+    2. If the user explicitly asks to save something to Notepad or Notes (e.g. "save this to notepad", "notepad me add kar", "note: buy milk"):
+       - action = "save_note"
+       - note = The exact text they want to save.
+    3. If the user pastes a large unformatted list WITHOUT saying what to do, OR it's ambiguous:
+       - action = "ask_clarification"
+       - chat_response = Ask them "Bhai, isko expenses me add karu ya Notepad me save karu?"
+    4. If the user is ASKING a question, requesting a summary, complaining, or chatting:
        - action = "chat"
        - chat_response = your natural, conversational, sarcastic but helpful reply.
-         - You MUST reply strictly in Hinglish, avoiding complex Hindi.
          - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
-         - Use bullet points (`• `) when listing expenses or details.
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
-         - If the user asks who created/made you (e.g. "kisne banaya", "who is your creator", "developer"), reply EXACTLY with this text:
-*Hello {user_name}!* 🙋‍♂️ I'm ExpenseTracker, your personal financial AI coach. I was created by *Ajay Vishwakarma*, a seasoned AI/ML & Full Stack Developer with a passion for finance and technology. 🤖
-
-You can learn more about my creator's work here:
-🌐 *Portfolio:* https://ajay-portfolio-r176.onrender.com
-🐙 *GitHub:* https://github.com/ajay160380
-📧 *Email:* ajaykumar160380@gmail.com 💻
-
-Now, let's get back to your finances! How can I assist you today?
-         - Ensure the message looks premium, attractive, and well-spaced. Keep it concise but deeply informative.
 
     Response MUST be strict JSON ONLY. No markdown, no extra text.
     {{
-        "action": "log_expense" | "chat",
-        "expense_details": {{
-            "amount": 0,
-            "category": "other",
-            "description": ""
-        }},
+        "action": "log_expenses" | "save_note" | "ask_clarification" | "chat",
+        "expenses": [
+            {{
+                "amount": 0,
+                "category": "other",
+                "description": ""
+            }}
+        ],
+        "note": "",
         "chat_response": ""
     }}
     """
@@ -1765,49 +1761,78 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             
         action = ai_data.get("action", "chat")
 
-        if action == "log_expense":
-            expense_details = ai_data.get("expense_details", {})
-            amount_raw = expense_details.get("amount", 0)
-            if isinstance(amount_raw, str):
-                amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
-            amount = Decimal(str(amount_raw))
+        if action == "log_expenses":
+            expenses_list = ai_data.get("expenses", [])
+            if not expenses_list:
+                return JsonResponse({"status": "error", "message": "Could not extract any expenses. Try: '500 petrol, 200 chai' ⛽"})
 
-            if amount <= 0:
-                return JsonResponse({"status": "error", "message": "Could not understand the amount. Try: '500 petrol' ⛽"})
+            created_expenses = []
+            total_logged = 0
 
-            category = str(expense_details.get("category", "other")).strip().lower()
-            if category not in VALID_CATEGORIES:
-                category = _keyword_category_fallback(spoken_text)
+            for exp_data in expenses_list:
+                amount_raw = exp_data.get("amount", 0)
+                if isinstance(amount_raw, str):
+                    amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
+                amount = Decimal(str(amount_raw or 0))
 
-            expense = Expense.objects.create(
-                user=target_user,
-                amount=amount,
-                category=category,
-                date=today,
-                description=str(expense_details.get("description", "")).strip()[:100],
-            )
+                if amount <= 0:
+                    continue
 
-            icon = CAT_ICONS.get(category, "📦")
-            new_spent = float(spent) + float(amount)
+                category = str(exp_data.get("category", "other")).strip().lower()
+                if category not in VALID_CATEGORIES:
+                    category = _keyword_category_fallback(str(exp_data.get("description", "")))
+
+                expense = Expense.objects.create(
+                    user=target_user,
+                    amount=amount,
+                    category=category,
+                    date=today,
+                    description=str(exp_data.get("description", "")).strip()[:100],
+                )
+                created_expenses.append(expense)
+                total_logged += amount
+
+            if not created_expenses:
+                return JsonResponse({"status": "error", "message": "Could not understand the amounts."})
+
+            new_spent = float(spent) + float(total_logged)
             new_rem = max(0, budget - new_spent)
             
             month_name = today.strftime("%B")
-            msg_lines = [
-                f"✅ *Hi {user_name}, Expense Logged Successfully!*",
-                f"━━━━━━━━━━━━━━━━━━",
-                f"{icon} *Amount:* ₹{amount:,}",
-                f"🏷️ *Category:* {category.title()}",
-                f"📝 *Note:* {expense.description or 'None'}",
-                f"━━━━━━━━━━━━━━━━━━",
+            
+            if len(created_expenses) == 1:
+                expense = created_expenses[0]
+                icon = CAT_ICONS.get(expense.category, "📦")
+                msg_lines = [
+                    f"✅ *Hi {user_name}, Expense Logged Successfully!*",
+                    f"━━━━━━━━━━━━━━━━━━",
+                    f"{icon} *Amount:* ₹{expense.amount:,}",
+                    f"🏷️ *Category:* {expense.category.title()}",
+                    f"📝 *Note:* {expense.description or 'None'}",
+                    f"━━━━━━━━━━━━━━━━━━"
+                ]
+            else:
+                msg_lines = [
+                    f"✅ *Hi {user_name}, {len(created_expenses)} Expenses Logged!*",
+                    f"━━━━━━━━━━━━━━━━━━"
+                ]
+                for expense in created_expenses:
+                    icon = CAT_ICONS.get(expense.category, "📦")
+                    msg_lines.append(f"• {icon} {expense.category.title()}: ₹{expense.amount:,} ({expense.description or 'None'})")
+                msg_lines.append(f"━━━━━━━━━━━━━━━━━━")
+                msg_lines.append(f"💵 *Total Logged Just Now:* ₹{total_logged:,}")
+                msg_lines.append(f"━━━━━━━━━━━━━━━━━━")
+
+            msg_lines.extend([
                 f"💰 *Total Spent ({month_name}):* ₹{new_spent:,.0f}",
                 f"🎯 *Remaining Budget:* ₹{new_rem:,.0f}"
-            ]
+            ])
             
             if new_rem == 0:
                 msg_lines.append("⚠️ *Warning:* You have exceeded your monthly budget! 🛑")
 
-            # 🔔 Smart Spending Alert
-            smart_alert = check_and_generate_alert(target_user, expense)
+            # 🔔 Smart Spending Alert (only run on the first expense or largest for now to avoid spam)
+            smart_alert = check_and_generate_alert(target_user, created_expenses[0])
             if smart_alert:
                 msg_lines.append("")
                 msg_lines.append(smart_alert)
@@ -1817,8 +1842,27 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             return JsonResponse({
                 "status": "success",
                 "message": final_message,
-                "expense_id": expense.pk,
+                "expense_id": created_expenses[0].pk,
             })
+            
+        elif action == "save_note":
+            note_text = str(ai_data.get("note", "")).strip()
+            if not note_text:
+                note_text = spoken_text
+                
+            note = Note.objects.create(user=target_user, text=note_text)
+            return JsonResponse({
+                "status": "success",
+                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.",
+            })
+            
+        elif action == "ask_clarification":
+            chat_response = ai_data.get("chat_response", "Bhai, isko expenses me add karu ya Notepad me save karu?")
+            return JsonResponse({
+                "status": "success",
+                "message": f"🤔 *Wait a second...*\n\n{chat_response}"
+            })
+            
         else:
             chat_response = ai_data.get("chat_response", "Mujhe samajh nahi aaya, bhai.")
             return JsonResponse({
@@ -2976,6 +3020,50 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
 
     return JsonResponse({"tips": tips, "count": len(tips)})
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE: AI NOTEPAD 📝
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_login_required
+@csrf_exempt
+def api_notes(request: HttpRequest) -> JsonResponse:
+    if request.method == "GET":
+        notes = request.user.notes.all()
+        data = []
+        for n in notes:
+            data.append({
+                "id": n.id,
+                "text": n.text,
+                "created_at": n.created_at.isoformat(),
+                "updated_at": n.updated_at.isoformat()
+            })
+        return JsonResponse({"notes": data})
+        
+    elif request.method == "POST":
+        try:
+            body = json.loads(request.body)
+            text = body.get("text", "").strip()
+            if not text:
+                return JsonResponse({"error": "Text is required"}, status=400)
+            note = Note.objects.create(user=request.user, text=text)
+            return JsonResponse({"status": "success", "note_id": note.id})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+            
+    return JsonResponse({"error": "Invalid method"}, status=405)
+
+@api_login_required
+@csrf_exempt
+def api_delete_note(request: HttpRequest, pk: int) -> JsonResponse:
+    if request.method != "DELETE":
+        return JsonResponse({"error": "DELETE required"}, status=405)
+    try:
+        note = Note.objects.get(id=pk, user=request.user)
+        note.delete()
+        return JsonResponse({"status": "success"})
+    except Note.DoesNotExist:
+        return JsonResponse({"error": "Note not found"}, status=404)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # FEATURE 4: SMART SPENDING ALERTS 🔔

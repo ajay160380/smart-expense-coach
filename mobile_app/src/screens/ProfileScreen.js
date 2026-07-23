@@ -202,6 +202,13 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => navigation.navigate('AIChat')}
           />
           <MenuItem
+            icon="📝"
+            ionIcon="document-text-outline"
+            label="Notepad"
+            sub="Save lists & notes easily"
+            onPress={() => navigation.navigate('Notepad')}
+          />
+          <MenuItem
             icon="📊"
             ionIcon="analytics-outline"
             label="Analytics"

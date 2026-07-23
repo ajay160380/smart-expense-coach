@@ -40,6 +40,7 @@ import AIChatScreen from './src/screens/AIChatScreen';
 import ExpenseSplitScreen from './src/screens/ExpenseSplitScreen';
 import SubscriptionsScreen from './src/screens/SubscriptionsScreen';
 import VoiceExpenseScreen from './src/screens/VoiceExpenseScreen';
+import NotepadScreen from './src/screens/NotepadScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -60,6 +61,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="ExpenseSplit" component={ExpenseSplitScreen} />
       <HomeStack.Screen name="Subscriptions" component={SubscriptionsScreen} />
       <HomeStack.Screen name="Notifications" component={DashboardScreen} />
+      <HomeStack.Screen name="Notepad" component={NotepadScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -89,6 +91,7 @@ function ProfileStackScreen() {
       <ProfileStack.Screen name="Subscriptions" component={SubscriptionsScreen} />
       <ProfileStack.Screen name="VoiceExpense" component={VoiceExpenseScreen} />
       <ProfileStack.Screen name="AdminPanel" component={AdminPanelScreen} />
+      <ProfileStack.Screen name="Notepad" component={NotepadScreen} />
     </ProfileStack.Navigator>
   );
 }

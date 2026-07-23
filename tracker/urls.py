@@ -145,6 +145,13 @@ urlpatterns = [
     path('api/trigger-daily-tips/',     views.api_trigger_daily_tips,  name='api_trigger_daily_tips'),
 
     # ══════════════════════════════════════════════════════════════════════
+    # FEATURE: AI NOTEPAD
+    # ══════════════════════════════════════════════════════════════════════
+    path('api/notes/',                  views.api_notes,               name='api_notes'),
+    path('api/notes/<int:pk>/delete/',  views.api_delete_note,         name='api_delete_note'),
+
+
+    # ══════════════════════════════════════════════════════════════════════
     # FEATURE 5: EXPENSE SPLIT
     # ══════════════════════════════════════════════════════════════════════
     path('api/splits/',                         views.api_split_groups,       name='api_split_groups'),
