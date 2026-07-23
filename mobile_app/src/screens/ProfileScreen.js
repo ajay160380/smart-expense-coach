@@ -202,6 +202,13 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => navigation.navigate('AIChat')}
           />
           <MenuItem
+            icon="📝"
+            ionIcon="document-text-outline"
+            label="Notepad"
+            sub="Save lists & notes easily"
+            onPress={() => navigation.navigate('Notepad')}
+          />
+          <MenuItem
             icon="📊"
             ionIcon="analytics-outline"
             label="Analytics"
@@ -238,7 +245,6 @@ export default function ProfileScreen({ navigation }) {
           />
         </GlassCard>
 
-        {/* ── Support & Feedback ── */}
         <SectionHeader title="💬 Support" />
         <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
           <MenuItem
@@ -247,6 +253,29 @@ export default function ProfileScreen({ navigation }) {
             label="Submit Feedback"
             sub="Tell us how we can improve"
             onPress={() => setFeedbackVisible(true)}
+          />
+          <MenuItem
+            icon="🔄"
+            ionIcon="sync-outline"
+            label="Check for Updates"
+            sub="Update to the latest version"
+            onPress={async () => {
+              try {
+                const Updates = require('expo-updates');
+                const update = await Updates.checkForUpdateAsync();
+                if (update.isAvailable) {
+                  Alert.alert("Update found", "Downloading update...");
+                  await Updates.fetchUpdateAsync();
+                  Alert.alert("Success", "Update downloaded! Restarting...", [
+                    { text: "OK", onPress: () => Updates.reloadAsync() }
+                  ]);
+                } else {
+                  Alert.alert("Up to date", "You are on the latest version.");
+                }
+              } catch (error) {
+                Alert.alert("Note", "App updates are managed automatically or you are using Expo Go.");
+              }
+            }}
           />
         </GlassCard>
 

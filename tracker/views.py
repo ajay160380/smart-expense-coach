@@ -42,7 +42,7 @@ from django.http import JsonResponse
 import json
 from django.conf import settings
 import random
-from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, WhatsAppSession, OTPVerification
+from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, WhatsAppSession, OTPVerification, Note
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
 
 from rest_framework import status
@@ -428,7 +428,7 @@ def normalize_hinglish_numbers(text: str) -> str:
     flush_buffer()
 
     result = ''.join(result_parts)
-    result = re.sub(r'\s+', ' ', result).strip()
+    result = re.sub(r'[^\S\n]+', ' ', result).strip()
     logger.debug("Normalized Hinglish: %r → %r", original, result)
     return result
 
@@ -436,9 +436,23 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are ExpenseTracker, a smart and helpful financial AI. Act like a casual, close friend (like a bro). You must converse strictly in Hinglish (a natural conversational mix of Hindi and English). Completely avoid pure, complex Hindi. NEVER use weird or patronizing words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.
-    You understand WhatsApp Hinglish slang perfectly (e.g., 'khrcha', 'sb', 'btvo', 'kaha', 'kaisa', 'kitan').
-    You analyze the user's message and decide if they want to LOG an expense, OR just chat/ask a question.
+    You are Expense Tracker, a smart, friendly, and helpful AI assistant. Act like a knowledgeable human friend. 
+    You have NO RESTRICTIONS on what you can talk about. The user can chat with you about anything! 
+    ALWAYS reply in pure, elegant, and professional English, regardless of the language the user speaks! Do NOT use Hindi or Hinglish.
+    Be highly conversational, empathetic, and sophisticated in your communication.
+    When a user says 'hello' or asks a general question, give a warm, naturally formatted English response. Do not blindly repeat their budget summary in every message unless asked.
+    
+    If asked about your creator or developer, your `chat_response` MUST be exactly this string (ensure you escape newlines as \\n\\n so the JSON remains valid):
+    "👨‍💻 *My Creator: Ajay Vishwakarma*\\n\\nI was developed by Ajay, a passionate Full Stack & AI/ML Engineer! Here are his professional links:\\n\\n🌐 *Portfolio:* https://ajay-vishwakarmaa.netlify.app\\n🐙 *GitHub:* https://github.com/ajay160380\\n💼 *LinkedIn:* https://www.linkedin.com/in/ajay-vishwakarma-71649129a/"
+    
+    FORMATTING RULES (CRITICAL):
+    1. Do NOT make everything bold. Only bold *important keywords* (like amounts or names), NOT entire sentences!
+    2. Write in short, clean sentences.
+    3. Always use double newlines (`\n\n`) between different points or paragraphs.
+    4. When listing items or links, use elegant bullet points (•) on separate lines.
+    5. Make your responses look BEAUTIFUL, spaced out, and easy to read. Use 1 or 2 relevant emojis naturally.
+    
+    You analyze the user's message and decide if they want to LOG an expense (or multiple expenses), SAVE a note, OR just chat/ask a question.
     
     Today's Date: {today}
     
@@ -450,41 +464,37 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     - Remaining Budget: ₹{user_context.get('remaining', 0)}
     - Category-wise Breakdown: {user_context.get('category_breakdown', 'None')}
     - Recent Expenses: {user_context.get('recent_expenses', 'None')}
+    - Recent Notes: {user_context.get('recent_notes', 'None')}
 
-    Rules for Routing:
-    1. If the user explicitly gives an AMOUNT to log an expense (e.g. "500 ki chai", "petrol 200", "bought a shirt for 1000"):
-       - action = "log_expense"
-       - amount = exact number extracted.
-       - category = one of: food, transport, shopping, health, entertainment, education, utilities, other.
-       - description = short description (e.g. "chai", "petrol").
-    2. If the user is ASKING a question, requesting a summary, complaining, or chatting (e.g. "khrcha kitan kiya maine", "kaha kaha khrcha kiya", "summary", "hi", "mai garib hu"):
+    Rules for Routing (CRITICAL):
+    1. If the user EXPLICITLY asks to log expenses (e.g. "add to expenses", "is list ko expense me add karo") OR gives a simple short expense (e.g. "500 petrol"):
+       - action = "log_expenses"
+       - expenses = An array of expense objects. Extract EVERY SINGLE item mentioned in their message (amount, category, description). Do NOT miss any item from a list!
+    2. If the user EXPLICITLY asks to save a note (e.g. "save to notepad", "notepad me daal do", "note: buy milk"):
+       - action = "save_note"
+       - note = The exact text they want to save. If they are replying to your clarification about a long list, extract the FULL list from the history and save it as the note!
+    3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
+       - action = "ask_clarification"
+       - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
+    4. If the user is ASKING a question, requesting a summary, complaining, or chatting:
        - action = "chat"
-       - chat_response = your natural, conversational, sarcastic but helpful reply.
-         - You MUST reply strictly in Hinglish, avoiding complex Hindi.
+       - chat_response = your natural, conversational, polite English reply.
          - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
-         - Use bullet points (`• `) when listing expenses or details.
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
-         - If the user asks who created/made you (e.g. "kisne banaya", "who is your creator", "developer"), reply EXACTLY with this text:
-*Hello {user_name}!* 🙋‍♂️ I'm ExpenseTracker, your personal financial AI coach. I was created by *Ajay Vishwakarma*, a seasoned AI/ML & Full Stack Developer with a passion for finance and technology. 🤖
-
-You can learn more about my creator's work here:
-🌐 *Portfolio:* https://ajay-portfolio-r176.onrender.com
-🐙 *GitHub:* https://github.com/ajay160380
-📧 *Email:* ajaykumar160380@gmail.com 💻
-
-Now, let's get back to your finances! How can I assist you today?
-         - Ensure the message looks premium, attractive, and well-spaced. Keep it concise but deeply informative.
 
     Response MUST be strict JSON ONLY. No markdown, no extra text.
     {{
-        "action": "log_expense" | "chat",
-        "expense_details": {{
-            "amount": 0,
-            "category": "other",
-            "description": ""
-        }},
+        "action": "log_expenses" | "save_note" | "ask_clarification" | "chat",
+        "expenses": [
+            {{
+                "amount": 0,
+                "category": "other",
+                "description": ""
+            }}
+        ],
+        "note": "",
         "chat_response": ""
     }}
     """
@@ -1442,6 +1452,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     category_breakdown = Expense.objects.filter(user=target_user, date__gte=first_day).values('category').annotate(total=Sum('amount')).order_by('-total')
     cat_str = ", ".join([f"{c['category'].title()}: ₹{c['total']}" for c in category_breakdown]) if category_breakdown else "No expenses this month."
     
+    recent_notes_qs = Note.objects.filter(user=target_user).order_by('-updated_at')[:5]
+    recent_notes_str = ", ".join([f"\"{n.text}\"" for n in recent_notes_qs]) or "No notes saved yet."
+    
     user_name = target_user.first_name.title() if target_user.first_name else target_user.username.title()
     
     user_context = {
@@ -1450,7 +1463,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         "spent": float(spent),
         "remaining": max(0, budget - float(spent)),
         "recent_expenses": recent_str,
-        "category_breakdown": cat_str
+        "category_breakdown": cat_str,
+        "recent_notes": recent_notes_str
     }
 
     # ── AI Conversations & Expense Routing ────────────────────────────────────
@@ -1486,10 +1500,28 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             return JsonResponse({"status": "success", "message": "Main ExpenseTracker bot hoon! Main ye sab kar sakta hoon:\n\n1. Add Expense: '500 for dinner' ya 'auto 150'\n2. Show Budget: 'how much budget left'\n3. Feedback: Type 'feedback'\n\nTry it now! 🚀"})
 
         # ──────────────────────────────────────────────────────────────────────
+        # FAST PATH FOR LARGE LISTS
+        # ──────────────────────────────────────────────────────────────────────
+        if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add to expense", "expense me", "log", "save", "note", "notepad"]):
+            msg = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
+            
+            # Save to history so AI remembers the list
+            chat_history = session.context if isinstance(session.context, list) else []
+            chat_history.append({"role": "user", "content": normalized_text})
+            chat_history.append({"role": "assistant", "content": json.dumps({"action": "ask_clarification", "chat_response": msg})})
+            session.context = chat_history[-10:]
+            session.save()
+            
+            return JsonResponse({
+                "status": "success",
+                "message": msg
+            })
+
+        # ──────────────────────────────────────────────────────────────────────
         # FAST PATH (Bypass slow AI for standard "[Amount] [Description]" format)
         # ──────────────────────────────────────────────────────────────────────
         fast_match = re.match(r'^(\d+(?:\.\d+)?)\s+(.+)$', normalized_text.strip())
-        if fast_match:
+        if fast_match and not any(kw in lower_text for kw in ["note", "notpad", "notepad"]):
             amount_raw = fast_match.group(1)
             desc_raw = fast_match.group(2).strip()
             amount = Decimal(amount_raw)
@@ -1636,29 +1668,86 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 
             if is_export_query:
                 import csv, io, base64
-                output = io.StringIO()
-                writer = csv.writer(output)
-                writer.writerow(['Date', 'Category', 'Description', 'Amount'])
                 expenses = cat_qs.order_by('-date')
-                total_export = 0
-                for exp in expenses:
-                    writer.writerow([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount}"])
-                    total_export += exp.amount
-                writer.writerow([])
-                writer.writerow(['', '', 'Total', f"{total_export}"])
-                csv_content = output.getvalue()
-                base64_csv = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
                 just_month = month_name_str.replace(" ", "_")
+                
+                is_pdf = "pdf" in normalized_text
+                
+                if is_pdf:
+                    try:
+                        from reportlab.lib.pagesizes import letter
+                        from reportlab.lib import colors
+                        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+                        from reportlab.lib.styles import getSampleStyleSheet
+                        
+                        buffer = io.BytesIO()
+                        doc = SimpleDocTemplate(buffer, pagesize=letter)
+                        elements = []
+                        
+                        styles = getSampleStyleSheet()
+                        title_style = styles['Heading1']
+                        title_style.alignment = 1 # Center
+                        
+                        elements.append(Paragraph(f"Expense Report for {month_name_str}", title_style))
+                        elements.append(Spacer(1, 20))
+                        
+                        data = [['Date', 'Category', 'Description', 'Amount (Rs)']]
+                        total_export = 0
+                        for exp in expenses:
+                            data.append([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount:,.2f}"])
+                            total_export += exp.amount
+                        data.append(['', '', 'Total', f"{total_export:,.2f}"])
+                        
+                        table = Table(data, colWidths=[80, 100, 200, 100])
+                        table.setStyle(TableStyle([
+                            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A73E8')),
+                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                            ('FONTSIZE', (0, 0), (-1, 0), 12),
+                            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#F8F9FA')),
+                            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E0E0E0')),
+                            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E8F0FE')),
+                        ]))
+                        
+                        elements.append(table)
+                        doc.build(elements)
+                        pdf_content = buffer.getvalue()
+                        base64_media = base64.b64encode(pdf_content).decode('utf-8')
+                        mimetype = "application/pdf"
+                        filename = f"ExpenseTracker_{just_month}_Report.pdf"
+                        msg_text = f"📄 *{user_name}*, here is your detailed PDF expense report for {month_name_str}."
+                    except ImportError:
+                        is_pdf = False # Fallback to CSV if reportlab missing
+                
+                if not is_pdf:
+                    output = io.StringIO()
+                    writer = csv.writer(output)
+                    writer.writerow(['Date', 'Category', 'Description', 'Amount'])
+                    total_export = 0
+                    for exp in expenses:
+                        writer.writerow([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount}"])
+                        total_export += exp.amount
+                    writer.writerow([])
+                    writer.writerow(['', '', 'Total', f"{total_export}"])
+                    csv_content = output.getvalue()
+                    base64_media = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+                    mimetype = "text/csv"
+                    filename = f"ExpenseTracker_{just_month}_Report.csv"
+                    msg_text = f"📄 *{user_name}*, here is your detailed CSV expense report for {month_name_str}.\n\n(Tip: Open this file in Excel or Google Sheets!)"
                 
                 return JsonResponse({
                     "status": "success",
-                    "message": f"📄 *{user_name}*, here is your detailed expense report for {month_name_str}.\n\n(Tip: Open this file in Excel or Google Sheets!)",
+                    "message": msg_text,
                     "media": {
-                        "mimetype": "text/csv",
-                        "filename": f"ExpenseTracker_{just_month}_Report.csv",
-                        "base64": base64_csv
+                        "mimetype": mimetype,
+                        "filename": filename,
+                        "base64": base64_media
                     }
                 })
+
 
             return JsonResponse({
                 "status": "success",
@@ -1681,7 +1770,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             messages=messages,
             model="llama-3.1-8b-instant",
             temperature=0.2,
-            max_tokens=200,
+            max_tokens=2048,
         )
         raw_response = response.choices[0].message.content.strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
@@ -1708,49 +1797,78 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             
         action = ai_data.get("action", "chat")
 
-        if action == "log_expense":
-            expense_details = ai_data.get("expense_details", {})
-            amount_raw = expense_details.get("amount", 0)
-            if isinstance(amount_raw, str):
-                amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
-            amount = Decimal(str(amount_raw))
+        if action == "log_expenses":
+            expenses_list = ai_data.get("expenses", [])
+            if not expenses_list:
+                return JsonResponse({"status": "error", "message": "Could not extract any expenses. Try: '500 petrol, 200 chai' ⛽"})
 
-            if amount <= 0:
-                return JsonResponse({"status": "error", "message": "Could not understand the amount. Try: '500 petrol' ⛽"})
+            created_expenses = []
+            total_logged = 0
 
-            category = str(expense_details.get("category", "other")).strip().lower()
-            if category not in VALID_CATEGORIES:
-                category = _keyword_category_fallback(spoken_text)
+            for exp_data in expenses_list:
+                amount_raw = exp_data.get("amount", 0)
+                if isinstance(amount_raw, str):
+                    amount_raw = re.sub(r'[^0-9.]', '', amount_raw)
+                amount = Decimal(str(amount_raw or 0))
 
-            expense = Expense.objects.create(
-                user=target_user,
-                amount=amount,
-                category=category,
-                date=today,
-                description=str(expense_details.get("description", "")).strip()[:100],
-            )
+                if amount <= 0:
+                    continue
 
-            icon = CAT_ICONS.get(category, "📦")
-            new_spent = float(spent) + float(amount)
+                category = str(exp_data.get("category", "other")).strip().lower()
+                if category not in VALID_CATEGORIES:
+                    category = _keyword_category_fallback(str(exp_data.get("description", "")))
+
+                expense = Expense.objects.create(
+                    user=target_user,
+                    amount=amount,
+                    category=category,
+                    date=today,
+                    description=str(exp_data.get("description", "")).strip()[:100],
+                )
+                created_expenses.append(expense)
+                total_logged += amount
+
+            if not created_expenses:
+                return JsonResponse({"status": "error", "message": "Could not understand the amounts."})
+
+            new_spent = float(spent) + float(total_logged)
             new_rem = max(0, budget - new_spent)
             
             month_name = today.strftime("%B")
-            msg_lines = [
-                f"✅ *Hi {user_name}, Expense Logged Successfully!*",
-                f"━━━━━━━━━━━━━━━━━━",
-                f"{icon} *Amount:* ₹{amount:,}",
-                f"🏷️ *Category:* {category.title()}",
-                f"📝 *Note:* {expense.description or 'None'}",
-                f"━━━━━━━━━━━━━━━━━━",
+            
+            if len(created_expenses) == 1:
+                expense = created_expenses[0]
+                icon = CAT_ICONS.get(expense.category, "📦")
+                msg_lines = [
+                    f"✅ *Hi {user_name}, Expense Logged Successfully!*",
+                    f"━━━━━━━━━━━━━━━━━━",
+                    f"{icon} *Amount:* ₹{expense.amount:,}",
+                    f"🏷️ *Category:* {expense.category.title()}",
+                    f"📝 *Note:* {expense.description or 'None'}",
+                    f"━━━━━━━━━━━━━━━━━━"
+                ]
+            else:
+                msg_lines = [
+                    f"✅ *Hi {user_name}, {len(created_expenses)} Expenses Logged!*",
+                    f"━━━━━━━━━━━━━━━━━━"
+                ]
+                for expense in created_expenses:
+                    icon = CAT_ICONS.get(expense.category, "📦")
+                    msg_lines.append(f"• {icon} {expense.category.title()}: ₹{expense.amount:,} ({expense.description or 'None'})")
+                msg_lines.append(f"━━━━━━━━━━━━━━━━━━")
+                msg_lines.append(f"💵 *Total Logged Just Now:* ₹{total_logged:,}")
+                msg_lines.append(f"━━━━━━━━━━━━━━━━━━")
+
+            msg_lines.extend([
                 f"💰 *Total Spent ({month_name}):* ₹{new_spent:,.0f}",
                 f"🎯 *Remaining Budget:* ₹{new_rem:,.0f}"
-            ]
+            ])
             
             if new_rem == 0:
                 msg_lines.append("⚠️ *Warning:* You have exceeded your monthly budget! 🛑")
 
-            # 🔔 Smart Spending Alert
-            smart_alert = check_and_generate_alert(target_user, expense)
+            # 🔔 Smart Spending Alert (only run on the first expense or largest for now to avoid spam)
+            smart_alert = check_and_generate_alert(target_user, created_expenses[0])
             if smart_alert:
                 msg_lines.append("")
                 msg_lines.append(smart_alert)
@@ -1760,8 +1878,27 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             return JsonResponse({
                 "status": "success",
                 "message": final_message,
-                "expense_id": expense.pk,
+                "expense_id": created_expenses[0].pk,
             })
+            
+        elif action == "save_note":
+            note_text = str(ai_data.get("note", "")).strip()
+            if not note_text:
+                note_text = spoken_text
+                
+            note = Note.objects.create(user=target_user, text=note_text)
+            return JsonResponse({
+                "status": "success",
+                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.",
+            })
+            
+        elif action == "ask_clarification":
+            chat_response = ai_data.get("chat_response", "Should I add this to your expenses or save it to Notepad?")
+            return JsonResponse({
+                "status": "success",
+                "message": f"🤔 *Wait a second...*\n\n{chat_response}"
+            })
+            
         else:
             chat_response = ai_data.get("chat_response", "Mujhe samajh nahi aaya, bhai.")
             return JsonResponse({
@@ -2459,7 +2596,7 @@ def whatsapp_summary(request):
             profile = UserProfile.objects.filter(phone_number__icontains=clean_phone).first()
             
             if not profile:
-                return JsonResponse({"status": "error", "message": "Bhai, pehle website par register karke apna WhatsApp number save karo! 🚫"})
+                return JsonResponse({"status": "error", "message": "Please register on the website first to link your WhatsApp number! 🚫"})
             
             user = profile.user
             today = timezone.now().date()
@@ -2494,7 +2631,7 @@ def whatsapp_summary(request):
                 ai_suggestion = get_ai_insight(user.id, all_expenses, budget, lifetime_spent)
             except Exception as e:
                 print(f"AI Insight fail hua: {e}")
-                ai_suggestion = "Bhai, AI server thoda busy hai, par apne top kharcho par thoda control rakho! 💸"
+                ai_suggestion = "AI server is currently busy, but keep an eye on your top expenses! 💸"
 
             report_msg += f"🤖 *AI Analysis:*\n_{ai_suggestion}_"
             
@@ -2919,6 +3056,50 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
 
     return JsonResponse({"tips": tips, "count": len(tips)})
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FEATURE: AI NOTEPAD 📝
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_login_required
+@csrf_exempt
+def api_notes(request: HttpRequest) -> JsonResponse:
+    if request.method == "GET":
+        notes = request.user.notes.all()
+        data = []
+        for n in notes:
+            data.append({
+                "id": n.id,
+                "text": n.text,
+                "created_at": n.created_at.isoformat(),
+                "updated_at": n.updated_at.isoformat()
+            })
+        return JsonResponse({"notes": data})
+        
+    elif request.method == "POST":
+        try:
+            body = json.loads(request.body)
+            text = body.get("text", "").strip()
+            if not text:
+                return JsonResponse({"error": "Text is required"}, status=400)
+            note = Note.objects.create(user=request.user, text=text)
+            return JsonResponse({"status": "success", "note_id": note.id})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+            
+    return JsonResponse({"error": "Invalid method"}, status=405)
+
+@api_login_required
+@csrf_exempt
+def api_delete_note(request: HttpRequest, pk: int) -> JsonResponse:
+    if request.method != "DELETE":
+        return JsonResponse({"error": "DELETE required"}, status=405)
+    try:
+        note = Note.objects.get(id=pk, user=request.user)
+        note.delete()
+        return JsonResponse({"status": "success"})
+    except Note.DoesNotExist:
+        return JsonResponse({"error": "Note not found"}, status=404)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # FEATURE 4: SMART SPENDING ALERTS 🔔
@@ -3558,34 +3739,49 @@ def export_csv(request):
 
 @api_login_required
 def export_pdf(request):
-    # Simple PDF generation or return CSV if PDF lib not installed
-    # To keep it robust without adding dependencies, we generate a simple HTML to PDF if possible,
-    # or just return a text file simulating PDF if reportlab is not available.
-    # We'll use basic HttpResponse with text/plain for simplicity here, but name it .pdf for download.
-    # Note: Real PDF requires reportlab. We will try reportlab.
     try:
-        from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
         
         buffer = io.BytesIO()
-        p = canvas.Canvas(buffer, pagesize=letter)
-        p.drawString(100, 750, f"Expense History for {request.user.username}")
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
         
-        y = 700
-        expenses = Expense.objects.filter(user=request.user).order_by('-date')[:50] # Limit to 50 for simplicity
-        p.drawString(100, y, "Date | Category | Amount")
-        y -= 20
+        styles = getSampleStyleSheet()
+        title_style = styles['Heading1']
+        title_style.alignment = 1 # Center
+        
+        elements.append(Paragraph(f"Expense History for {request.user.username}", title_style))
+        elements.append(Spacer(1, 20))
+        
+        expenses = Expense.objects.filter(user=request.user).order_by('-date')
+        
+        data = [['Date', 'Category', 'Description', 'Amount (Rs)']]
+        total = 0
         for exp in expenses:
-            p.drawString(100, y, f"{exp.date} | {exp.category.title()} | Rs {exp.amount}")
-            y -= 20
-            if y < 50:
-                p.showPage()
-                y = 750
+            data.append([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount:,.2f}"])
+            total += exp.amount
+        data.append(['', '', 'Total', f"{total:,.2f}"])
         
-        p.showPage()
-        p.save()
+        table = Table(data, colWidths=[80, 100, 200, 100])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A73E8')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#F8F9FA')),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E0E0E0')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E8F0FE')),
+        ]))
+        
+        elements.append(table)
+        doc.build(elements)
         buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename='ExpenseTracker_History.pdf')
     except ImportError:
-        # Fallback to CSV if reportlab is missing
         return export_csv(request)

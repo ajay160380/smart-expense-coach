@@ -94,7 +94,7 @@ async function startBot(retryCount = 0) {
     const BACKOFF_MS = Math.min(5000 * Math.pow(2, retryCount), 60000); // 5s, 10s, 20s, 40s, 60s
 
     try {
-        await pool.connect();
+        await pool.query('SELECT 1');
         console.log("Connected to PostgreSQL for WhatsApp session storage.");
     } catch (err) {
         console.error(`Failed to connect to PostgreSQL (attempt ${retryCount + 1}/${MAX_RETRIES}):`, err.message);
@@ -352,6 +352,51 @@ async function startBot(retryCount = 0) {
         const text = msg.body;
         console.log(`📩 Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
 
+        // ── ADMIN BROADCAST UPDATE ──
+        const allowedAdmins = [
+            "917905398965@c.us", // Ajay's admin number
+            "7905398965@c.us",   // Ajay's number without 91
+            "260391116484637@lid", // Ajay's new LID format
+            "917379053923@c.us", // Fallback/Bot number
+            process.env.MY_WHATSAPP_NUMBER
+        ];
+        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!broadcast_update')) {
+            console.log("📣 Admin initiated broadcast update!");
+
+            const downloadLink = "https://ajay160380-paisa-mitra.hf.space/static/downloads/ExpenseTracker.apk";
+            const defaultMsg = `🚀 *Expense Tracker - Important Update Available!*\n\nHello there! 👋 We've just released a major update to your Expense Tracker app with some exciting new additions.\n\n✨ *What's New:*\n• *Smart Notepad:* A brand-new feature to quickly jot down your financial notes and reminders directly within the app! 📝\n• *Refreshed Branding:* Enjoy our beautiful new app icon and a sleeker UI experience. 🎨\n• *Performance Boost:* We've squashed some bugs to make your expense tracking faster and smoother than ever. ⚡\n\n⚠️ *IMPORTANT:* To enjoy these new features, please *DELETE* your old Expense Tracker app first, and then download and install the new version from the link below:\n\n📲 *Download Now:* ${downloadLink}\n\nThank you for trusting Expense Tracker! 💼`;
+            
+            const customMessage = msg.body.replace('!broadcast_update', '').trim() || defaultMsg;
+
+            try {
+                const result = await pool.query("SELECT DISTINCT phone_number FROM tracker_userprofile WHERE phone_number ~ '^[0-9]{10,15}$'");
+                const numbers = result.rows.map(r => r.phone_number);
+
+                await msg.reply(`✅ Starting TEXT ONLY broadcast with Download Link to ${numbers.length} users... Please wait.`);
+
+                let successCount = 0;
+                for (const number of numbers) {
+                    try {
+                        const chatId = `${number}@c.us`;
+                        
+                        // Send text with link
+                        await client.sendMessage(chatId, customMessage);
+                        
+                        successCount++;
+                        // Delay to avoid WhatsApp spam limits
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    } catch (e) {
+                        console.error(`Failed to send broadcast to ${number}:`, e.message);
+                    }
+                }
+                await msg.reply(`🎉 Broadcast complete! Successfully sent to ${successCount}/${numbers.length} users.`);
+            } catch (dbErr) {
+                console.error("DB error during broadcast:", dbErr);
+                await msg.reply("❌ Failed to fetch users from database.");
+            }
+            return;
+        }
+
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
@@ -386,9 +431,17 @@ async function startBot(retryCount = 0) {
 
             // Priority 0: Media Attachment (e.g. Reports)
             if (data.media) {
-                const media = new MessageMedia(data.media.mimetype, data.media.base64, data.media.filename);
-                const chat = await msg.getChat();
-                await client.sendMessage(chat.id._serialized, media, { caption: data.message || "Here is your file." });
+                try {
+                    const tempFilePath = `/tmp/${data.media.filename}`;
+                    fs.writeFileSync(tempFilePath, data.media.base64, 'base64');
+                    const media = MessageMedia.fromFilePath(tempFilePath);
+                    await msg.reply(media, undefined, { caption: data.message || "Here is your file.", sendMediaAsDocument: true });
+                    fs.unlinkSync(tempFilePath);
+                } catch (mediaErr) {
+                    console.error('❌ Failed to send file, sending as text fallback:', mediaErr.message);
+                    const csvText = Buffer.from(data.media.base64, 'base64').toString('utf-8');
+                    await safeReply(msg, `${data.message}\n\n*CSV Data:*\n\`\`\`\n${csvText.substring(0, 3000)}\n\`\`\``);
+                }
             }
             // Priority 1: Direct message field (covers both success and error cases)
             else if (data.message) {
@@ -412,17 +465,7 @@ async function startBot(retryCount = 0) {
             }
         } catch (err) {
             console.error('❌ Error processing message:', err.message);
-            // Send error message back to user so they know something went wrong
-            try {
-                if (err.name === 'AbortError') {
-                    await safeReply(msg, '⏰ Server response slow hai. Thoda wait karo aur phir try karo!');
-                } else {
-                    await safeReply(msg, '😅 Technical issue aa gayi. Thoda baad mein try karo!');
-                }
-            } catch (_) {
-                // Last resort - can't even send error message
-                console.error('❌ Could not send error message to user');
-            }
+            // Removed the "technical issue" message as requested by the user
         }
     });
 

@@ -164,7 +164,7 @@ export default function DashboardScreen({ navigation }) {
       const tokenStr = await AsyncStorage.getItem('userToken');
       const token = tokenStr ? `Token ${tokenStr}` : '';
       
-      const fileUri = FileSystem.documentDirectory + `ExpenseTracker_History.${format}`;
+      const fileUri = FileSystem.cacheDirectory + `ExpenseTracker_History.${format}`;
       
       const downloadRes = await FileSystem.downloadAsync(url, fileUri, {
         headers: { Authorization: token }
@@ -428,6 +428,27 @@ export default function DashboardScreen({ navigation }) {
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#fff" style={{ opacity: 0.7 }} />
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* ── NOTEPAD ── */}
+        <TouchableOpacity onPress={() => navigation.navigate('Notepad')} activeOpacity={0.85}>
+          <LinearGradient
+            colors={['#FF9A9E', '#FECFEF']}
+            style={styles.aiCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <View style={styles.aiIcon}>
+              <MaterialCommunityIcons name="note-edit-outline" size={24} color="#1e293b" />
+            </View>
+            <View style={styles.aiContent}>
+              <Text style={[styles.aiTitle, { color: '#333' }]}>NOTEPAD</Text>
+              <Text style={[styles.aiText, { color: '#444' }]}>
+                Save important text, unformatted lists, or shopping lists here. 📝
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#333" style={{ opacity: 0.7 }} />
           </LinearGradient>
         </TouchableOpacity>
 
