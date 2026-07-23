@@ -15,6 +15,10 @@
       "bundleIdentifier": "com.ajay160380.paisamitra"
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#2C353F"
+      },
       "softwareKeyboardLayoutMode": "resize",
       "package": "com.ajay160380.paisamitra",
       "permissions": [
@@ -43,8 +47,6 @@
       }
     },
     "owner": "ajay160380",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    }
+    "runtimeVersion": "1.0.0"
   }
 }
