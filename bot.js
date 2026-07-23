@@ -353,7 +353,12 @@ async function startBot(retryCount = 0) {
         console.log(`📩 Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
 
         // ── ADMIN BROADCAST UPDATE ──
-        if (msg.from === (process.env.MY_WHATSAPP_NUMBER || "917379053923@c.us") && msg.body.startsWith('!broadcast_update')) {
+        const allowedAdmins = [
+            "917905398965@c.us", // Ajay's admin number
+            "917379053923@c.us", // Fallback/Bot number
+            process.env.MY_WHATSAPP_NUMBER
+        ];
+        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!broadcast_update')) {
             console.log("📣 Admin initiated broadcast update!");
             let media = null;
             if (msg.hasMedia) {
