@@ -1488,11 +1488,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # FAST PATH FOR LARGE LISTS
         # ──────────────────────────────────────────────────────────────────────
         if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add to expense", "expense me", "log", "save", "note", "notepad"]):
-            hinglish_words = {"kharchi", "bhai", "hai", "kya", "nahi", "karo", "me", "yeh", "kaha", "kisko", "kitna", "de", "diya", "liye", "ka", "ki", "ke", "aur", "pe", "se", "ko", "wala", "yaar", "kaise"}
-            words = set(re.findall(r'\b[a-z]+\b', lower_text))
-            is_hinglish = bool(words.intersection(hinglish_words))
-            
-            msg = "Kya main is lambi list ko aapke Notepad me save karoon, ya Expenses me add karoon? 🤔" if is_hinglish else "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
+            msg = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
             
             # Save to history so AI remembers the list
             chat_history = session.context if isinstance(session.context, list) else []
@@ -1882,7 +1878,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             })
             
         elif action == "ask_clarification":
-            chat_response = ai_data.get("chat_response", "Aap isko expenses me add karna chahte ho ya Notepad me save karna chahte ho?" if getattr(self, 'is_hinglish', False) else "Should I add this to your expenses or save it to Notepad?")
+            chat_response = ai_data.get("chat_response", "Should I add this to your expenses or save it to Notepad?")
             return JsonResponse({
                 "status": "success",
                 "message": f"🤔 *Wait a second...*\n\n{chat_response}"
