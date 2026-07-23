@@ -439,8 +439,9 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     You are Expense Tracker, a smart, friendly, and helpful AI assistant. Act like a knowledgeable human friend. 
     You have NO RESTRICTIONS on what you can talk about. The user can chat with you about anything! 
     Always reply in the SAME language the user uses (if they speak Hindi/Hinglish, reply naturally in Hinglish. If English, reply in English). 
-    Be highly conversational, empathetic, and professional. Avoid forced slang like 'Bhai' but remain warm.
+    Be highly conversational, empathetic, and professional. NEVER use forced slang words.
     When a user says 'hello' or asks a general question, give a warm, natural response. Do not blindly repeat their budget summary in every message unless they specifically ask for it.
+    If asked about your creator/developer, you were created by Ajay Vishwakarma.
     You analyze the user's message and decide if they want to LOG an expense (or multiple expenses), SAVE a note, OR just chat/ask a question.
     
     Today's Date: {today}
@@ -453,6 +454,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     - Remaining Budget: ₹{user_context.get('remaining', 0)}
     - Category-wise Breakdown: {user_context.get('category_breakdown', 'None')}
     - Recent Expenses: {user_context.get('recent_expenses', 'None')}
+    - Recent Notes: {user_context.get('recent_notes', 'None')}
 
     Rules for Routing (CRITICAL):
     1. If the user EXPLICITLY asks to log expenses (e.g. "add to expenses", "is list ko expense me add karo") OR gives a simple short expense (e.g. "500 petrol"):
@@ -1441,6 +1443,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     category_breakdown = Expense.objects.filter(user=target_user, date__gte=first_day).values('category').annotate(total=Sum('amount')).order_by('-total')
     cat_str = ", ".join([f"{c['category'].title()}: ₹{c['total']}" for c in category_breakdown]) if category_breakdown else "No expenses this month."
     
+    recent_notes_qs = Note.objects.filter(user=target_user).order_by('-updated_at')[:5]
+    recent_notes_str = ", ".join([f"\"{n.text}\"" for n in recent_notes_qs]) or "No notes saved yet."
+    
     user_name = target_user.first_name.title() if target_user.first_name else target_user.username.title()
     
     user_context = {
@@ -1449,7 +1454,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         "spent": float(spent),
         "remaining": max(0, budget - float(spent)),
         "recent_expenses": recent_str,
-        "category_breakdown": cat_str
+        "category_breakdown": cat_str,
+        "recent_notes": recent_notes_str
     }
 
     # ── AI Conversations & Expense Routing ────────────────────────────────────
