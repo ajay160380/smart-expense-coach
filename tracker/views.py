@@ -1636,29 +1636,86 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 
             if is_export_query:
                 import csv, io, base64
-                output = io.StringIO()
-                writer = csv.writer(output)
-                writer.writerow(['Date', 'Category', 'Description', 'Amount'])
                 expenses = cat_qs.order_by('-date')
-                total_export = 0
-                for exp in expenses:
-                    writer.writerow([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount}"])
-                    total_export += exp.amount
-                writer.writerow([])
-                writer.writerow(['', '', 'Total', f"{total_export}"])
-                csv_content = output.getvalue()
-                base64_csv = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
                 just_month = month_name_str.replace(" ", "_")
+                
+                is_pdf = "pdf" in normalized_text
+                
+                if is_pdf:
+                    try:
+                        from reportlab.lib.pagesizes import letter
+                        from reportlab.lib import colors
+                        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+                        from reportlab.lib.styles import getSampleStyleSheet
+                        
+                        buffer = io.BytesIO()
+                        doc = SimpleDocTemplate(buffer, pagesize=letter)
+                        elements = []
+                        
+                        styles = getSampleStyleSheet()
+                        title_style = styles['Heading1']
+                        title_style.alignment = 1 # Center
+                        
+                        elements.append(Paragraph(f"Expense Report for {month_name_str}", title_style))
+                        elements.append(Spacer(1, 20))
+                        
+                        data = [['Date', 'Category', 'Description', 'Amount (Rs)']]
+                        total_export = 0
+                        for exp in expenses:
+                            data.append([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount:,.2f}"])
+                            total_export += exp.amount
+                        data.append(['', '', 'Total', f"{total_export:,.2f}"])
+                        
+                        table = Table(data, colWidths=[80, 100, 200, 100])
+                        table.setStyle(TableStyle([
+                            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A73E8')),
+                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                            ('FONTSIZE', (0, 0), (-1, 0), 12),
+                            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#F8F9FA')),
+                            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E0E0E0')),
+                            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E8F0FE')),
+                        ]))
+                        
+                        elements.append(table)
+                        doc.build(elements)
+                        pdf_content = buffer.getvalue()
+                        base64_media = base64.b64encode(pdf_content).decode('utf-8')
+                        mimetype = "application/pdf"
+                        filename = f"ExpenseTracker_{just_month}_Report.pdf"
+                        msg_text = f"📄 *{user_name}*, here is your detailed PDF expense report for {month_name_str}."
+                    except ImportError:
+                        is_pdf = False # Fallback to CSV if reportlab missing
+                
+                if not is_pdf:
+                    output = io.StringIO()
+                    writer = csv.writer(output)
+                    writer.writerow(['Date', 'Category', 'Description', 'Amount'])
+                    total_export = 0
+                    for exp in expenses:
+                        writer.writerow([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount}"])
+                        total_export += exp.amount
+                    writer.writerow([])
+                    writer.writerow(['', '', 'Total', f"{total_export}"])
+                    csv_content = output.getvalue()
+                    base64_media = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+                    mimetype = "text/csv"
+                    filename = f"ExpenseTracker_{just_month}_Report.csv"
+                    msg_text = f"📄 *{user_name}*, here is your detailed CSV expense report for {month_name_str}.\n\n(Tip: Open this file in Excel or Google Sheets!)"
                 
                 return JsonResponse({
                     "status": "success",
-                    "message": f"📄 *{user_name}*, here is your detailed expense report for {month_name_str}.\n\n(Tip: Open this file in Excel or Google Sheets!)",
+                    "message": msg_text,
                     "media": {
-                        "mimetype": "text/csv",
-                        "filename": f"ExpenseTracker_{just_month}_Report.csv",
-                        "base64": base64_csv
+                        "mimetype": mimetype,
+                        "filename": filename,
+                        "base64": base64_media
                     }
                 })
+
 
             return JsonResponse({
                 "status": "success",
@@ -3558,34 +3615,49 @@ def export_csv(request):
 
 @api_login_required
 def export_pdf(request):
-    # Simple PDF generation or return CSV if PDF lib not installed
-    # To keep it robust without adding dependencies, we generate a simple HTML to PDF if possible,
-    # or just return a text file simulating PDF if reportlab is not available.
-    # We'll use basic HttpResponse with text/plain for simplicity here, but name it .pdf for download.
-    # Note: Real PDF requires reportlab. We will try reportlab.
     try:
-        from reportlab.pdfgen import canvas
         from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
         
         buffer = io.BytesIO()
-        p = canvas.Canvas(buffer, pagesize=letter)
-        p.drawString(100, 750, f"Expense History for {request.user.username}")
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
         
-        y = 700
-        expenses = Expense.objects.filter(user=request.user).order_by('-date')[:50] # Limit to 50 for simplicity
-        p.drawString(100, y, "Date | Category | Amount")
-        y -= 20
+        styles = getSampleStyleSheet()
+        title_style = styles['Heading1']
+        title_style.alignment = 1 # Center
+        
+        elements.append(Paragraph(f"Expense History for {request.user.username}", title_style))
+        elements.append(Spacer(1, 20))
+        
+        expenses = Expense.objects.filter(user=request.user).order_by('-date')
+        
+        data = [['Date', 'Category', 'Description', 'Amount (Rs)']]
+        total = 0
         for exp in expenses:
-            p.drawString(100, y, f"{exp.date} | {exp.category.title()} | Rs {exp.amount}")
-            y -= 20
-            if y < 50:
-                p.showPage()
-                y = 750
+            data.append([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount:,.2f}"])
+            total += exp.amount
+        data.append(['', '', 'Total', f"{total:,.2f}"])
         
-        p.showPage()
-        p.save()
+        table = Table(data, colWidths=[80, 100, 200, 100])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A73E8')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#F8F9FA')),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E0E0E0')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E8F0FE')),
+        ]))
+        
+        elements.append(table)
+        doc.build(elements)
         buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename='ExpenseTracker_History.pdf')
     except ImportError:
-        # Fallback to CSV if reportlab is missing
         return export_csv(request)
