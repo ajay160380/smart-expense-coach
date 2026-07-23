@@ -386,12 +386,19 @@ async function startBot(retryCount = 0) {
 
             // Priority 0: Media Attachment (e.g. Reports)
             if (data.media) {
-                const tempFilePath = `/tmp/${data.media.filename}`;
-                fs.writeFileSync(tempFilePath, data.media.base64, 'base64');
-                const media = MessageMedia.fromFilePath(tempFilePath);
-                const chat = await msg.getChat();
-                await client.sendMessage(chat.id._serialized, media, { caption: data.message || "Here is your file.", sendMediaAsDocument: true });
-                fs.unlinkSync(tempFilePath);
+                try {
+                    const tempFilePath = `/tmp/${data.media.filename}`;
+                    fs.writeFileSync(tempFilePath, data.media.base64, 'base64');
+                    const media = MessageMedia.fromFilePath(tempFilePath);
+                    const chat = await msg.getChat();
+                    await client.sendMessage(chat.id._serialized, media, { caption: data.message || "Here is your file.", sendMediaAsDocument: true });
+                    fs.unlinkSync(tempFilePath);
+                } catch (mediaErr) {
+                    console.error('❌ Failed to send file, sending as text fallback:', mediaErr.message);
+                    const csvText = Buffer.from(data.media.base64, 'base64').toString('utf-8');
+                    const chat = await msg.getChat();
+                    await chat.sendMessage(`${data.message}\n\n*CSV Data:*\n\`\`\`\n${csvText.substring(0, 3000)}\n\`\`\``);
+                }
             }
             // Priority 1: Direct message field (covers both success and error cases)
             else if (data.message) {
@@ -415,17 +422,7 @@ async function startBot(retryCount = 0) {
             }
         } catch (err) {
             console.error('❌ Error processing message:', err.message);
-            // Send error message back to user so they know something went wrong
-            try {
-                if (err.name === 'AbortError') {
-                    await safeReply(msg, '⏰ Server response slow hai. Thoda wait karo aur phir try karo!');
-                } else {
-                    await safeReply(msg, '😅 Technical issue aa gayi. Thoda baad mein try karo!');
-                }
-            } catch (_) {
-                // Last resort - can't even send error message
-                console.error('❌ Could not send error message to user');
-            }
+            // Removed the "technical issue" message as requested by the user
         }
     });
 
