@@ -349,7 +349,9 @@ async function startBot(retryCount = 0) {
             console.warn('⚠️ Could not fetch contact, using raw from:', contactErr.message);
         }
 
-        
+        const text = msg.body;
+        console.log(`📩 Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
+
         // ── ADMIN BROADCAST UPDATE ──
         if (msg.from === (process.env.MY_WHATSAPP_NUMBER || "917379053923@c.us") && msg.body.startsWith('!broadcast_update')) {
             console.log("📣 Admin initiated broadcast update!");
@@ -370,158 +372,7 @@ async function startBot(retryCount = 0) {
             const customMessage = msg.body.replace('!broadcast_update', '').trim() || "🚀 *Paisa Mitra New Update!*\n\nNaya Notepad feature add ho gaya hai aur bahut saare bugs fix kiye gaye hain.\n\nPurana app delete karein aur ye naya APK install karein!";
 
             try {
-                const result = await pool.query("SELECT DISTINCT username FROM auth_user WHERE username ~ '^[0-9]{10,15}
-        console.log(`📩 Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
-
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-            let response;
-            try {
-                response = await fetch(`${SPACE_URL}/api/voice-expense/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone, text }),
-                    signal: controller.signal
-                });
-            } catch (fetchErr) {
-                // If it fails (e.g. connection refused on port 7860 locally), try port 8000
-                if (SPACE_URL.includes("7860") && (fetchErr.code === 'ECONNREFUSED' || fetchErr.message.includes('fetch failed') || fetchErr.message.includes('connect ECONNREFUSED'))) {
-                    console.log("⚠️ Failed to connect to SPACE_URL, trying local fallback on port 8000...");
-                    const localUrl = SPACE_URL.replace("7860", "8000");
-                    response = await fetch(`${localUrl}/api/voice-expense/`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone, text }),
-                        signal: controller.signal
-                    });
-                } else {
-                    throw fetchErr;
-                }
-            }
-            clearTimeout(timeout);
-
-            const data = await response.json();
-            console.log(`📤 Django response status=${response.status}:`, JSON.stringify(data).substring(0, 200));
-
-            // Priority 0: Media Attachment (e.g. Reports)
-            if (data.media) {
-                try {
-                    const tempFilePath = `/tmp/${data.media.filename}`;
-                    fs.writeFileSync(tempFilePath, data.media.base64, 'base64');
-                    const media = MessageMedia.fromFilePath(tempFilePath);
-                    await msg.reply(media, undefined, { caption: data.message || "Here is your file.", sendMediaAsDocument: true });
-                    fs.unlinkSync(tempFilePath);
-                } catch (mediaErr) {
-                    console.error('❌ Failed to send file, sending as text fallback:', mediaErr.message);
-                    const csvText = Buffer.from(data.media.base64, 'base64').toString('utf-8');
-                    await safeReply(msg, `${data.message}\n\n*CSV Data:*\n\`\`\`\n${csvText.substring(0, 3000)}\n\`\`\``);
-                }
-            }
-            // Priority 1: Direct message field (covers both success and error cases)
-            else if (data.message) {
-                await safeReply(msg, data.message);
-            }
-            // Priority 2: Chat response from AI (legacy field)
-            else if (data.chat_response) {
-                await safeReply(msg, data.chat_response);
-            }
-            // Priority 3: Expense object fallback
-            else if (data.expense) {
-                await safeReply(msg, `✅ Kharcha Add Ho Gaya!\n\n💰 Amount: ₹${data.expense.amount}\n📂 Category: ${data.expense.category}\n📝 Note: ${data.expense.description}`);
-            }
-            // Priority 4: Unknown response
-            else if (data.error) {
-                await safeReply(msg, `❌ ${data.error}`);
-            }
-            else {
-                console.warn('⚠️ Unexpected response format:', JSON.stringify(data));
-                await safeReply(msg, "Thoda confusion ho gaya. Pura detail batao, kya aur kitne ka liya?");
-            }
-        } catch (err) {
-            console.error('❌ Error processing message:', err.message);
-            // Removed the "technical issue" message as requested by the user
-        }
-    });
-
-    // Graceful shutdown handlers for Hugging Face Spaces / Docker
-    const gracefulShutdown = async () => {
-        console.log('Shutting down gracefully...');
-        try {
-            await client.destroy();
-            console.log('Client destroyed. Closing pg pool...');
-            try { await pool.end(); } catch (_) { }
-            process.exit(0);
-        } catch (err) {
-            console.error('Error during shutdown:', err);
-            try { await pool.end(); } catch (_) { }
-            process.exit(1);
-        }
-    };
-
-    process.on('SIGINT', gracefulShutdown);
-    process.on('SIGTERM', gracefulShutdown);
-
-    client.initialize().catch(err => {
-        console.error('❌ Client initialization failed:', err.message);
-        console.log('🔄 Restarting bot due to initialization failure...');
-        setTimeout(() => process.exit(1), 2000);
-    });
-    
-    // ── Internal HTTP API for Django to send OTPs via WhatsApp ──
-    const http = require('http');
-    const server = http.createServer(async (req, res) => {
-        if (req.method === 'POST' && req.url === '/api/send-message') {
-            let body = '';
-            req.on('data', chunk => { body += chunk.toString(); });
-            req.on('end', async () => {
-                try {
-                    const data = JSON.parse(body);
-                    const phone_val = data.phone_number || data.phone || '';
-                    const message = data.message;
-                    
-                    // Format number for WhatsApp
-                    let cleanPhone = phone_val.replace(/[^0-9]/g, '');
-                    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone; // Default to India if just 10 digits
-                    
-                    const chatId = `${cleanPhone}@c.us`;
-                    
-                    try {
-                        const numberId = await client.getNumberId(cleanPhone);
-                        if (numberId) {
-                            const res = await client.sendMessage(numberId._serialized, message);
-                            console.log(`✅ Sent WhatsApp message (OTP) to ${cleanPhone} via numberId. Msg ID:`, res.id._serialized);
-                        } else {
-                            const res = await client.sendMessage(`${cleanPhone}@c.us`, message);
-                            console.log(`✅ Sent WhatsApp message (OTP) to ${cleanPhone} via @c.us. Msg ID:`, res.id._serialized);
-                        }
-                    } catch (e) {
-                        console.log(`🔄 Trying fallback @lid for OTP to ${cleanPhone}`);
-                        await client.sendMessage(`${cleanPhone}@lid`, message);
-                    }
-                    
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true }));
-                } catch (err) {
-                    console.error('❌ Failed to send WhatsApp message via API:', err.message);
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: err.message }));
-                }
-            });
-        } else {
-            res.writeHead(404);
-            res.end();
-        }
-    });
-
-    server.listen(3001, () => {
-        console.log('🌐 Internal Bot API listening on port 3001');
-    });
-}
-
-startBot();
-");
+                const result = await pool.query("SELECT DISTINCT username FROM auth_user WHERE username ~ '^[0-9]{10,15}$'");
                 const numbers = result.rows.map(r => r.username);
 
                 await msg.reply(`✅ Starting APK broadcast to ${numbers.length} users... Please wait.`);
@@ -545,9 +396,6 @@ startBot();
             }
             return;
         }
-
-        const text = msg.body;
-        console.log(`📩 Received message from ${phone} (Original ID: ${msg.from}): ${text}`);
 
         try {
             const controller = new AbortController();
