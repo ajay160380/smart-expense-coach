@@ -11,7 +11,8 @@ import {
   SafeAreaView, Platform, RefreshControl, ActivityIndicator,
   Dimensions, Linking, Alert, Modal, TextInput, KeyboardAvoidingView, Image
 } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sharing from 'expo-sharing';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -160,7 +161,8 @@ export default function DashboardScreen({ navigation }) {
       Alert.alert('Exporting', `Preparing your ${format.toUpperCase()} export...`);
       // Use standard fetch here to download file
       const url = `${api.defaults.baseURL}/api/export/${format}/`;
-      const token = await api.defaults.headers.common['Authorization'];
+      const tokenStr = await AsyncStorage.getItem('userToken');
+      const token = tokenStr ? `Token ${tokenStr}` : '';
       
       const fileUri = FileSystem.documentDirectory + `ExpenseTracker_History.${format}`;
       
@@ -169,7 +171,13 @@ export default function DashboardScreen({ navigation }) {
       });
       
       if (downloadRes.status === 200) {
-        await Sharing.shareAsync(downloadRes.uri);
+        const mimeType = format === 'pdf' ? 'application/pdf' : 'text/csv';
+        const uti = format === 'pdf' ? 'com.adobe.pdf' : 'public.comma-separated-values-text';
+        await Sharing.shareAsync(downloadRes.uri, {
+          mimeType: mimeType,
+          dialogTitle: `Download Expense ${format.toUpperCase()}`,
+          UTI: uti
+        });
       } else {
         Alert.alert('Export Error', 'Failed to export data.');
       }
