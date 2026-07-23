@@ -26,6 +26,9 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 \
     libpangocairo-1.0-0 \
     libpango-1.0-0 \
+    build-essential \
+    pkg-config \
+    libcairo2-dev \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
