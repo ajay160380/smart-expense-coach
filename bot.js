@@ -381,8 +381,8 @@ async function startBot(retryCount = 0) {
             const customMessage = msg.body.replace('!broadcast_update', '').trim() || defaultMsg;
 
             try {
-                const result = await pool.query("SELECT DISTINCT username FROM auth_user WHERE username ~ '^[0-9]{10,15}$'");
-                const numbers = result.rows.map(r => r.username);
+                const result = await pool.query("SELECT DISTINCT phone_number FROM tracker_userprofile WHERE phone_number ~ '^[0-9]{10,15}$'");
+                const numbers = result.rows.map(r => r.phone_number);
 
                 await msg.reply(`✅ Starting APK broadcast to ${numbers.length} users... Please wait.`);
 
