@@ -1481,6 +1481,15 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             return JsonResponse({"status": "success", "message": "Main ExpenseTracker bot hoon! Main ye sab kar sakta hoon:\n\n1. Add Expense: '500 for dinner' ya 'auto 150'\n2. Show Budget: 'how much budget left'\n3. Feedback: Type 'feedback'\n\nTry it now! 🚀"})
 
         # ──────────────────────────────────────────────────────────────────────
+        # FAST PATH FOR LARGE LISTS
+        # ──────────────────────────────────────────────────────────────────────
+        if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add to expense", "expense me", "log", "save", "note", "notepad"]):
+            return JsonResponse({
+                "status": "success",
+                "message": "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu? 🤔"
+            })
+
+        # ──────────────────────────────────────────────────────────────────────
         # FAST PATH (Bypass slow AI for standard "[Amount] [Description]" format)
         # ──────────────────────────────────────────────────────────────────────
         fast_match = re.match(r'^(\d+(?:\.\d+)?)\s+(.+)$', normalized_text.strip())
@@ -1733,7 +1742,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             messages=messages,
             model="llama-3.1-8b-instant",
             temperature=0.2,
-            max_tokens=1024,
+            max_tokens=2048,
         )
         raw_response = response.choices[0].message.content.strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
