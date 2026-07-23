@@ -390,14 +390,12 @@ async function startBot(retryCount = 0) {
                     const tempFilePath = `/tmp/${data.media.filename}`;
                     fs.writeFileSync(tempFilePath, data.media.base64, 'base64');
                     const media = MessageMedia.fromFilePath(tempFilePath);
-                    const chat = await msg.getChat();
-                    await client.sendMessage(chat.id._serialized, media, { caption: data.message || "Here is your file.", sendMediaAsDocument: true });
+                    await msg.reply(media, undefined, { caption: data.message || "Here is your file.", sendMediaAsDocument: true });
                     fs.unlinkSync(tempFilePath);
                 } catch (mediaErr) {
                     console.error('❌ Failed to send file, sending as text fallback:', mediaErr.message);
                     const csvText = Buffer.from(data.media.base64, 'base64').toString('utf-8');
-                    const chat = await msg.getChat();
-                    await chat.sendMessage(`${data.message}\n\n*CSV Data:*\n\`\`\`\n${csvText.substring(0, 3000)}\n\`\`\``);
+                    await safeReply(msg, `${data.message}\n\n*CSV Data:*\n\`\`\`\n${csvText.substring(0, 3000)}\n\`\`\``);
                 }
             }
             // Priority 1: Direct message field (covers both success and error cases)
