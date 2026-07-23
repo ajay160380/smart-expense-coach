@@ -460,11 +460,12 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
        - note = The exact text they want to save. If they are replying to your clarification about a long list, extract the FULL list from the history and save it as the note!
     3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
        - action = "ask_clarification"
-       - chat_response = "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu?"
+       - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔" (Translate to Hinglish if user speaks Hinglish)
     4. If the user is ASKING a question, requesting a summary, complaining, or chatting:
        - action = "chat"
        - chat_response = your natural, conversational, sarcastic but helpful reply.
          - Address the user by their name ({user_name}) when appropriate!
+         - IMPORTANT: Reply in the SAME LANGUAGE as the user! If they speak English, reply in English. If they speak Hinglish/Hindi, reply in Hinglish.
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
@@ -1484,7 +1485,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # FAST PATH FOR LARGE LISTS
         # ──────────────────────────────────────────────────────────────────────
         if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add to expense", "expense me", "log", "save", "note", "notepad"]):
-            msg = "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu? 🤔"
+            hinglish_words = {"kharchi", "bhai", "hai", "kya", "nahi", "karo", "me", "yeh", "kaha", "kisko", "kitna", "de", "diya", "liye", "ka", "ki", "ke", "aur", "pe", "se", "ko", "wala"}
+            words = set(re.findall(r'\b[a-z]+\b', lower_text))
+            is_hinglish = bool(words.intersection(hinglish_words))
+            
+            msg = "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu? 🤔" if is_hinglish else "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
             
             # Save to history so AI remembers the list
             chat_history = session.context if isinstance(session.context, list) else []
