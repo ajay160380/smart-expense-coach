@@ -362,39 +362,24 @@ async function startBot(retryCount = 0) {
         ];
         if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!broadcast_update')) {
             console.log("📣 Admin initiated broadcast update!");
+
+            const downloadLink = "https://ajay160380-paisa-mitra.hf.space/static/downloads/ExpenseTracker.apk";
+            const defaultMsg = `🚀 *Expense Tracker - Important Update Available!*\n\nHello there! 👋 We've just released a major update to your Expense Tracker app with some exciting new additions.\n\n✨ *What's New:*\n• *Smart Notepad:* A brand-new feature to quickly jot down your financial notes and reminders directly within the app! 📝\n• *Refreshed Branding:* Enjoy our beautiful new app icon and a sleeker UI experience. 🎨\n• *Performance Boost:* We've squashed some bugs to make your expense tracking faster and smoother than ever. ⚡\n\n⚠️ *IMPORTANT:* To enjoy these new features, please *DELETE* your old Expense Tracker app first, and then download and install the new version from the link below:\n\n📲 *Download Now:* ${downloadLink}\n\nThank you for trusting Expense Tracker! 💼`;
             
-            let messageToForward = null;
-            if (msg.hasMedia) {
-                messageToForward = msg;
-            } else if (msg.hasQuotedMsg) {
-                const quotedMsg = await msg.getQuotedMessage();
-                if (quotedMsg.hasMedia) {
-                    messageToForward = quotedMsg;
-                }
-            }
-
-            if (!messageToForward) {
-                return msg.reply("⚠️ No media found! Please attach the APK file or reply to an APK file with:\n!broadcast_update");
-            }
-
-            const defaultMsg = "🚀 *Expense Tracker - Important Update Available!*\\n\\nHello there! 👋 We've just released a major update to your Expense Tracker app with some exciting new additions.\\n\\n✨ *What's New:*\\n• *Smart Notepad:* A brand-new feature to quickly jot down your financial notes and reminders directly within the app! 📝\\n• *Refreshed Branding:* Enjoy our beautiful new app icon and a sleeker UI experience. 🎨\\n• *Performance Boost:* We've squashed some bugs to make your expense tracking faster and smoother than ever. ⚡\\n\\n⚠️ *IMPORTANT:* To enjoy these new features, please *DELETE* your old Expense Tracker app first, and then install the new APK file.\\n\\nThank you for trusting Expense Tracker! 💼";
             const customMessage = msg.body.replace('!broadcast_update', '').trim() || defaultMsg;
 
             try {
                 const result = await pool.query("SELECT DISTINCT phone_number FROM tracker_userprofile WHERE phone_number ~ '^[0-9]{10,15}$'");
                 const numbers = result.rows.map(r => r.phone_number);
 
-                await msg.reply(`✅ Starting APK broadcast to ${numbers.length} users... Please wait.`);
+                await msg.reply(`✅ Starting TEXT ONLY broadcast with Download Link to ${numbers.length} users... Please wait.`);
 
                 let successCount = 0;
                 for (const number of numbers) {
                     try {
                         const chatId = `${number}@c.us`;
                         
-                        // First forward the APK directly (prevents memory crash from downloading 100MB file)
-                        await messageToForward.forward(chatId);
-                        
-                        // Then send the text update
+                        // Send text with link
                         await client.sendMessage(chatId, customMessage);
                         
                         successCount++;
