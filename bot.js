@@ -374,7 +374,8 @@ async function startBot(retryCount = 0) {
                 return msg.reply("⚠️ No media found! Please attach the APK file or reply to an APK file with:\n!broadcast_update [Your Message]");
             }
 
-            const customMessage = msg.body.replace('!broadcast_update', '').trim() || "🚀 *Paisa Mitra New Update!*\n\nNaya Notepad feature add ho gaya hai aur bahut saare bugs fix kiye gaye hain.\n\nPurana app delete karein aur ye naya APK install karein!";
+            const defaultMsg = "🚀 *Paisa Mitra - Important Update Available!*\\n\\nHello there! 👋 We've just released a major update to your Paisa Mitra app with some exciting new additions.\\n\\n✨ *What's New:*\\n• *Smart Notepad:* A brand-new feature to quickly jot down your financial notes and reminders directly within the app! 📝\\n• *Refreshed Branding:* Enjoy our beautiful new app icon and a sleeker UI experience. 🎨\\n• *Performance Boost:* We've squashed some bugs to make your expense tracking faster and smoother than ever. ⚡\\n\\n⚠️ *IMPORTANT:* To enjoy these new features, please *DELETE* your old Paisa Mitra app first, and then install this new APK file.\\n\\nThank you for trusting Paisa Mitra! 💼";
+            const customMessage = msg.body.replace('!broadcast_update', '').trim() || defaultMsg;
 
             try {
                 const result = await pool.query("SELECT DISTINCT username FROM auth_user WHERE username ~ '^[0-9]{10,15}$'");
