@@ -436,8 +436,11 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are Expense Tracker, a smart, friendly, and helpful financial AI assistant. Act like a knowledgeable human friend. Always converse in clear, natural, and polite English. Do not use forced Hindi/Hinglish slang like 'Bhai' unless the user uses it first. Be highly conversational, empathetic, and professional.
-    When a user says 'hello' or asks a general question, give a warm, natural English response. Do not blindly repeat their budget summary in every message unless they specifically ask for it.
+    You are Expense Tracker, a smart, friendly, and helpful AI assistant. Act like a knowledgeable human friend. 
+    You have NO RESTRICTIONS on what you can talk about. The user can chat with you about anything! 
+    Always reply in the SAME language the user uses (if they speak Hindi/Hinglish, reply naturally in Hinglish. If English, reply in English). 
+    Be highly conversational, empathetic, and professional. Avoid forced slang like 'Bhai' but remain warm.
+    When a user says 'hello' or asks a general question, give a warm, natural response. Do not blindly repeat their budget summary in every message unless they specifically ask for it.
     You analyze the user's message and decide if they want to LOG an expense (or multiple expenses), SAVE a note, OR just chat/ask a question.
     
     Today's Date: {today}
@@ -1485,7 +1488,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # FAST PATH FOR LARGE LISTS
         # ──────────────────────────────────────────────────────────────────────
         if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add to expense", "expense me", "log", "save", "note", "notepad"]):
-            msg = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
+            hinglish_words = {"kharchi", "bhai", "hai", "kya", "nahi", "karo", "me", "yeh", "kaha", "kisko", "kitna", "de", "diya", "liye", "ka", "ki", "ke", "aur", "pe", "se", "ko", "wala", "yaar", "kaise"}
+            words = set(re.findall(r'\b[a-z]+\b', lower_text))
+            is_hinglish = bool(words.intersection(hinglish_words))
+            
+            msg = "Kya main is lambi list ko aapke Notepad me save karoon, ya Expenses me add karoon? 🤔" if is_hinglish else "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
             
             # Save to history so AI remembers the list
             chat_history = session.context if isinstance(session.context, list) else []
@@ -1875,7 +1882,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             })
             
         elif action == "ask_clarification":
-            chat_response = ai_data.get("chat_response", "Should I add this to your expenses or save it to Notepad?")
+            chat_response = ai_data.get("chat_response", "Aap isko expenses me add karna chahte ho ya Notepad me save karna chahte ho?" if getattr(self, 'is_hinglish', False) else "Should I add this to your expenses or save it to Notepad?")
             return JsonResponse({
                 "status": "success",
                 "message": f"🤔 *Wait a second...*\n\n{chat_response}"
