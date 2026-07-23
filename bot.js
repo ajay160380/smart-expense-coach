@@ -388,7 +388,7 @@ async function startBot(retryCount = 0) {
             if (data.media) {
                 const media = new MessageMedia(data.media.mimetype, data.media.base64, data.media.filename);
                 const chat = await msg.getChat();
-                await client.sendMessage(chat.id._serialized, media, { caption: data.message || "Here is your file." });
+                await client.sendMessage(chat.id._serialized, media, { caption: data.message || "Here is your file.", sendMediaAsDocument: true });
             }
             // Priority 1: Direct message field (covers both success and error cases)
             else if (data.message) {
