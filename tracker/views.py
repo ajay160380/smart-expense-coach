@@ -457,7 +457,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
        - expenses = An array of expense objects. Extract EVERY SINGLE item mentioned in their message (amount, category, description). Do NOT miss any item from a list!
     2. If the user EXPLICITLY asks to save a note (e.g. "save to notepad", "notepad me daal do", "note: buy milk"):
        - action = "save_note"
-       - note = The exact text they want to save.
+       - note = The exact text they want to save. If they are replying to your clarification about a long list, extract the FULL list from the history and save it as the note!
     3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
        - action = "ask_clarification"
        - chat_response = "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu?"
@@ -1484,9 +1484,18 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # FAST PATH FOR LARGE LISTS
         # ──────────────────────────────────────────────────────────────────────
         if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add to expense", "expense me", "log", "save", "note", "notepad"]):
+            msg = "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu? 🤔"
+            
+            # Save to history so AI remembers the list
+            chat_history = session.context if isinstance(session.context, list) else []
+            chat_history.append({"role": "user", "content": normalized_text})
+            chat_history.append({"role": "assistant", "content": json.dumps({"action": "ask_clarification", "chat_response": msg})})
+            session.context = chat_history[-10:]
+            session.save()
+            
             return JsonResponse({
                 "status": "success",
-                "message": "Bhai, ye itni lambi list Notepad me save karu ya Expenses me add karu? 🤔"
+                "message": msg
             })
 
         # ──────────────────────────────────────────────────────────────────────
