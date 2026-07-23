@@ -374,7 +374,7 @@ async function startBot(retryCount = 0) {
                 return msg.reply("⚠️ No media found! Please attach the APK file or reply to an APK file with:\n!broadcast_update [Your Message]");
             }
 
-            const defaultMsg = "🚀 *Paisa Mitra - Important Update Available!*\\n\\nHello there! 👋 We've just released a major update to your Paisa Mitra app with some exciting new additions.\\n\\n✨ *What's New:*\\n• *Smart Notepad:* A brand-new feature to quickly jot down your financial notes and reminders directly within the app! 📝\\n• *Refreshed Branding:* Enjoy our beautiful new app icon and a sleeker UI experience. 🎨\\n• *Performance Boost:* We've squashed some bugs to make your expense tracking faster and smoother than ever. ⚡\\n\\n⚠️ *IMPORTANT:* To enjoy these new features, please *DELETE* your old Paisa Mitra app first, and then install this new APK file.\\n\\nThank you for trusting Paisa Mitra! 💼";
+            const defaultMsg = "🚀 *Expense Tracker - Important Update Available!*\\n\\nHello there! 👋 We've just released a major update to your Expense Tracker app with some exciting new additions.\\n\\n✨ *What's New:*\\n• *Smart Notepad:* A brand-new feature to quickly jot down your financial notes and reminders directly within the app! 📝\\n• *Refreshed Branding:* Enjoy our beautiful new app icon and a sleeker UI experience. 🎨\\n• *Performance Boost:* We've squashed some bugs to make your expense tracking faster and smoother than ever. ⚡\\n\\n⚠️ *IMPORTANT:* To enjoy these new features, please *DELETE* your old Expense Tracker app first, and then install this new APK file.\\n\\nThank you for trusting Expense Tracker! 💼";
             const customMessage = msg.body.replace('!broadcast_update', '').trim() || defaultMsg;
 
             try {
