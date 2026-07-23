@@ -255,6 +255,51 @@
     .float-text h4 { margin: 0 0 4px 0; font-size: 1.1rem; color: var(--text-main); }
     .float-text p { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
 
+    /* Browser Mockup for Video */
+    .browser-mockup {
+        position: relative;
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        border-radius: 20px;
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+        width: 100%;
+        max-width: 900px;
+        z-index: 10;
+        animation: float-card 8s ease-in-out infinite alternate;
+    }
+    
+    .browser-header {
+        height: 40px;
+        background: var(--bg-glass);
+        border-bottom: 1px solid var(--border-glass);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 8px;
+    }
+    
+    .browser-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    .browser-dot.red { background: #FF5F56; }
+    .browser-dot.yellow { background: #FFBD2E; }
+    .browser-dot.green { background: #27C93F; }
+    
+    .video-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 80%;
+        height: 80%;
+        background: radial-gradient(circle, rgba(37, 211, 102, 0.15) 0%, rgba(129, 140, 248, 0.1) 40%, transparent 70%);
+        transform: translate(-50%, -50%);
+        filter: blur(80px);
+        z-index: 1;
+    }
+
     /* The Phone */
     .phone-wrapper {
         perspective: 1500px;
@@ -524,8 +569,14 @@
         </div>
 
         <!-- Central Video Showcase -->
-        <div class="video-wrapper" style="position: relative; width: 100%; max-width: 850px; border-radius: 20px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(255,255,255,0.1); z-index: 10;">
-            <video autoplay loop muted playsinline style="width: 100%; height: auto; display: block; border-radius: 20px;">
+        <div class="video-glow"></div>
+        <div class="browser-mockup">
+            <div class="browser-header">
+                <div class="browser-dot red"></div>
+                <div class="browser-dot yellow"></div>
+                <div class="browser-dot green"></div>
+            </div>
+            <video autoplay loop muted playsinline style="width: 100%; height: auto; display: block;">
                 <source src="{% static 'tracker/videos/demo.mp4' %}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
