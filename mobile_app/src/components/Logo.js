@@ -15,7 +15,7 @@ export default function Logo({ size = 1, showText = true, circle = true }) {
         circle ? { backgroundColor: '#FFF', borderRadius: 110 * s, shadowColor: '#000', shadowOffset: { width: 0, height: 10 * s }, shadowOpacity: 0.1, shadowRadius: 20 * s, elevation: 10 } : {}
       ]}>
         <Image 
-          source={require('../../assets/icon.png')} 
+          source={require('../../assets/logo.png')} 
           style={{ width: 180 * s, height: 180 * s, resizeMode: 'contain', borderRadius: 24 * s }} 
         />
       </View>
