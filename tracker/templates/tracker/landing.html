@@ -256,17 +256,22 @@
     .float-text p { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
 
     /* Browser Mockup for Video */
+    @keyframes tilt-3d {
+        0% { transform: perspective(1500px) rotateX(10deg) rotateY(-6deg) translateY(0) translateZ(0) scale(0.95); box-shadow: -20px 40px 100px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.1); }
+        100% { transform: perspective(1500px) rotateX(6deg) rotateY(-3deg) translateY(-15px) translateZ(30px) scale(0.97); box-shadow: -10px 20px 80px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1); }
+    }
+    
     .browser-mockup {
         position: relative;
         background: var(--bg-card);
         border: 1px solid var(--border-glass);
         border-radius: 20px;
-        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
         overflow: hidden;
         width: 100%;
         max-width: 900px;
         z-index: 10;
-        animation: float-card 8s ease-in-out infinite alternate;
+        animation: tilt-3d 5s ease-in-out infinite alternate;
+        transform-style: preserve-3d;
     }
     
     .browser-header {
@@ -288,16 +293,21 @@
     .browser-dot.yellow { background: #FFBD2E; }
     .browser-dot.green { background: #27C93F; }
     
+    @keyframes pulse-glow {
+        0% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); filter: blur(80px); }
+        100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.1); filter: blur(100px); }
+    }
+
     .video-glow {
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 80%;
-        height: 80%;
-        background: radial-gradient(circle, rgba(37, 211, 102, 0.15) 0%, rgba(129, 140, 248, 0.1) 40%, transparent 70%);
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(37, 211, 102, 0.25) 0%, rgba(129, 140, 248, 0.2) 40%, transparent 70%);
         transform: translate(-50%, -50%);
-        filter: blur(80px);
         z-index: 1;
+        animation: pulse-glow 4s ease-in-out infinite alternate;
     }
 
     /* The Phone */
@@ -535,38 +545,7 @@
 
     <!-- Interactive Mockup Showcase -->
     <section class="showcase-container" data-aos="fade-up" data-aos-delay="200">
-        <!-- Floating UI Elements -->
-        <div class="float-item float-1" style="--rot: -5deg;">
-            <div class="float-icon fi-1">🍔</div>
-            <div class="float-text">
-                <h4>Zomato Order</h4>
-                <p>₹650 • Food</p>
-            </div>
-        </div>
-
-        <div class="float-item float-2" style="--rot: 5deg;">
-            <div class="float-icon fi-2">🎬</div>
-            <div class="float-text">
-                <h4>Netflix Sub</h4>
-                <p>₹499 • Entertainment</p>
-            </div>
-        </div>
-
-        <div class="float-item float-3" style="--rot: 8deg;">
-            <div class="float-icon fi-3">✅</div>
-            <div class="float-text">
-                <h4>Budget Safe</h4>
-                <p>₹12k Remaining</p>
-            </div>
-        </div>
-
-        <div class="float-item float-4" style="--rot: -3deg;">
-            <div class="float-icon fi-4">🤖</div>
-            <div class="float-text">
-                <h4>AI Coach</h4>
-                <p>Stop buying shoes!</p>
-            </div>
-        </div>
+        <!-- 3D Float Elements Removed -->
 
         <!-- Central Video Showcase -->
         <div class="video-glow"></div>
