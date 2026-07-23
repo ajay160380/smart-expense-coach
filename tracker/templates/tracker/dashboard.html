@@ -997,7 +997,7 @@ body::before {
           <div class="card-title" style="margin:0">💳 Transactions</div>
           <div class="export-btns">
             <button class="export-btn" onclick="exportCSV()">CSV ↓</button>
-            <button class="export-btn" onclick="exportJSON()">JSON ↓</button>
+            <button class="export-btn" onclick="exportPDF()">PDF ↓</button>
           </div>
         </div>
         <div class="search-wrap">
@@ -1914,13 +1914,9 @@ function exportCSV() {
   a.click();
   showToast('CSV export complete! ✅','success');
 }
-function exportJSON() {
-  const data = {exported_at:new Date().toISOString(), budget, expenses};
-  const a = document.createElement('a');
-  a.href = 'data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2));
-  a.download = `paisatracker_${today.toISOString().split('T')[0]}.json`;
-  a.click();
-  showToast('JSON export complete! ✅','success');
+function exportPDF() {
+  window.location.href = '/api/export/pdf/';
+  showToast('Downloading PDF... 📄', 'success');
 }
 
 function openModal(id)  {

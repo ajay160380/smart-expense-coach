@@ -164,7 +164,7 @@ export default function DashboardScreen({ navigation }) {
       const tokenStr = await AsyncStorage.getItem('userToken');
       const token = tokenStr ? `Token ${tokenStr}` : '';
       
-      const fileUri = FileSystem.documentDirectory + `ExpenseTracker_History.${format}`;
+      const fileUri = FileSystem.cacheDirectory + `ExpenseTracker_History.${format}`;
       
       const downloadRes = await FileSystem.downloadAsync(url, fileUri, {
         headers: { Authorization: token }
