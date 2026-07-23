@@ -482,12 +482,11 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
        - note = The exact text they want to save. If they are replying to your clarification about a long list, extract the FULL list from the history and save it as the note!
     3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
        - action = "ask_clarification"
-       - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔" (Translate to Hinglish if user speaks Hinglish)
+       - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
     4. If the user is ASKING a question, requesting a summary, complaining, or chatting:
        - action = "chat"
        - chat_response = your natural, conversational, polite English reply.
          - Address the user by their name ({user_name}) when appropriate!
-         - IMPORTANT: Reply in the SAME LANGUAGE as the user! If they speak English, reply in English. If they speak Hinglish/Hindi, reply in Hinglish.
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
