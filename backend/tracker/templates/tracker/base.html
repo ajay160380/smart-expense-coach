@@ -542,37 +542,9 @@
                 font-size: 26px;
             }
         }
-        {% block extra_css %}{% endblock %}
-    
-/* --- MOBILE FIXES --- */
-@media (max-width: 768px) {
-    /* Stop Lag on Mobile */
-    body::before, body::after { animation: none !important; opacity: 0.2 !important; }
-    .card, .insight-panel, .app-sidebar { backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }
-    
-    /* Fix Sidebar Menu Squishing */
-    .app-sidebar { 
-        display: flex !important; 
-        flex-direction: row !important; 
-        overflow-x: auto !important; 
-        white-space: nowrap !important; 
-        flex-wrap: nowrap !important;
-        scrollbar-width: none; 
-        padding-bottom: 5px !important;
-        justify-content: flex-start !important;
-    }
-    .app-sidebar::-webkit-scrollbar { display: none; }
-    .app-sidebar-btn { flex: 0 0 auto !important; padding: 10px 14px !important; }
-    
-    /* Fix FAB overlap */
-    .floating-dock { flex-wrap: wrap !important; justify-content: center !important; }
-    
-    /* Ensure Header wraps correctly */
-    .nav { flex-wrap: wrap; justify-content: space-between; }
-    .nav-brand { flex: 1 1 auto; }
-}
-
-</style>
+        {% block base_extra_css %}{% endblock %}
+    </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <div class="bg-mesh"></div>
