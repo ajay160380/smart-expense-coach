@@ -1024,6 +1024,35 @@ body::after {
     100% { background-position: 0% 50%; }
 }
 
+
+/* --- MOBILE FIXES --- */
+@media (max-width: 768px) {
+    /* Stop Lag on Mobile */
+    body::before, body::after { animation: none !important; opacity: 0.2 !important; }
+    .card, .insight-panel, .app-sidebar { backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }
+    
+    /* Fix Sidebar Menu Squishing */
+    .app-sidebar { 
+        display: flex !important; 
+        flex-direction: row !important; 
+        overflow-x: auto !important; 
+        white-space: nowrap !important; 
+        flex-wrap: nowrap !important;
+        scrollbar-width: none; 
+        padding-bottom: 5px !important;
+        justify-content: flex-start !important;
+    }
+    .app-sidebar::-webkit-scrollbar { display: none; }
+    .app-sidebar-btn { flex: 0 0 auto !important; padding: 10px 14px !important; }
+    
+    /* Fix FAB overlap */
+    .floating-dock { flex-wrap: wrap !important; justify-content: center !important; }
+    
+    /* Ensure Header wraps correctly */
+    .nav { flex-wrap: wrap; justify-content: space-between; }
+    .nav-brand { flex: 1 1 auto; }
+}
+
 </style>
 </head>
 <body>
@@ -1051,7 +1080,7 @@ body::after {
   <!-- NAV -->
   <div class="nav">
     <div class="nav-brand" style="display: flex; align-items: center; gap: 12px;">
-      <img src="{% static 'tracker/images/icon.png' %}?v=2" alt="ExpenseTracker Logo" style="height: 60px; width: 60px; border-radius: 14px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+      <div style="background: linear-gradient(135deg, var(--primary), var(--primary-h)); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
       <div style="display: flex; flex-direction: column; line-height: 1.1;">
         <span style="font-size: 24px; font-weight: 800;">Expense<span style="color: var(--primary);">Tracker</span></span>
         <sub id="month-label" style="font-size: 12px; font-weight: 500; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px;"></sub>
@@ -1475,6 +1504,35 @@ body::after {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
+}
+
+
+/* --- MOBILE FIXES --- */
+@media (max-width: 768px) {
+    /* Stop Lag on Mobile */
+    body::before, body::after { animation: none !important; opacity: 0.2 !important; }
+    .card, .insight-panel, .app-sidebar { backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }
+    
+    /* Fix Sidebar Menu Squishing */
+    .app-sidebar { 
+        display: flex !important; 
+        flex-direction: row !important; 
+        overflow-x: auto !important; 
+        white-space: nowrap !important; 
+        flex-wrap: nowrap !important;
+        scrollbar-width: none; 
+        padding-bottom: 5px !important;
+        justify-content: flex-start !important;
+    }
+    .app-sidebar::-webkit-scrollbar { display: none; }
+    .app-sidebar-btn { flex: 0 0 auto !important; padding: 10px 14px !important; }
+    
+    /* Fix FAB overlap */
+    .floating-dock { flex-wrap: wrap !important; justify-content: center !important; }
+    
+    /* Ensure Header wraps correctly */
+    .nav { flex-wrap: wrap; justify-content: space-between; }
+    .nav-brand { flex: 1 1 auto; }
 }
 
 </style>
