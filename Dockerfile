@@ -36,11 +36,11 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt backend/
+RUN cd backend && pip install --no-cache-dir -r requirements.txt
 
-COPY package.json .
-RUN npm install
+COPY whatsapp_bot/package.json whatsapp_bot/
+RUN cd whatsapp_bot && npm install
 
 COPY . .
 

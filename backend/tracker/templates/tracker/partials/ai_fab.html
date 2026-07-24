@@ -1,0 +1,147 @@
+<!-- AI FAB -->
+<div class="ai-fab">
+  <button class="ai-fab-btn" onclick="toggleFabAI()" id="fab-ai-btn" title="Open ExpenseTracker AI">🤖</button>
+  <div class="ai-notif" id="fab-ai-notif">1</div>
+</div>
+
+<!-- AI POPUP -->
+<div class="ai-popup" id="fab-ai-popup">
+  <div class="ai-pop-head">
+    <div class="ai-pop-av">🤖</div>
+    <div>
+      <div class="ai-pop-name">ExpenseTracker AI</div>
+      <div class="ai-pop-status">Always online</div>
+    </div>
+    <button class="ai-pop-x" onclick="toggleFabAI()">✕</button>
+  </div>
+  <div class="ai-error-banner" id="fab-ai-error-banner">
+    ⚠️ <span id="fab-ai-error-text">Unable to connect to the server.</span>
+    <button onclick="retryFabLastMsg()" style="margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:var(--font);font-weight:600;">Retry</button>
+  </div>
+  <div class="ai-msgs" id="fab-ai-msgs"></div>
+  <div class="ai-chips" id="fab-ai-chips">
+    <button class="ai-chip" onclick="quickFabAsk(this)">Where is my money going?</button>
+    <button class="ai-chip" onclick="quickFabAsk(this)">Analyze my budget</button>
+    <button class="ai-chip" onclick="quickFabAsk(this)">How can I save ₹5000?</button>
+    <button class="ai-chip" onclick="quickFabAsk(this)">Give top 3 saving tips</button>
+  </div>
+  <div class="ai-input-row">
+    <input class="ai-input" id="fab-ai-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFabMsg();}">
+    <button class="ai-send" id="fab-ai-send" onclick="sendFabMsg()" title="Send">➤</button>
+  </div>
+</div>
+
+<script>
+let fabAiOpen = false;
+let fabAiTyping = false;
+let fabAiHistory = [];
+let fabLastMsg = '';
+
+function toggleFabAI() {
+  fabAiOpen = !fabAiOpen;
+  document.getElementById('fab-ai-popup').classList.toggle('open', fabAiOpen);
+  if (fabAiOpen) {
+    document.getElementById('fab-ai-notif').style.display = 'none';
+    if (!fabAiHistory.length) sendFabWelcome();
+    setTimeout(() => document.getElementById('fab-ai-input').focus(), 350);
+  }
+}
+
+function sendFabWelcome() {
+  const ctx = getFinancialContext();
+  let msg = `Hello! I am ExpenseTracker 🙏\n\n`;
+  msg += `✅ Remaining: ₹${Math.round(ctx.rem).toLocaleString('en-IN')}\n`;
+  msg += `📊 Budget used: ${ctx.pct}%\n`;
+  if (ctx.topCat) msg += `🔥 Top category: ${ctx.topCat[0].charAt(0).toUpperCase()+ctx.topCat[0].slice(1)} — ₹${Math.round(ctx.topCat[1]).toLocaleString('en-IN')}`;
+  msg += `\n\nWhat would you like to know? Ask me anything! 😊`;
+  addFabBotMsg(msg);
+}
+
+function quickFabAsk(btn) {
+  document.getElementById('fab-ai-input').value = btn.textContent;
+  sendFabMsg();
+}
+
+function addFabUserMsg(text) {
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'ai-msg user';
+  div.innerHTML = `<div class="ai-bubble">${text.replace(/</g,'&lt;')}</div><div class="ai-time">${now}</div>`;
+  document.getElementById('fab-ai-msgs').appendChild(div);
+  scrollFabMsgs();
+}
+
+function addFabBotMsg(text) {
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'ai-msg bot';
+  div.innerHTML = `<div class="ai-bubble">${text.replace(/</g,'&lt;').replace(/\\n/g,'<br>')}</div><div class="ai-time">${now}</div>`;
+  document.getElementById('fab-ai-msgs').appendChild(div);
+  scrollFabMsgs();
+  fabAiHistory.push({role:'assistant',content:text});
+}
+
+function showFabTyping() {
+  const div = document.createElement('div');
+  div.id        = 'fab-typing-ind';
+  div.className = 'ai-msg bot';
+  div.innerHTML = '<div class="ai-bubble"><div class="typing-wrap"><span></span><span></span><span></span></div></div>';
+  document.getElementById('fab-ai-msgs').appendChild(div);
+  scrollFabMsgs();
+}
+
+function hideFabTyping() { const t=document.getElementById('fab-typing-ind'); if(t) t.remove(); }
+function scrollFabMsgs() { const m=document.getElementById('fab-ai-msgs'); m.scrollTop=m.scrollHeight; }
+
+function showFabAIError(msg) {
+  const banner = document.getElementById('fab-ai-error-banner');
+  document.getElementById('fab-ai-error-text').textContent = msg;
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 6000);
+}
+
+function retryFabLastMsg() {
+  if (!fabLastMsg) return;
+  document.getElementById('fab-ai-input').value = fabLastMsg;
+  sendFabMsg();
+}
+
+async function sendFabMsg() {
+  const inp = document.getElementById('fab-ai-input');
+  const msg = inp.value.trim();
+  if (!msg || fabAiTyping) return;
+  fabLastMsg = msg;
+  inp.value = '';
+  addFabUserMsg(msg);
+  fabAiHistory.push({role:'user', content:msg});
+  document.getElementById('fab-ai-chips').style.display = 'none';
+  document.getElementById('fab-ai-error-banner').classList.remove('show');
+  fabAiTyping = true;
+  document.getElementById('fab-ai-send').disabled = true;
+  showFabTyping();
+  try {
+    const response = await fetch(URL_AI_CHAT, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json','X-CSRFToken': getCsrf()},
+      body: JSON.stringify({message: msg, history: fabAiHistory.slice(-8)}),
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(()=>({}));
+      throw new Error(errData.error || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    hideFabTyping();
+    if (data.reply) addFabBotMsg(data.reply);
+    else throw new Error('Empty reply from server');
+  } catch(err) {
+    hideFabTyping();
+    console.error('AI Chat error:', err);
+    showFabAIError('Unable to connect — please retry.');
+    addFabBotMsg('Oops! A network issue occurred 😅 Please retry.');
+  } finally {
+    fabAiTyping = false;
+    document.getElementById('fab-ai-send').disabled = false;
+    inp.focus();
+  }
+}
+</script>

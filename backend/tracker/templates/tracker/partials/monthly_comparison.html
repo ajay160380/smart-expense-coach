@@ -1,0 +1,46 @@
+<!-- 📊 MONTHLY COMPARISON -->
+      {% if comparison.has_prev_data %}
+      <div class="compare-section" id="compare-section">
+        <div class="compare-header">
+          <div class="section-title">📊 vs {{ comparison.prev_month_name }}</div>
+          <span class="compare-verdict verdict-{{ comparison.verdict }}">{{ comparison.verdict_msg }}</span>
+        </div>
+        <div class="compare-grid">
+          <div class="compare-stat">
+            <div class="cs-lbl">This Month</div>
+            <div class="cs-val">₹{{ comparison.cur_total|floatformat:0 }}</div>
+            <div class="cs-change {% if comparison.total_change_pct > 0 %}up{% elif comparison.total_change_pct < 0 %}down{% else %}same{% endif %}">
+              {% if comparison.total_change_pct > 0 %}↑{% elif comparison.total_change_pct < 0 %}↓{% else %}→{% endif %} {{ comparison.total_change_pct }}%
+            </div>
+          </div>
+          <div class="compare-stat">
+            <div class="cs-lbl">Last Month</div>
+            <div class="cs-val">₹{{ comparison.prev_total|floatformat:0 }}</div>
+            <div class="cs-change same">{{ comparison.prev_month_name }}</div>
+          </div>
+          <div class="compare-stat">
+            <div class="cs-lbl">Daily Avg Change</div>
+            <div class="cs-val">₹{{ comparison.cur_daily_avg|floatformat:0 }}</div>
+            <div class="cs-change {% if comparison.daily_avg_change_pct > 0 %}up{% elif comparison.daily_avg_change_pct < 0 %}down{% else %}same{% endif %}">
+              {% if comparison.daily_avg_change_pct > 0 %}↑{% elif comparison.daily_avg_change_pct < 0 %}↓{% else %}→{% endif %} {{ comparison.daily_avg_change_pct }}%
+            </div>
+          </div>
+        </div>
+        {% if comparison.categories %}
+        <div class="compare-cats">
+          {% for cat in comparison.categories %}
+          <div class="cc-item">
+            <span class="cc-icon">{{ cat.icon }}</span>
+            <div class="cc-info">
+              <div class="cc-name">{{ cat.title }}</div>
+              <div class="cc-amounts">₹{{ cat.previous|floatformat:0 }} → ₹{{ cat.current|floatformat:0 }}</div>
+            </div>
+            <span class="cc-change {% if cat.direction == 'up' %}up{% elif cat.direction == 'down' %}down{% else %}same{% endif %}">
+              {% if cat.direction == 'up' %}↑{% elif cat.direction == 'down' %}↓{% else %}→{% endif %}{{ cat.change_pct }}%
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}

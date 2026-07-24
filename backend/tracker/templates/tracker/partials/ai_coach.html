@@ -1,0 +1,16 @@
+<!-- AI BANNER -->
+      <div class="ai-banner" onclick="openAI()">
+        <div class="ai-avatar">🤖</div>
+        <div class="ai-banner-text">
+          <div class="ai-banner-label">AI Financial Coach</div>
+          <div class="ai-banner-msg" id="banner-msg">{{ ai_main_tip|default:"Hello! I am ExpenseTracker — ask me anything about your finances!" }}</div>
+        </div>
+        <span class="ai-banner-caret">›</span>
+      </div>
+      <!-- Sub Tip -->
+      {% if ai_sub_tip %}
+      <div style="font-size: 12px; color: var(--primary); background: var(--primary-l); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 8px; border: 1px solid var(--border);">
+          <span>💡</span> {{ ai_sub_tip }}
+      </div>
+      {% endif %}
+      <div id="anomaly-container" class="anomaly-list"></div>

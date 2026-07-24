@@ -1,0 +1,238 @@
+<!-- MODALS -->
+<div class="overlay" id="addModal" onclick="if(event.target===this)closeModal('addModal')">
+  <div class="modal">
+    <div class="modal-title">Add Expense <button class="modal-close" onclick="closeModal('addModal')" type="button">✕</button></div>
+    <form method="POST" action="{% url 'add_expense' %}">
+      {% csrf_token %}
+      <div class="form-group"><label class="form-label">Amount (₹)</label><input class="form-input" type="number" name="amount" id="inp-amt" placeholder="0" min="1" step="0.01" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-select" name="category" id="inp-cat" required>
+            <option value="food">🍜 Food</option>
+            <option value="transport">🚗 Transport</option>
+            <option value="shopping">🛍️ Shopping</option>
+            <option value="health">💊 Health</option>
+            <option value="entertainment">🎬 Entertainment</option>
+            <option value="education">📚 Education</option>
+            <option value="utilities">⚡ Utilities</option>
+            <option value="other">📦 Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" name="date" id="inp-date" required></div>
+      </div>
+      <button type="submit" class="submit-btn">Log Expense ✓</button>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="budgetModal" onclick="if(event.target===this)closeModal('budgetModal')">
+  <div class="modal">
+    <div class="modal-title">Budget Settings <button class="modal-close" onclick="closeModal('budgetModal')" type="button">✕</button></div>
+    <form method="POST" action="{% url 'dashboard' %}">
+      {% csrf_token %}
+      <div class="form-group"><label class="form-label">Monthly budget (₹)</label><input class="form-input" type="number" name="new_budget" id="budget-inp" placeholder="20000" min="1" required></div>
+      <button type="submit" class="submit-btn">Update Budget 💰</button>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="billModal" onclick="if(event.target===this)closeModal('billModal')">
+  <div class="modal">
+    <div class="modal-title">Add Upcoming Bill <button class="modal-close" onclick="closeModal('billModal')" type="button">✕</button></div>
+    <form method="POST" action="{% url 'add_subscription' %}">
+      {% csrf_token %}
+      <div class="form-group"><label class="form-label">Bill Name</label><input class="form-input" type="text" name="name" id="bill-name" placeholder="Netflix, Rent, Gym..." required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Amount (₹)</label><input class="form-input" type="number" name="amount" id="bill-amt" placeholder="0" required></div>
+        <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" type="date" name="next_billing_date" id="bill-date" required></div>
+      </div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-select" name="category" required>
+          <option value="entertainment">📺 Streaming</option>
+          <option value="utilities">🏠 Rent</option>
+          <option value="utilities">⚡ Electricity</option>
+          <option value="utilities">💧 Water</option>
+          <option value="health">🏋️ Gym</option>
+          <option value="other">💳 Other</option>
+        </select>
+      </div>
+      <button type="submit" class="submit-btn">Add Bill 📅</button>
+    </form>
+  </div>
+</div>
+
+<!-- 🎯 GOAL MODAL -->
+<div class="overlay" id="goalModal" onclick="if(event.target===this)closeModal('goalModal')">
+  <div class="modal">
+    <div class="modal-title">🎯 New Savings Goal <button class="modal-close" onclick="closeModal('goalModal')" type="button">✕</button></div>
+    <div class="form-group">
+      <label class="form-label">Goal Name</label>
+      <input class="form-input" id="goal-name" placeholder="e.g. iPhone 16, Goa Trip" maxlength="100">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Target Amount (₹)</label>
+        <input class="form-input" id="goal-amount" type="number" min="1" placeholder="50000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline (optional)</label>
+        <input class="form-input" id="goal-deadline" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Icon</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="goal-icon-picker">
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🎯" style="font-size:18px;padding:8px 12px;">🎯</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="📱" style="font-size:18px;padding:8px 12px;">📱</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="✈️" style="font-size:18px;padding:8px 12px;">✈️</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🏠" style="font-size:18px;padding:8px 12px;">🏠</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🚗" style="font-size:18px;padding:8px 12px;">🚗</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="💻" style="font-size:18px;padding:8px 12px;">💻</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🏓" style="font-size:18px;padding:8px 12px;">🏓</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🎓" style="font-size:18px;padding:8px 12px;">🎓</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="💍" style="font-size:18px;padding:8px 12px;">💍</button>
+        <button type="button" class="ftag" onclick="selectGoalIcon(this)" data-icon="🎁" style="font-size:18px;padding:8px 12px;">🎁</button>
+      </div>
+    </div>
+    <input type="hidden" id="goal-icon" value="🎯">
+    <button class="submit-btn" onclick="saveGoal()" type="button">Create Goal 🎯</button>
+  </div>
+</div>
+
+<!-- 📱 SPLIT CREATE MODAL -->
+<div class="overlay" id="splitModal" onclick="if(event.target===this)closeModal('splitModal')">
+  <div class="modal">
+    <div class="modal-title">👥 Create Split Group <button class="modal-close" onclick="closeModal('splitModal')" type="button">✕</button></div>
+    <div class="form-group">
+      <label class="form-label">Group Name</label>
+      <input class="form-input" id="split-name" placeholder="e.g. Goa Trip, Office Lunch" maxlength="100">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Members (one per line)</label>
+      <textarea class="form-input" id="split-members" rows="4" placeholder="Ajay&#10;Rahul&#10;Priya&#10;Sneha" style="resize:vertical;min-height:80px;"></textarea>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">Min 2 members required. Include yourself!</div>
+    </div>
+    <button class="submit-btn" onclick="createSplit()" type="button">Create Split 👥</button>
+  </div>
+</div>
+
+<!-- 💸 SPLIT ADD EXPENSE MODAL -->
+<div class="overlay" id="splitExpModal" onclick="if(event.target===this)closeModal('splitExpModal')">
+  <div class="modal">
+    <div class="modal-title" id="split-exp-modal-title">💸 Add Split Expense <button class="modal-close" onclick="closeModal('splitExpModal')" type="button">✕</button></div>
+    <input type="hidden" id="split-exp-group-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Amount (₹)</label>
+        <input class="form-input" id="split-exp-amount" type="number" min="1" placeholder="500">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Paid By</label>
+        <select class="form-select" id="split-exp-paid-by">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input class="form-input" id="split-exp-desc" placeholder="e.g. Hotel booking, Dinner">
+    </div>
+    <button class="submit-btn" onclick="addSplitExpense()" type="button">Add Expense 💸</button>
+  </div>
+</div>
+
+<!-- 🔄 SPLIT SUMMARY MODAL -->
+<div class="overlay" id="splitSummaryModal" onclick="if(event.target===this)closeModal('splitSummaryModal')">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title"><span id="summary-group-name">🔄 Settlement</span> <button class="modal-close" onclick="closeModal('splitSummaryModal')" type="button">✕</button></div>
+    <div id="split-summary-content">Loading...</div>
+  </div>
+</div>
+
+<!-- 💰 ADD TO GOAL MODAL -->
+<div class="overlay" id="addToGoalModal" onclick="if(event.target===this)closeModal('addToGoalModal')">
+  <div class="modal">
+    <div class="modal-title">💰 Add Savings <button class="modal-close" onclick="closeModal('addToGoalModal')" type="button">✕</button></div>
+    <input type="hidden" id="add-goal-id">
+    <div class="form-group">
+      <label class="form-label">Amount to Save (₹)</label>
+      <input class="form-input" id="add-goal-amount" type="number" min="1" placeholder="1000">
+    </div>
+    <button class="submit-btn" onclick="submitAddToGoal()" type="button">Add Savings 💰</button>
+  </div>
+</div>
+
+<!-- 📝 ADD NOTE MODAL -->
+<div class="overlay" id="noteModal" onclick="if(event.target===this)closeModal('noteModal')">
+  <div class="modal">
+    <div class="modal-title">📝 Add Note <button class="modal-close" onclick="closeModal('noteModal')" type="button">✕</button></div>
+    <div class="form-group">
+      <label class="form-label">Note Text</label>
+      <textarea class="form-input" id="new-note-text" rows="4" placeholder="Write your note here..."></textarea>
+    </div>
+    <button class="submit-btn" onclick="saveNote()" type="button">Save Note</button>
+  </div>
+</div>
+
+<!-- ✅ PROFILE MODAL -->
+<div class="overlay" id="profileModal" onclick="if(event.target===this)closeModal('profileModal')">
+  <div class="profile-modal-wrap">
+    <div class="modal-title">My Profile <button class="modal-close" onclick="closeModal('profileModal')" type="button">✕</button></div>
+
+    <div class="pm-avatar">{{ request.user.username|slice:":1"|upper }}</div>
+    <div class="pm-username">{{ request.user.username }}</div>
+    <div class="pm-joined">Member since {{ request.user.date_joined|date:"d M Y" }}</div>
+
+    <div class="pm-stats">
+      <div class="pm-stat">
+        <div class="pm-stat-v" id="pm-total-spent">₹—</div>
+        <div class="pm-stat-l">All-time spent</div>
+      </div>
+      <div class="pm-stat">
+        <div class="pm-stat-v" id="pm-txn-count">—</div>
+        <div class="pm-stat-l">Transactions</div>
+      </div>
+      <div class="pm-stat">
+        <div class="pm-stat-v" id="pm-days">—</div>
+        <div class="pm-stat-l">Days active</div>
+      </div>
+    </div>
+
+    <div class="pm-section-title">Account Details</div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Username</span>
+      <span class="pm-info-val">{{ request.user.username }}</span>
+    </div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Email</span>
+      <span class="pm-info-val">{{ request.user.email|default:"Not set" }}</span>
+    </div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Budget</span>
+      <span class="pm-info-val" id="pm-budget">₹{{ budget|floatformat:0 }}</span>
+    </div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Member for</span>
+      <span class="pm-info-val" id="pm-member-days">— days</span>
+    </div>
+
+    <a href="{% url 'logout' %}" class="pm-logout-btn">🚪 Logout</a>
+  </div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div class="overlay" id="feedbackModal" onclick="if(event.target===this)closeModal('feedbackModal')">
+  <div class="modal">
+    <div class="modal-title">Submit Feedback <button class="modal-close" onclick="closeModal('feedbackModal')" type="button">✕</button></div>
+    <form onsubmit="submitFeedback(event)">
+      {% csrf_token %}
+      <div class="form-group"><label class="form-label">Your Feedback</label><textarea id="feedbackText" rows="4" class="form-input" placeholder="Tell us how we can improve..." required style="resize:vertical;min-height:100px;"></textarea></div>
+      <button type="submit" class="submit-btn">Submit 📝</button>
+    </form>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container" style="position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;"></div>
+
+<script>

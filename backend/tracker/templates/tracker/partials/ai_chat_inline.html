@@ -1,0 +1,40 @@
+<div class="card" style="padding: 0; display: flex; flex-direction: column; height: 600px; max-height: 70vh; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow);">
+  <div class="ai-pop-head" style="border-bottom: 1px solid var(--border); padding: 16px 20px; background: var(--surface2);">
+    <div class="ai-pop-av">🤖</div>
+    <div>
+      <div class="ai-pop-name" style="font-size: 16px;">ExpenseTracker AI</div>
+      <div class="ai-pop-status">Always online</div>
+    </div>
+  </div>
+  
+  <div class="ai-error-banner" id="ai-error-banner">
+    ⚠️ <span id="ai-error-text">Unable to connect to the server.</span>
+    <button onclick="retryLastMsg()" style="margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:var(--font);font-weight:600;">Retry</button>
+  </div>
+  
+  <div class="ai-msgs" id="ai-msgs" style="flex: 1; height: auto; max-height: none; padding: 20px;"></div>
+  
+  <div class="ai-chips" id="ai-chips" style="padding: 12px 20px; border-top: 1px solid var(--border2); background: var(--surface);">
+    <button class="ai-chip" onclick="quickAsk(this)">Where is my money going?</button>
+    <button class="ai-chip" onclick="quickAsk(this)">Analyze my budget</button>
+    <button class="ai-chip" onclick="quickAsk(this)">How can I save ₹5000?</button>
+    <button class="ai-chip" onclick="quickAsk(this)">Give top 3 saving tips</button>
+  </div>
+  
+  <div class="ai-input-row" style="padding: 16px 20px; background: var(--surface2); border-top: 1px solid var(--border);">
+    <input class="ai-input" id="ai-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}" style="font-size: 15px;">
+    <button class="ai-send" id="ai-send" onclick="sendMsg()" title="Send" style="width: 44px; height: 44px;">➤</button>
+  </div>
+</div>
+
+<script>
+  // Initialize AI chat when this tab is opened if not already initialized
+  document.addEventListener('DOMContentLoaded', () => {
+    // Send welcome message automatically if history is empty
+    setTimeout(() => {
+      if (!aiHistory.length && document.getElementById('ai-msgs').innerHTML === '') {
+        sendWelcome();
+      }
+    }, 500);
+  });
+</script>

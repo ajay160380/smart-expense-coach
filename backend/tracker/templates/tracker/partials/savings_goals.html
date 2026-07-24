@@ -1,0 +1,57 @@
+<!-- 🎯 SAVINGS GOALS -->
+      <div class="goals-section">
+        <div class="bills-header">
+          <div class="section-title">🎯 Savings Goals</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            {% if completed_goals_count > 0 %}
+            <span style="font-size:10px;color:var(--green);font-weight:600;">✅ {{ completed_goals_count }} completed</span>
+            {% endif %}
+            <button class="add-small-btn" onclick="openModal('goalModal')">+ Add Goal</button>
+          </div>
+        </div>
+        <div class="goals-grid" id="goals-grid">
+          {% for goal in savings_goals %}
+          <div class="goal-card" id="goal-card-{{ goal.pk }}">
+            <div class="goal-top">
+              <span class="goal-icon">{{ goal.icon }}</span>
+              <span class="goal-name">{{ goal.name }}</span>
+              <div class="goal-progress-ring">
+                <svg width="48" height="48" viewBox="0 0 48 48">
+                  <circle class="track" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--surface)"/>
+                  <circle class="fill" cx="24" cy="24" r="20" stroke-width="4" stroke="var(--primary)"
+                          stroke-dasharray="125.66"
+                          data-progress="{{ goal.progress_percent|floatformat:0 }}"/>
+                </svg>
+                <span class="goal-pct">{{ goal.progress_percent|floatformat:0 }}%</span>
+              </div>
+            </div>
+            <div class="goal-amounts">
+              <span class="goal-saved">₹{{ goal.saved_amount|floatformat:0 }}</span>
+              <span class="goal-target">/ ₹{{ goal.target_amount|floatformat:0 }}</span>
+            </div>
+            <div class="goal-bar"><div class="goal-bar-fill" data-progress="{{ goal.progress_percent|floatformat:0 }}"></div></div>
+            {% if goal.deadline %}
+            <div class="goal-eta">📅 Deadline: {{ goal.deadline|date:"d M Y" }}</div>
+            {% endif %}
+            <div class="goal-actions">
+              <button class="goal-action-btn" onclick="addToGoal('{{ goal.pk }}')">+ Add Savings</button>
+              <button class="goal-action-btn danger" onclick="deleteGoal('{{ goal.pk }}')">Delete</button>
+            </div>
+          </div>
+          {% empty %}
+          <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text3);font-size:13px;">
+            No savings goals yet. Set a goal to start saving! 🌟
+          </div>
+          {% endfor %}
+        </div>
+        <script>
+          document.querySelectorAll('.goal-progress-ring .fill').forEach(function(el) {
+            var pct = parseFloat(el.getAttribute('data-progress')) || 0;
+            el.style.strokeDashoffset = 125.66 - (125.66 * pct / 100);
+          });
+          document.querySelectorAll('.goal-bar-fill').forEach(function(el) {
+            var pct = parseFloat(el.getAttribute('data-progress')) || 0;
+            el.style.width = pct + '%';
+          });
+        </script>
+      </div>

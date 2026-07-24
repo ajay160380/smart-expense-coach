@@ -19,3 +19,5 @@ wwebjs_temp_session_*
 tracker/static/tracker/apk/app-release.apk
 Ajay_Vishwakarma_59303.pdf
 RemoteAuth-paisa-mitra-v3.zip
+wwebjs_temp_session*/
+*.ldb

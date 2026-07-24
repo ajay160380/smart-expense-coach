@@ -1,0 +1,38 @@
+<!-- HERO (CLEAN STAT STYLE) -->
+<div class="hero">
+  <div>
+    <div class="hero-top">
+      <div>
+        <div class="hero-label">Current Balance / Spent</div>
+        <div class="hero-amount" id="hero-total">₹0</div>
+        <div class="hero-budget" id="hero-budget-label">of ₹20,000 budget</div>
+      </div>
+      <button class="budget-btn" onclick="openModal('budgetModal')">Edit Budget</button>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+  
+  <div class="hero-stats">
+    <div class="h-stat"><div class="h-stat-l">Used</div><div class="h-stat-v" id="hero-pct">0%</div></div>
+    <div class="h-stat"><div class="h-stat-l">Remaining</div><div class="h-stat-v" id="hero-rem">₹0</div></div>
+    <div class="h-stat"><div class="h-stat-l">Transactions</div><div class="h-stat-v" id="hero-count">0</div></div>
+  </div>
+</div>
+
+<!-- STAT BENTO BOXES -->
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="sc-label">Avg / Day</div>
+    <div class="sc-val" id="stat-avg">₹0</div>
+  </div>
+  <div class="stat-card">
+    <div class="sc-label">Highest</div>
+    <div class="sc-val amber" id="stat-high">₹0</div>
+  </div>
+  <div class="stat-card full-width">
+    <div>
+      <div class="sc-label">Savings Rate</div>
+      <div class="sc-val green" id="stat-save">0%</div>
+    </div>
+  </div>
+</div>
