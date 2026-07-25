@@ -229,7 +229,7 @@ export default function DashboardScreen({ navigation }) {
             <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
             {anomalies.length > 0 && <View style={styles.notifDot} />}
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={styles.avatar}>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.avatar}>
             <Text style={styles.avatarText}>{username.charAt(0).toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
