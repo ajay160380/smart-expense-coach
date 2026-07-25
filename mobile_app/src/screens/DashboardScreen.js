@@ -273,7 +273,7 @@ export default function DashboardScreen({ navigation }) {
               </View>
               <View style={styles.waTextContainer}>
                 <Text style={styles.waTitle}>Track via WhatsApp</Text>
-                <Text style={styles.waSubtitle}>Text "500 petrol" to +91 00000 00000</Text>
+                <Text style={styles.waSubtitle}>Text "500 petrol" to +91 7379053923</Text>
               </View>
               <View style={styles.waButton}>
                 <Text style={styles.waButtonText}>Open →</Text>
