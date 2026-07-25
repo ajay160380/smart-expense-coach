@@ -363,7 +363,7 @@ async function startBot(retryCount = 0) {
         if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!broadcast_update')) {
             console.log("📣 Admin initiated broadcast update!");
 
-            const downloadLink = "https://ajay160380-paisa-mitra.hf.space/static/downloads/ExpenseTracker.apk";
+            const downloadLink = "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk";
             const defaultMsg = `🚀 *Expense Tracker - Important Update Available!*\n\nHello there! 👋 We've just released a major update to your Expense Tracker app with some exciting new additions.\n\n✨ *What's New:*\n• *Smart Notepad:* A brand-new feature to quickly jot down your financial notes and reminders directly within the app! 📝\n• *Refreshed Branding:* Enjoy our beautiful new app icon and a sleeker UI experience. 🎨\n• *Performance Boost:* We've squashed some bugs to make your expense tracking faster and smoother than ever. ⚡\n\n⚠️ *IMPORTANT:* To enjoy these new features, please *DELETE* your old Expense Tracker app first, and then download and install the new version from the link below:\n\n📲 *Download Now:* ${downloadLink}\n\nThank you for trusting Expense Tracker! 💼`;
             
             const customMessage = msg.body.replace('!broadcast_update', '').trim() || defaultMsg;

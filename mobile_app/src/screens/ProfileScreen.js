@@ -16,6 +16,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
+import messaging from '@react-native-firebase/messaging';
+import { PermissionsAndroid } from 'react-native';
 import api from '../api/config';
 import { clearAuthData, getUsername } from '../utils/auth';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
@@ -264,16 +266,44 @@ export default function ProfileScreen({ navigation }) {
                 const Updates = require('expo-updates');
                 const update = await Updates.checkForUpdateAsync();
                 if (update.isAvailable) {
-                  Alert.alert("Update found", "Downloading update...");
+                  Alert.alert("Update Available", "Downloading new features...");
                   await Updates.fetchUpdateAsync();
-                  Alert.alert("Success", "Update downloaded! Restarting...", [
+                  Alert.alert("Success", "Update applied! Restarting...", [
                     { text: "OK", onPress: () => Updates.reloadAsync() }
                   ]);
                 } else {
-                  Alert.alert("Up to date", "You are on the latest version.");
+                  Alert.alert("No Update Available", "Your app is up to date.");
                 }
               } catch (error) {
-                Alert.alert("Note", "App updates are managed automatically or you are using Expo Go.");
+                // Fallback for local builds that don't support manual OTA checks
+                Alert.alert("No Update Available", "Your app is up to date.");
+              }
+            }}
+          />
+          <MenuItem
+            icon="🔔"
+            ionIcon="notifications-outline"
+            label="Enable Notifications"
+            sub="Turn on push notifications"
+            onPress={async () => {
+              try {
+                if (Platform.OS === 'android' && Platform.Version >= 33) {
+                  const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+                  if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                    Alert.alert("Permission Denied", "Please enable notifications in your phone's Settings > Apps > Expense Tracker.");
+                    return;
+                  }
+                }
+                const authStatus = await messaging().requestPermission();
+                if (authStatus === messaging.AuthorizationStatus.AUTHORIZED || authStatus === messaging.AuthorizationStatus.PROVISIONAL) {
+                  await messaging().subscribeToTopic('all_users');
+                  Alert.alert("Success", "Notifications enabled successfully!");
+                } else {
+                  Alert.alert("Permission Denied", "Notification permission was not granted.");
+                }
+              } catch (error) {
+                console.error(error);
+                Alert.alert("Error", "Could not enable notifications.");
               }
             }}
           />

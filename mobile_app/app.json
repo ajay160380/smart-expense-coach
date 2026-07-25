@@ -1,14 +1,14 @@
 {
   "expo": {
     "name": "Expense Tracker",
-    "slug": "paisa-mitra",
+    "slug": "expense-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "updates": {
       "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/4973328a-1fe2-42c2-8a53-42cca33aef27"
+      "url": "https://u.expo.dev/4159228e-c70e-46d2-a231-eda454c6eb0d"
     },
     "ios": {
       "supportsTablet": true,
@@ -21,21 +21,21 @@
       },
       "softwareKeyboardLayoutMode": "resize",
       "package": "com.ajay160380.paisamitra",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
       "expo-audio",
       "expo-font",
       "expo-asset",
@@ -43,10 +43,10 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "4973328a-1fe2-42c2-8a53-42cca33aef27"
+        "projectId": "4159228e-c70e-46d2-a231-eda454c6eb0d"
       }
     },
-    "owner": "ajay160380",
+    "owner": "ajay1506s-team",
     "runtimeVersion": "1.0.0"
   }
 }

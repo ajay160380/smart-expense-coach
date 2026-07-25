@@ -13,13 +13,14 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Platform, Alert, PermissionsAndroid } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Logo from './src/components/Logo';
 import { setUnauthorizedHandler } from './src/api/config';
 import { getToken } from './src/utils/auth';
+import messaging from '@react-native-firebase/messaging';
 
 // ── Auth Screens ──
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -41,6 +42,7 @@ import ExpenseSplitScreen from './src/screens/ExpenseSplitScreen';
 import SubscriptionsScreen from './src/screens/SubscriptionsScreen';
 import VoiceExpenseScreen from './src/screens/VoiceExpenseScreen';
 import NotepadScreen from './src/screens/NotepadScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -60,7 +62,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="AddExpense" component={AddExpenseScreen} />
       <HomeStack.Screen name="ExpenseSplit" component={ExpenseSplitScreen} />
       <HomeStack.Screen name="Subscriptions" component={SubscriptionsScreen} />
-      <HomeStack.Screen name="Notifications" component={DashboardScreen} />
+      <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="Notepad" component={NotepadScreen} />
     </HomeStack.Navigator>
   );
@@ -175,6 +177,35 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    const setupFCM = async () => {
+      try {
+        if (Platform.OS === 'android' && Platform.Version >= 33) {
+          await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+        }
+
+        const authStatus = await messaging().requestPermission();
+        const enabled =
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+        if (enabled) {
+          await messaging().subscribeToTopic('all_users');
+          console.log('Subscribed to all_users topic!');
+        }
+      } catch (error) {
+        console.error("FCM Setup Error:", error);
+      }
+    };
+
+    setupFCM();
+
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      Alert.alert(
+        remoteMessage.notification?.title || 'New Notification', 
+        remoteMessage.notification?.body || JSON.stringify(remoteMessage)
+      );
+    });
+
     const checkAuth = async () => {
       try {
         const token = await getToken();
@@ -194,6 +225,8 @@ export default function App() {
     setUnauthorizedHandler(() => {
       setIsAuthenticated(false);
     });
+
+    return unsubscribe;
   }, []);
 
   if (isLoading) {
