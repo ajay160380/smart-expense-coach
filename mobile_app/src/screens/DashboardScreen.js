@@ -153,7 +153,7 @@ export default function DashboardScreen({ navigation }) {
 
   const openWhatsApp = () => {
     const phoneParam = stats?.user_phone ? `Link ${stats.user_phone}` : 'Link 91';
-    Linking.openURL(`https://wa.me/YOUR_WHATSAPP_NUMBER?text=${encodeURIComponent(phoneParam)}`);
+    Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(phoneParam)}`);
   };
 
   const exportData = async (format) => {

@@ -1,10 +1,42 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS } from '../utils/theme';
 import { StatusBar } from 'expo-status-bar';
+import { getNotifications, clearNotifications } from '../utils/notifications';
 
 export default function NotificationsScreen({ navigation }) {
+  const [notifications, setNotifications] = useState([]);
+
+  const loadNotifications = async () => {
+    const notifs = await getNotifications();
+    setNotifications(notifs);
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const handleClear = async () => {
+    await clearNotifications();
+    setNotifications([]);
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={styles.notificationCard}>
+      <View style={styles.iconBoxSmall}>
+        <Ionicons name="notifications" size={24} color={COLORS.primary} />
+      </View>
+      <View style={styles.notificationContent}>
+        <Text style={styles.notifTitle}>{item.title}</Text>
+        <Text style={styles.notifBody}>{item.body}</Text>
+        <Text style={styles.notifDate}>
+          {new Date(item.date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -14,19 +46,30 @@ export default function NotificationsScreen({ navigation }) {
           <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity onPress={handleClear} style={styles.clearBtn}>
+          <Text style={styles.clearText}>Clear</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Empty State */}
-      <View style={styles.emptyContainer}>
-        <View style={styles.iconBox}>
-          <Ionicons name="notifications-off-outline" size={60} color="#FF3B30" />
+      {notifications.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <View style={styles.iconBox}>
+            <Ionicons name="notifications-off-outline" size={60} color={COLORS.primary} />
+          </View>
+          <Text style={styles.emptyTitle}>No new notifications</Text>
+          <Text style={styles.emptyDesc}>
+            When your friends split expenses with you, they will appear here!
+          </Text>
         </View>
-        <Text style={styles.emptyTitle}>OTA Magic Successful! 🚀</Text>
-        <Text style={styles.emptyDesc}>
-          Aapki app me Hawa se (OTA) Update aagaya hai, bina Play Store ke!
-        </Text>
-      </View>
+      ) : (
+        <FlatList
+          data={notifications}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 20 }}
+          ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -84,5 +127,47 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  clearBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  clearText: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+  },
+  notificationCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
+    padding: 15,
+  },
+  iconBoxSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(168, 136, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notifTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  notifBody: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  notifDate: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
   },
 });

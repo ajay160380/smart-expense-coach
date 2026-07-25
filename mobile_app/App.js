@@ -21,6 +21,7 @@ import Logo from './src/components/Logo';
 import { setUnauthorizedHandler } from './src/api/config';
 import { getToken } from './src/utils/auth';
 import messaging from '@react-native-firebase/messaging';
+import { saveNotification } from './src/utils/notifications';
 
 // ── Auth Screens ──
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -177,7 +178,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const setupFCM = async () => {
+    const setupFCM = async (authToken) => {
       try {
         if (Platform.OS === 'android' && Platform.Version >= 33) {
           await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
@@ -191,15 +192,34 @@ export default function App() {
         if (enabled) {
           await messaging().subscribeToTopic('all_users');
           console.log('Subscribed to all_users topic!');
+          
+          if (authToken) {
+            const fcmToken = await messaging().getToken();
+            console.log('FCM Token:', fcmToken);
+            
+            // Send token to backend
+            try {
+              await fetch(`${API_URL}/api/update-fcm-token/`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Token ${authToken}`,
+                },
+                body: JSON.stringify({ fcm_token: fcmToken })
+              });
+              console.log('FCM token sent to backend successfully');
+            } catch (apiError) {
+              console.log('Error sending FCM token to backend:', apiError);
+            }
+          }
         }
       } catch (error) {
         console.error("FCM Setup Error:", error);
       }
     };
 
-    setupFCM();
-
     const unsubscribe = messaging().onMessage(async remoteMessage => {
+      await saveNotification(remoteMessage);
       Alert.alert(
         remoteMessage.notification?.title || 'New Notification', 
         remoteMessage.notification?.body || JSON.stringify(remoteMessage)
@@ -211,8 +231,10 @@ export default function App() {
         const token = await getToken();
         if (token) {
           setIsAuthenticated(true);
+          setupFCM(token);
         } else {
           setIsAuthenticated(false);
+          setupFCM(null);
         }
       } catch (e) {
         console.error(e);
