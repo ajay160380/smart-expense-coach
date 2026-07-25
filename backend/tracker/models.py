@@ -22,6 +22,9 @@ class UserProfile(models.Model):
     level = models.IntegerField(default=1)
     streak = models.IntegerField(default=0)
     last_expense_date = models.DateField(blank=True, null=True) # Streak track karne ke liye
+    
+    # --- FCM Push Notification Token ---
+    fcm_token = models.CharField(max_length=255, blank=True, null=True)
 
     # --- Budget Field ---
     monthly_budget = models.DecimalField(max_digits=10, decimal_places=2, default=20000)

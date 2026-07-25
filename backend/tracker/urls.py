@@ -107,6 +107,7 @@ urlpatterns = [
     # User profile + lifetime stats
     path('api/profile/',               views.api_user_profile,     name='api_user_profile'),
     path('api/profile/upload-photo/',  views.api_upload_profile_photo, name='api_upload_profile_photo'),
+    path('api/update-fcm-token/',      views.api_update_fcm_token, name='api_update_fcm_token'),
 
     # ══════════════════════════════════════════════════════════════════════
     # HEALTH CHECK (no auth required — for uptime monitoring)

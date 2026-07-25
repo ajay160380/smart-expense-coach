@@ -3,16 +3,25 @@ from firebase_admin import credentials, messaging
 import os
 from django.conf import settings
 
+import json
+
 # Initialize Firebase app only once
 def initialize_firebase():
     if not firebase_admin._apps:
-        # We copied this from your downloads folder earlier
-        cred_path = os.path.join(settings.BASE_DIR, 'firebase-service-account.json')
-        
         try:
-            cred = credentials.Certificate(cred_path)
+            # First try loading from Environment Variable (for Hugging Face)
+            env_cred = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY')
+            if env_cred:
+                cred_dict = json.loads(env_cred)
+                cred = credentials.Certificate(cred_dict)
+                print("Firebase Admin initialized from Environment Variable.")
+            else:
+                # Fallback to local file for development
+                cred_path = os.path.join(settings.BASE_DIR, 'firebase-service-account.json')
+                cred = credentials.Certificate(cred_path)
+                print("Firebase Admin initialized from local file.")
+                
             firebase_admin.initialize_app(cred)
-            print("Firebase Admin initialized successfully.")
         except Exception as e:
             print("Warning: Could not initialize Firebase Admin.", e)
 

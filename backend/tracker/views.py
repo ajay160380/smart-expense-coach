@@ -3296,6 +3296,20 @@ def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
     total = _safe_float(group.expenses.aggregate(t=Sum("amount"))["t"])
     per_person = total / max(group.members.count(), 1)
 
+    # ─── NAYA: Automated Push Notifications ───
+    try:
+        from .fcm_utils import send_push_notification
+        # Notify other members who have a linked UserProfile and fcm_token
+        for mem in group.members.exclude(name__iexact=paid_by_input):
+            if mem.phone:
+                profile = UserProfile.objects.filter(phone_number=mem.phone).first()
+                if profile and profile.fcm_token:
+                    title = f"🧾 New Split in {group.name}"
+                    body = f"{paid_by} added ₹{amount} for '{description}'. Your share is ~₹{round(per_person, 2)}."
+                    send_push_notification(profile.fcm_token, title, body)
+    except Exception as e:
+        print("Failed to send split expense push notification:", e)
+
     return JsonResponse({
         "status": "success",
         "message": f"💸 ₹{amount:,} added to '{group.name}' (paid by {paid_by})",
@@ -3802,6 +3816,23 @@ def export_pdf(request):
         return FileResponse(buffer, as_attachment=True, filename='ExpenseTracker_History.pdf')
     except ImportError:
         return export_csv(request)
+
+@api_login_required
+@json_required
+def api_update_fcm_token(request):
+    """Saves the device FCM token for push notifications."""
+    body = getattr(request, "_json_body", {})
+    fcm_token = body.get("fcm_token")
+    if not fcm_token:
+        return JsonResponse({"error": "FCM token is required"}, status=400)
+    
+    try:
+        profile = request.user.profile
+        profile.fcm_token = fcm_token
+        profile.save()
+        return JsonResponse({"status": "success", "message": "FCM token updated successfully"})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 def server_error(request, *args, **kwargs):
     import logging
