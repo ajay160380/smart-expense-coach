@@ -129,7 +129,6 @@ async function startBot(retryCount = 0) {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--single-process',
                 '--disable-gpu',
                 '--disable-extensions',
                 '--disable-background-networking',
