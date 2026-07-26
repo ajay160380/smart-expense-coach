@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
-import { COLORS, CAT_ICONS, RADIUS } from '../utils/theme';
+import { COLORS, CAT_ICONS, RADIUS, getFallbackIcon, CAT_COLORS } from '../utils/theme';
 import { GlassCard, GradientButton, EmptyState, SectionHeader } from '../components/SharedComponents';
 
 const SUB_CATEGORIES = ['entertainment', 'utilities', 'health', 'education', 'food', 'shopping', 'other'];
@@ -145,8 +145,8 @@ export default function SubscriptionsScreen({ navigation }) {
           <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
             {subs.map((sub, idx) => (
               <View key={sub.id} style={[styles.subRow, idx < subs.length - 1 && styles.subBorder]}>
-                <View style={[styles.subIcon, { backgroundColor: (sub.color || '#888') + '22' }]}>
-                  <Text style={{ fontSize: 20 }}>{sub.icon || '📦'}</Text>
+                <View style={[styles.subIcon, { backgroundColor: (CAT_COLORS[sub.category] || COLORS.cyan) + '22' }]}>
+                  <Text style={{ fontSize: 20 }}>{sub.icon || getFallbackIcon(sub.category)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.subNameRow}>
@@ -210,7 +210,7 @@ export default function SubscriptionsScreen({ navigation }) {
                   style={[styles.catChip, subCategory === cat && styles.catChipActive]}
                   onPress={() => setSubCategory(cat)}
                 >
-                  <Text style={{ marginRight: 4 }}>{CAT_ICONS[cat] || '📦'}</Text>
+                  <Text style={{ marginRight: 4 }}>{CAT_ICONS[cat] || getFallbackIcon(cat)}</Text>
                   <Text style={[styles.catChipText, subCategory === cat && { color: '#fff' }]}>
                     {cat.charAt(0).toUpperCase() + cat.slice(1)}
                   </Text>

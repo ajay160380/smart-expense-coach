@@ -20,7 +20,7 @@ import { FontAwesome, MaterialCommunityIcons, Ionicons } from '@expo/vector-icon
 import { StatusBar } from 'expo-status-bar';
 import api from '../api/config';
 import { getUsername, clearAuthData } from '../utils/auth';
-import { COLORS, CAT_COLORS, CAT_ICONS, SPACING, RADIUS, FONT, SHADOW } from '../utils/theme';
+import { COLORS, CAT_COLORS, CAT_ICONS, SPACING, RADIUS, FONT, SHADOW, getFallbackIcon } from '../utils/theme';
 import { GlassCard, AnimatedNumber, StatCard, SectionHeader, EmptyState } from '../components/SharedComponents';
 
 const { width } = Dimensions.get('window');
@@ -471,11 +471,13 @@ export default function DashboardScreen({ navigation }) {
         )}
 
         {/* ── RECENT EXPENSES ── */}
-        <SectionHeader
-          title="Recent Expenses"
-          actionText="Add New +"
-          onAction={() => navigation.navigate('AddExpense')}
-        />
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Expenses</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('History')} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ color: COLORS.cyan, fontWeight: 'bold', marginRight: 4 }}>See All History</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.cyan} />
+          </TouchableOpacity>
+        </View>
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, marginBottom: 10 }}>
           <TouchableOpacity onPress={() => exportData('pdf')} style={{ marginRight: 15 }}>
             <Text style={{ color: COLORS.cyan, fontWeight: 'bold' }}>📄 Export PDF</Text>
@@ -493,10 +495,14 @@ export default function DashboardScreen({ navigation }) {
                 onPress={() => navigation.navigate('AddExpense', { expense: exp })}
               >
                 <View style={[styles.expIcon, { backgroundColor: (CAT_COLORS[exp.category] || '#888') + '22' }]}>
-                  <Text style={{ fontSize: 18 }}>{CAT_ICONS[exp.category] || '📦'}</Text>
+                  <Text style={{ fontSize: 18 }}>{CAT_ICONS[exp.category] || getFallbackIcon(exp.category)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.expCategory}>{(exp.category || 'other').charAt(0).toUpperCase() + (exp.category || 'other').slice(1)}</Text>
+                  <Text style={styles.expCategory} numberOfLines={1}>
+                    {exp.description 
+                      ? exp.description.charAt(0).toUpperCase() + exp.description.slice(1) 
+                      : (exp.category || 'other').charAt(0).toUpperCase() + (exp.category || 'other').slice(1)}
+                  </Text>
                   <Text style={styles.expDate}>{formatDate(exp.date)}</Text>
                 </View>
                 <Text style={[styles.expAmount, { marginRight: 10 }]}>-₹{Number(exp.amount).toLocaleString('en-IN')}</Text>
@@ -645,7 +651,7 @@ function getCategoryBreakdown(expenses) {
       total: Math.round(catTotal),
       percent: total > 0 ? Math.round((catTotal / total) * 100) : 0,
       color: CAT_COLORS[name] || '#888',
-      icon: CAT_ICONS[name] || '📦',
+      icon: CAT_ICONS[name] || getFallbackIcon(name),
     }));
 }
 

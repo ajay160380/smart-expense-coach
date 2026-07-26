@@ -80,6 +80,16 @@ export const CAT_ICONS = {
   other:         '📦',
 };
 
+const FALLBACK_EMOJIS = ['✨', '💎', '📌', '🏷️', '🧩', '🎈', '🔮', '💡', '🔔', '🎭'];
+export const getFallbackIcon = (category) => {
+  if (!category) return '📦';
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = category.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return FALLBACK_EMOJIS[Math.abs(hash) % FALLBACK_EMOJIS.length];
+};
+
 export const SPACING = {
   xs: 4,
   sm: 8,

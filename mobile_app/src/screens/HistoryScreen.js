@@ -9,7 +9,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/config';
-import { COLORS, CAT_COLORS, CAT_ICONS, SPACING } from '../utils/theme';
+import { COLORS, CAT_COLORS, CAT_ICONS, SPACING, getFallbackIcon } from '../utils/theme';
 import { GlassCard, EmptyState, AnimatedNumber } from '../components/SharedComponents';
 
 export default function HistoryScreen({ navigation }) {
@@ -137,10 +137,14 @@ export default function HistoryScreen({ navigation }) {
                     onPress={() => navigation.navigate('AddExpense', { expense: exp })}
                   >
                     <View style={[styles.expIcon, { backgroundColor: (CAT_COLORS[exp.category] || '#888') + '22' }]}>
-                      <Text style={{ fontSize: 18 }}>{CAT_ICONS[exp.category] || '📦'}</Text>
+                      <Text style={{ fontSize: 18 }}>{CAT_ICONS[exp.category] || getFallbackIcon(exp.category)}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.expCategory}>{(exp.category || 'other').charAt(0).toUpperCase() + (exp.category || 'other').slice(1)}</Text>
+                      <Text style={styles.expCategory} numberOfLines={1}>
+                        {exp.description 
+                          ? exp.description.charAt(0).toUpperCase() + exp.description.slice(1) 
+                          : (exp.category || 'other').charAt(0).toUpperCase() + (exp.category || 'other').slice(1)}
+                      </Text>
                       <Text style={styles.expDate}>{formatDate(exp.date)}</Text>
                     </View>
                     <Text style={[styles.expAmount, { marginRight: 10 }]}>-₹{Number(exp.amount).toLocaleString('en-IN')}</Text>

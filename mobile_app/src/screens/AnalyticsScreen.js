@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import api from '../api/config';
-import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SPACING, FONT, SHADOW } from '../utils/theme';
+import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SPACING, FONT, SHADOW, getFallbackIcon } from '../utils/theme';
 import { GlassCard, SectionHeader, EmptyState } from '../components/SharedComponents';
 
 const { width } = Dimensions.get('window');
@@ -158,8 +158,8 @@ export default function AnalyticsScreen({ navigation }) {
             <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
               {categories.map((cat, idx) => (
                 <View key={idx} style={[styles.catRow, idx < categories.length - 1 && styles.catBorder]}>
-                  <View style={[styles.catIcon, { backgroundColor: (cat.color || '#888') + '22' }]}>
-                    <Text style={{ fontSize: 20 }}>{cat.icon || '📦'}</Text>
+                  <View style={[styles.catIcon, { backgroundColor: (CAT_COLORS[cat.category] || '#888') + '22' }]}>
+                    <Text style={{ fontSize: 20 }}>{cat.icon || getFallbackIcon(cat.category)}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={styles.catNameRow}>
