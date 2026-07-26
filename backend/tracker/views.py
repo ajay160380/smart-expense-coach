@@ -3962,3 +3962,21 @@ def server_error(request, *args, **kwargs):
         return JsonResponse({"error": "Internal Server Error"}, status=500)
     from django.shortcuts import render
     return render(request, "500.html", status=500)
+
+@csrf_exempt
+def api_trigger_test_push(request):
+    try:
+        from tracker.fcm_utils import send_push_notification
+        profile = UserProfile.objects.filter(user__username='ajayvishwakarma').first()
+        if not profile:
+            profile = UserProfile.objects.filter(user__username='ajay').first()
+            
+        if profile and profile.fcm_token:
+            title = "🚀 Naya Premium OTA Update!"
+            body = "1. Is notification par tap karein.\n2. Profile page khulega.\n3. Niche 'Check for Update' button dabayein! ✨"
+            data = {"screen": "Profile"}
+            success = send_push_notification(profile.fcm_token, title, body, data)
+            return JsonResponse({"status": "success" if success else "failed"})
+        return JsonResponse({"status": "error", "message": "No FCM Token found"})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)})
