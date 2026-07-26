@@ -1227,8 +1227,8 @@ def add_expense(request: HttpRequest) -> HttpResponse:
         return redirect("dashboard")
 
     category = request.POST.get("category", "other").strip().lower()
-    if category not in VALID_CATEGORIES:
-        category = "other"
+    # if category not in VALID_CATEGORIES:
+    #     category = "other"
 
     try:
         exp_date = date.fromisoformat(request.POST.get("date", ""))
@@ -1818,8 +1818,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     continue
 
                 category = str(exp_data.get("category", "other")).strip().lower()
-                if category not in VALID_CATEGORIES:
-                    category = _keyword_category_fallback(str(exp_data.get("description", "")))
+                # if category not in VALID_CATEGORIES:
+                #     category = _keyword_category_fallback(str(exp_data.get("description", "")))
 
                 expense = Expense.objects.create(
                     user=target_user,
@@ -2028,8 +2028,8 @@ def api_category_insight(request: HttpRequest) -> JsonResponse:
     category = request.GET.get("category", "").strip().lower()
     period   = request.GET.get("period", "month")
 
-    if category not in VALID_CATEGORIES:
-        return JsonResponse({"error": "Invalid category"}, status=400)
+    # if category not in VALID_CATEGORIES:
+    #     return JsonResponse({"error": "Invalid category"}, status=400)
     if period not in VALID_PERIODS:
         period = "month"
 
@@ -2178,7 +2178,7 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
     stats    = calculate_stats(month_qs, budget)
     today    = date.today()
 
-    recent_qs = month_qs.values('id', 'title', 'category', 'amount', 'date', 'icon', 'description')[:10] if hasattr(Expense, 'title') else month_qs.values('id', 'category', 'amount', 'date', 'icon', 'description')[:10]
+    recent_qs = month_qs.values('id', 'title', 'category', 'amount', 'date', 'icon', 'description') if hasattr(Expense, 'title') else month_qs.values('id', 'category', 'amount', 'date', 'icon', 'description')
     
     return JsonResponse({
         "budget":            budget,
@@ -2461,8 +2461,8 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"error": "Valid amount chahiye"}, status=400)
 
     category = str(data.get("category", "other")).strip().lower()
-    if category not in VALID_CATEGORIES:
-        category = "other"
+    # if category not in VALID_CATEGORIES:
+    #     category = "other"
 
     try:
         exp_date = date.fromisoformat(str(data.get("date", date.today().isoformat())))
@@ -2512,8 +2512,7 @@ def api_edit_expense(request: HttpRequest, pk: int) -> JsonResponse:
 
     if "category" in data:
         category = str(data["category"]).strip().lower()
-        if category in VALID_CATEGORIES:
-            expense.category = category
+        expense.category = category
 
     if "date" in data:
         try:

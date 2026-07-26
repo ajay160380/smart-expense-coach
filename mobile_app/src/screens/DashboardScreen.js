@@ -486,7 +486,7 @@ export default function DashboardScreen({ navigation }) {
         </View>
         {recentExpenses.length > 0 ? (
           <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
-            {recentExpenses.slice(0, 6).map((exp, idx) => (
+            {recentExpenses.map((exp, idx) => (
               <TouchableOpacity 
                 key={exp.id || idx} 
                 style={[styles.expenseItem, idx < recentExpenses.length - 1 && styles.expenseBorder]}
