@@ -3789,8 +3789,21 @@ def export_csv(request):
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['Date', 'Category', 'Description', 'Amount'])
+    
+    valid_categories = {'food', 'transport', 'shopping', 'entertainment', 'bills', 'health', 'education', 'other'}
+    
     for exp in expenses:
-        writer.writerow([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount}"])
+        cat = (exp.category or 'other').lower()
+        desc = exp.description or ''
+        
+        if cat not in valid_categories:
+            formatted_cat = "Other"
+            formatted_desc = f"{exp.category.title()} - {desc}" if desc else exp.category.title()
+        else:
+            formatted_cat = cat.title()
+            formatted_desc = desc
+            
+        writer.writerow([exp.date.strftime('%Y-%m-%d'), formatted_cat, formatted_desc, f"{exp.amount}"])
     
     response = HttpResponse(output.getvalue(), content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="ExpenseTracker_History.csv"'
@@ -3854,8 +3867,20 @@ def export_pdf(request):
         elements.append(Spacer(1, 15))
         
         data = [['Date', 'Category', 'Description', 'Amount (Rs)']]
+        valid_categories = {'food', 'transport', 'shopping', 'entertainment', 'bills', 'health', 'education', 'other'}
+        
         for exp in expenses:
-            data.append([exp.date.strftime('%d %b %Y'), exp.category.title(), exp.description or '-', f"{exp.amount:,.2f}"])
+            cat = (exp.category or 'other').lower()
+            desc = exp.description or ''
+            
+            if cat not in valid_categories:
+                formatted_cat = "Other"
+                formatted_desc = f"{exp.category.title()} - {desc}" if desc else exp.category.title()
+            else:
+                formatted_cat = cat.title()
+                formatted_desc = desc
+                
+            data.append([exp.date.strftime('%d %b %Y'), formatted_cat, formatted_desc or '-', f"{exp.amount:,.2f}"])
             
         table = Table(data, colWidths=[90, 100, 230, 100])
         t_style = TableStyle([
