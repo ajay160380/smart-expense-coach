@@ -36,6 +36,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.hf.space',
     'https://huggingface.co',
 ]
+USE_X_FORWARDED_HOST = True
 
 
 # Application definition
