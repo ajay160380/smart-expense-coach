@@ -1505,7 +1505,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # ──────────────────────────────────────────────────────────────────────
         # FAST PATH FOR LARGE LISTS
         # ──────────────────────────────────────────────────────────────────────
-        if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add to expense", "expense me", "log", "save", "note", "notepad"]):
+        # If the user sends a large list and DOES NOT include an explicit command word.
+        if spoken_text.count('\n') >= 3 and not any(kw in lower_text for kw in ["add", "expense", "log", "save", "note", "notepad"]):
             msg = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
             
             # Save to history so AI remembers the list
@@ -1609,7 +1610,16 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         is_export_query = any(kw in lower_text for kw in export_keywords)
         is_query = any(kw in lower_text for kw in query_keywords) or lower_text.strip() in ["?", "help"] or target_month is not None or is_export_query
 
-        if is_query or is_past_query or target_month is not None:
+        # Check if the AI just asked for clarification
+        chat_history = session.context if isinstance(session.context, list) else []
+        last_bot_action = None
+        if chat_history and len(chat_history) > 0 and chat_history[-1].get("role") == "assistant":
+            try:
+                last_bot_action = json.loads(chat_history[-1]["content"]).get("action")
+            except:
+                pass
+
+        if (is_query or is_past_query or target_month is not None) and last_bot_action != "ask_clarification":
             if target_month is not None:
                 import calendar
                 first_day_target = date(target_year, target_month, 1)
