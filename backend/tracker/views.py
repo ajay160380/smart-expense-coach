@@ -2198,6 +2198,30 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
         ).days,
     })
 
+@api_login_required
+def api_transactions_history(request: HttpRequest) -> JsonResponse:
+    today = date.today()
+    try:
+        month = int(request.GET.get('month', today.month))
+        year = int(request.GET.get('year', today.year))
+    except ValueError:
+        month = today.month
+        year = today.year
+
+    qs = Expense.objects.filter(user=request.user, date__year=year, date__month=month).order_by("-date", "-id")
+    
+    txns = qs.values('id', 'title', 'category', 'amount', 'date', 'icon', 'description') if hasattr(Expense, 'title') else qs.values('id', 'category', 'amount', 'date', 'icon', 'description')
+    
+    agg = qs.aggregate(total=Sum("amount"))
+    total_spent = _safe_float(agg["total"])
+    
+    month_name = date(year, month, 1).strftime("%B %Y")
+
+    return JsonResponse({
+        "month": month_name,
+        "total_spent": round(total_spent, 2),
+        "transactions": list(txns),
+    })
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SUBSCRIPTION MANAGEMENT

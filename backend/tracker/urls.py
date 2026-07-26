@@ -87,6 +87,9 @@ urlpatterns = [
 
     # Quick summary stats for dashboard widgets (lightweight, no AI)
     path('api/summary-stats/',         views.api_summary_stats,    name='api_summary_stats'),
+    
+    # Custom history for any month
+    path('api/transactions-history/',  views.api_transactions_history, name='api_transactions_history'),
 
     # All subscriptions as JSON
     path('api/subscriptions/',         views.api_subscriptions,    name='api_subscriptions'),

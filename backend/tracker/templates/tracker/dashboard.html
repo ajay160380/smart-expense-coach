@@ -2420,6 +2420,29 @@ function renderFilterTags() {
   ).join('');
 }
 
+// ✅ HISTORY FETCHER
+async function fetchHistory(val) {
+  if (!val) return;
+  const [year, month] = val.split('-');
+  try {
+    const res = await fetch(`/api/transactions-history/?month=${month}&year=${year}`);
+    const data = await res.json();
+    expenses = data.transactions.map(t => ({
+      id: t.id,
+      cat: t.category,
+      amt: parseFloat(t.amount),
+      date: t.date,
+      icon: t.icon || '📦',
+      note: t.description || ''
+    }));
+    document.getElementById('search-input').value = '';
+    renderFilterTags();
+    renderTxns();
+  } catch(e) {
+    console.error("Failed to fetch history", e);
+  }
+}
+
 // ✅ SCROLLABLE TRANSACTIONS WITH COUNT LABEL
 
 function renderMiniTxns() {
@@ -2458,6 +2481,7 @@ function renderTxns() {
 
   if (!f.length) { el.innerHTML='<div class="empty">No transactions yet 🧾</div>'; return; }
   el.innerHTML = [...f].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(e =>
+
     `<div class="txn-item">
       <div class="txn-icon" style="background:${COLORS[e.cat]}20">${ICONS[e.cat]||'📦'}</div>
       <div class="txn-info">
