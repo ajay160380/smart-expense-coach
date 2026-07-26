@@ -3971,8 +3971,8 @@ def api_trigger_test_push(request):
         count = 0
         
         for profile in profiles:
-            title = "🚀 Naya Premium OTA Update!"
-            body = "1. Is notification par tap karein.\n2. Profile page khulega.\n3. Niche 'Check for Update' button dabayein! ✨"
+            title = "🚀 New Premium OTA Update!"
+            body = "1. Tap on this notification.\n2. It will open your Profile.\n3. Tap 'Check for Update' to get new features! ✨"
             data = {"screen": "Profile"}
             success = send_push_notification(profile.fcm_token, title, body, data)
             if success:
