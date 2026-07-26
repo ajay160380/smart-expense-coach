@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/config';
 import { COLORS, CAT_COLORS, CAT_ICONS, SPACING, getFallbackIcon } from '../utils/theme';
@@ -37,6 +38,7 @@ export default function HistoryScreen({ navigation }) {
   }, [fetchHistory]);
 
   const changeMonth = (offset) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       newDate.setMonth(newDate.getMonth() + offset);
@@ -52,6 +54,7 @@ export default function HistoryScreen({ navigation }) {
 
   const exportData = async (format) => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
       Alert.alert('Exporting', `Preparing your ${format.toUpperCase()} export for ${data?.month || 'this month'}...`);

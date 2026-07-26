@@ -14,6 +14,7 @@ import {
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sharing from 'expo-sharing';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -158,6 +159,7 @@ export default function DashboardScreen({ navigation }) {
 
   const exportData = async (format) => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Alert.alert('Exporting', `Preparing your ${format.toUpperCase()} export...`);
       // Use standard fetch here to download file
       const url = `${api.defaults.baseURL}/api/export/${format}/`;
@@ -223,13 +225,22 @@ export default function DashboardScreen({ navigation }) {
         </View>
         <View style={styles.navRight}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('Notifications')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('Notifications');
+            }}
             style={styles.navIconBtn}
           >
             <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
             {anomalies.length > 0 && <View style={styles.notifDot} />}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.avatar}>
+          <TouchableOpacity 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('Profile');
+            }} 
+            style={styles.avatar}
+          >
             <Text style={styles.avatarText}>{username.charAt(0).toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
@@ -266,7 +277,13 @@ export default function DashboardScreen({ navigation }) {
 
         {/* ── WHATSAPP BANNER ── */}
         {!stats?.whatsapp_linked && (
-          <TouchableOpacity onPress={openWhatsApp} activeOpacity={0.85}>
+          <TouchableOpacity 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              openWhatsApp();
+            }} 
+            activeOpacity={0.85}
+          >
             <View style={styles.waBanner}>
               <View style={styles.waIconContainer}>
                 <FontAwesome name="whatsapp" size={24} color="#fff" />
@@ -308,6 +325,7 @@ export default function DashboardScreen({ navigation }) {
           <TouchableOpacity 
             style={styles.budgetEditRow} 
             onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setNewBudget(budget.toString());
               setBudgetModalVisible(true);
             }}
@@ -409,7 +427,13 @@ export default function DashboardScreen({ navigation }) {
         )}
 
         {/* ── AI FINANCIAL COACH ── */}
-        <TouchableOpacity onPress={() => navigation.navigate('AIChat')} activeOpacity={0.85}>
+        <TouchableOpacity 
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('AIChat');
+          }} 
+          activeOpacity={0.85}
+        >
           <LinearGradient
             colors={COLORS.gradCyan}
             style={styles.aiCard}
@@ -432,7 +456,13 @@ export default function DashboardScreen({ navigation }) {
         </TouchableOpacity>
 
         {/* ── NOTEPAD ── */}
-        <TouchableOpacity onPress={() => navigation.navigate('Notepad')} activeOpacity={0.85}>
+        <TouchableOpacity 
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate('Notepad');
+          }} 
+          activeOpacity={0.85}
+        >
           <LinearGradient
             colors={['#FF9A9E', '#FECFEF']}
             style={styles.aiCard}
@@ -515,7 +545,10 @@ export default function DashboardScreen({ navigation }) {
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  onPress={() => handleDeleteExpense(exp.id)}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    handleDeleteExpense(exp.id);
+                  }}
                   style={{ padding: 5 }}
                 >
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
@@ -541,14 +574,20 @@ export default function DashboardScreen({ navigation }) {
         <View style={styles.fabInner}>
           <TouchableOpacity
             style={styles.voiceFab}
-            onPress={() => navigation.navigate('VoiceExpense')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('VoiceExpense');
+            }}
           >
             <MaterialCommunityIcons name="microphone" size={16} color="#fff" style={{ marginRight: 6 }} />
             <Text style={styles.voiceFabText}>Voice</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.addFab}
-            onPress={() => navigation.navigate('AddExpense')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('AddExpense');
+            }}
           >
             <Ionicons name="add" size={18} color="#0f172a" style={{ marginRight: 4 }} />
             <Text style={styles.addFabText}>Add expense</Text>

@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import messaging from '@react-native-firebase/messaging';
 import { PermissionsAndroid } from 'react-native';
 import api from '../api/config';
@@ -71,11 +72,15 @@ export default function ProfileScreen({ navigation }) {
         });
 
         if (uploadRes.data.status === 'success') {
-          setProfile({ ...profile, profile_picture: uploadRes.data.profile_picture });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          // Add timestamp to bust cache so the image refreshes instantly
+          const newPicUrl = uploadRes.data.profile_picture + '?t=' + Date.now();
+          setProfile({ ...profile, profile_picture: newPicUrl });
           Alert.alert('Success', 'Profile photo updated successfully!');
         }
       }
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.error('Image pick/upload error:', error);
       Alert.alert('Error', 'Failed to upload image. Please try again.');
     } finally {
@@ -84,6 +89,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleLogout = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
       {
