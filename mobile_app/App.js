@@ -9,8 +9,8 @@ import 'react-native-gesture-handler';
 if (__DEV__) {
   require('./src/reticle-dev');
 }
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useState, useRef } from 'react';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, StyleSheet, Platform, Alert, PermissionsAndroid } from 'react-native';
@@ -44,12 +44,15 @@ import SubscriptionsScreen from './src/screens/SubscriptionsScreen';
 import VoiceExpenseScreen from './src/screens/VoiceExpenseScreen';
 import NotepadScreen from './src/screens/NotepadScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import HistoryScreen from './src/screens/HistoryScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
 const GoalsStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
+
+export const navigationRef = createNavigationContainerRef();
 
 // ═══════════════════════════════════════════════
 // HOME STACK — Dashboard + sub-screens
@@ -65,6 +68,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="Subscriptions" component={SubscriptionsScreen} />
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="Notepad" component={NotepadScreen} />
+      <HomeStack.Screen name="History" component={HistoryScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -226,6 +230,32 @@ export default function App() {
       );
     });
 
+    // Handle background notification tap
+    messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('Notification caused app to open from background state:', remoteMessage.notification);
+      if (remoteMessage.data?.screen) {
+        setTimeout(() => {
+          if (navigationRef.isReady()) {
+            navigationRef.navigate(remoteMessage.data.screen);
+          }
+        }, 500);
+      }
+    });
+
+    // Handle initial notification (app was closed)
+    messaging().getInitialNotification().then(remoteMessage => {
+      if (remoteMessage) {
+        console.log('Notification caused app to open from quit state:', remoteMessage.notification);
+        if (remoteMessage.data?.screen) {
+          setTimeout(() => {
+            if (navigationRef.isReady()) {
+              navigationRef.navigate(remoteMessage.data.screen);
+            }
+          }, 1000); // Wait longer on cold start
+        }
+      }
+    });
+
     const checkAuth = async () => {
       try {
         const token = await getToken();
@@ -264,7 +294,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <StatusBar style="light" />
       <Stack.Navigator
         initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
