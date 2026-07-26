@@ -3802,50 +3802,101 @@ def export_pdf(request):
         from reportlab.lib.pagesizes import letter
         from reportlab.lib import colors
         from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+        import datetime
         
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
         elements = []
         
         styles = getSampleStyleSheet()
-        title_style = styles['Heading1']
-        title_style.alignment = 1 # Center
         
-        elements.append(Paragraph(f"Expense History for {request.user.username}", title_style))
-        elements.append(Spacer(1, 20))
+        # Custom Styles
+        title_style = ParagraphStyle(
+            'CustomTitle', parent=styles['Heading1'],
+            fontName='Helvetica-Bold', fontSize=24,
+            textColor=colors.HexColor('#0F172A'), alignment=TA_CENTER,
+            spaceAfter=5
+        )
+        subtitle_style = ParagraphStyle(
+            'Subtitle', parent=styles['Normal'],
+            fontName='Helvetica', fontSize=12,
+            textColor=colors.HexColor('#64748B'), alignment=TA_CENTER,
+            spaceAfter=25
+        )
+        info_style = ParagraphStyle(
+            'Info', parent=styles['Normal'],
+            fontName='Helvetica', fontSize=11,
+            textColor=colors.HexColor('#334155'), alignment=TA_LEFT,
+            spaceAfter=6
+        )
+        
+        # Header
+        elements.append(Paragraph("Paisa Tracker", title_style))
+        elements.append(Paragraph("Expense & Financial Report", subtitle_style))
         
         expenses = Expense.objects.filter(user=request.user).order_by('-date')
         month = request.GET.get('month')
         year = request.GET.get('year')
+        period_text = "All Time"
         if month and year:
             expenses = expenses.filter(date__month=month, date__year=year)
+            month_name = datetime.date(int(year), int(month), 1).strftime('%B')
+            period_text = f"{month_name} {year}"
+            
+        total = sum([exp.amount for exp in expenses])
+        
+        # Info Section
+        elements.append(Paragraph(f"<b>Generated For:</b> {request.user.username.title()}", info_style))
+        elements.append(Paragraph(f"<b>Period:</b> {period_text}", info_style))
+        elements.append(Paragraph(f"<b>Total Expenses:</b> Rs. {total:,.2f}", info_style))
+        elements.append(Spacer(1, 15))
         
         data = [['Date', 'Category', 'Description', 'Amount (Rs)']]
-        total = 0
         for exp in expenses:
-            data.append([exp.date.strftime('%Y-%m-%d'), exp.category.title(), exp.description or '', f"{exp.amount:,.2f}"])
-            total += exp.amount
-        data.append(['', '', 'Total', f"{total:,.2f}"])
-        
-        table = Table(data, colWidths=[80, 100, 200, 100])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A73E8')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            data.append([exp.date.strftime('%d %b %Y'), exp.category.title(), exp.description or '-', f"{exp.amount:,.2f}"])
+            
+        table = Table(data, colWidths=[90, 100, 230, 100])
+        t_style = TableStyle([
+            # Header
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0EA5E9')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#F8F9FA')),
-            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E0E0E0')),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E8F0FE')),
-        ]))
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
+            
+            # Body
+            ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+            ('ALIGN', (2, 1), (2, -1), 'LEFT'), # Left align description
+            ('ALIGN', (3, 1), (3, -1), 'RIGHT'), # Right align amounts
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+            ('TOPPADDING', (0, 1), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F8FAFC')]),
+        ])
+        table.setStyle(t_style)
         
         elements.append(table)
+        
+        # Footer
+        elements.append(Spacer(1, 30))
+        footer_style = ParagraphStyle(
+            'Footer', parent=styles['Normal'],
+            fontName='Helvetica-Oblique', fontSize=9,
+            textColor=colors.HexColor('#94A3B8'), alignment=TA_CENTER
+        )
+        elements.append(Paragraph(f"Generated by Paisa Tracker App on {datetime.date.today().strftime('%d %b %Y')}", footer_style))
+        
         doc.build(elements)
         buffer.seek(0)
-        return FileResponse(buffer, as_attachment=True, filename='ExpenseTracker_History.pdf')
+        
+        filename = f"PaisaTracker_{period_text.replace(' ', '_')}.pdf"
+        return FileResponse(buffer, as_attachment=True, filename=filename)
     except ImportError:
         return export_csv(request)
 
