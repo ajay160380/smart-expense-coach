@@ -3963,6 +3963,20 @@ def server_error(request, *args, **kwargs):
     from django.shortcuts import render
     return render(request, "500.html", status=500)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_update_fcm_token(request):
+    try:
+        fcm_token = request.data.get('fcm_token')
+        if fcm_token:
+            profile = UserProfile.objects.get(user=request.user)
+            profile.fcm_token = fcm_token
+            profile.save()
+            return JsonResponse({"status": "success"})
+        return JsonResponse({"status": "error", "message": "No token provided"})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)})
+
 @csrf_exempt
 def api_trigger_test_push(request):
     try:
