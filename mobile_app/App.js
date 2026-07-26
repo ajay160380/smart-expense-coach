@@ -18,7 +18,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Logo from './src/components/Logo';
-import { setUnauthorizedHandler } from './src/api/config';
+import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
 import { getToken } from './src/utils/auth';
 import messaging from '@react-native-firebase/messaging';
 import { saveNotification } from './src/utils/notifications';
@@ -203,7 +203,7 @@ export default function App() {
             
             // Send token to backend
             try {
-              await fetch(`${API_URL}/api/update-fcm-token/`, {
+              await fetch(`${BASE_URL}/api/update-fcm-token/`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
