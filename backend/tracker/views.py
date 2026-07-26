@@ -3781,6 +3781,11 @@ def api_submit_feedback(request):
 @api_login_required
 def export_csv(request):
     expenses = Expense.objects.filter(user=request.user).order_by('-date')
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    if month and year:
+        expenses = expenses.filter(date__month=month, date__year=year)
+    
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['Date', 'Category', 'Description', 'Amount'])
@@ -3811,6 +3816,10 @@ def export_pdf(request):
         elements.append(Spacer(1, 20))
         
         expenses = Expense.objects.filter(user=request.user).order_by('-date')
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+        if month and year:
+            expenses = expenses.filter(date__month=month, date__year=year)
         
         data = [['Date', 'Category', 'Description', 'Amount (Rs)']]
         total = 0

@@ -2661,15 +2661,24 @@ async function fetchCatInsight(cat, period='month') {
 }
 
 function exportCSV() {
-  const rows = [['Date','Category','Amount','Note'], ...expenses.map(e=>[e.date,e.cat,e.amount,e.note||''])];
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'));
-  a.download = `paisatracker_${today.toISOString().split('T')[0]}.csv`;
-  a.click();
-  showToast('CSV export complete! ✅','success');
+  const picker = document.getElementById('month-picker');
+  let url = '/api/export/csv/';
+  if (picker && picker.value) {
+    const [year, month] = picker.value.split('-');
+    url += `?month=${month}&year=${year}`;
+  }
+  window.location.href = url;
+  showToast('Downloading CSV... ✅', 'success');
 }
+
 function exportPDF() {
-  window.location.href = '/api/export/pdf/';
+  const picker = document.getElementById('month-picker');
+  let url = '/api/export/pdf/';
+  if (picker && picker.value) {
+    const [year, month] = picker.value.split('-');
+    url += `?month=${month}&year=${year}`;
+  }
+  window.location.href = url;
   showToast('Downloading PDF... 📄', 'success');
 }
 
