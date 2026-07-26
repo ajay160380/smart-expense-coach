@@ -44,6 +44,18 @@ def send_push_notification(fcm_token, title, body, data=None):
             ),
             data=data if data else {},
             token=fcm_token,
+            android=messaging.AndroidConfig(
+                priority='high',
+                notification=messaging.AndroidNotification(
+                    sound='default',
+                    channel_id='default',
+                ),
+            ),
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(sound='default')
+                ),
+            )
         )
 
         # Send the message
