@@ -543,6 +543,44 @@ def process_subscriptions(user) -> int:
     return debits
 
 
+def get_budget_cycle_dates(user, reference_date=None):
+    if reference_date is None:
+        reference_date = date.today()
+    try:
+        start_day = user.profile.budget_cycle_start_day
+    except Exception:
+        start_day = 1
+
+    if reference_date.day < start_day:
+        m = reference_date.month - 1
+        y = reference_date.year
+        if m == 0:
+            m = 12
+            y -= 1
+        _, last_day = calendar.monthrange(y, m)
+        sd = min(start_day, last_day)
+        start_date = date(y, m, sd)
+        
+        _, curr_last_day = calendar.monthrange(reference_date.year, reference_date.month)
+        curr_sd = min(start_day, curr_last_day)
+        end_date = date(reference_date.year, reference_date.month, curr_sd) - timedelta(days=1)
+    else:
+        _, last_day = calendar.monthrange(reference_date.year, reference_date.month)
+        sd = min(start_day, last_day)
+        start_date = date(reference_date.year, reference_date.month, sd)
+        
+        m = reference_date.month + 1
+        y = reference_date.year
+        if m == 13:
+            m = 1
+            y += 1
+        _, next_last_day = calendar.monthrange(y, m)
+        next_sd = min(start_day, next_last_day)
+        end_date = date(y, m, next_sd) - timedelta(days=1)
+        
+    return start_date, end_date
+
+
 def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
     qs = Expense.objects.filter(user=user)
 
@@ -553,7 +591,8 @@ def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
     if filter_type == "week":
         qs = qs.filter(date__gte=today - timedelta(days=7))
     elif filter_type == "month":
-        qs = qs.filter(date__year=today.year, date__month=today.month)
+        start_date, end_date = get_budget_cycle_dates(user, today)
+        qs = qs.filter(date__range=(start_date, end_date))
 
     return qs.order_by("-date", "-id")
 
@@ -565,7 +604,8 @@ def get_period_expenses(user, period: str):
     if period == "week":
         return qs.filter(date__gte=today - timedelta(days=7))
     elif period == "month":
-        return qs.filter(date__year=today.year, date__month=today.month)
+        start_date, end_date = get_budget_cycle_dates(user, today)
+        return qs.filter(date__range=(start_date, end_date))
     elif period == "quarter":
         quarter_start = today.replace(day=1) - timedelta(days=(today.month - 1) % 3 * 30)
         return qs.filter(date__gte=quarter_start)
@@ -724,7 +764,8 @@ def detect_anomalies(user, budget: float) -> list:
     alerts = []
     today  = date.today()
 
-    month_qs    = Expense.objects.filter(user=user, date__year=today.year, date__month=today.month)
+    start_date, end_date = get_budget_cycle_dates(user, today)
+    month_qs    = Expense.objects.filter(user=user, date__range=(start_date, end_date))
     month_agg   = month_qs.aggregate(total=Sum("amount"), days=Count("date", distinct=True))
     month_total = _safe_float(month_agg["total"])
     active_days = max(month_agg["days"] or 1, 1)
@@ -1047,9 +1088,16 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             if nb <= 0:
                 raise ValueError("Budget must be positive")
             profile.monthly_budget = nb
+            
+            start_day_str = request.POST.get("budget_cycle_start_day", "")
+            if start_day_str.isdigit():
+                sd = int(start_day_str)
+                if 1 <= sd <= 28:
+                    profile.budget_cycle_start_day = sd
+                    
             profile.save()  # Permanently saved in DB!
-            logger.info("Budget updated uid=%s budget=%.0f", user.id, nb)
-            messages.success(request, f"Budget set: ₹{nb:,.0f} 💰")
+            logger.info("Budget updated uid=%s budget=%.0f cycle=%s", user.id, nb, getattr(profile, 'budget_cycle_start_day', 1))
+            messages.success(request, f"Budget settings updated! 💰")
         except (ValueError, TypeError):
             messages.error(request, "Please enter a valid budget (positive number).")
         return redirect("dashboard")
@@ -1078,10 +1126,10 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     # ──────────────────────────────────────────────────────────────────────────
     # PERFECT AGGREGATION — Single query with conditional aggregation
     # ──────────────────────────────────────────────────────────────────────────
-    month_start = today.replace(day=1)
+    month_start, month_end = get_budget_cycle_dates(user, today)
     week_start = today - timedelta(days=7)
     totals = Expense.objects.filter(user=user).aggregate(
-        month_total=Sum("amount", filter=Q(date__gte=month_start)),
+        month_total=Sum("amount", filter=Q(date__range=(month_start, month_end))),
         week_total=Sum("amount", filter=Q(date__gte=week_start)),
         all_total=Sum("amount"),
     )
@@ -1190,6 +1238,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "whatsapp_linked":      profile.whatsapp_linked,
         "whatsapp_number":      profile.whatsapp_number,
         "user_phone":           profile.phone_number,
+        "budget_cycle_start_day": getattr(profile, 'budget_cycle_start_day', 1),
         "search_query":         search_query,
         "form":                 ExpenseForm(),
         "sub_form":             SubscriptionForm(),
@@ -2416,6 +2465,12 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
                     raise ValueError
                 profile, _ = UserProfile.objects.get_or_create(user=user)
                 profile.monthly_budget = nb
+                
+                if "budget_cycle_start_day" in body:
+                    sd = int(body["budget_cycle_start_day"])
+                    if 1 <= sd <= 28:
+                        profile.budget_cycle_start_day = sd
+                        
                 profile.save()
                 return JsonResponse({"status": "success", "message": "Budget updated successfully"})
             except ValueError:
@@ -2442,6 +2497,7 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
         "first_expense":  all_agg["first_date"].isoformat() if all_agg["first_date"] else None,
         "last_expense":   all_agg["last_date"].isoformat()  if all_agg["last_date"]  else None,
         "budget":         get_user_budget(request),
+        "budget_cycle_start_day": getattr(profile, 'budget_cycle_start_day', 1) if profile else 1,
         "member_days":    (date.today() - user.date_joined.date()).days,
         "profile_picture": profile_pic_url,
         "whatsapp_linked": profile.whatsapp_linked if profile else False,
@@ -2742,16 +2798,15 @@ def wa_link_status(request: HttpRequest) -> JsonResponse:
 def build_monthly_comparison(user) -> dict:
     """Compare current month vs previous month spending."""
     today = date.today()
-    cur_year, cur_month = today.year, today.month
+    
+    cur_start, cur_end = get_budget_cycle_dates(user, today)
+    
+    # Previous month cycle based on a reference date from previous cycle
+    prev_ref_date = cur_start - timedelta(days=5)
+    prev_start, prev_end = get_budget_cycle_dates(user, prev_ref_date)
 
-    # Previous month
-    if cur_month == 1:
-        prev_year, prev_month = cur_year - 1, 12
-    else:
-        prev_year, prev_month = cur_year, cur_month - 1
-
-    cur_qs = Expense.objects.filter(user=user, date__year=cur_year, date__month=cur_month)
-    prev_qs = Expense.objects.filter(user=user, date__year=prev_year, date__month=prev_month)
+    cur_qs = Expense.objects.filter(user=user, date__range=(cur_start, cur_end))
+    prev_qs = Expense.objects.filter(user=user, date__range=(prev_start, prev_end))
 
     cur_total = _safe_float(cur_qs.aggregate(t=Sum("amount"))["t"])
     prev_total = _safe_float(prev_qs.aggregate(t=Sum("amount"))["t"])

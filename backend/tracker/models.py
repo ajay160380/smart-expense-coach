@@ -28,6 +28,7 @@ class UserProfile(models.Model):
 
     # --- Budget Field ---
     monthly_budget = models.DecimalField(max_digits=10, decimal_places=2, default=20000)
+    budget_cycle_start_day = models.IntegerField(default=1)
 
     def __str__(self):
         return f"{self.user.username} - {self.phone_number}"

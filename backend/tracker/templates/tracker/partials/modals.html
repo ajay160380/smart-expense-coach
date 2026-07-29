@@ -31,6 +31,7 @@
     <form method="POST" action="{% url 'dashboard' %}">
       {% csrf_token %}
       <div class="form-group"><label class="form-label">Monthly budget (₹)</label><input class="form-input" type="number" name="new_budget" id="budget-inp" placeholder="20000" min="1" required></div>
+      <div class="form-group"><label class="form-label">Cycle Start Date (1-28)</label><input class="form-input" type="number" name="budget_cycle_start_day" value="{{ budget_cycle_start_day|default:1 }}" min="1" max="28" required></div>
       <button type="submit" class="submit-btn">Update Budget 💰</button>
     </form>
   </div>

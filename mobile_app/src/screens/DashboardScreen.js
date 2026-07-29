@@ -36,6 +36,7 @@ export default function DashboardScreen({ navigation }) {
   const [username, setUsername] = useState('User');
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
   const [newBudget, setNewBudget] = useState('');
+  const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
 
   const handleSaveBudget = async () => {
@@ -47,7 +48,13 @@ export default function DashboardScreen({ navigation }) {
 
     setBudgetSubmitting(true);
     try {
-      const response = await api.post('/profile/', { budget: parsedBudget });
+      const parsedCycleDay = parseInt(newBudgetCycleDay, 10);
+      const payload = { budget: parsedBudget };
+      if (!isNaN(parsedCycleDay) && parsedCycleDay >= 1 && parsedCycleDay <= 28) {
+          payload.budget_cycle_start_day = parsedCycleDay;
+      }
+      
+      const response = await api.post('/profile/', payload);
       if (response.data.status === 'success') {
         setBudgetModalVisible(false);
         fetchDashboardData();
@@ -201,6 +208,7 @@ export default function DashboardScreen({ navigation }) {
 
   const spent = stats?.total_spent || 0;
   const budget = stats?.budget || 20000;
+  const budgetCycleDay = stats?.budget_cycle_start_day || 1;
   const usedPercent = stats?.budget_percent || 0;
   const remaining = stats?.remaining || budget;
   const txCount = stats?.transaction_count || 0;
@@ -327,6 +335,7 @@ export default function DashboardScreen({ navigation }) {
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setNewBudget(budget.toString());
+              setNewBudgetCycleDay(budgetCycleDay.toString());
               setBudgetModalVisible(true);
             }}
             activeOpacity={0.7}
@@ -621,6 +630,19 @@ export default function DashboardScreen({ navigation }) {
                 placeholderTextColor="#64748b"
                 autoFocus={true}
                 maxLength={10}
+              />
+            </View>
+            
+            <View style={[styles.inputContainer, { marginTop: 15 }]}>
+              <Text style={styles.inputPrefix}>📅</Text>
+              <TextInput
+                style={styles.budgetInput}
+                keyboardType="numeric"
+                value={newBudgetCycleDay}
+                onChangeText={setNewBudgetCycleDay}
+                placeholder="Cycle start day (1-28)"
+                placeholderTextColor="#64748b"
+                maxLength={2}
               />
             </View>
 
