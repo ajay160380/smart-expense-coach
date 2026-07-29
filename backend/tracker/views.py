@@ -2816,7 +2816,7 @@ def build_monthly_comparison(user) -> dict:
 
     # Days elapsed calculation for fair comparison
     days_elapsed = today.day
-    prev_days = calendar.monthrange(prev_year, prev_month)[1]
+    prev_days = calendar.monthrange(prev_start.year, prev_start.month)[1]
 
     cur_daily_avg = cur_total / max(days_elapsed, 1)
     prev_daily_avg = prev_total / max(prev_days, 1)
@@ -3991,23 +3991,6 @@ def export_pdf(request):
     except ImportError:
         return export_csv(request)
 
-@api_login_required
-@json_required
-def api_update_fcm_token(request):
-    """Saves the device FCM token for push notifications."""
-    body = getattr(request, "_json_body", {})
-    fcm_token = body.get("fcm_token")
-    if not fcm_token:
-        return JsonResponse({"error": "FCM token is required"}, status=400)
-    
-    try:
-        profile = request.user.profile
-        profile.fcm_token = fcm_token
-        profile.save()
-        return JsonResponse({"status": "success", "message": "FCM token updated successfully"})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
 def server_error(request, *args, **kwargs):
     import logging
     logger = logging.getLogger('django.request')
@@ -4023,31 +4006,32 @@ def server_error(request, *args, **kwargs):
 @permission_classes([IsAuthenticated])
 def api_update_fcm_token(request):
     try:
-        fcm_token = request.data.get('fcm_token')
+        fcm_token = request.data.get('fcm_token') or getattr(request, "_json_body", {}).get('fcm_token')
         if fcm_token:
-            profile = UserProfile.objects.get(user=request.user)
+            profile = request.user.profile
             profile.fcm_token = fcm_token
             profile.save()
-            return JsonResponse({"status": "success"})
-        return JsonResponse({"status": "error", "message": "No token provided"})
+            return JsonResponse({"status": "success", "message": "FCM token updated successfully"})
+        return JsonResponse({"status": "error", "message": "No token provided"}, status=400)
     except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)})
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 @csrf_exempt
 def api_trigger_test_push(request):
     try:
         from tracker.fcm_utils import send_push_notification
-        profiles = UserProfile.objects.exclude(fcm_token__isnull=True).exclude(fcm_token__exact='')
+        tokens = UserProfile.objects.exclude(fcm_token__isnull=True).exclude(fcm_token__exact='').values_list('fcm_token', flat=True).distinct()
         count = 0
         
-        for profile in profiles:
+        for token in tokens:
             title = "🚀 Premium Update Available!"
             body = "A new version of the app is ready for you! Tap here to head to your Profile section and hit 'Check for Update' to experience the latest features. ✨"
             data = {"screen": "Profile"}
-            success = send_push_notification(profile.fcm_token, title, body, data)
+            success = send_push_notification(token, title, body, data)
             if success:
                 count += 1
                 
         return JsonResponse({"status": "success", "messages_sent": count})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
+

@@ -8,14 +8,15 @@ from tracker.models import UserProfile
 from tracker.fcm_utils import send_push_notification, initialize_firebase
 from firebase_admin import messaging
 
-title = "🌙 Aaj Kahan Udaaye Paise? 🧾"
-body = "Din khatam hone wala hai! Aaj ke saare kharche (chai, snacks, shopping) record kar liye ya bhool gaye? 📝⚡"
+title = "💖 'Babu ne Thana Thaya?' 🍕"
+body = "Babu ne thana kha liya aur bill tumne bhara? Aao jaldi wo momos aur date ka kharcha log kar lo! Good Night! 😂💸"
 data = {"screen": "Dashboard"}
 
 print(f"Title: {title}")
 print(f"Body: {body}\n")
 
 # Broadcast to topic 'all_users'
+topic_sent = False
 try:
     initialize_firebase()
     topic_message = messaging.Message(
@@ -28,20 +29,25 @@ try:
     )
     res = messaging.send(topic_message)
     print("Successfully broadcasted to topic 'all_users':", res)
+    topic_sent = True
 except Exception as e:
     print("Topic send notice/error:", e)
 
-# Send to individual FCM tokens
-profiles = UserProfile.objects.exclude(fcm_token__isnull=True).exclude(fcm_token__exact='')
-print(f"Found {profiles.count()} user profiles with FCM token.")
+# Fallback to individual FCM tokens ONLY if topic broadcast failed
+if not topic_sent:
+    tokens = UserProfile.objects.exclude(fcm_token__isnull=True).exclude(fcm_token__exact='').values_list('fcm_token', flat=True).distinct()
+    print(f"Fallback: Found {len(tokens)} unique FCM tokens.")
 
-count = 0
-for profile in profiles:
-    success = send_push_notification(profile.fcm_token, title, body, data)
-    if success:
-        count += 1
-        print(f"✅ Notification sent to user: {profile.user.username}")
-    else:
-        print(f"❌ Failed to send notification to user: {profile.user.username}")
+    count = 0
+    for fcm_token in tokens:
+        success = send_push_notification(fcm_token, title, body, data)
+        if success:
+            count += 1
+            print(f"✅ Notification sent to token: {fcm_token[:15]}...")
+        else:
+            print(f"❌ Failed to send notification to token: {fcm_token[:15]}...")
 
-print(f"\nCompleted! Total individual push notifications sent: {count}")
+    print(f"\nCompleted! Total individual push notifications sent: {count}")
+else:
+    print("\nSkipping individual token loop to prevent duplicate notification delivery (since topic broadcast succeeded).")
+
