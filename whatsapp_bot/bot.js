@@ -162,7 +162,7 @@ async function startBot(retryCount = 0) {
             // ── 💡 DAILY TIP CRON JOB (8:00 AM IST) ──
             cron.schedule('0 8 * * *', async () => {
                 console.log('⏰ Running daily tip cron job (8 AM)...');
-                const SPACE_URL = "http://127.0.0.1:8000";
+                const SPACE_URL = "http://127.0.0.1:7860";
                 const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
 
                 try {
@@ -219,7 +219,7 @@ async function startBot(retryCount = 0) {
             // ── 🌙 NIGHT TIP CRON JOB (10:00 PM IST) ──
             cron.schedule('0 22 * * *', async () => {
                 console.log('⏰ Running night tip cron job (10 PM)...');
-                const SPACE_URL = "http://127.0.0.1:8000";
+                const SPACE_URL = "http://127.0.0.1:7860";
                 const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
 
                 try {
@@ -341,7 +341,7 @@ async function startBot(retryCount = 0) {
     }
 
     client.on('message', async (msg) => {
-        const SPACE_URL = "http://127.0.0.1:8000";
+        const SPACE_URL = "http://127.0.0.1:7860";
 
         // Skip group messages, status updates, and media-only messages
         if (msg.from === 'status@broadcast') return;
