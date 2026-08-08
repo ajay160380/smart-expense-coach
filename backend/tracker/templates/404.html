@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Page Not Found | Paisa Mitra</title>
+    <title>404 - Page Not Found | Expense Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -141,8 +142,8 @@
         <nav class="w-full max-w-[1100px] mx-auto px-5 md:px-10 py-5 md:py-[28px] flex items-center justify-between nav-border relative z-20">
             <!-- Left: Logo -->
             <a href="/" class="flex items-center gap-[9px] cursor-pointer">
-                <img src="https://pub-f170a2592d2c4a1485466404c36807be.r2.dev/Tests/logoipsum-415.svg" style="filter: brightness(0); height: 28px;" alt="Logo">
-                <span class="font-bold text-[#111] text-[20px] tracking-[-0.3px]">Paisa Mitra.</span>
+                <img src="{% static 'tracker/images/icon.png' %}" style="height: 32px; width: 32px; border-radius: 8px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" alt="Logo">
+                <span class="font-bold text-[#111] text-[20px] tracking-[-0.3px]">Expense Tracker.</span>
             </a>
 
             <!-- Center: Links (Desktop) -->
