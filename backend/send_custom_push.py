@@ -8,8 +8,8 @@ from tracker.models import UserProfile
 from tracker.fcm_utils import send_push_notification, initialize_firebase
 from firebase_admin import messaging
 
-title = "💖 'Babu ne Thana Thaya?' 🍕"
-body = "Babu ne thana kha liya aur bill tumne bhara? Aao jaldi wo momos aur date ka kharcha log kar lo! Good Night! 😂💸"
+title = "🚀 Track Your Spendings!"
+body = "Hey there! Don't forget to log your daily expenses. Keep your budget on track! 💰📈"
 data = {"screen": "Dashboard"}
 
 print(f"Title: {title}")

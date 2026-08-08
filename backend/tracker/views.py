@@ -4035,3 +4035,39 @@ def api_trigger_test_push(request):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def api_send_admin_push(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            secret = data.get("secret")
+            if secret != os.environ.get("ADMIN_PUSH_SECRET", "paisamitra-admin-2025"):
+                return JsonResponse({"status": "error", "message": "Invalid secret"}, status=403)
+                
+            title = data.get("title")
+            body = data.get("body")
+            screen = data.get("screen", "Dashboard")
+            
+            if not title or not body:
+                return JsonResponse({"status": "error", "message": "Title and body required"}, status=400)
+                
+            from tracker.fcm_utils import initialize_firebase, send_push_notification
+            from firebase_admin import messaging
+            
+            initialize_firebase()
+            topic_message = messaging.Message(
+                notification=messaging.Notification(
+                    title=title,
+                    body=body,
+                ),
+                data={"screen": screen},
+                topic='all_users',
+            )
+            res = messaging.send(topic_message)
+            return JsonResponse({"status": "success", "message": "Push sent to all_users topic", "res": res})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)

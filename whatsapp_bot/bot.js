@@ -271,6 +271,23 @@ async function startBot(retryCount = 0) {
                 timezone: "Asia/Kolkata"
             });
             console.log('📅 Night tip cron scheduled for 10:00 PM IST');
+
+            // ── ADMIN PUSH NOTIFICATION PROMPT CRON JOB (11:00 AM & 05:00 PM) ──
+            cron.schedule('0 11,17 * * *', async () => {
+                console.log('⏰ Running Admin Push Prompt cron job...');
+                try {
+                    const menuText = `👨‍💻 *Admin Push Menu*\nKaunsa message bhejna hai app par?\n\n1️⃣ 🚀 Keep tracking! - Don't forget to add your recent expenses!\n2️⃣ 💡 Tip of the day! - Small savings everyday make a big difference!\n3️⃣ ☕ Coffee Time? - Did you buy tea or coffee?\n4️⃣ 💸 Wallet Check - Review your daily spending.\n5️⃣ 📊 Financial Fitness - Consistency is key.\n\nReply with: !push 1, !push 2, etc.`;
+                    
+                    // Try to send to Ajay's number
+                    const target = "917905398965@c.us";
+                    await client.sendMessage(target, menuText);
+                    console.log(`✅ Admin Push Prompt sent to ${target}`);
+                } catch (err) {
+                    console.error('❌ Failed to send Admin Push Prompt:', err.message);
+                }
+            }, { timezone: "Asia/Kolkata" });
+            console.log('📅 Admin Push Prompt cron scheduled for 11:00 AM & 5:00 PM IST');
+            
         } // End of isCronScheduled check
     });
 
@@ -359,6 +376,50 @@ async function startBot(retryCount = 0) {
             "917379053923@c.us", // Fallback/Bot number
             process.env.MY_WHATSAPP_NUMBER
         ];
+
+        // ── ADMIN HELP / CHEATSHEET ──
+        const lowerBody = msg.body.toLowerCase();
+        if (allowedAdmins.includes(msg.from) && (lowerBody.includes('!admin_help') || lowerBody.includes('!help_admin') || lowerBody.includes('kaise bheju') || lowerBody.includes('kaise beju'))) {
+            const helpText = `👑 *Admin Commands Guide*\n\n1️⃣ *App Push Notification (Predefined)*\n\`!push 1\` se lekar \`!push 5\`\n(App par notification bhejta hai)\n\n2️⃣ *App Custom Push Notification*\n\`!custom_push Title yaha | Message yaha\`\n(App par custom title aur message bhejta hai)\n\n3️⃣ *WhatsApp Broadcast*\n\`!broadcast Hello sabhi ko!\`\n(Sabhi users ko WhatsApp par message bhejta hai)\n\n4️⃣ *WhatsApp Update Broadcast*\n\`!broadcast_update [Aapka message]\`\n(Sabhi ko WhatsApp par APK download link ke sath message bhejta hai)`;
+            await msg.reply(helpText);
+            return;
+        }
+
+        // ── ADMIN WHATSAPP MESSAGE BROADCAST ──
+        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!broadcast ')) {
+            console.log("📣 Admin initiated WhatsApp broadcast!");
+            const customMessage = msg.body.replace('!broadcast ', '').trim();
+            
+            if (!customMessage) {
+                await msg.reply("❌ Please provide a message. Example: !broadcast Hello everyone!");
+                return;
+            }
+
+            try {
+                const result = await pool.query("SELECT DISTINCT phone_number FROM tracker_userprofile WHERE phone_number ~ '^[0-9]{10,15}$'");
+                const numbers = result.rows.map(r => r.phone_number);
+
+                await msg.reply(`✅ Starting WhatsApp Broadcast to ${numbers.length} users... Please wait.`);
+
+                let successCount = 0;
+                for (const number of numbers) {
+                    try {
+                        const chatId = `${number}@c.us`;
+                        await client.sendMessage(chatId, customMessage);
+                        successCount++;
+                        // Delay to avoid WhatsApp spam limits
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    } catch (e) {
+                        console.error(`Failed to send broadcast to ${number}:`, e.message);
+                    }
+                }
+                await msg.reply(`🎉 WhatsApp Broadcast complete! Successfully sent to ${successCount}/${numbers.length} users.`);
+            } catch (dbErr) {
+                console.error("DB error during broadcast:", dbErr);
+                await msg.reply("❌ Failed to fetch users from database.");
+            }
+            return;
+        }
         if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!broadcast_update')) {
             console.log("📣 Admin initiated broadcast update!");
 
@@ -392,6 +453,86 @@ async function startBot(retryCount = 0) {
             } catch (dbErr) {
                 console.error("DB error during broadcast:", dbErr);
                 await msg.reply("❌ Failed to fetch users from database.");
+            }
+            return;
+        }
+
+        // ── ADMIN PUSH NOTIFICATION LISTENER ──
+        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!push ')) {
+            const option = msg.body.split(' ')[1];
+            
+            const pushMessages = {
+                '1': { title: "🚀 Keep tracking!", body: "Don't forget to add your recent expenses! Keep your budget on track. 💰" },
+                '2': { title: "💡 Tip of the day!", body: "Small savings everyday make a big difference! Have you checked your dashboard today? 📊" },
+                '3': { title: "☕ Coffee Time?", body: "Did you buy tea or coffee? Add it to your expenses! 📝" },
+                '4': { title: "💸 Wallet Check", body: "Review your daily spending and stay on budget. 💸" },
+                '5': { title: "📊 Financial Fitness", body: "Consistency is key. Log your expenses today! 💪" }
+            };
+            
+            const selected = pushMessages[option];
+            if (!selected) {
+                await msg.reply("❌ Invalid option. Please send '!push 1' to '!push 5'.");
+                return;
+            }
+            
+            try {
+                await msg.reply(`⏳ Sending Push Notification: *${selected.title}*...`);
+                // Use SPACE_URL to call the Django endpoint
+                const url = `${SPACE_URL}/api/send-admin-push/`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        secret: "paisamitra-admin-2025", 
+                        title: selected.title, 
+                        body: selected.body 
+                    })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    await msg.reply(`✅ Push Notification successfully broadcasted to all users!`);
+                } else {
+                    await msg.reply(`❌ Failed to send push: ${data.message}`);
+                }
+            } catch (err) {
+                console.error("Error triggering push:", err);
+                await msg.reply(`❌ Error triggering push: ${err.message}`);
+            }
+            return;
+        }
+
+        // ── ADMIN CUSTOM PUSH NOTIFICATION LISTENER ──
+        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!custom_push ')) {
+            const content = msg.body.replace('!custom_push ', '').trim();
+            const parts = content.split('|');
+            let title = "📢 Admin Update";
+            let body = content;
+            if (parts.length >= 2) {
+                title = parts[0].trim();
+                body = parts.slice(1).join('|').trim();
+            }
+            
+            try {
+                await msg.reply(`⏳ Sending Custom Push Notification: *${title}*...`);
+                const url = `${SPACE_URL}/api/send-admin-push/`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        secret: "paisamitra-admin-2025", 
+                        title: title, 
+                        body: body 
+                    })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    await msg.reply(`✅ Custom Push Notification successfully broadcasted to all users!`);
+                } else {
+                    await msg.reply(`❌ Failed to send custom push: ${data.message}`);
+                }
+            } catch (err) {
+                console.error("Error triggering custom push:", err);
+                await msg.reply(`❌ Error triggering custom push: ${err.message}`);
             }
             return;
         }
