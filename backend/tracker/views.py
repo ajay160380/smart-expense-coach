@@ -2873,7 +2873,7 @@ def build_monthly_comparison(user) -> dict:
         verdict = "danger"
         verdict_msg = "Alert! Spending bahut zyada badh gayi! 🚨"
 
-    prev_month_name = MONTH_NAMES[prev_month - 1]
+    prev_month_name = prev_start.strftime("%B")
 
     return {
         "cur_total": cur_total,
