@@ -119,9 +119,10 @@ async function startBot(retryCount = 0) {
             clientId: "paisa-mitra-v3",
             dataPath: './'
         }),
+        authTimeoutMs: 0,
         puppeteer: {
-            timeout: 300000,       // 5 minutes navigation timeout
-            protocolTimeout: 300000,
+            timeout: 0,       // 0 means no timeout
+            protocolTimeout: 0,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
