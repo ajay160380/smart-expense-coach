@@ -386,9 +386,9 @@ async function startBot(retryCount = 0) {
         }
 
         // ── ADMIN WHATSAPP MESSAGE BROADCAST ──
-        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!broadcast ')) {
+        if (allowedAdmins.includes(msg.from) && lowerBody.startsWith('!broadcast ')) {
             console.log("📣 Admin initiated WhatsApp broadcast!");
-            const customMessage = msg.body.replace('!broadcast ', '').trim();
+            const customMessage = msg.body.replace(/^!broadcast /i, '').trim();
             
             if (!customMessage) {
                 await msg.reply("❌ Please provide a message. Example: !broadcast Hello everyone!");
@@ -420,13 +420,13 @@ async function startBot(retryCount = 0) {
             }
             return;
         }
-        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!broadcast_update')) {
+        if (allowedAdmins.includes(msg.from) && lowerBody.startsWith('!broadcast_update')) {
             console.log("📣 Admin initiated broadcast update!");
 
             const downloadLink = "https://ajay160380-paisa-mitra.hf.space/static/downloads/ExpenseTracker.apk";
             const defaultMsg = `🚀 *Expense Tracker - Important Update Available!*\n\nHello there! 👋 We've just released a major update to your Expense Tracker app with some exciting new additions.\n\n✨ *What's New:*\n• *Smart Notepad:* A brand-new feature to quickly jot down your financial notes and reminders directly within the app! 📝\n• *Refreshed Branding:* Enjoy our beautiful new app icon and a sleeker UI experience. 🎨\n• *Performance Boost:* We've squashed some bugs to make your expense tracking faster and smoother than ever. ⚡\n\n⚠️ *IMPORTANT:* To enjoy these new features, please *DELETE* your old Expense Tracker app first, and then download and install the new version from the link below:\n\n📲 *Download Now:* ${downloadLink}\n\nThank you for trusting Expense Tracker! 💼`;
             
-            const customMessage = msg.body.replace('!broadcast_update', '').trim() || defaultMsg;
+            const customMessage = msg.body.replace(/^!broadcast_update/i, '').trim() || defaultMsg;
 
             try {
                 const result = await pool.query("SELECT DISTINCT phone_number FROM tracker_userprofile WHERE phone_number ~ '^[0-9]{10,15}$'");
@@ -458,8 +458,8 @@ async function startBot(retryCount = 0) {
         }
 
         // ── ADMIN PUSH NOTIFICATION LISTENER ──
-        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!push ')) {
-            const option = msg.body.split(' ')[1];
+        if (allowedAdmins.includes(msg.from) && lowerBody.startsWith('!push ')) {
+            const option = msg.body.replace(/^!push /i, '').trim().split(' ')[0];
             
             const pushMessages = {
                 '1': { title: "🚀 Keep tracking!", body: "Don't forget to add your recent expenses! Keep your budget on track. 💰" },
@@ -502,8 +502,8 @@ async function startBot(retryCount = 0) {
         }
 
         // ── ADMIN CUSTOM PUSH NOTIFICATION LISTENER ──
-        if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!custom_push ')) {
-            const content = msg.body.replace('!custom_push ', '').trim();
+        if (allowedAdmins.includes(msg.from) && lowerBody.startsWith('!custom_push ')) {
+            const content = msg.body.replace(/^!custom_push /i, '').trim();
             const parts = content.split('|');
             let title = "🔔 Notification";
             let body = content;
