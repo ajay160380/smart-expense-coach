@@ -587,9 +587,13 @@ async function startBot(retryCount = 0) {
             else if (data.message) {
                 await safeReply(msg, data.message);
             }
-            // Priority 2: Chat response from AI (legacy field)
+            // Priority 2: Chat response from AI
             else if (data.chat_response) {
                 await safeReply(msg, data.chat_response);
+            }
+            // Priority 2.5: General AI reply
+            else if (data.reply) {
+                await safeReply(msg, data.reply);
             }
             // Priority 3: Expense object fallback
             else if (data.expense) {
