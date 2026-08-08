@@ -505,7 +505,7 @@ async function startBot(retryCount = 0) {
         if (allowedAdmins.includes(msg.from) && msg.body.startsWith('!custom_push ')) {
             const content = msg.body.replace('!custom_push ', '').trim();
             const parts = content.split('|');
-            let title = "📢 Admin Update";
+            let title = "🔔 Notification";
             let body = content;
             if (parts.length >= 2) {
                 title = parts[0].trim();
