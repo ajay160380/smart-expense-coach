@@ -438,11 +438,13 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are Expense Tracker, a smart, friendly, and helpful AI assistant. Act like a knowledgeable human friend. 
+    You are "Paisa Mitra", a smart, friendly, and highly polite financial AI assistant. 
     You have NO RESTRICTIONS on what you can talk about. The user can chat with you about anything! 
-    ALWAYS reply in pure, elegant, and professional English, regardless of the language the user speaks! Do NOT use Hindi or Hinglish.
-    Be highly conversational, empathetic, and sophisticated in your communication.
-    When a user says 'hello' or asks a general question, give a warm, naturally formatted English response. Do not blindly repeat their budget summary in every message unless asked.
+    CRITICAL LANGUAGE RULES:
+    1. NEVER use words like "Tu", "Tera", "Tujhe", "tutu". ALWAYS use respectful words like "Aap", "Aapka", "Bhai", "Dost".
+    2. Speak in 100% natural, grammatically correct Hinglish (Hindi written in English alphabet) by default, UNLESS the user speaks pure English, in which case reply in pure English. 
+    3. Be highly conversational, empathetic, and sophisticated, exactly like a helpful professional colleague or an older brother. 
+    4. Do not blindly repeat their budget summary in every message unless asked.
     
     If asked about your creator or developer, your `chat_response` MUST be exactly this string (ensure you escape newlines as \\n\\n so the JSON remains valid):
     "👨‍💻 *My Creator: Ajay Vishwakarma*\\n\\nI was developed by Ajay, a passionate Full Stack & AI/ML Engineer! Here are his professional links:\\n\\n🌐 *Portfolio:* https://ajay-vishwakarmaa.netlify.app\\n🐙 *GitHub:* https://github.com/ajay160380\\n💼 *LinkedIn:* https://www.linkedin.com/in/ajay-vishwakarma-71649129a/"
@@ -836,7 +838,7 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
         ).days
 
         prompt = (
-            f"You are a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.\n"
+            f"You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.\n"
             f"Budget: ₹{budget:,.0f} | Spent: ₹{total_spent:,.0f} | "
             f"Remaining: ₹{remaining:,.0f} | Days left this month: {days_left}\n"
             f"Recent expenses: {summary}\n\n"
@@ -872,7 +874,7 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
     try:
         prompt = (
-            f"You are a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.\n"
+            f"You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.\n"
             f"User spent ₹{cat_total:,.0f} on {category} this {period}.\n"
             f"That's {share_pct:.1f}% of their total budget.\n"
             f"Average per transaction: ₹{avg_txn:,.0f}.\n\n"
@@ -1796,7 +1798,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     writer.writerow([])
                     writer.writerow(['', '', 'Total', f"{total_export}"])
                     csv_content = output.getvalue()
-                    base64_media = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
+                    base64_content = base64.b64encode(csv_content.encode('utf-8')).decode('utf-8')
                     mimetype = "text/csv"
                     filename = f"ExpenseTracker_{just_month}_Report.csv"
                     msg_text = f"📄 *{user_name}*, here is your detailed CSV expense report for {month_name_str}.\n\n(Tip: Open this file in Excel or Google Sheets!)"
@@ -1807,7 +1809,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     "media": {
                         "mimetype": mimetype,
                         "filename": filename,
-                        "base64": base64_media
+                        "base64": base64_content
                     }
                 })
 
@@ -2025,8 +2027,7 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
     ).days
 
-    system = f"""You are "ExpenseTracker" — a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like "nanha dost", "beta", "bacha" or "babu". Keep it natural and casual.
-Analyze the user's language. If they speak in Hinglish (Hindi written in English alphabet), reply in warm, conversational Hinglish. If they speak in English, reply in natural, practical English. Be sometimes sarcastic, but always practical and helpful.
+    system = f"""You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.
 
 ══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
 Budget:         ₹{budget:,.0f}
@@ -2043,11 +2044,11 @@ TOP SPENDING CATEGORIES:
 {cat_lines or '  (No data available yet)'}
 
 ══ YOUR RULES ══
-1. Always respond in the same language as the user (English or Hinglish).
+1. Always respond respectfully using "Aap" or "Bhai".
 2. Keep responses concise — max 100 words.
 3. If user asks for calculations, do them correctly.
-4. Never make up numbers you don't have.
-5. If budget is exceeded, be extra honest about it."""
+4. Never make up numbers. Use the exact data provided above.
+5. If budget is exceeded, gently warn them but remain polite."""
 
     messages_payload = [{"role": "system", "content": system}]
 
@@ -2664,7 +2665,7 @@ def habit_warnings(request):
     data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
 
     prompt = f"""
-    You are 'ExpenseTracker', a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like 'nanha dost', 'beta', 'bacha' or 'babu'. Keep it natural and casual.
+    You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.
     Here is the user's daily spending data for the last 14 days:
     {data_str}
 
@@ -3048,7 +3049,7 @@ def generate_daily_tip(user) -> str:
 
     try:
         prompt = (
-            f"You are ExpenseTracker, a smart and helpful financial AI. Act like a casual, close friend (like a bro). Talk in normal conversational English by default. If the user speaks in Hindi or Hinglish, naturally match their language and tone. NEVER use weird words like 'nanha dost', 'beta', 'bacha', or 'babu'. Keep it natural and casual.\n"
+            f"You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.\n"
             f"Today is {day_of_week}.\n"
             f"User's weekly spending: ₹{week_total:,.0f}\n"
             f"Top category this week: {cat_name} (₹{cat_total:,.0f})\n"
