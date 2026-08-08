@@ -1,273 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>500 - Internal Server Error | Expense Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,100..1000&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
-    <style>
-        :root {
-            --text-main: #1a1a1a;
-            --text-secondary: #888888;
-            --bg-page: #F5F5F5;
-            --card-bg: #ffffff;
-        }
+{% extends 'tracker/base.html' %}
+{% load static %}
 
-        html, body, #root {
-            height: 100vh;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            background-image: url('https://pub-e68758f43067417dba612b2371819aa1.r2.dev/viktor-components/alien-spaceship.png'),
-                              linear-gradient(to top left, #F5F5F5, #F7F7F7);
-            background-position: center 40%, center center;
-            background-size: contain, auto;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                background-size: 90%, auto;
-                background-position: center 45%, center center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            body {
-                background-size: 100%, auto;
-            }
-        }
-
-        /* Nav Dashed Border */
-        .nav-border {
-            position: relative;
-        }
-        .nav-border::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background-image: linear-gradient(to right, rgba(0,0,0,0.08) 2px, transparent 2px);
-            background-size: 6px 1px;
-        }
-
-        /* Buttons & Animations */
-        .cta-btn {
-            background: linear-gradient(180deg, #2c2c2c 0%, #111111 100%);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            transition: all 0.2s ease;
-        }
-        .cta-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-            filter: brightness(1.1);
-        }
-
-        @keyframes floatSlow {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(3deg); }
-        }
-
-        .float-cloud {
-            animation: floatSlow 5s ease-in-out infinite;
-            animation-delay: 0.3s;
-        }
-        .float-heart {
-            animation: floatSlow 4.5s ease-in-out infinite;
-            animation-delay: 1s;
-        }
-
-        .gradient-icon {
-            background: linear-gradient(to bottom, #F7B2FB 50%, #786EF1 80%, #5588FB 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 2px 4px rgba(255,255,255,0.8));
-        }
-
-        /* Mobile Menu */
-        .mobile-menu {
-            transform: translateX(100%);
-            transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
-        }
-        .mobile-menu.active {
-            transform: translateX(0);
-        }
-
-        /* Nav Card */
-        .nav-card {
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-            transition: all 0.3s ease;
-        }
-        .nav-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 28px rgba(0,0,0,0.08);
-        }
-        .nav-card:hover .card-icon-container {
-            transform: scale(1.05);
-        }
-        .nav-card:hover .card-chevron {
-            transform: translateX(6px);
-        }
+{% block content %}
+<div style="min-height: 70vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border-glass); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; max-width: 600px; width: 100%; box-shadow: var(--shadow-soft);" data-aos="zoom-in">
         
-        .highlight-tag {
-            display: inline-flex;
-            background: #E0E2E7;
-            font-size: 12.5px;
-            font-weight: 600;
-            padding: 2px 12px;
-            border-radius: 6px;
-            color: #111;
-        }
-    </style>
-</head>
-<body>
-    <div id="root">
-        <!-- Navbar -->
-        <nav class="w-full max-w-[1100px] mx-auto px-5 md:px-10 py-5 md:py-[28px] flex items-center justify-between nav-border relative z-20">
-            <!-- Left: Logo -->
-            <a href="/" class="flex items-center gap-[9px] cursor-pointer">
-                <img src="/static/tracker/images/icon.png" style="height: 32px; width: 32px; border-radius: 8px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" alt="Logo">
-                <span class="font-bold text-[#111] text-[20px] tracking-[-0.3px]">Expense Tracker.</span>
-            </a>
-
-            <!-- Center: Links (Desktop) -->
-            <div class="hidden md:flex items-center gap-[36px]">
-                <a href="/dashboard/" class="text-[14px] font-normal opacity-65 hover:opacity-100 transition-opacity">Dashboard</a>
-                <a href="/dashboard/" class="text-[14px] font-normal opacity-65 hover:opacity-100 transition-opacity flex items-center gap-1">Add Expense <span class="material-symbols-rounded text-[18px]">keyboard_arrow_down</span></a>
-                <a href="/dashboard/" class="text-[14px] font-normal opacity-65 hover:opacity-100 transition-opacity">History</a>
-                <a href="/dashboard/" class="text-[14px] font-normal opacity-65 hover:opacity-100 transition-opacity">Settings</a>
-            </div>
-
-            <!-- Right: CTA (Desktop) -->
-            <a href="/dashboard/" class="hidden md:flex cta-btn rounded-[40px] p-[5px_16px_5px_5px] items-center gap-3 cursor-pointer text-white">
-                <div class="w-6 h-6 rounded-full bg-white flex items-center justify-center text-black">
-                    <span class="material-symbols-rounded text-[16px]">chevron_right</span>
-                </div>
-                <span class="text-[13px] font-medium">Go to Dashboard</span>
-            </a>
-
-            <!-- Hamburger (Mobile) -->
-            <button id="menuBtn" class="md:hidden flex flex-col gap-[5px] cursor-pointer z-50 relative w-[24px] h-[19px] justify-center">
-                <span class="w-full h-[2px] bg-[#111] transition-all origin-center"></span>
-                <span class="w-full h-[2px] bg-[#111] transition-all origin-center"></span>
-                <span class="w-full h-[2px] bg-[#111] transition-all origin-center"></span>
-            </button>
-        </nav>
-
-        <!-- Mobile Menu Overlay -->
-        <div id="mobileMenu" class="mobile-menu fixed inset-0 bg-[#F5F5F5] z-40 flex flex-col px-6 pt-28 pb-10">
-            <div class="flex flex-col gap-0 w-full h-full overflow-y-auto">
-                <a href="/dashboard/" class="text-[38px] font-extrabold tracking-[-1.5px] py-6 border-b border-black/5">Dashboard</a>
-                <a href="/dashboard/" class="text-[38px] font-extrabold tracking-[-1.5px] py-6 border-b border-black/5">Add Expense</a>
-                <a href="/dashboard/" class="text-[38px] font-extrabold tracking-[-1.5px] py-6 border-b border-black/5">History</a>
-                <a href="/dashboard/" class="text-[38px] font-extrabold tracking-[-1.5px] py-6 border-b border-black/5">Settings</a>
-                
-                <!-- Mobile CTA -->
-                <a href="/dashboard/" class="mt-8 cta-btn rounded-[40px] p-[6px_24px_6px_6px] inline-flex w-max items-center gap-4 text-white">
-                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black">
-                        <span class="material-symbols-rounded text-[20px]">chevron_right</span>
-                    </div>
-                    <span class="text-[16px] font-medium">Go to Dashboard</span>
-                </a>
-            </div>
+        <div style="position: relative; display: inline-block; margin-bottom: 20px;">
+            <i class="fa-solid fa-bolt" style="position: absolute; top: -10px; left: -30px; font-size: 35px; color: var(--secondary); opacity: 0.8; animation: float 4s ease-in-out infinite;"></i>
+            <h1 style="font-family: 'Outfit', sans-serif; font-size: clamp(60px, 10vw, 100px); font-weight: 800; line-height: 1; margin: 0; background: linear-gradient(135deg, #EF4444, #F59E0B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: var(--shadow-glow);">500</h1>
+            <i class="fa-solid fa-wrench" style="position: absolute; bottom: 0; right: -25px; font-size: 28px; color: #EF4444; animation: float 3s ease-in-out infinite 1s;"></i>
         </div>
-
-        <!-- Main Content -->
-        <main class="flex-1 flex flex-col items-center justify-center w-full max-w-[700px] mx-auto px-5 pt-5 pb-[30px] relative z-10 text-center">
-            
-            <p class="text-[15px] font-normal text-[var(--text-secondary)] mb-3">Seems our server broke down...</p>
-            
-            <div class="relative inline-block mb-[14px]">
-                <span class="material-symbols-rounded absolute -top-[18px] -left-[24px] text-[42px] gradient-icon float-cloud max-md:-left-[15px] max-md:text-[34px]">cloud</span>
-                
-                <h1 class="text-[clamp(34px,5vw,52px)] font-medium tracking-[-1.5px] leading-[1.08] text-[#0f0f0f] relative z-10 max-[480px]:text-[26px]">
-                    Oops! Something broke
-                </h1>
-                
-                <span class="material-symbols-rounded absolute -bottom-[15px] -right-[20px] text-[32px] gradient-icon float-heart max-md:-right-[10px] max-md:text-[26px]">favorite</span>
-            </div>
-            
-            <p class="text-[14px] text-[var(--text-secondary)] leading-[1.7] max-w-[470px] mb-[28px] mx-auto">
-                Our servers are experiencing a <span class="highlight-tag">temporary</span> hiccup. Let's get you back to the Dashboard while our <span class="highlight-tag">engineers</span> fix the warp drive.
-            </p>
-
-            <!-- Nav Cards -->
-            <div class="flex flex-col gap-[12px] w-full max-w-[460px] mx-auto mt-auto max-md:gap-[10px]">
-                <!-- Card 1 -->
-                <a href="/dashboard/" class="nav-card bg-white rounded-[18px] p-[18px_22px] flex items-center justify-between cursor-pointer w-full text-left max-md:p-[14px_16px]">
-                    <div class="flex items-center gap-4">
-                        <div class="card-icon-container w-12 h-12 rounded-full bg-[#eaecf0] flex items-center justify-center transition-transform max-md:w-10 max-md:h-10">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-black max-md:w-5 max-md:h-5">
-                                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"></path>
-                                <path d="M9 21V12h6v9" fill="white"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="text-[15px] font-semibold text-[#111]">Dashboard</div>
-                            <div class="text-[12px] text-[var(--text-secondary)] mt-0.5">Back where it all begins...</div>
-                        </div>
-                    </div>
-                    <div class="text-[#888] card-chevron transition-transform text-[21px]">&rsaquo;</div>
-                </a>
-
-                <!-- Card 2 -->
-                <a href="/dashboard/" class="nav-card bg-white rounded-[18px] p-[18px_22px] flex items-center justify-between cursor-pointer w-full text-left max-md:p-[14px_16px]">
-                    <div class="flex items-center gap-4">
-                        <div class="card-icon-container w-12 h-12 rounded-full bg-[#eaecf0] flex items-center justify-center transition-transform max-md:w-10 max-md:h-10">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-black max-md:w-5 max-md:h-5">
-                                <circle cx="12" cy="12" r="9" fill="currentColor"></circle>
-                                <circle cx="12" cy="12" r="3.5" fill="white"></circle>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="text-[15px] font-semibold text-[#111]">Add Expense</div>
-                            <div class="text-[12px] text-[var(--text-secondary)] mt-0.5">Where you log your spending</div>
-                        </div>
-                    </div>
-                    <div class="text-[#888] card-chevron transition-transform text-[21px]">&rsaquo;</div>
-                </a>
-            </div>
-
-        </main>
+        
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-main); margin-bottom: 15px;">Internal Server Error</h2>
+        
+        <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
+            Oops! Our servers are experiencing a temporary hiccup. Let's get you back to safety while our engineers fix the warp drive.
+        </p>
+        
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <a href="{% url 'dashboard' %}" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-house"></i> Back to Dashboard
+            </a>
+            <a href="javascript:location.reload()" class="btn-glass" style="display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-rotate-right"></i> Refresh Page
+            </a>
+        </div>
     </div>
+</div>
 
-    <script>
-        // Mobile Menu Toggle Logic
-        const menuBtn = document.getElementById('menuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
-        let isOpen = false;
-
-        menuBtn.addEventListener('click', () => {
-            isOpen = !isOpen;
-            const spans = menuBtn.querySelectorAll('span');
-            
-            if (isOpen) {
-                mobileMenu.classList.add('active');
-                spans[0].style.transform = 'translateY(7px) rotate(45deg)';
-                spans[1].style.opacity = '0';
-                spans[2].style.transform = 'translateY(-7px) rotate(-45deg)';
-            } else {
-                mobileMenu.classList.remove('active');
-                spans[0].style.transform = 'none';
-                spans[1].style.opacity = '1';
-                spans[2].style.transform = 'none';
-            }
-        });
-    </script>
-</body>
-</html>
+<style>
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(5deg); }
+}
+</style>
+{% endblock %}
