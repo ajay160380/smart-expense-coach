@@ -1,37 +1,149 @@
-{% extends 'tracker/base.html' %}
-{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | ExpenseTracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #007AFF;
+            --secondary: #A855F7;
+            --bg-base: #F8FAFC;
+            --bg-glass: rgba(255, 255, 255, 0.7);
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --border-glass: rgba(255, 255, 255, 0.6);
+            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
+            --radius-lg: 32px;
+            --radius-md: 20px;
+        }
 
-{% block content %}
-<div style="min-height: 70vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: var(--bg-glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border-glass); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; max-width: 600px; width: 100%; box-shadow: var(--shadow-soft);" data-aos="zoom-in">
+        [data-theme="dark"] {
+            --primary: #3395FF;
+            --bg-base: #020617;
+            --bg-glass: rgba(15, 23, 42, 0.6);
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border-glass: rgba(255, 255, 255, 0.05);
+            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.5);
+            --shadow-glow: 0 0 20px rgba(129, 140, 248, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        <div style="position: relative; display: inline-block; margin-bottom: 20px;">
-            <i class="fa-solid fa-ghost" style="position: absolute; top: -10px; left: -30px; font-size: 35px; color: var(--secondary); opacity: 0.8; animation: float 4s ease-in-out infinite;"></i>
-            <h1 style="font-family: 'Outfit', sans-serif; font-size: clamp(60px, 10vw, 100px); font-weight: 800; line-height: 1; margin: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: var(--shadow-glow);">404</h1>
-            <i class="fa-solid fa-rocket" style="position: absolute; bottom: 0; right: -25px; font-size: 28px; color: var(--primary); animation: float 3s ease-in-out infinite 1s;"></i>
-        </div>
-        
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-main); margin-bottom: 15px;">Page Not Found</h2>
-        
-        <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
-            It looks like you've wandered off the budget roadmap. The page you're looking for doesn't exist or has been moved.
-        </p>
-        
-        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-            <a href="{% url 'dashboard' %}" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-house"></i> Back to Dashboard
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        .bg-mesh {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;
+            background: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+            filter: blur(80px); opacity: 0.8;
+        }
+        [data-theme="dark"] .bg-mesh { opacity: 0.5; }
+
+        .navbar-wrapper { padding: 15px 20px 0; }
+        .navbar {
+            max-width: 1200px; margin: 0 auto;
+            background: var(--bg-glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass); border-radius: var(--radius-lg);
+            padding: 14px 24px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .navbar-brand {
+            font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800;
+            color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white !important; padding: 10px 24px; border-radius: var(--radius-md);
+            font-weight: 600; font-family: 'Outfit', sans-serif; text-decoration: none; border: none; cursor: pointer;
+            box-shadow: var(--shadow-glow); display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 122, 255, 0.4); }
+
+        .btn-glass {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            backdrop-filter: blur(10px); border: 1px solid var(--border-glass); box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            color: var(--text-main); padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; font-family: 'Outfit', sans-serif;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;
+        }
+        .btn-glass:hover { transform: translateY(-2px); background: rgba(255,255,255,0.2); }
+
+        .theme-toggle {
+            background: var(--bg-glass); border: 1px solid var(--border-glass); width: 44px; height: 44px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+            color: var(--text-main); transition: all 0.3s;
+        }
+        .theme-toggle:hover { transform: scale(1.1) rotate(15deg); color: var(--primary); }
+
+        .main-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .error-card {
+            background: var(--bg-glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center;
+            max-width: 600px; width: 100%; box-shadow: var(--shadow-soft);
+        }
+
+        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(5deg); } }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <div class="navbar-wrapper">
+        <nav class="navbar">
+            <a href="/" class="navbar-brand">
+                <img src="/static/tracker/images/icon.png" alt="Logo" style="width:36px; height:36px; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                ExpenseTracker
             </a>
-            <a href="javascript:history.back()" class="btn-glass" style="display: inline-flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-arrow-left"></i> Go Back
-            </a>
-        </div>
+            <div>
+                <button class="theme-toggle" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark')">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </nav>
     </div>
-</div>
 
-<style>
-@keyframes float {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-12px) rotate(5deg); }
-}
-</style>
-{% endblock %}
+    <main class="main-container">
+        <div class="error-card">
+            <div style="position: relative; display: inline-block; margin-bottom: 20px;">
+                <i class="fa-solid fa-ghost" style="position: absolute; top: -10px; left: -30px; font-size: 35px; color: var(--secondary); opacity: 0.8; animation: float 4s ease-in-out infinite;"></i>
+                <h1 style="font-family: 'Outfit', sans-serif; font-size: clamp(60px, 10vw, 100px); font-weight: 800; line-height: 1; margin: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: var(--shadow-glow);">404</h1>
+                <i class="fa-solid fa-rocket" style="position: absolute; bottom: 0; right: -25px; font-size: 28px; color: var(--primary); animation: float 3s ease-in-out infinite 1s;"></i>
+            </div>
+            
+            <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-main); margin-bottom: 15px;">Page Not Found</h2>
+            
+            <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
+                It looks like you've wandered off the budget roadmap. The page you're looking for doesn't exist or has been moved.
+            </p>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <a href="/dashboard/" class="btn-primary">
+                    <i class="fa-solid fa-house"></i> Back to Dashboard
+                </a>
+                <a href="javascript:history.back()" class="btn-glass">
+                    <i class="fa-solid fa-arrow-left"></i> Go Back
+                </a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
