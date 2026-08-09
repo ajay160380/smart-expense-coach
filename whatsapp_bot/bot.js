@@ -46,6 +46,16 @@ class SafeRemoteAuth extends RemoteAuth {
         }
     }
 
+    async extractRemoteSession() {
+        const pathExists = await this.isValidPath(this.userDataDir);
+        if (pathExists) {
+            console.log("⚡ SafeRemoteAuth: Local session directory already exists. Skipping 100MB remote extraction to start instantly!");
+            return;
+        }
+        console.log("📥 SafeRemoteAuth: Local session not found. Extracting from PostgreSQL remote store (this may take a minute)...");
+        await super.extractRemoteSession();
+    }
+
     async copyByRequiredDirs(from, to) {
         const path = require('path');
         for (const d of this.requiredDirs) {
