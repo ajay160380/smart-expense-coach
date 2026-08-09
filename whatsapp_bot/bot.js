@@ -80,13 +80,21 @@ class SafeRemoteAuth extends RemoteAuth {
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 2,                // Only 2 connections — Supabase free tier is limited to 15 total
+    max: 5,                // Increased to 5 connections to avoid checkout timeouts
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
 });
 
 pool.on('error', (err, client) => {
     console.error('❌ Unexpected error on idle PostgreSQL client:', err.message);
+});
+
+// Catch unhandled rejections (like "auth timeout" from whatsapp-web.js) so the bot doesn't crash
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('⚠️ Unhandled Promise Rejection at:', promise, 'reason:', reason);
+    if (reason === 'auth timeout' || (reason && reason.message === 'auth timeout')) {
+        console.error('❌ Auth timeout detected from whatsapp-web.js. We caught it to prevent crash.');
+    }
 });
 
 async function startBot(retryCount = 0) {
