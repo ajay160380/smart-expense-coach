@@ -22,4 +22,3 @@ RemoteAuth-paisa-mitra-v3.zip
 wwebjs_temp_session*/
 *.ldb
 backend/firebase-service-account.json
-mobile_app/google-services.json
