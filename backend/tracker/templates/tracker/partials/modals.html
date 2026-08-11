@@ -199,10 +199,17 @@
       </div>
     </div>
 
-    <div class="pm-section-title">Account Details</div>
+    <div class="pm-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+      Account Details
+      <button class="ftag" style="border:none; cursor:pointer; font-size:12px; padding:4px 8px;" onclick="closeModal('profileModal'); openModal('editProfileModal');">✏️ Edit</button>
+    </div>
     <div class="pm-info-row">
       <span class="pm-info-key">Username</span>
       <span class="pm-info-val">{{ request.user.username }}</span>
+    </div>
+    <div class="pm-info-row">
+      <span class="pm-info-key">Name</span>
+      <span class="pm-info-val">{{ request.user.first_name }} {{ request.user.last_name }}</span>
     </div>
     <div class="pm-info-row">
       <span class="pm-info-key">Email</span>
@@ -218,6 +225,31 @@
     </div>
 
     <a href="{% url 'logout' %}" class="pm-logout-btn">🚪 Logout</a>
+  </div>
+</div>
+
+<!-- ✏️ EDIT PROFILE MODAL -->
+<div class="overlay" id="editProfileModal" onclick="if(event.target===this)closeModal('editProfileModal')">
+  <div class="modal">
+    <div class="modal-title">Edit Profile <button class="modal-close" onclick="closeModal('editProfileModal')" type="button">✕</button></div>
+    <form onsubmit="submitEditProfile(event)">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="edit-username" type="text" value="{{ request.user.username }}" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input class="form-input" id="edit-first-name" type="text" value="{{ request.user.first_name }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" id="edit-last-name" type="text" value="{{ request.user.last_name }}">
+        </div>
+      </div>
+      <button type="submit" class="submit-btn" id="edit-profile-btn">Save Changes 💾</button>
+    </form>
   </div>
 </div>
 

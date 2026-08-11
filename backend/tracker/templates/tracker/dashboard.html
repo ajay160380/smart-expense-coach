@@ -3378,6 +3378,44 @@ document.addEventListener('DOMContentLoaded', () => {
     loadNotes();
 });
 
+async function submitEditProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('edit-profile-btn');
+    btn.innerHTML = 'Saving... ⏳';
+    btn.disabled = true;
+
+    const payload = {
+        username: document.getElementById('edit-username').value,
+        first_name: document.getElementById('edit-first-name').value,
+        last_name: document.getElementById('edit-last-name').value
+    };
+
+    try {
+        const res = await fetch('/api/profile/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+            showToast('Profile updated! Reloading...', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.error || 'Failed to update profile', 'error');
+            btn.innerHTML = 'Save Changes 💾';
+            btn.disabled = false;
+        }
+    } catch (err) {
+        showToast('Error updating profile', 'error');
+        btn.innerHTML = 'Save Changes 💾';
+        btn.disabled = false;
+    }
+}
+
 </script>
 
 <!-- FLOATING ACTION DOCK -->

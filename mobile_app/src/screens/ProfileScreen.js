@@ -32,6 +32,11 @@ export default function ProfileScreen({ navigation }) {
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [editProfileVisible, setEditProfileVisible] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [submittingProfile, setSubmittingProfile] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -122,6 +127,40 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const openEditProfile = () => {
+    setEditUsername(profile?.username || '');
+    setEditFirstName(profile?.first_name || '');
+    setEditLastName(profile?.last_name || '');
+    setEditProfileVisible(true);
+  };
+
+  const submitEditProfile = async () => {
+    if (!editUsername.trim()) {
+      Alert.alert('Error', 'Username cannot be empty');
+      return;
+    }
+    setSubmittingProfile(true);
+    try {
+      const res = await api.post('/profile/', { 
+        username: editUsername,
+        first_name: editFirstName,
+        last_name: editLastName
+      });
+      if (res.data.status === 'success') {
+        Alert.alert('Success', 'Profile updated successfully!');
+        setEditProfileVisible(false);
+        fetchProfile();
+      } else {
+        Alert.alert('Error', res.data.error || 'Failed to update profile');
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', e.response?.data?.error || 'An error occurred while updating profile');
+    } finally {
+      setSubmittingProfile(false);
+    }
+  };
+
   const openLink = (url) => Linking.openURL(url);
 
   if (loading) {
@@ -167,7 +206,10 @@ export default function ProfileScreen({ navigation }) {
               <Ionicons name="camera" size={16} color="white" />
             </View>
           </TouchableOpacity>
-          <Text style={styles.profileName}>{username}</Text>
+          <Text style={styles.profileName}>
+            {profile?.first_name ? `${profile.first_name} ${profile.last_name}`.trim() : username}
+          </Text>
+          <Text style={{color: 'rgba(255,255,255,0.7)', fontSize: 16}}>@{username}</Text>
           <Text style={styles.profileSince}>Member since {joined}</Text>
           <View style={styles.profileBadge}>
             <Text style={styles.profileBadgeText}>🌟 {memberDays} days</Text>
@@ -200,8 +242,15 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* ── Quick Actions ── */}
-        <SectionHeader title="⚡ Quick Actions" />
+        <SectionHeader title="⚡ Quick Actions (Auto-Updated!)" />
         <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+          <MenuItem
+            icon="✏️"
+            ionIcon="person-outline"
+            label="Edit Profile"
+            sub="Change your name and username"
+            onPress={openEditProfile}
+          />
           <MenuItem
             icon="📱"
             ionIcon="chatbubble-ellipses-outline"
@@ -393,6 +442,56 @@ export default function ProfileScreen({ navigation }) {
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.submitFeedbackText}>Submit</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Edit Profile Modal ── */}
+      <Modal visible={editProfileVisible} transparent animationType="slide" onRequestClose={() => setEditProfileVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <TouchableOpacity onPress={() => setEditProfileVisible(false)}>
+                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <View style={{ marginBottom: 15 }}>
+              <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>Username</Text>
+              <TextInput
+                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
+                value={editUsername}
+                onChangeText={setEditUsername}
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={{ marginBottom: 15 }}>
+              <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>First Name</Text>
+              <TextInput
+                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
+                value={editFirstName}
+                onChangeText={setEditFirstName}
+              />
+            </View>
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>Last Name</Text>
+              <TextInput
+                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
+                value={editLastName}
+                onChangeText={setEditLastName}
+              />
+            </View>
+            <TouchableOpacity 
+              style={[styles.submitFeedbackBtn, submittingProfile && {opacity: 0.7}]} 
+              onPress={submitEditProfile}
+              disabled={submittingProfile}
+            >
+              {submittingProfile ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.submitFeedbackText}>Save Changes</Text>
               )}
             </TouchableOpacity>
           </View>

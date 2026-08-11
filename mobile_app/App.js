@@ -17,6 +17,7 @@ import { ActivityIndicator, View, StyleSheet, Platform, Alert, PermissionsAndroi
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Updates from 'expo-updates';
 import Logo from './src/components/Logo';
 import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
 import { getToken } from './src/utils/auth';
@@ -182,6 +183,20 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    const downloadUpdateSilently = async () => {
+      try {
+        if (!__DEV__) {
+          const update = await Updates.checkForUpdateAsync();
+          if (update.isAvailable) {
+            await Updates.fetchUpdateAsync();
+          }
+        }
+      } catch (e) {
+        console.log("Error fetching update:", e);
+      }
+    };
+    downloadUpdateSilently();
+
     const setupFCM = async (authToken) => {
       try {
         if (Platform.OS === 'android' && Platform.Version >= 33) {

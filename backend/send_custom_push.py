@@ -8,8 +8,8 @@ from tracker.models import UserProfile
 from tracker.fcm_utils import send_push_notification, initialize_firebase
 from firebase_admin import messaging
 
-title = "🚀 Track Your Spendings!"
-body = "Hey there! Don't forget to log your daily expenses. Keep your budget on track! 💰📈"
+title = "🚀 Expense Tracker Update!"
+body = "A new update is here! Edit your profile, get faster app launches, and enjoy seamless silent updates. Re-open the app to apply! ⚡️"
 data = {"screen": "Dashboard"}
 
 print(f"Title: {title}")
