@@ -99,11 +99,12 @@ pool.on('error', (err, client) => {
     console.error('❌ Unexpected error on idle PostgreSQL client:', err.message);
 });
 
-// Catch unhandled rejections (like "auth timeout" from whatsapp-web.js) so the bot doesn't crash
+// Catch unhandled rejections (like "auth timeout" from whatsapp-web.js) so the bot restarts and recovers instead of freezing
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('⚠️ Unhandled Promise Rejection at:', promise, 'reason:', reason);
-    if (reason === 'auth timeout' || (reason && reason.message === 'auth timeout')) {
-        console.error('❌ Auth timeout detected from whatsapp-web.js. We caught it to prevent crash.');
+    console.error('⚠️ Unhandled Promise Rejection:', reason);
+    if (reason === 'auth timeout' || (reason && reason.message === 'auth timeout') || String(reason).includes('Session closed')) {
+        console.error('❌ Critical WhatsApp error detected. Restarting process to auto-recover...');
+        process.exit(1);
     }
 });
 
@@ -318,6 +319,8 @@ async function startBot(retryCount = 0) {
 
     client.on('auth_failure', msg => {
         console.error('❌ Authentication failure:', msg);
+        console.log('🔄 Restarting bot due to authentication failure...');
+        process.exit(1);
     });
 
     client.on('disconnected', async (reason) => {
