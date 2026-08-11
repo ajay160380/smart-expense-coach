@@ -1565,7 +1565,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             chat_history = session.context if isinstance(session.context, list) else []
             chat_history.append({"role": "user", "content": normalized_text})
             chat_history.append({"role": "assistant", "content": json.dumps({"action": "ask_clarification", "chat_response": msg})})
-            session.context = chat_history[-10:]
+            session.context = chat_history[-6:]
             session.save()
             
             return JsonResponse({
@@ -1835,7 +1835,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             messages=messages,
             model="llama-3.1-8b-instant",
             temperature=0.2,
-            max_tokens=2048,
+            max_tokens=350,
         )
         raw_response = response.choices[0].message.content.strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
@@ -1850,7 +1850,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # Save history back to session
         chat_history.append({"role": "user", "content": normalized_text})
         chat_history.append({"role": "assistant", "content": json_str})
-        session.context = chat_history[-10:] # Keep last 10 messages
+        session.context = chat_history[-6:] # Keep last 6 messages to save Groq tokens
         session.save()
         
         try:
@@ -2459,6 +2459,22 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
 
     if request.method == "POST":
         body = getattr(request, "_json_body", {})
+        
+        if any(k in body for k in ["username", "first_name", "last_name"]):
+            from django.contrib.auth.models import User
+            if "username" in body:
+                new_username = str(body["username"]).strip()
+                if new_username and new_username != user.username:
+                    if User.objects.filter(username=new_username).exists():
+                        return JsonResponse({"error": "Username is already taken"}, status=400)
+                    user.username = new_username
+            if "first_name" in body:
+                user.first_name = str(body["first_name"]).strip()
+            if "last_name" in body:
+                user.last_name = str(body["last_name"]).strip()
+            user.save()
+            return JsonResponse({"status": "success", "message": "Profile updated successfully"})
+
         if "budget" in body:
             try:
                 nb = float(body["budget"])
@@ -2492,6 +2508,8 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
 
     return JsonResponse({
         "username":       user.username,
+        "first_name":     user.first_name,
+        "last_name":      user.last_name,
         "joined":         user.date_joined.strftime("%d %B %Y"),
         "lifetime_spent": round(_safe_float(all_agg["total"]), 2),
         "total_txns":     all_agg["count"] or 0,
