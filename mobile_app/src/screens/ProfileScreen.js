@@ -17,7 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import messaging from '@react-native-firebase/messaging';
+// import messaging from '@react-native-firebase/messaging';
 import { PermissionsAndroid } from 'react-native';
 import api from '../api/config';
 import { clearAuthData, getUsername } from '../utils/auth';
@@ -341,25 +341,23 @@ export default function ProfileScreen({ navigation }) {
             label="Enable Notifications"
             sub="Turn on push notifications"
             onPress={async () => {
+              /*
               try {
                 if (Platform.OS === 'android' && Platform.Version >= 33) {
-                  const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-                  if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-                    Alert.alert("Permission Denied", "Please enable notifications in your phone's Settings > Apps > Expense Tracker.");
-                    return;
-                  }
+                  await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
                 }
                 const authStatus = await messaging().requestPermission();
                 if (authStatus === messaging.AuthorizationStatus.AUTHORIZED || authStatus === messaging.AuthorizationStatus.PROVISIONAL) {
                   await messaging().subscribeToTopic('all_users');
-                  Alert.alert("Success", "Notifications enabled successfully!");
+                  Alert.alert("Success", "Push notifications enabled!");
                 } else {
-                  Alert.alert("Permission Denied", "Notification permission was not granted.");
+                  Alert.alert("Notice", "Notification permission was denied.");
                 }
-              } catch (error) {
-                console.error(error);
+              } catch (e) {
+                console.error(e);
                 Alert.alert("Error", "Could not enable notifications.");
               }
+              */
             }}
           />
         </GlassCard>

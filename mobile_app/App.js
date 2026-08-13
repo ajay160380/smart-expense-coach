@@ -21,8 +21,9 @@ import * as Updates from 'expo-updates';
 import Logo from './src/components/Logo';
 import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
 import { getToken } from './src/utils/auth';
-import messaging from '@react-native-firebase/messaging';
-import { saveNotification } from './src/utils/notifications';
+// Temporarily disabled for Expo Go testing
+// import messaging from '@react-native-firebase/messaging';
+// import { saveNotification } from './src/utils/notifications';
 
 // ── Auth Screens ──
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -46,6 +47,7 @@ import VoiceExpenseScreen from './src/screens/VoiceExpenseScreen';
 import NotepadScreen from './src/screens/NotepadScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
+import UPIPaymentScreen from './src/screens/UPIPaymentScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -70,6 +72,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="Notepad" component={NotepadScreen} />
       <HomeStack.Screen name="History" component={HistoryScreen} />
+      <HomeStack.Screen name="UPIPayment" component={UPIPaymentScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -111,10 +114,10 @@ function AddButton({ onPress }) {
   return (
     <View style={styles.addBtnContainer}>
       <LinearGradient
-        colors={['#A888FF', '#9333EA']}
+        colors={['#8B5CF6', '#6D28D9']}
         style={styles.addBtnGradient}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="qr-code-outline" size={24} color="#fff" />
       </LinearGradient>
     </View>
   );
@@ -163,7 +166,7 @@ function MainTabNavigator() {
       <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       <Tab.Screen
         name="Add"
-        component={AddExpenseScreen}
+        component={UPIPaymentScreen}
         options={{
           tabBarLabel: '',
           tabBarIcon: () => <AddButton />,
@@ -197,6 +200,8 @@ export default function App() {
     };
     downloadUpdateSilently();
 
+    // --- FIREBASE DISABLED TEMPORARILY FOR EXPO GO TESTING ---
+    /*
     const setupFCM = async (authToken) => {
       try {
         if (Platform.OS === 'android' && Platform.Version >= 33) {
@@ -270,16 +275,17 @@ export default function App() {
         }
       }
     });
+    */
 
     const checkAuth = async () => {
       try {
         const token = await getToken();
         if (token) {
           setIsAuthenticated(true);
-          setupFCM(token);
+          // setupFCM(token); // Disabled for Expo Go
         } else {
           setIsAuthenticated(false);
-          setupFCM(null);
+          // setupFCM(null); // Disabled for Expo Go
         }
       } catch (e) {
         console.error(e);
@@ -293,7 +299,8 @@ export default function App() {
       setIsAuthenticated(false);
     });
 
-    return unsubscribe;
+    // return unsubscribe; // Disabled for Expo Go
+    return () => {};
   }, []);
 
   if (isLoading) {

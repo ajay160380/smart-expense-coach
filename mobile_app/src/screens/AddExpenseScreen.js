@@ -36,9 +36,15 @@ export default function AddExpenseScreen({ route, navigation }) {
   const isEdit = route?.params?.expense ? true : false;
   const expense = route?.params?.expense || {};
 
-  const [amount, setAmount] = useState(expense.amount ? expense.amount.toString() : '');
+  const [amount, setAmount] = useState(
+    expense.amount 
+      ? expense.amount.toString() 
+      : (route?.params?.prefillAmount ? route.params.prefillAmount.toString() : '')
+  );
   const [category, setCategory] = useState(expense.category || 'other');
-  const [description, setDescription] = useState(expense.description || '');
+  const [description, setDescription] = useState(
+    expense.description || route?.params?.prefillDescription || ''
+  );
   const [expDate, setExpDate] = useState(expense.date ? expense.date.split('T')[0] : TODAY);
   const [loading, setLoading] = useState(false);
 

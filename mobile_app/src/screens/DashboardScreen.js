@@ -578,7 +578,6 @@ export default function DashboardScreen({ navigation }) {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* ── FLOATING ACTION BAR ── */}
       <View style={styles.fabContainer}>
         <View style={styles.fabInner}>
           <TouchableOpacity
