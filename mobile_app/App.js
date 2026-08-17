@@ -21,9 +21,8 @@ import * as Updates from 'expo-updates';
 import Logo from './src/components/Logo';
 import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
 import { getToken } from './src/utils/auth';
-// Temporarily disabled for Expo Go testing
-// import messaging from '@react-native-firebase/messaging';
-// import { saveNotification } from './src/utils/notifications';
+import messaging from '@react-native-firebase/messaging';
+import { saveNotification } from './src/utils/notifications';
 
 // ── Auth Screens ──
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -200,8 +199,6 @@ export default function App() {
     };
     downloadUpdateSilently();
 
-    // --- FIREBASE DISABLED TEMPORARILY FOR EXPO GO TESTING ---
-    /*
     const setupFCM = async (authToken) => {
       try {
         if (Platform.OS === 'android' && Platform.Version >= 33) {
@@ -275,17 +272,16 @@ export default function App() {
         }
       }
     });
-    */
 
     const checkAuth = async () => {
       try {
         const token = await getToken();
         if (token) {
           setIsAuthenticated(true);
-          // setupFCM(token); // Disabled for Expo Go
+          setupFCM(token);
         } else {
           setIsAuthenticated(false);
-          // setupFCM(null); // Disabled for Expo Go
+          setupFCM(null);
         }
       } catch (e) {
         console.error(e);
@@ -299,8 +295,7 @@ export default function App() {
       setIsAuthenticated(false);
     });
 
-    // return unsubscribe; // Disabled for Expo Go
-    return () => {};
+    return unsubscribe;
   }, []);
 
   if (isLoading) {

@@ -17,7 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-// import messaging from '@react-native-firebase/messaging';
+import messaging from '@react-native-firebase/messaging';
 import { PermissionsAndroid } from 'react-native';
 import api from '../api/config';
 import { clearAuthData, getUsername } from '../utils/auth';
@@ -341,7 +341,6 @@ export default function ProfileScreen({ navigation }) {
             label="Enable Notifications"
             sub="Turn on push notifications"
             onPress={async () => {
-              /*
               try {
                 if (Platform.OS === 'android' && Platform.Version >= 33) {
                   await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
@@ -357,7 +356,6 @@ export default function ProfileScreen({ navigation }) {
                 console.error(e);
                 Alert.alert("Error", "Could not enable notifications.");
               }
-              */
             }}
           />
         </GlassCard>
