@@ -499,8 +499,8 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
                 "description": ""
             }}
         ],
-        "note": "",
-        "chat_response": ""
+        "note": "The note text to save",
+        "chat_response": "Your actual helpful and detailed reply goes here. Do NOT use placeholders."
     }}
     """
 
