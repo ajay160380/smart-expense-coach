@@ -16,34 +16,14 @@ async function initDB(pool) {
     `);
 }
 
-// Finds the actual session directory by checking multiple possible locations
-function findSessionDir(dataPath, clientId) {
-    const possiblePaths = [
-        path.join(dataPath, `session-${clientId}`),                    // Direct in dataPath
-        path.join(dataPath, '.wwebjs_auth', `session-${clientId}`),    // Inside .wwebjs_auth
-    ];
-    
-    for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
-            return { sessionDir: p, parentDir: path.dirname(p), folderName: path.basename(p) };
-        }
-    }
-    
-    // Default to direct path for restore
-    return { 
-        sessionDir: possiblePaths[0], 
-        parentDir: dataPath, 
-        folderName: `session-${clientId}` 
-    };
-}
-
 async function restoreSessionFromDB(pool, clientId, dataPath) {
     await initDB(pool);
+    const authDir = path.join(dataPath, '.wwebjs_auth');
+    const sessionDir = path.join(authDir, `session-${clientId}`);
     
-    const found = findSessionDir(dataPath, clientId);
-    console.log(`🔍 CustomSession: Looking for session at: ${found.sessionDir}`);
+    console.log(`🔍 CustomSession: Looking for session at: ${sessionDir}`);
     
-    if (fs.existsSync(found.sessionDir)) {
+    if (fs.existsSync(sessionDir)) {
         console.log(`⚡ CustomSession: Local session directory already exists. Starting instantly!`);
         return;
     }
@@ -54,12 +34,15 @@ async function restoreSessionFromDB(pool, clientId, dataPath) {
         if (result.rows.length > 0 && result.rows[0].data) {
             const archivePath = path.join(dataPath, `session-${clientId}.tar.gz`);
             
+            // Ensure auth directory exists
+            if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
+            
             // Write buffer to disk
             fs.writeFileSync(archivePath, result.rows[0].data);
             
-            // Extract tar.gz directly into dataPath
-            console.log(`📦 CustomSession: Extracting session archive into ${dataPath}...`);
-            await execPromise(`tar -xzf "${archivePath}" -C "${dataPath}"`);
+            // Extract tar.gz into authDir
+            console.log(`📦 CustomSession: Extracting session archive into ${authDir}...`);
+            await execPromise(`tar -xzf "${archivePath}" -C "${authDir}"`);
             
             // Clean up archive
             fs.unlinkSync(archivePath);
@@ -73,26 +56,24 @@ async function restoreSessionFromDB(pool, clientId, dataPath) {
 }
 
 async function backupSessionToDB(pool, clientId, dataPath) {
-    const found = findSessionDir(dataPath, clientId);
+    const authDir = path.join(dataPath, '.wwebjs_auth');
+    const sessionDir = path.join(authDir, `session-${clientId}`);
+    const sessionFolderName = `session-${clientId}`;
     
-    console.log(`🔍 CustomSession: Checking session at: ${found.sessionDir}`);
+    console.log(`🔍 CustomSession: Checking session at: ${sessionDir}`);
     
-    if (!fs.existsSync(found.sessionDir)) {
-        console.log(`⚠️ CustomSession: Session directory NOT found at ${found.sessionDir}.`);
-        try {
-            const items = fs.readdirSync(dataPath);
-            console.log(`📂 CustomSession: Contents of ${dataPath}: [${items.join(', ')}]`);
-        } catch(e) { /* ignore */ }
+    if (!fs.existsSync(sessionDir)) {
+        console.log(`⚠️ CustomSession: Session directory NOT found at ${sessionDir}.`);
         return;
     }
     
-    console.log(`📂 CustomSession: Session directory found at ${found.sessionDir}! Starting backup...`);
+    console.log(`📂 CustomSession: Session directory found at ${sessionDir}! Starting backup...`);
 
     try {
         const archivePath = path.join(dataPath, `session-${clientId}.tar.gz`);
 
-        // Create tarball from the parent directory containing the session folder
-        await execPromise(`tar -czf "${archivePath}" -C "${found.parentDir}" "${found.folderName}"`);
+        // Create tarball from authDir
+        await execPromise(`tar -czf "${archivePath}" -C "${authDir}" "${sessionFolderName}"`);
         
         // Read tarball into buffer
         const buffer = fs.readFileSync(archivePath);
