@@ -5,7 +5,7 @@ const { PostgresStore } = require('wwebjs-postgres');
 const { Pool } = require('pg');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
-
+const { restoreSessionFromDB, backupSessionToDB, deleteSessionFromDB } = require('./session_manager');
 
 
 const pool = new Pool({
@@ -49,7 +49,8 @@ async function startBot(retryCount = 0) {
 
     const store = new PostgresStore({ pool });
 
-    console.log("Starting WhatsApp Bot with LocalAuth...");
+    console.log("Starting WhatsApp Bot with LocalAuth + Custom Persistent Storage...");
+    await restoreSessionFromDB(pool, "paisa-mitra-v3");
 
     const client = new Client({
         authStrategy: new LocalAuth({
@@ -91,6 +92,11 @@ async function startBot(retryCount = 0) {
 
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
+
+        // Start background session sync every 10 minutes
+        setInterval(async () => {
+            await backupSessionToDB(pool, "paisa-mitra-v3");
+        }, 10 * 60 * 1000);
 
         if (!isCronScheduled) {
             isCronScheduled = true;
@@ -248,10 +254,8 @@ async function startBot(retryCount = 0) {
         if (reason === 'LOGOUT') {
             console.log('🗑️ WhatsApp invalidated the session. Clearing invalid session from PostgreSQL...');
             try {
-                if (client.authStrategy && client.authStrategy.sessionName) {
-                    await store.delete({ session: client.authStrategy.sessionName });
-                    console.log('✅ Invalid session cleared successfully. Bot will ask for a fresh QR code scan upon restart.');
-                }
+                await deleteSessionFromDB(pool, "paisa-mitra-v3");
+                console.log('✅ Invalid session cleared successfully. Bot will ask for a fresh QR code scan upon restart.');
             } catch (err) {
                 console.error('❌ Failed to clear invalid session from DB:', err.message);
             }
@@ -581,6 +585,7 @@ async function startBot(retryCount = 0) {
     const gracefulShutdown = async () => {
         console.log('Shutting down gracefully...');
         try {
+            await backupSessionToDB(pool, "paisa-mitra-v3");
             await client.destroy();
             console.log('Client destroyed. Closing pg pool...');
             try { await pool.end(); } catch (_) { }
