@@ -1,6 +1,6 @@
 require('dotenv').config({ path: '../.env' });
 const fs = require('fs');
-const { Client, RemoteAuth, MessageMedia } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { PostgresStore } = require('wwebjs-postgres');
 const { Pool } = require('pg');
 const qrcode = require('qrcode-terminal');
@@ -129,12 +129,10 @@ async function startBot(retryCount = 0) {
 
     const store = new PostgresStore({ pool });
 
-    console.log("Starting WhatsApp Bot with SafeRemoteAuth...");
+    console.log("Starting WhatsApp Bot with LocalAuth...");
 
     const client = new Client({
-        authStrategy: new SafeRemoteAuth({
-            store: store,
-            backupSyncIntervalMs: 60000,
+        authStrategy: new LocalAuth({
             clientId: "paisa-mitra-v3",
             dataPath: './'
         }),
@@ -482,14 +480,40 @@ async function startBot(retryCount = 0) {
             const option = msg.body.replace(/^!push /i, '').trim().split(' ')[0];
             
             const pushMessages = {
-                '1': { title: "🚀 Keep tracking!", body: "Don't forget to add your recent expenses! Keep your budget on track. 💰" },
-                '2': { title: "💡 Tip of the day!", body: "Small savings everyday make a big difference! Have you checked your dashboard today? 📊" },
-                '3': { title: "☕ Coffee Time?", body: "Did you buy tea or coffee? Add it to your expenses! 📝" },
-                '4': { title: "💸 Wallet Check", body: "Review your daily spending and stay on budget. 💸" },
-                '5': { title: "📊 Financial Fitness", body: "Consistency is key. Log your expenses today! 💪" }
+                '1': [
+                    { title: "🚀 Keep tracking!", body: "Don't forget to add your recent expenses! Keep your budget on track. 💰" },
+                    { title: "🎯 Stay on Target", body: "Every rupee counts. Take a minute to log your expenses! 📉" },
+                    { title: "📝 Quick Update", body: "Spent something recently? Add it now before you forget! 💸" },
+                    { title: "💡 Budget Reminder", body: "Logging expenses daily is the key to financial freedom! 🚀" }
+                ],
+                '2': [
+                    { title: "💡 Tip of the day!", body: "Small savings everyday make a big difference! Have you checked your dashboard today? 📊" },
+                    { title: "🧠 Smart Spender", body: "Before your next purchase, ask: 'Do I really need this?' 🤔" },
+                    { title: "💰 Money Hack", body: "Try the 24-hour rule before buying non-essentials! ⏳" },
+                    { title: "🌟 Financial Wisdom", body: "It's not about how much you make, it's about how much you save! 💎" }
+                ],
+                '3': [
+                    { title: "☕ Coffee Time?", body: "Did you buy tea or coffee? Add it to your expenses! 📝" },
+                    { title: "🍔 Lunch Break", body: "Just had lunch or snacks? Track it real quick! 🍟" },
+                    { title: "🍿 Snack Attack", body: "Small cravings can add up. Make sure to log them! 😋" },
+                    { title: "🛒 Grocery Run", body: "Did you buy groceries today? Update your Expense Tracker! 🥦" }
+                ],
+                '4': [
+                    { title: "💸 Wallet Check", body: "Review your daily spending and stay on budget. 💸" },
+                    { title: "🔎 Budget Review", body: "Take a peek at your dashboard. Are you within your limits? 📉" },
+                    { title: "💳 Card Swipe", body: "Used your credit card today? Make sure it's tracked! 💳" },
+                    { title: "📱 UPI Check", body: "Any recent UPI payments? Just say it or add it! 🎙️" }
+                ],
+                '5': [
+                    { title: "📊 Financial Fitness", body: "Consistency is key. Log your expenses today! 💪" },
+                    { title: "🏆 Daily Streak", body: "Don't break your tracking streak. Keep it up! 🔥" },
+                    { title: "📈 Wealth Building", body: "Small daily habits lead to massive financial results! 🌟" },
+                    { title: "🚀 Next Level", body: "Ready to hit your savings goals? Keep tracking! 🎯" }
+                ]
             };
             
-            const selected = pushMessages[option];
+            const category = pushMessages[option];
+            const selected = category ? category[Math.floor(Math.random() * category.length)] : null;
             if (!selected) {
                 await msg.reply("❌ Invalid option. Please send '!push 1' to '!push 5'.");
                 return;

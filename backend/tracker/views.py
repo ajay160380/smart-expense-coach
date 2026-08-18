@@ -852,11 +852,11 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.6-27b",
+            model="llama-3.3-70b-versatile",
             temperature=0.85,
             max_tokens=90,
         )
-        insight = r.choices[0].message.content.strip()
+        insight = re.sub(r"<think>.*?</think>", "", r.choices[0].message.content, flags=re.DOTALL).strip()
         cache.set(ck, insight, AI_CACHE_TIMEOUT)
         return insight
 
@@ -887,11 +887,11 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.6-27b",
+            model="llama-3.3-70b-versatile",
             temperature=0.85,
             max_tokens=100,
         )
-        tip = r.choices[0].message.content.strip()
+        tip = re.sub(r"<think>.*?</think>", "", r.choices[0].message.content, flags=re.DOTALL).strip()
         cache.set(ck, tip, CAT_CACHE_TIMEOUT)
         return tip
 
@@ -922,11 +922,11 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.6-27b",
+            model="llama-3.3-70b-versatile",
             temperature=0.75,
             max_tokens=120,
         )
-        report = r.choices[0].message.content.strip()
+        report = re.sub(r"<think>.*?</think>", "", r.choices[0].message.content, flags=re.DOTALL).strip()
         cache.set(ck, report, AI_CACHE_TIMEOUT)
         return report
 
@@ -1833,11 +1833,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
         response = _groq_client().chat.completions.create(
             messages=messages,
-            model="qwen/qwen3.6-27b",
+            model="llama-3.3-70b-versatile",
             temperature=0.2,
             max_tokens=350,
         )
-        raw_response = response.choices[0].message.content.strip()
+        raw_response = re.sub(r"<think>.*?</think>", "", response.choices[0].message.content, flags=re.DOTALL).strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
 
         start_idx = raw_response.find('{')
@@ -2064,11 +2064,11 @@ TOP SPENDING CATEGORIES:
     try:
         resp = _groq_client().chat.completions.create(
             messages=messages_payload,
-            model="qwen/qwen3.6-27b",
+            model="llama-3.3-70b-versatile",
             temperature=0.7,
             max_tokens=200,
         )
-        reply = resp.choices[0].message.content.strip()
+        reply = re.sub(r"<think>.*?</think>", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
         logger.info("AI chat uid=%s msg_len=%d", request.user.id, len(user_msg))
         return JsonResponse({"reply": reply, "status": "success"})
 
@@ -2701,11 +2701,11 @@ def habit_warnings(request):
     try:
         response = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.6-27b",
+            model="llama-3.3-70b-versatile",
             temperature=0.8,
             max_tokens=150,
         )
-        warning_msg = response.choices[0].message.content.strip()
+        warning_msg = re.sub(r"<think>.*?</think>", "", response.choices[0].message.content, flags=re.DOTALL).strip()
         return JsonResponse({"warning": warning_msg})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -3043,7 +3043,7 @@ def api_delete_goal(request: HttpRequest, pk: int) -> JsonResponse:
 # FEATURE 3: DAILY MONEY TIP 💡
 # ══════════════════════════════════════════════════════════════════════════════
 
-def generate_daily_tip(user) -> str:
+def generate_daily_tip(user, tip_type: str = "morning") -> str:
     """Generate a personalized AI money tip based on user's spending patterns."""
     today = date.today()
     week_ago = today - timedelta(days=7)
@@ -3066,34 +3066,40 @@ def generate_daily_tip(user) -> str:
     day_of_week = today.strftime("%A")
 
     try:
+        user_name = user.first_name.title() if user.first_name else user.username.title()
+        time_of_day = "Morning" if tip_type == "morning" else "Night"
+        
         prompt = (
-            f"You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.\n"
-            f"Today is {day_of_week}.\n"
-            f"User's weekly spending: ₹{week_total:,.0f}\n"
-            f"Top category this week: {cat_name} (₹{cat_total:,.0f})\n"
-            f"Monthly budget used: {budget_pct:.0f}%\n"
+            f"You are Paisa Mitra, a highly engaging, friendly financial coach. Never use 'Tu/Tera', always 'Aap/Bhai'.\n"
+            f"User: {user_name}\n"
+            f"Time: {time_of_day}\n"
+            f"Weekly spent: ₹{week_total:,.0f}\n"
+            f"Top category: {cat_name} (₹{cat_total:,.0f})\n"
+            f"Budget used: {budget_pct:.0f}%\n"
             f"Monthly spent: ₹{month_spent:,.0f} / ₹{budget:,.0f}\n\n"
-            f"Write ONE short, actionable English money-saving tip (under 30 words) that is:\n"
-            f"- Specific to this {day_of_week}\n"
-            f"- Relevant to the user's top category ({cat_name})\n"
-            f"- Funny, relatable, and practical\n"
-            f"- Includes 1-2 emojis\n"
-            f"ONLY return the tip text."
+            f"Write a completely unique, highly creative {time_of_day} WhatsApp message for the user. \n"
+            f"Requirements:\n"
+            f"- Do NOT just say 'Good Morning' or 'Good Night'. Start with something fresh, catchy, and highly personalized.\n"
+            f"- Include exactly ONE brilliant, insightful money tip related to their '{cat_name}' spending or general budget.\n"
+            f"- Make it sound conversational, warm, and slightly witty (Hinglish is great).\n"
+            f"- Keep it under 60 words. Use 2-3 emojis.\n"
+            f"- Format it beautifully for WhatsApp (use *bold* or _italics_ where appropriate).\n"
+            f"ONLY return the exact message to be sent."
         )
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.6-27b",
-            temperature=0.85,
-            max_tokens=80,
+            model="llama-3.3-70b-versatile",
+            temperature=0.9,
+            max_tokens=150,
         )
-        return r.choices[0].message.content.strip()
+        return re.sub(r"<think>.*?</think>", "", r.choices[0].message.content, flags=re.DOTALL).strip()
     except Exception as e:
         logger.error("Daily tip generation error: %s", e)
+        time_greeting = "Good Morning" if tip_type == "morning" else "Good Night"
         tips_fallback = [
-            f"💡 {day_of_week} tip: Skip ordering out today and cook something simple. Your wallet will thank you! 🍳",
-            f"💡 {day_of_week} tip: Before buying anything, wait 24 hours. If you still want it tomorrow, go ahead! ⏰",
-            f"💡 {day_of_week} tip: Check your subscriptions — cancel anything you haven't used in 30 days! 🔍",
+            f"🌟 {time_greeting}! Small savings today build a stronger tomorrow. Keep tracking your expenses and watch your wealth grow! 📈💸",
+            f"✨ {time_greeting}! Before you spend today, ask yourself: 'Do I really need this?'. Your wallet will thank you later! 💼💰",
         ]
         import random
         return random.choice(tips_fallback)
@@ -3152,25 +3158,7 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
         if cache.get(ck):
             continue  # Already sent today
 
-        tip = generate_daily_tip(profile.user)
-        user_name = profile.user.first_name.title() if profile.user.first_name else profile.user.username.title()
-
-        if tip_type == "night":
-            msg = (
-                f"🌙 *Good Night, {user_name}!* ✨\n"
-                f"━━━━━━━━━━━━━━━━━━━\n"
-                f"🦉 *ExpenseTracker Night Tip*\n\n"
-                f"_{tip}_\n\n"
-                f"🌟 _Rest well! Tomorrow is a new day to save._ 💤"
-            )
-        else:
-            msg = (
-                f"🌅 *Good Morning, {user_name}!* ☀️\n"
-                f"━━━━━━━━━━━━━━━━━━━\n"
-                f"💎 *ExpenseTracker Daily Tip*\n\n"
-                f"_{tip}_\n\n"
-                f"🚀 _Have a fantastic day! Track your expenses wisely._ 📈"
-            )
+        msg = generate_daily_tip(profile.user, tip_type)
 
         tips.append({
             "whatsapp_number": profile.whatsapp_number,
