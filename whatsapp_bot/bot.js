@@ -81,6 +81,15 @@ async function startBot(retryCount = 0) {
         }
     });
 
+    client.on('authenticated', async (session) => {
+        console.log('✅ Authenticated successfully!');
+        // Safely backup the initial session state after 5 seconds to ensure files are written
+        setTimeout(async () => {
+            console.log('💾 Initial session backup...');
+            await backupSessionToDB(pool, "paisa-mitra-v3");
+        }, 5000);
+    });
+
     client.on('qr', (qr) => {
         console.log('SCAN THIS QR CODE WITH WHATSAPP:');
         qrcode.generate(qr, { small: true });
@@ -92,11 +101,6 @@ async function startBot(retryCount = 0) {
 
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
-
-        // Start background session sync every 10 minutes
-        setInterval(async () => {
-            await backupSessionToDB(pool, "paisa-mitra-v3");
-        }, 10 * 60 * 1000);
 
         if (!isCronScheduled) {
             isCronScheduled = true;
@@ -585,9 +589,11 @@ async function startBot(retryCount = 0) {
     const gracefulShutdown = async () => {
         console.log('Shutting down gracefully...');
         try {
-            await backupSessionToDB(pool, "paisa-mitra-v3");
+            console.log('Closing WhatsApp client to safely unlock session files...');
             await client.destroy();
-            console.log('Client destroyed. Closing pg pool...');
+            console.log('WhatsApp client closed. Backing up session securely...');
+            await backupSessionToDB(pool, "paisa-mitra-v3");
+            console.log('Backup complete. Closing pg pool...');
             try { await pool.end(); } catch (_) { }
             process.exit(0);
         } catch (err) {
