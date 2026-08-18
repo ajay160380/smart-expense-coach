@@ -50,7 +50,7 @@ async function startBot(retryCount = 0) {
     const store = new PostgresStore({ pool });
 
     console.log("Starting WhatsApp Bot with LocalAuth + Custom Persistent Storage...");
-    await restoreSessionFromDB(pool, "paisa-mitra-v3");
+    await restoreSessionFromDB(pool, "paisa-mitra-v3", __dirname);
 
     const client = new Client({
         authStrategy: new LocalAuth({
@@ -86,7 +86,7 @@ async function startBot(retryCount = 0) {
         // Safely backup the initial session state after 5 seconds to ensure files are written
         setTimeout(async () => {
             console.log('💾 Initial session backup...');
-            await backupSessionToDB(pool, "paisa-mitra-v3");
+            await backupSessionToDB(pool, "paisa-mitra-v3", __dirname);
         }, 5000);
     });
 
@@ -592,7 +592,7 @@ async function startBot(retryCount = 0) {
             console.log('Closing WhatsApp client to safely unlock session files...');
             await client.destroy();
             console.log('WhatsApp client closed. Backing up session securely...');
-            await backupSessionToDB(pool, "paisa-mitra-v3");
+            await backupSessionToDB(pool, "paisa-mitra-v3", __dirname);
             console.log('Backup complete. Closing pg pool...');
             try { await pool.end(); } catch (_) { }
             process.exit(0);
