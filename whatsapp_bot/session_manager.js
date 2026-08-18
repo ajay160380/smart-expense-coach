@@ -55,9 +55,12 @@ async function restoreSessionFromDB(pool, clientId) {
 
 async function backupSessionToDB(pool, clientId) {
     const sessionDir = path.join(__dirname, '.wwebjs_auth', `session-${clientId}`);
+    console.log(`🔍 CustomSession: Checking session at: ${sessionDir}`);
     if (!fs.existsSync(sessionDir)) {
+        console.log(`⚠️ CustomSession: Session directory NOT found at ${sessionDir}. Nothing to backup.`);
         return; // Nothing to backup
     }
+    console.log(`📂 CustomSession: Session directory found! Starting backup...`);
 
     try {
         const archivePath = path.join(__dirname, `session-${clientId}.tar.gz`);

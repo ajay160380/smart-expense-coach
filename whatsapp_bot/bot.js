@@ -55,7 +55,7 @@ async function startBot(retryCount = 0) {
     const client = new Client({
         authStrategy: new LocalAuth({
             clientId: "paisa-mitra-v3",
-            dataPath: './'
+            dataPath: __dirname
         }),
         authTimeoutMs: 0,
         puppeteer: {
