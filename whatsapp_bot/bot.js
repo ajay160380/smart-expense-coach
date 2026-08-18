@@ -19,14 +19,6 @@ pool.on('error', (err, client) => {
     console.error('❌ Unexpected error on idle PostgreSQL client:', err.message);
 });
 
-// Catch unhandled rejections (like "auth timeout" from whatsapp-web.js) so the bot restarts and recovers instead of freezing
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('⚠️ Unhandled Promise Rejection:', reason);
-    if (reason === 'auth timeout' || (reason && reason.message === 'auth timeout') || String(reason).includes('Session closed')) {
-        console.error('❌ Critical WhatsApp error detected. Restarting process to auto-recover...');
-        process.exit(1);
-    }
-});
 
 async function startBot(retryCount = 0) {
     const MAX_RETRIES = 5;
@@ -100,17 +92,25 @@ async function startBot(retryCount = 0) {
         }, 5000);
     });
 
+    let qrCount = 0;
     client.on('qr', (qr) => {
-        console.log('SCAN THIS QR CODE WITH WHATSAPP:');
+        qrCount++;
+        console.log(`\n[QR #${qrCount}] SCAN THIS QR CODE WITH WHATSAPP (Refreshes every 20s):`);
         qrcode.generate(qr, { small: true });
-        console.log('\n--- OR CLICK THIS LINK TO SEE A PERFECT QR CODE IMAGE ---');
-        console.log(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qr)}`);
+        console.log(`--- OR CLICK THIS LINK TO SEE A PERFECT QR CODE IMAGE ---`);
+        console.log(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qr)}\n`);
     });
 
     let isCronScheduled = false;
 
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
+
+        // Backup session periodically to prevent invalidation if app crashes unexpectedly
+        setInterval(async () => {
+            console.log('💾 Periodic session backup (5 mins)...');
+            await backupSessionToDB(pool, "paisa-mitra-v3", __dirname);
+        }, 5 * 60 * 1000);
 
         if (!isCronScheduled) {
             isCronScheduled = true;
@@ -615,6 +615,15 @@ async function startBot(retryCount = 0) {
 
     process.on('SIGINT', gracefulShutdown);
     process.on('SIGTERM', gracefulShutdown);
+
+    // Catch unhandled rejections (like "auth timeout" from whatsapp-web.js) so the bot saves the session before recovering
+    process.on('unhandledRejection', async (reason, promise) => {
+        console.error('⚠️ Unhandled Promise Rejection:', reason);
+        if (reason === 'auth timeout' || (reason && reason.message === 'auth timeout') || String(reason).includes('Session closed')) {
+            console.error('❌ Critical WhatsApp error detected. Gracefully shutting down to save session...');
+            await gracefulShutdown();
+        }
+    });
 
     client.initialize().catch(err => {
         console.error('❌ Client initialization failed:', err.message);
