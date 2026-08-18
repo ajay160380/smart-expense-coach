@@ -1,11 +1,10 @@
 require('dotenv').config({ path: '../.env' });
 const fs = require('fs');
-const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+const { Client, RemoteAuth, MessageMedia } = require('whatsapp-web.js');
 const { PostgresStore } = require('wwebjs-postgres');
 const { Pool } = require('pg');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
-const { restoreSessionFromDB, backupSessionToDB, deleteSessionFromDB } = require('./session_manager');
 
 
 const pool = new Pool({
@@ -18,7 +17,6 @@ const pool = new Pool({
 pool.on('error', (err, client) => {
     console.error('❌ Unexpected error on idle PostgreSQL client:', err.message);
 });
-
 
 async function startBot(retryCount = 0) {
     const MAX_RETRIES = 5;
@@ -39,25 +37,32 @@ async function startBot(retryCount = 0) {
         process.exit(0); // Exit 0 so supervisord doesn't immediately restart
     }
 
-    const store = new PostgresStore({ pool });
+    // Initialize PostgresStore for RemoteAuth
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS wwebjs_auth (
+            session_id VARCHAR(255) PRIMARY KEY,
+            session_data BYTEA,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+    const store = new PostgresStore({ pool: pool });
 
-    console.log("Starting WhatsApp Bot with LocalAuth + Custom Persistent Storage...");
-    // Clean up Chromium locks and stale session folders to prevent Code: 21 crash and wrong backups
+    console.log("Starting WhatsApp Bot with RemoteAuth + Direct PostgreSQL Storage...");
+    
+    // Clean up Chromium locks
     try {
         const { execSync } = require('child_process');
-        console.log("🧹 Cleaning up old Chromium lock files and stale folders...");
+        console.log("🧹 Cleaning up old Chromium lock files...");
         execSync(`find "${__dirname}" -name "SingletonLock" -delete -o -name "SingletonCookie" -delete || true`);
-        execSync(`rm -rf "${__dirname}/session-paisa-mitra-v3" || true`);
     } catch (e) {
         console.log("⚠️ Could not clean up lock files:", e.message);
     }
 
-    await restoreSessionFromDB(pool, "paisa-mitra-v3", __dirname);
-
     const client = new Client({
-        authStrategy: new LocalAuth({
+        authStrategy: new RemoteAuth({
             clientId: "paisa-mitra-v3",
-            dataPath: __dirname
+            store: store,
+            backupSyncIntervalMs: 300000 // Automatically sync to DB every 5 minutes
         }),
         authTimeoutMs: 0,
         puppeteer: {
@@ -83,13 +88,12 @@ async function startBot(retryCount = 0) {
         }
     });
 
+    client.on('remote_session_saved', () => {
+        console.log('✅ WhatsApp Session successfully saved NATIVELY to PostgreSQL database!');
+    });
+
     client.on('authenticated', async (session) => {
         console.log('✅ Authenticated successfully!');
-        // Safely backup the initial session state after 5 seconds to ensure files are written
-        setTimeout(async () => {
-            console.log('💾 Initial session backup...');
-            await backupSessionToDB(pool, "paisa-mitra-v3", __dirname);
-        }, 5000);
     });
 
     let qrCount = 0;
@@ -105,12 +109,6 @@ async function startBot(retryCount = 0) {
 
     client.on('ready', () => {
         console.log('WhatsApp Bot is ready and connected!');
-
-        // Backup session periodically to prevent invalidation if app crashes unexpectedly
-        setInterval(async () => {
-            console.log('💾 Periodic session backup (5 mins)...');
-            await backupSessionToDB(pool, "paisa-mitra-v3", __dirname);
-        }, 5 * 60 * 1000);
 
         if (!isCronScheduled) {
             isCronScheduled = true;
@@ -266,13 +264,7 @@ async function startBot(retryCount = 0) {
         console.log('Reason:', reason);
 
         if (reason === 'LOGOUT') {
-            console.log('🗑️ WhatsApp invalidated the session. Clearing invalid session from PostgreSQL...');
-            try {
-                await deleteSessionFromDB(pool, "paisa-mitra-v3");
-                console.log('✅ Invalid session cleared successfully. Bot will ask for a fresh QR code scan upon restart.');
-            } catch (err) {
-                console.error('❌ Failed to clear invalid session from DB:', err.message);
-            }
+            console.log('🗑️ WhatsApp invalidated the session. RemoteAuth will automatically clear the invalid session from PostgreSQL.');
         }
 
         console.log('🔄 Exiting process to allow supervisord / container manager to restart it clean...');
@@ -599,11 +591,9 @@ async function startBot(retryCount = 0) {
     const gracefulShutdown = async () => {
         console.log('Shutting down gracefully...');
         try {
-            console.log('Closing WhatsApp client to safely unlock session files...');
+            console.log('Closing WhatsApp client to safely unlock session files and trigger final RemoteAuth sync...');
             await client.destroy();
-            console.log('WhatsApp client closed. Backing up session securely...');
-            await backupSessionToDB(pool, "paisa-mitra-v3", __dirname);
-            console.log('Backup complete. Closing pg pool...');
+            console.log('WhatsApp client closed. Closing pg pool...');
             try { await pool.end(); } catch (_) { }
             process.exit(0);
         } catch (err) {
