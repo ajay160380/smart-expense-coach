@@ -52,6 +52,15 @@ async function startBot(retryCount = 0) {
     console.log("Starting WhatsApp Bot with LocalAuth + Custom Persistent Storage...");
     await restoreSessionFromDB(pool, "paisa-mitra-v3", __dirname);
 
+    // Clean up Chromium locks to prevent Code: 21 crash on restart
+    try {
+        const { execSync } = require('child_process');
+        console.log("🧹 Cleaning up old Chromium lock files...");
+        execSync(`find "${__dirname}" -name "SingletonLock" -delete -o -name "SingletonCookie" -delete`);
+    } catch (e) {
+        console.log("⚠️ Could not clean up lock files:", e.message);
+    }
+
     const client = new Client({
         authStrategy: new LocalAuth({
             clientId: "paisa-mitra-v3",
