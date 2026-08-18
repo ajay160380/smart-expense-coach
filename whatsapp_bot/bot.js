@@ -620,8 +620,8 @@ async function startBot(retryCount = 0) {
         if (err.message.includes('Failed to extract session') || err.message.includes('ENOENT')) {
             console.log('🗑️ Corrupted session found in RemoteAuth. Deleting from PostgreSQL to force fresh QR scan...');
             try {
-                await pool.query('DELETE FROM wwebjs_auth WHERE session_id = $1', ['whatsapp-RemoteAuth-paisa-mitra-v3']);
-                console.log('✅ Corrupted session deleted successfully.');
+                const res = await pool.query("DELETE FROM wwebjs_auth WHERE session_id LIKE '%paisa-mitra%'");
+                console.log(`✅ Corrupted session deleted successfully. Rows affected: ${res.rowCount}`);
             } catch (dbErr) {
                 console.error('Failed to delete corrupted session from DB:', dbErr.message);
             }
