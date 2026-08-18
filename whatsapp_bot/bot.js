@@ -55,7 +55,8 @@ async function startBot(retryCount = 0) {
         authStrategy: new RemoteAuth({
             clientId: "paisa-mitra-v3",
             store: store,
-            backupSyncIntervalMs: 300000 // Automatically sync to DB every 5 minutes
+            backupSyncIntervalMs: 300000, // Automatically sync to DB every 5 minutes
+            dataPath: './'
         }),
         authTimeoutMs: 0,
         puppeteer: {
