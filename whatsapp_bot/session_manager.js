@@ -16,14 +16,34 @@ async function initDB(pool) {
     `);
 }
 
+// Finds the actual session directory by checking multiple possible locations
+function findSessionDir(dataPath, clientId) {
+    const possiblePaths = [
+        path.join(dataPath, `session-${clientId}`),                    // Direct in dataPath
+        path.join(dataPath, '.wwebjs_auth', `session-${clientId}`),    // Inside .wwebjs_auth
+    ];
+    
+    for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+            return { sessionDir: p, parentDir: path.dirname(p), folderName: path.basename(p) };
+        }
+    }
+    
+    // Default to direct path for restore
+    return { 
+        sessionDir: possiblePaths[0], 
+        parentDir: dataPath, 
+        folderName: `session-${clientId}` 
+    };
+}
+
 async function restoreSessionFromDB(pool, clientId, dataPath) {
     await initDB(pool);
-    const authDir = path.join(dataPath, '.wwebjs_auth');
-    const sessionDir = path.join(authDir, `session-${clientId}`);
     
-    console.log(`🔍 CustomSession: Looking for session at: ${sessionDir}`);
+    const found = findSessionDir(dataPath, clientId);
+    console.log(`🔍 CustomSession: Looking for session at: ${found.sessionDir}`);
     
-    if (fs.existsSync(sessionDir)) {
+    if (fs.existsSync(found.sessionDir)) {
         console.log(`⚡ CustomSession: Local session directory already exists. Starting instantly!`);
         return;
     }
@@ -34,15 +54,12 @@ async function restoreSessionFromDB(pool, clientId, dataPath) {
         if (result.rows.length > 0 && result.rows[0].data) {
             const archivePath = path.join(dataPath, `session-${clientId}.tar.gz`);
             
-            // Ensure auth directory exists
-            if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
-            
             // Write buffer to disk
             fs.writeFileSync(archivePath, result.rows[0].data);
             
-            // Extract tar.gz
-            console.log(`📦 CustomSession: Extracting session archive...`);
-            await execPromise(`tar -xzf "${archivePath}" -C "${authDir}"`);
+            // Extract tar.gz directly into dataPath
+            console.log(`📦 CustomSession: Extracting session archive into ${dataPath}...`);
+            await execPromise(`tar -xzf "${archivePath}" -C "${dataPath}"`);
             
             // Clean up archive
             fs.unlinkSync(archivePath);
@@ -56,34 +73,26 @@ async function restoreSessionFromDB(pool, clientId, dataPath) {
 }
 
 async function backupSessionToDB(pool, clientId, dataPath) {
-    const authDir = path.join(dataPath, '.wwebjs_auth');
-    const sessionDir = path.join(authDir, `session-${clientId}`);
-    const sessionFolderName = `session-${clientId}`;
+    const found = findSessionDir(dataPath, clientId);
     
-    console.log(`🔍 CustomSession: Checking session at: ${sessionDir}`);
+    console.log(`🔍 CustomSession: Checking session at: ${found.sessionDir}`);
     
-    if (!fs.existsSync(sessionDir)) {
-        // Try to find session elsewhere for debugging
-        console.log(`⚠️ CustomSession: Session directory NOT found at ${sessionDir}.`);
-        // List what's actually in the dataPath to help debug
+    if (!fs.existsSync(found.sessionDir)) {
+        console.log(`⚠️ CustomSession: Session directory NOT found at ${found.sessionDir}.`);
         try {
             const items = fs.readdirSync(dataPath);
             console.log(`📂 CustomSession: Contents of ${dataPath}: [${items.join(', ')}]`);
-            if (fs.existsSync(authDir)) {
-                const authItems = fs.readdirSync(authDir);
-                console.log(`📂 CustomSession: Contents of ${authDir}: [${authItems.join(', ')}]`);
-            }
         } catch(e) { /* ignore */ }
         return;
     }
     
-    console.log(`📂 CustomSession: Session directory found! Starting backup...`);
+    console.log(`📂 CustomSession: Session directory found at ${found.sessionDir}! Starting backup...`);
 
     try {
         const archivePath = path.join(dataPath, `session-${clientId}.tar.gz`);
 
-        // Create tarball
-        await execPromise(`tar -czf "${archivePath}" -C "${authDir}" "${sessionFolderName}"`);
+        // Create tarball from the parent directory containing the session folder
+        await execPromise(`tar -czf "${archivePath}" -C "${found.parentDir}" "${found.folderName}"`);
         
         // Read tarball into buffer
         const buffer = fs.readFileSync(archivePath);
@@ -99,7 +108,6 @@ async function backupSessionToDB(pool, clientId, dataPath) {
         const sizeMB = (buffer.length / 1024 / 1024).toFixed(2);
         console.log(`💾 CustomSession: Successfully backed up session to PostgreSQL! (${sizeMB} MB)`);
     } catch (err) {
-        // Suppress tar warnings that happen when LevelDB files change during archiving
         if (err.message && err.message.includes('file changed as we read it')) {
             console.log(`💾 CustomSession: Backup succeeded with minor tar warnings (safe to ignore).`);
         } else {

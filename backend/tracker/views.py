@@ -488,7 +488,8 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
 
-    Response MUST be strict JSON ONLY. No markdown, no extra text.
+    Response MUST be strict JSON ONLY. No markdown, no extra text. Do NOT use <think> tags.
+    /no_think
     {{
         "action": "log_expenses" | "save_note" | "ask_clarification" | "chat",
         "expenses": [
