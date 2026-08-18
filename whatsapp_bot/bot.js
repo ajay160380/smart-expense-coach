@@ -615,8 +615,17 @@ async function startBot(retryCount = 0) {
         }
     });
 
-    client.initialize().catch(err => {
+    client.initialize().catch(async err => {
         console.error('❌ Client initialization failed:', err.message);
+        if (err.message.includes('Failed to extract session') || err.message.includes('ENOENT')) {
+            console.log('🗑️ Corrupted session found in RemoteAuth. Deleting from PostgreSQL to force fresh QR scan...');
+            try {
+                await pool.query('DELETE FROM wwebjs_auth WHERE session_id = $1', ['whatsapp-RemoteAuth-paisa-mitra-v3']);
+                console.log('✅ Corrupted session deleted successfully.');
+            } catch (dbErr) {
+                console.error('Failed to delete corrupted session from DB:', dbErr.message);
+            }
+        }
         console.log('🔄 Restarting bot due to initialization failure...');
         setTimeout(() => process.exit(1), 2000);
     });
