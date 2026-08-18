@@ -37,14 +37,7 @@ async function startBot(retryCount = 0) {
         process.exit(0); // Exit 0 so supervisord doesn't immediately restart
     }
 
-    // Initialize PostgresStore for RemoteAuth
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS wwebjs_auth (
-            session_id VARCHAR(255) PRIMARY KEY,
-            session_data BYTEA,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
+    // wwebjs-postgres will automatically create 'whatsapp_sessions' table if it doesn't exist
     const store = new PostgresStore({ pool: pool });
 
     console.log("Starting WhatsApp Bot with RemoteAuth + Direct PostgreSQL Storage...");
@@ -620,7 +613,7 @@ async function startBot(retryCount = 0) {
         if (err.message.includes('Failed to extract session') || err.message.includes('ENOENT')) {
             console.log('🗑️ Corrupted session found in RemoteAuth. Deleting from PostgreSQL to force fresh QR scan...');
             try {
-                const res = await pool.query("DELETE FROM wwebjs_auth WHERE session_id LIKE '%paisa-mitra%'");
+                const res = await pool.query("DELETE FROM whatsapp_sessions WHERE session_id LIKE '%paisa-mitra%'");
                 console.log(`✅ Corrupted session deleted successfully. Rows affected: ${res.rowCount}`);
             } catch (dbErr) {
                 console.error('Failed to delete corrupted session from DB:', dbErr.message);
