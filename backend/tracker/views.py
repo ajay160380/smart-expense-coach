@@ -1838,15 +1838,23 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             temperature=0.2,
             max_tokens=350,
         )
-        raw_response = re.sub(r"<think>.*?</think>", "", response.choices[0].message.content, flags=re.DOTALL).strip()
+        full_response = response.choices[0].message.content
+        raw_response = re.sub(r"<think>.*?</think>", "", full_response, flags=re.DOTALL).strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
 
+        # Try finding JSON in stripped response first, then fall back to full response
+        json_source = raw_response
         start_idx = raw_response.find('{')
         end_idx = raw_response.rfind('}')
         if start_idx == -1 or end_idx == -1:
-            raise ValueError("No JSON found in AI response")
+            # JSON might be inside <think> tags - search full response
+            json_source = full_response
+            start_idx = full_response.find('{')
+            end_idx = full_response.rfind('}')
+            if start_idx == -1 or end_idx == -1:
+                raise ValueError("No JSON found in AI response")
 
-        json_str = raw_response[start_idx:end_idx+1]
+        json_str = json_source[start_idx:end_idx+1]
         
         # Save history back to session
         chat_history.append({"role": "user", "content": normalized_text})
