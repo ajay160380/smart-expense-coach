@@ -855,9 +855,9 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
             messages=[{"role": "user", "content": prompt}],
             model="qwen/qwen3.6-27b",
             temperature=0.85,
-            max_tokens=90,
+            max_tokens=1000,
         )
-        insight = re.sub(r"<think>.*?</think>", "", r.choices[0].message.content, flags=re.DOTALL).strip()
+        insight = re.sub(r"<think>(?:.*?</think>|.*$)", "", r.choices[0].message.content, flags=re.DOTALL).strip()
         cache.set(ck, insight, AI_CACHE_TIMEOUT)
         return insight
 
@@ -890,9 +890,9 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
             messages=[{"role": "user", "content": prompt}],
             model="qwen/qwen3.6-27b",
             temperature=0.85,
-            max_tokens=100,
+            max_tokens=1000,
         )
-        tip = re.sub(r"<think>.*?</think>", "", r.choices[0].message.content, flags=re.DOTALL).strip()
+        tip = re.sub(r"<think>(?:.*?</think>|.*$)", "", r.choices[0].message.content, flags=re.DOTALL).strip()
         cache.set(ck, tip, CAT_CACHE_TIMEOUT)
         return tip
 
@@ -925,9 +925,9 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
             messages=[{"role": "user", "content": prompt}],
             model="qwen/qwen3.6-27b",
             temperature=0.75,
-            max_tokens=120,
+            max_tokens=1000,
         )
-        report = re.sub(r"<think>.*?</think>", "", r.choices[0].message.content, flags=re.DOTALL).strip()
+        report = re.sub(r"<think>(?:.*?</think>|.*$)", "", r.choices[0].message.content, flags=re.DOTALL).strip()
         cache.set(ck, report, AI_CACHE_TIMEOUT)
         return report
 
@@ -1836,10 +1836,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             messages=messages,
             model="qwen/qwen3.6-27b",
             temperature=0.2,
-            max_tokens=350,
+            max_tokens=1000,
         )
         full_response = response.choices[0].message.content
-        raw_response = re.sub(r"<think>.*?</think>", "", full_response, flags=re.DOTALL).strip()
+        raw_response = re.sub(r"<think>(?:.*?</think>|.*$)", "", full_response, flags=re.DOTALL).strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
 
         # Try finding JSON in stripped response first, then fall back to full response
@@ -2075,9 +2075,9 @@ TOP SPENDING CATEGORIES:
             messages=messages_payload,
             model="qwen/qwen3.6-27b",
             temperature=0.7,
-            max_tokens=200,
+            max_tokens=1000,
         )
-        reply = re.sub(r"<think>.*?</think>", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
+        reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
         logger.info("AI chat uid=%s msg_len=%d", request.user.id, len(user_msg))
         return JsonResponse({"reply": reply, "status": "success"})
 
@@ -2712,9 +2712,9 @@ def habit_warnings(request):
             messages=[{"role": "user", "content": prompt}],
             model="qwen/qwen3.6-27b",
             temperature=0.8,
-            max_tokens=150,
+            max_tokens=1000,
         )
-        warning_msg = re.sub(r"<think>.*?</think>", "", response.choices[0].message.content, flags=re.DOTALL).strip()
+        warning_msg = re.sub(r"<think>(?:.*?</think>|.*$)", "", response.choices[0].message.content, flags=re.DOTALL).strip()
         return JsonResponse({"warning": warning_msg})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -3100,9 +3100,9 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
             messages=[{"role": "user", "content": prompt}],
             model="qwen/qwen3.6-27b",
             temperature=0.9,
-            max_tokens=150,
+            max_tokens=1000,
         )
-        return re.sub(r"<think>.*?</think>", "", r.choices[0].message.content, flags=re.DOTALL).strip()
+        return re.sub(r"<think>(?:.*?</think>|.*$)", "", r.choices[0].message.content, flags=re.DOTALL).strip()
     except Exception as e:
         logger.error("Daily tip generation error: %s", e)
         time_greeting = "Good Morning" if tip_type == "morning" else "Good Night"
