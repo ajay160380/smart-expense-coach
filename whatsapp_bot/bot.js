@@ -224,7 +224,7 @@ async function startBot(retryCount = 0) {
             cron.schedule('0 11,17 * * *', async () => {
                 console.log('⏰ Running Admin Push Prompt cron job...');
                 try {
-                    const menuText = `👨‍💻 *Admin Push Menu*\nKaunsa message bhejna hai app par?\n\n1️⃣ 🚀 Keep tracking! - Don't forget to add your recent expenses!\n2️⃣ 💡 Tip of the day! - Small savings everyday make a big difference!\n3️⃣ ☕ Coffee Time? - Did you buy tea or coffee?\n4️⃣ 💸 Wallet Check - Review your daily spending.\n5️⃣ 📊 Financial Fitness - Consistency is key.\n\nReply with: !push 1, !push 2, etc.`;
+                    const menuText = `👨‍💻 *Admin Push Menu*\nKaunsa message bhejna hai app par?\n\n1️⃣ 🚀 Keep tracking! - Don't forget to add your recent expenses!\n2️⃣ 💡 Tip of the day! - Small savings everyday make a big difference!\n3️⃣ ☕ Coffee Time? - Did you buy tea or coffee?\n4️⃣ 💸 Wallet Check - Review your daily spending.\n5️⃣ 📊 Financial Fitness - Consistency is key.\n6️⃣ ☀️ Good Morning! - Start your day with smart tracking!\n\nReply with: !push 1, !push 2, etc.`;
                     
                     // Try to send to Ajay's number
                     const target = "917905398965@c.us";
@@ -433,13 +433,19 @@ async function startBot(retryCount = 0) {
                     { title: "🏆 Daily Streak", body: "Don't break your tracking streak. Keep it up! 🔥" },
                     { title: "📈 Wealth Building", body: "Small daily habits lead to massive financial results! 🌟" },
                     { title: "🚀 Next Level", body: "Ready to hit your savings goals? Keep tracking! 🎯" }
+                ],
+                '6': [
+                    { title: "☀️ Good Morning!", body: "Good morning! Start your day off right by logging your first expense! ☕" },
+                    { title: "🌅 Rise and Shine", body: "Good morning! Let's make today a great day for your budget! 💰" },
+                    { title: "☀️ Happy Tracking", body: "Good morning! A new day, a new chance to save! 📈" },
+                    { title: "🌟 Morning Motivation", body: "Good morning! Track your expenses early and stay ahead! 🚀" }
                 ]
             };
             
             const category = pushMessages[option];
             const selected = category ? category[Math.floor(Math.random() * category.length)] : null;
             if (!selected) {
-                await msg.reply("❌ Invalid option. Please send '!push 1' to '!push 5'.");
+                await msg.reply("❌ Invalid option. Please send '!push 1' to '!push 6'.");
                 return;
             }
             
