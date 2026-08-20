@@ -126,6 +126,7 @@ async function startBot(retryCount = 0) {
                         console.log(`💡 Sending ${data.tips.length} daily tips...`);
 
                         for (const tip of data.tips) {
+                            try {
                                 try {
                                     let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
                                     let msgId = "unknown";
@@ -189,6 +190,7 @@ async function startBot(retryCount = 0) {
 
                         for (const tip of data.tips) {
                             try {
+                                try {
                                     let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
                                     let msgId = "unknown";
                                     const numberId = await client.getNumberId(cleanPhone);
