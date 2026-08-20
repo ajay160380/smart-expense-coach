@@ -51,6 +51,14 @@ async function startBot(retryCount = 0) {
         console.log("⚠️ Could not clean up lock files:", e.message);
     }
 
+    // TEMPORARY FIX: Clear the corrupted session from the database to break the crash loop
+    console.log("🧹 Clearing corrupt session from PostgreSQL to force a new QR code...");
+    try {
+        await pool.query("DELETE FROM whatsapp_sessions WHERE session_id = 'whatsapp-RemoteAuth-paisa-mitra-v3'");
+    } catch (e) {
+        console.error("Failed to clear corrupt session:", e.message);
+    }
+
     const client = new Client({
         authStrategy: new RemoteAuth({
             clientId: "paisa-mitra-v3",
@@ -283,7 +291,13 @@ async function startBot(retryCount = 0) {
         console.log('Reason:', reason);
 
         if (reason === 'LOGOUT') {
-            console.log('🗑️ WhatsApp invalidated the session. RemoteAuth will automatically clear the invalid session from PostgreSQL.');
+            console.log('🗑️ WhatsApp invalidated the session. Clearing the invalid session from PostgreSQL...');
+            try {
+                await pool.query("DELETE FROM whatsapp_sessions WHERE session_id = 'whatsapp-RemoteAuth-paisa-mitra-v3'");
+                console.log('✅ Session cleared successfully.');
+            } catch (err) {
+                console.error('❌ Failed to clear session:', err.message);
+            }
         }
 
         console.log('🔄 Exiting process to allow supervisord / container manager to restart it clean...');
