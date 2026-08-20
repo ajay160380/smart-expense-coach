@@ -3102,7 +3102,10 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
             temperature=0.9,
             max_tokens=1000,
         )
-        return re.sub(r"<think>(?:.*?</think>|.*$)", "", r.choices[0].message.content, flags=re.DOTALL).strip()
+        ans = re.sub(r"<think>(?:.*?</think>|.*$)", "", r.choices[0].message.content, flags=re.DOTALL).strip()
+        if not ans:
+            raise ValueError("Empty response from AI (possibly only think tags)")
+        return ans
     except Exception as e:
         logger.error("Daily tip generation error: %s", e)
         time_greeting = "Good Morning" if tip_type == "morning" else "Good Night"
