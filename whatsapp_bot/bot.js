@@ -129,18 +129,21 @@ async function startBot(retryCount = 0) {
                             try {
                                 try {
                                     let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
-                                    let msgId = "unknown";
-                                    const numberId = await client.getNumberId(cleanPhone);
+                                    let targetId = `${cleanPhone}@c.us`;
                                     
-                                    if (numberId) {
-                                        const res = await client.sendMessage(numberId._serialized, tip.message);
-                                        msgId = res.id._serialized;
-                                    } else {
-                                        const fallbackId = tip.whatsapp_number.includes('@') ? tip.whatsapp_number : `${cleanPhone}@c.us`;
-                                        const res = await client.sendMessage(fallbackId, tip.message);
-                                        msgId = res.id._serialized;
+                                    try {
+                                        const contact = await client.getContactById(targetId);
+                                        if (contact) {
+                                            const chat = await contact.getChat();
+                                            await chat.sendMessage(tip.message);
+                                        } else {
+                                            await client.sendMessage(targetId, tip.message);
+                                        }
+                                    } catch (resolveErr) {
+                                        console.warn(`getContactById failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
+                                        await client.sendMessage(targetId, tip.message);
                                     }
-                                    console.log(`✅ Daily tip sent to ${tip.whatsapp_number} (MsgID: ${msgId})`);
+                                    console.log(`✅ Daily tip sent to ${tip.whatsapp_number}`);
                                 } catch (sendErr) {
                                     console.warn(`⚠️ Primary send failed for ${tip.whatsapp_number}, trying @lid fallback: ${sendErr.message}`);
                                     try {
@@ -192,18 +195,21 @@ async function startBot(retryCount = 0) {
                             try {
                                 try {
                                     let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
-                                    let msgId = "unknown";
-                                    const numberId = await client.getNumberId(cleanPhone);
+                                    let targetId = `${cleanPhone}@c.us`;
                                     
-                                    if (numberId) {
-                                        const res = await client.sendMessage(numberId._serialized, tip.message);
-                                        msgId = res.id._serialized;
-                                    } else {
-                                        const fallbackId = tip.whatsapp_number.includes('@') ? tip.whatsapp_number : `${cleanPhone}@c.us`;
-                                        const res = await client.sendMessage(fallbackId, tip.message);
-                                        msgId = res.id._serialized;
+                                    try {
+                                        const contact = await client.getContactById(targetId);
+                                        if (contact) {
+                                            const chat = await contact.getChat();
+                                            await chat.sendMessage(tip.message);
+                                        } else {
+                                            await client.sendMessage(targetId, tip.message);
+                                        }
+                                    } catch (resolveErr) {
+                                        console.warn(`getContactById failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
+                                        await client.sendMessage(targetId, tip.message);
                                     }
-                                    console.log(`✅ Night tip sent to ${tip.whatsapp_number} (MsgID: ${msgId})`);
+                                    console.log(`✅ Night tip sent to ${tip.whatsapp_number}`);
                                 } catch (sendErr) {
                                     console.warn(`⚠️ Primary send failed for ${tip.whatsapp_number}, trying @lid fallback: ${sendErr.message}`);
                                     try {
@@ -356,12 +362,19 @@ async function startBot(retryCount = 0) {
                     for (const tip of data.tips) {
                         try {
                             let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
-                            const numberId = await client.getNumberId(cleanPhone);
-                            if (numberId) {
-                                await client.sendMessage(numberId._serialized, tip.message);
-                            } else {
-                                const fallbackId = tip.whatsapp_number.includes('@') ? tip.whatsapp_number : `${cleanPhone}@c.us`;
-                                await client.sendMessage(fallbackId, tip.message);
+                            let targetId = `${cleanPhone}@c.us`;
+                            
+                            try {
+                                const contact = await client.getContactById(targetId);
+                                if (contact) {
+                                    const chat = await contact.getChat();
+                                    await chat.sendMessage(tip.message);
+                                } else {
+                                    await client.sendMessage(targetId, tip.message);
+                                }
+                            } catch (resolveErr) {
+                                console.warn(`getContactById failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
+                                await client.sendMessage(targetId, tip.message);
                             }
                             await new Promise(resolve => setTimeout(resolve, 2000));
                         } catch (e) {
