@@ -617,8 +617,9 @@ async function startBot(retryCount = 0) {
     });
 
     client.initialize().catch(async err => {
-        console.error('❌ Client initialization failed:', err.message);
-        if (err.message.includes('Failed to extract session') || err.message.includes('ENOENT')) {
+        const errMsg = err && err.message ? err.message : String(err);
+        console.error('❌ Client initialization failed:', errMsg);
+        if (errMsg.includes('Failed to extract session') || errMsg.includes('ENOENT')) {
             console.log('🗑️ Corrupted session found in RemoteAuth. Deleting from PostgreSQL to force fresh QR scan...');
             try {
                 const res = await pool.query("DELETE FROM whatsapp_sessions WHERE session_id LIKE '%paisa-mitra%'");
