@@ -608,11 +608,45 @@ async function startBot(retryCount = 0) {
     process.on('SIGTERM', gracefulShutdown);
 
     // Catch unhandled rejections (like "auth timeout" from whatsapp-web.js) so the bot saves the session before recovering
+    let isReconnecting = false;
     process.on('unhandledRejection', async (reason, promise) => {
+        const errMsg = reason && reason.message ? reason.message : String(reason);
+        const errCode = reason && reason.code ? reason.code : '';
+
+        // ── IGNORE: Harmless LevelDB race condition during RemoteAuth backup ──
+        // Chromium rotates/compacts its IndexedDB .ldb files while RemoteAuth tries to copy them.
+        // This is a known race condition and is completely harmless — next backup will pick up new files.
+        if (errCode === 'ENOENT' && errMsg.includes('.ldb')) {
+            console.warn('⚠️ Ignoring harmless ENOENT during RemoteAuth session backup (LevelDB file was rotated by Chromium).');
+            return; // Do NOT crash — this is expected behavior
+        }
+
         console.error('⚠️ Unhandled Promise Rejection:', reason);
-        if (reason === 'auth timeout' || (reason && reason.message === 'auth timeout') || String(reason).includes('Session closed')) {
-            console.error('❌ Critical WhatsApp error detected. Gracefully shutting down to save session...');
-            await gracefulShutdown();
+
+        // ── RECONNECT: Auth timeout — try to reconnect once before giving up ──
+        if (reason === 'auth timeout' || errMsg === 'auth timeout' || errMsg.includes('Session closed')) {
+            if (isReconnecting) {
+                console.error('❌ Already attempting reconnect. Ignoring duplicate auth timeout.');
+                return;
+            }
+            isReconnecting = true;
+            console.warn('⚠️ Auth timeout detected. Attempting reconnect in 10 seconds...');
+            
+            try {
+                // Wait a bit for Chromium/WhatsApp to stabilize
+                await new Promise(r => setTimeout(r, 10000));
+                console.log('🔄 Destroying old client and reinitializing...');
+                try { await client.destroy(); } catch (_) {}
+                await new Promise(r => setTimeout(r, 5000));
+                await client.initialize();
+                console.log('✅ Reconnect successful!');
+                isReconnecting = false;
+            } catch (reconnectErr) {
+                console.error('❌ Reconnect failed:', reconnectErr.message);
+                console.error('❌ Giving up. Gracefully shutting down to save session...');
+                isReconnecting = false;
+                await gracefulShutdown();
+            }
         }
     });
 
