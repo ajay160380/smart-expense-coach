@@ -3168,7 +3168,8 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
         seen_numbers.add(target_number)
         
         ck = f"{tip_type}_tip_sent_{profile.user.id}_{date.today().isoformat()}"
-        if cache.get(ck):
+        force = body.get("force", False)
+        if cache.get(ck) and not force:
             continue  # Already sent today
 
         msg = generate_daily_tip(profile.user, tip_type)

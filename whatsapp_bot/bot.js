@@ -333,8 +333,46 @@ async function startBot(retryCount = 0) {
         // ── ADMIN HELP / CHEATSHEET ──
         const lowerBody = msg.body.toLowerCase();
         if (allowedAdmins.includes(msg.from) && (lowerBody.includes('!admin_help') || lowerBody.includes('!help_admin') || lowerBody.includes('kaise bheju') || lowerBody.includes('kaise beju'))) {
-            const helpText = `👑 *Admin Commands Guide*\n\n1️⃣ *App Push Notification (Predefined)*\n\`!push 1\` se lekar \`!push 5\`\n(App par notification bhejta hai)\n\n2️⃣ *App Custom Push Notification*\n\`!custom_push Title yaha | Message yaha\`\n(App par custom title aur message bhejta hai)\n\n3️⃣ *WhatsApp Broadcast*\n\`!broadcast Hello sabhi ko!\`\n(Sabhi users ko WhatsApp par message bhejta hai)\n\n4️⃣ *WhatsApp Update Broadcast*\n\`!broadcast_update [Aapka message]\`\n(Sabhi ko WhatsApp par APK download link ke sath message bhejta hai)`;
+            const helpText = `👑 *Admin Commands Guide*\n\n1️⃣ *App Push Notification (Predefined)*\n\`!push 1\` se lekar \`!push 5\`\n(App par notification bhejta hai)\n\n2️⃣ *App Custom Push Notification*\n\`!custom_push Title yaha | Message yaha\`\n(App par custom title aur message bhejta hai)\n\n3️⃣ *WhatsApp Broadcast*\n\`!broadcast Hello sabhi ko!\`\n(Sabhi users ko WhatsApp par message bhejta hai)\n\n4️⃣ *WhatsApp Update Broadcast*\n\`!broadcast_update [Aapka message]\`\n(Sabhi ko WhatsApp par APK download link ke sath message bhejta hai)\n\n5️⃣ *Trigger Night Tips*\n\`!trigger_night\`\n(Manual night tips broadcast karega)`;
             await msg.reply(helpText);
+            return;
+        }
+
+        // ── MANUAL TRIGGER FOR NIGHT TIPS ──
+        if (allowedAdmins.includes(msg.from) && lowerBody === '!trigger_night') {
+            await msg.reply("⏳ Fetching and triggering Night Tips manually...");
+            try {
+                const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'night', force: true })
+                });
+                const data = await response.json();
+
+                if (data.tips && data.tips.length > 0) {
+                    await msg.reply(`🌙 Found ${data.tips.length} tips. Sending now...`);
+                    for (const tip of data.tips) {
+                        try {
+                            let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                            const numberId = await client.getNumberId(cleanPhone);
+                            if (numberId) {
+                                await client.sendMessage(numberId._serialized, tip.message);
+                            } else {
+                                const fallbackId = tip.whatsapp_number.includes('@') ? tip.whatsapp_number : `${cleanPhone}@c.us`;
+                                await client.sendMessage(fallbackId, tip.message);
+                            }
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        } catch (e) {
+                            console.warn(`Failed to send to ${tip.whatsapp_number}:`, e.message);
+                        }
+                    }
+                    await msg.reply(`✅ Night tips manual broadcast complete!`);
+                } else {
+                    await msg.reply('🌙 No night tips to send today (already sent or no linked users).');
+                }
+            } catch (err) {
+                await msg.reply(`❌ Failed to trigger night tips: ${err.message}`);
+            }
             return;
         }
 
