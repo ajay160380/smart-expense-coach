@@ -162,7 +162,7 @@ async function startBot(retryCount = 0) {
                                 }
 
                                 // Small delay between messages to avoid rate limiting
-                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                await new Promise(resolve => setTimeout(resolve, 5000));
                             } catch (err) {
                                 console.error(`❌ Failed to send tip to ${tip.whatsapp_number}:`, err.message);
                             }
@@ -230,7 +230,7 @@ async function startBot(retryCount = 0) {
                                     }
                                 }
 
-                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                await new Promise(resolve => setTimeout(resolve, 5000));
                             } catch (err) {
                                 console.error(`❌ Failed to send night tip to ${tip.whatsapp_number}:`, err.message);
                             }
@@ -393,7 +393,7 @@ async function startBot(retryCount = 0) {
                                 console.warn(`Contact resolution failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
                                 await client.sendMessage(targetId, tip.message);
                             }
-                            await new Promise(resolve => setTimeout(resolve, 2000));
+                            await new Promise(resolve => setTimeout(resolve, 5000));
                         } catch (e) {
                             console.warn(`Failed to send to ${tip.whatsapp_number}:`, e.message);
                         }
