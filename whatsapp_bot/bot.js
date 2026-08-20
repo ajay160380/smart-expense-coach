@@ -401,7 +401,8 @@ async function startBot(retryCount = 0) {
 
         // ── ADMIN PUSH NOTIFICATION LISTENER ──
         if (allowedAdmins.includes(msg.from) && lowerBody.startsWith('!push ')) {
-            const option = msg.body.replace(/^!push /i, '').trim().split(' ')[0];
+            const optionMatch = msg.body.match(/^!push\s+(\d+)/i);
+            const option = optionMatch ? optionMatch[1] : null;
             
             const pushMessages = {
                 '1': [

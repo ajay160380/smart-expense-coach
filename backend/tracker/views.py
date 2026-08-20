@@ -3158,10 +3158,14 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
     tips = []
     
     for profile in linked_profiles:
-        number = profile.whatsapp_number
-        if number in seen_numbers:
+        # Use phone_number as the primary delivery target, as whatsapp_number might be a LID
+        target_number = profile.phone_number or profile.whatsapp_number
+        if not target_number:
             continue
-        seen_numbers.add(number)
+            
+        if target_number in seen_numbers:
+            continue
+        seen_numbers.add(target_number)
         
         ck = f"{tip_type}_tip_sent_{profile.user.id}_{date.today().isoformat()}"
         if cache.get(ck):
@@ -3170,7 +3174,7 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
         msg = generate_daily_tip(profile.user, tip_type)
 
         tips.append({
-            "whatsapp_number": profile.whatsapp_number,
+            "whatsapp_number": target_number,
             "message": msg,
             "user_id": profile.user.id,
         })
