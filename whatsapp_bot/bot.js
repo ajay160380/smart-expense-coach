@@ -132,15 +132,18 @@ async function startBot(retryCount = 0) {
                                     let targetId = `${cleanPhone}@c.us`;
                                     
                                     try {
-                                        const contact = await client.getContactById(targetId);
+                                        const allContacts = await client.getContacts();
+                                        const contact = allContacts.find(c => c.number === cleanPhone);
+                                        
                                         if (contact) {
                                             const chat = await contact.getChat();
                                             await chat.sendMessage(tip.message);
                                         } else {
+                                            console.warn(`Contact not found in list for ${cleanPhone}, falling back to direct send.`);
                                             await client.sendMessage(targetId, tip.message);
                                         }
                                     } catch (resolveErr) {
-                                        console.warn(`getContactById failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
+                                        console.warn(`Contact resolution failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
                                         await client.sendMessage(targetId, tip.message);
                                     }
                                     console.log(`✅ Daily tip sent to ${tip.whatsapp_number}`);
@@ -198,15 +201,18 @@ async function startBot(retryCount = 0) {
                                     let targetId = `${cleanPhone}@c.us`;
                                     
                                     try {
-                                        const contact = await client.getContactById(targetId);
+                                        const allContacts = await client.getContacts();
+                                        const contact = allContacts.find(c => c.number === cleanPhone);
+                                        
                                         if (contact) {
                                             const chat = await contact.getChat();
                                             await chat.sendMessage(tip.message);
                                         } else {
+                                            console.warn(`Contact not found in list for ${cleanPhone}, falling back to direct send.`);
                                             await client.sendMessage(targetId, tip.message);
                                         }
                                     } catch (resolveErr) {
-                                        console.warn(`getContactById failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
+                                        console.warn(`Contact resolution failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
                                         await client.sendMessage(targetId, tip.message);
                                     }
                                     console.log(`✅ Night tip sent to ${tip.whatsapp_number}`);
@@ -365,15 +371,18 @@ async function startBot(retryCount = 0) {
                             let targetId = `${cleanPhone}@c.us`;
                             
                             try {
-                                const contact = await client.getContactById(targetId);
+                                const allContacts = await client.getContacts();
+                                const contact = allContacts.find(c => c.number === cleanPhone);
+                                
                                 if (contact) {
                                     const chat = await contact.getChat();
                                     await chat.sendMessage(tip.message);
                                 } else {
+                                    console.warn(`Contact not found in list for ${cleanPhone}, falling back to direct send.`);
                                     await client.sendMessage(targetId, tip.message);
                                 }
                             } catch (resolveErr) {
-                                console.warn(`getContactById failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
+                                console.warn(`Contact resolution failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
                                 await client.sendMessage(targetId, tip.message);
                             }
                             await new Promise(resolve => setTimeout(resolve, 2000));
