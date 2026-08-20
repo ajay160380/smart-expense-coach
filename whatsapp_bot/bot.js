@@ -453,6 +453,18 @@ async function startBot(retryCount = 0) {
             return;
         }
 
+        // ── MANUAL TEST BASIC ──
+        if (allowedAdmins.includes(msg.from) && lowerBody === '!test_basic') {
+            await msg.reply("⏳ Testing basic sendMessage to @c.us...");
+            try {
+                await client.sendMessage('917905398965@c.us', 'Hello! This is a hardcoded test message from the bot directly to @c.us format.');
+                await msg.reply("✅ Executed basic sendMessage.");
+            } catch (err) {
+                await msg.reply(`❌ Failed basic sendMessage: ${err.message}`);
+            }
+            return;
+        }
+
         // ── ADMIN WHATSAPP MESSAGE BROADCAST ──
         if (allowedAdmins.includes(msg.from) && lowerBody.startsWith('!broadcast ')) {
             console.log("📣 Admin initiated WhatsApp broadcast!");
