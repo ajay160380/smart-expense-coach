@@ -417,6 +417,8 @@ async function startBot(retryCount = 0) {
                         await msg.reply(`🌙 Found ${testTips.length} tip(s) for your number. Sending now...`);
                         for (const tip of testTips) {
                             try {
+                                await msg.reply(`DEBUG: tip.message content:\n${tip.message}`);
+                                
                                 let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
                                 let targetId = `${cleanPhone}@c.us`;
                                 
