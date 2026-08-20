@@ -400,6 +400,59 @@ async function startBot(retryCount = 0) {
             return;
         }
 
+        // ── MANUAL TEST TRIGGER FOR ONE NUMBER ──
+        if (allowedAdmins.includes(msg.from) && lowerBody === '!test_night') {
+            await msg.reply("⏳ Fetching Night Tips and filtering for testing (only to 7905398965)...");
+            try {
+                const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'night', force: true })
+                });
+                const data = await response.json();
+
+                if (data.tips && data.tips.length > 0) {
+                    const testTips = data.tips.filter(t => t.whatsapp_number.includes('7905398965'));
+                    if (testTips.length > 0) {
+                        await msg.reply(`🌙 Found ${testTips.length} tip(s) for your number. Sending now...`);
+                        for (const tip of testTips) {
+                            try {
+                                let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                                let targetId = `${cleanPhone}@c.us`;
+                                
+                                try {
+                                    const allContacts = await client.getContacts();
+                                    const contact = allContacts.find(c => c.number === cleanPhone);
+                                    
+                                    if (contact) {
+                                        const chat = await contact.getChat();
+                                        await chat.sendMessage(tip.message);
+                                    } else {
+                                        console.warn(`Contact not found in list for ${cleanPhone}, falling back to direct send.`);
+                                        await client.sendMessage(targetId, tip.message);
+                                    }
+                                } catch (resolveErr) {
+                                    console.warn(`Contact resolution failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
+                                    await client.sendMessage(targetId, tip.message);
+                                }
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                            } catch (e) {
+                                console.warn(`Failed to send to ${tip.whatsapp_number}:`, e.message);
+                            }
+                        }
+                        await msg.reply(`✅ Night tips test broadcast complete!`);
+                    } else {
+                        await msg.reply('🌙 No tips found for 7905398965 today.');
+                    }
+                } else {
+                    await msg.reply('🌙 No night tips generated.');
+                }
+            } catch (err) {
+                await msg.reply(`❌ Failed to trigger test night tips: ${err.message}`);
+            }
+            return;
+        }
+
         // ── ADMIN WHATSAPP MESSAGE BROADCAST ──
         if (allowedAdmins.includes(msg.from) && lowerBody.startsWith('!broadcast ')) {
             console.log("📣 Admin initiated WhatsApp broadcast!");
