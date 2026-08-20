@@ -51,13 +51,7 @@ async function startBot(retryCount = 0) {
         console.log("⚠️ Could not clean up lock files:", e.message);
     }
 
-    // TEMPORARY FIX: Clear the corrupted session from the database to break the crash loop
-    console.log("🧹 Clearing corrupt session from PostgreSQL to force a new QR code...");
-    try {
-        await pool.query("DELETE FROM whatsapp_sessions WHERE session_id = 'whatsapp-RemoteAuth-paisa-mitra-v3'");
-    } catch (e) {
-        console.error("Failed to clear corrupt session:", e.message);
-    }
+
 
     const client = new Client({
         authStrategy: new RemoteAuth({
@@ -414,72 +408,7 @@ async function startBot(retryCount = 0) {
             return;
         }
 
-        // ── MANUAL TEST TRIGGER FOR ONE NUMBER ──
-        if (allowedAdmins.includes(msg.from) && lowerBody === '!test_night') {
-            await msg.reply("⏳ Fetching Night Tips and filtering for testing (only to 7905398965)...");
-            try {
-                const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'night', force: true })
-                });
-                const data = await response.json();
 
-                if (data.tips && data.tips.length > 0) {
-                    const testTips = data.tips.filter(t => t.whatsapp_number.includes('7905398965'));
-                    if (testTips.length > 0) {
-                        await msg.reply(`🌙 Found ${testTips.length} tip(s) for your number. Sending now...`);
-                        for (const tip of testTips) {
-                            try {
-                                await msg.reply(`DEBUG: tip.message content:\n${tip.message}`);
-                                
-                                let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
-                                let targetId = `${cleanPhone}@c.us`;
-                                
-                                try {
-                                    const allContacts = await client.getContacts();
-                                    const contact = allContacts.find(c => c.number === cleanPhone);
-                                    
-                                    if (contact) {
-                                        const chat = await contact.getChat();
-                                        await chat.sendMessage(tip.message);
-                                    } else {
-                                        console.warn(`Contact not found in list for ${cleanPhone}, falling back to direct send.`);
-                                        await client.sendMessage(targetId, tip.message);
-                                    }
-                                } catch (resolveErr) {
-                                    console.warn(`Contact resolution failed for ${cleanPhone}, falling back to direct send:`, resolveErr.message);
-                                    await client.sendMessage(targetId, tip.message);
-                                }
-                                await new Promise(resolve => setTimeout(resolve, 2000));
-                            } catch (e) {
-                                console.warn(`Failed to send to ${tip.whatsapp_number}:`, e.message);
-                            }
-                        }
-                        await msg.reply(`✅ Night tips test broadcast complete!`);
-                    } else {
-                        await msg.reply('🌙 No tips found for 7905398965 today.');
-                    }
-                } else {
-                    await msg.reply('🌙 No night tips generated.');
-                }
-            } catch (err) {
-                await msg.reply(`❌ Failed to trigger test night tips: ${err.message}`);
-            }
-            return;
-        }
-
-        // ── MANUAL TEST BASIC ──
-        if (allowedAdmins.includes(msg.from) && lowerBody === '!test_basic') {
-            await msg.reply("⏳ Testing basic sendMessage to @c.us...");
-            try {
-                await client.sendMessage('917905398965@c.us', 'Hello! This is a hardcoded test message from the bot directly to @c.us format.');
-                await msg.reply("✅ Executed basic sendMessage.");
-            } catch (err) {
-                await msg.reply(`❌ Failed basic sendMessage: ${err.message}`);
-            }
-            return;
-        }
 
         // ── ADMIN WHATSAPP MESSAGE BROADCAST ──
         if (allowedAdmins.includes(msg.from) && lowerBody.startsWith('!broadcast ')) {
