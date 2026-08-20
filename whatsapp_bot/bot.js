@@ -126,24 +126,29 @@ async function startBot(retryCount = 0) {
                         console.log(`💡 Sending ${data.tips.length} daily tips...`);
 
                         for (const tip of data.tips) {
-                            try {
-                                // Try sending to the WhatsApp number
-                                const chatId = tip.whatsapp_number.includes('@')
-                                    ? tip.whatsapp_number
-                                    : `${tip.whatsapp_number}@c.us`;
-
                                 try {
-                                    await client.sendMessage(chatId, tip.message);
-                                    console.log(`✅ Daily tip sent to ${tip.whatsapp_number}`);
-                                } catch (sendErr) {
-                                    console.warn(`⚠️ Failed to send tip to ${chatId}: ${sendErr.message}`);
-                                    if (!tip.whatsapp_number.includes('@')) {
-                                        console.log(`🔄 Trying @lid fallback for ${tip.whatsapp_number}...`);
-                                        const fallbackChatId = `${tip.whatsapp_number}@lid`;
-                                        await client.sendMessage(fallbackChatId, tip.message);
-                                        console.log(`✅ Daily tip sent via fallback to ${fallbackChatId}`);
+                                    let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                                    let msgId = "unknown";
+                                    const numberId = await client.getNumberId(cleanPhone);
+                                    
+                                    if (numberId) {
+                                        const res = await client.sendMessage(numberId._serialized, tip.message);
+                                        msgId = res.id._serialized;
                                     } else {
-                                        throw sendErr;
+                                        const fallbackId = tip.whatsapp_number.includes('@') ? tip.whatsapp_number : `${cleanPhone}@c.us`;
+                                        const res = await client.sendMessage(fallbackId, tip.message);
+                                        msgId = res.id._serialized;
+                                    }
+                                    console.log(`✅ Daily tip sent to ${tip.whatsapp_number} (MsgID: ${msgId})`);
+                                } catch (sendErr) {
+                                    console.warn(`⚠️ Primary send failed for ${tip.whatsapp_number}, trying @lid fallback: ${sendErr.message}`);
+                                    try {
+                                        let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                                        const fallbackChatId = `${cleanPhone}@lid`;
+                                        const res = await client.sendMessage(fallbackChatId, tip.message);
+                                        console.log(`✅ Daily tip sent via fallback to ${fallbackChatId} (MsgID: ${res.id._serialized})`);
+                                    } catch (fallbackErr) {
+                                        console.error(`❌ Complete failure sending tip to ${tip.whatsapp_number}:`, fallbackErr.message);
                                     }
                                 }
 
@@ -184,22 +189,28 @@ async function startBot(retryCount = 0) {
 
                         for (const tip of data.tips) {
                             try {
-                                const chatId = tip.whatsapp_number.includes('@')
-                                    ? tip.whatsapp_number
-                                    : `${tip.whatsapp_number}@c.us`;
-
-                                try {
-                                    await client.sendMessage(chatId, tip.message);
-                                    console.log(`✅ Night tip sent to ${tip.whatsapp_number}`);
-                                } catch (sendErr) {
-                                    console.warn(`⚠️ Failed to send night tip to ${chatId}: ${sendErr.message}`);
-                                    if (!tip.whatsapp_number.includes('@')) {
-                                        console.log(`🔄 Trying @lid fallback for ${tip.whatsapp_number}...`);
-                                        const fallbackChatId = `${tip.whatsapp_number}@lid`;
-                                        await client.sendMessage(fallbackChatId, tip.message);
-                                        console.log(`✅ Night tip sent via fallback to ${fallbackChatId}`);
+                                    let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                                    let msgId = "unknown";
+                                    const numberId = await client.getNumberId(cleanPhone);
+                                    
+                                    if (numberId) {
+                                        const res = await client.sendMessage(numberId._serialized, tip.message);
+                                        msgId = res.id._serialized;
                                     } else {
-                                        throw sendErr;
+                                        const fallbackId = tip.whatsapp_number.includes('@') ? tip.whatsapp_number : `${cleanPhone}@c.us`;
+                                        const res = await client.sendMessage(fallbackId, tip.message);
+                                        msgId = res.id._serialized;
+                                    }
+                                    console.log(`✅ Night tip sent to ${tip.whatsapp_number} (MsgID: ${msgId})`);
+                                } catch (sendErr) {
+                                    console.warn(`⚠️ Primary send failed for ${tip.whatsapp_number}, trying @lid fallback: ${sendErr.message}`);
+                                    try {
+                                        let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                                        const fallbackChatId = `${cleanPhone}@lid`;
+                                        const res = await client.sendMessage(fallbackChatId, tip.message);
+                                        console.log(`✅ Night tip sent via fallback to ${fallbackChatId} (MsgID: ${res.id._serialized})`);
+                                    } catch (fallbackErr) {
+                                        console.error(`❌ Complete failure sending night tip to ${tip.whatsapp_number}:`, fallbackErr.message);
                                     }
                                 }
 
