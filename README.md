@@ -3,7 +3,8 @@ title: Expense Tracker
 emoji: 💰
 colorFrom: green
 colorTo: blue
-sdk: docker
+sdk: gradio
+app_file: app.py
 pinned: false
 ---
 
