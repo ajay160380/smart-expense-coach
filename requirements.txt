@@ -15,4 +15,4 @@ django-cors-headers>=4.3.0
 reportlab>=4.0.0
 firebase-admin>=6.5.0
 a2wsgi>=1.10.0
-
+fastapi>=0.110.0

@@ -18,6 +18,7 @@ except Exception as e:
 from expense_project.wsgi import application as django_wsgi_app
 
 import gradio as gr
+from fastapi import FastAPI
 from a2wsgi import WSGIMiddleware
 
 # Hugging Face ZeroGPU detection
@@ -37,11 +38,14 @@ with gr.Blocks(title="Paisa Mitra Status") as demo:
     output = gr.Textbox(label="Status")
     status_btn.click(fn=gpu_status, outputs=output)
 
-# Convert Django WSGI to ASGI
-django_asgi_app = WSGIMiddleware(django_wsgi_app)
+# Create root FastAPI application
+app = FastAPI()
 
-# Mount Gradio onto Django ASGI app
-app = gr.mount_gradio_app(django_asgi_app, demo, path="/_gradio")
+# Mount Gradio onto FastAPI at /_gradio
+app = gr.mount_gradio_app(app, demo, path="/_gradio")
+
+# Mount Django WSGI onto root "/" (handles all Django views, admin, APIs, and static files)
+app.mount("/", WSGIMiddleware(django_wsgi_app))
 
 if __name__ == "__main__":
     import uvicorn
