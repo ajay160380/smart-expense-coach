@@ -50,8 +50,27 @@ app.mount("/", WSGIMiddleware(django_wsgi_app))
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("GRADIO_SERVER_PORT", os.environ.get("PORT", 7860)))
+    import socket
+
+    def get_free_port(start_port):
+        port = start_port
+        while port < start_port + 10:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(('0.0.0.0', port))
+                    return port
+            except OSError:
+                port += 1
+        return start_port
+
+    base_port = int(os.environ.get("GRADIO_SERVER_PORT", os.environ.get("PORT", 7860)))
+    port = get_free_port(base_port)
+    
+    # Print the exact string Gradio prints, so Hugging Face supervisor can catch the port
+    print(f"Running on local URL:  http://127.0.0.1:{port}", flush=True)
+    print(f"Running on local URL:  http://0.0.0.0:{port}", flush=True)
     print(f"🚀 Starting Production Server on 0.0.0.0:{port}...", flush=True)
+    
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 
 
