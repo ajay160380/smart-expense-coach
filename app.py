@@ -1,5 +1,6 @@
 import os
 import sys
+import socket
 
 # 1. Django Environment Setup
 backend_dir = os.path.join(os.path.dirname(__file__), "backend")
@@ -50,9 +51,25 @@ app = gr.mount_gradio_app(app, demo, path="/_gradio")
 # Mount Django WSGI onto root "/" (handles all Django views, admin, and APIs)
 app.mount("/", WSGIMiddleware(django_wsgi_app))
 
+def find_available_port(start_port=7860, max_attempts=15):
+    for p in range(start_port, start_port + max_attempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(('0.0.0.0', p))
+                return p
+            except OSError:
+                continue
+    return start_port
+
 if __name__ == "__main__":
     import uvicorn
-    # Hugging Face ZeroGPU proxy uses GRADIO_SERVER_PORT / PORT dynamically
-    port = int(os.environ.get("GRADIO_SERVER_PORT", os.environ.get("PORT", 7860)))
-    print(f"🚀 Starting Production Server on 0.0.0.0:{port}...", flush=True)
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+    if "GRADIO_SERVER_PORT" in os.environ:
+        target_port = int(os.environ["GRADIO_SERVER_PORT"])
+    elif "PORT" in os.environ:
+        target_port = int(os.environ["PORT"])
+    else:
+        target_port = find_available_port(7860)
+
+    print(f"🚀 Starting Production Server on 0.0.0.0:{target_port}...", flush=True)
+    uvicorn.run(app, host="0.0.0.0", port=target_port, log_level="info")
+
