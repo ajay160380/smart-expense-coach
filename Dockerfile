@@ -13,14 +13,20 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Hugging Face standard non-root user (UID 1000)
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
+
+WORKDIR $HOME/app
 
 # Install Python backend dependencies
-COPY backend/requirements.txt backend/
-RUN cd backend && pip install --no-cache-dir -r requirements.txt
+COPY --chown=user backend/requirements.txt backend/
+RUN cd backend && pip install --no-cache-dir --user -r requirements.txt
 
 # Copy all project files
-COPY . .
+COPY --chown=user . $HOME/app
 
 # Hugging Face Spaces port
 EXPOSE 7860
