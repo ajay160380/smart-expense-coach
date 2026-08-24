@@ -46,6 +46,8 @@ async function startBot() {
         
         if (qr) {
             console.log('\n\n📌 SCAN THIS QR CODE WITH WHATSAPP TO LOGIN 📌\n');
+            console.log('Agar upar wala QR code scan nahi ho raha, toh is RAW code ko copy karke kisi bhi QR Generator website (jaise the-qrcode-generator.com) par paste karein aur wahan se scan karein:');
+            console.log('\n=========================================\nRAW_QR_CODE_START\n' + qr + '\nRAW_QR_CODE_END\n=========================================\n');
             qrcode.generate(qr, { small: true });
         }
 
