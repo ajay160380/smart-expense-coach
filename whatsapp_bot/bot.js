@@ -7,7 +7,8 @@ const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 
 const PORT = process.env.PORT || 8000;
-const SPACE_URL = process.env.SPACE_URL || `http://127.0.0.1:${PORT}`;
+// Always use the local container port for API calls, ignoring any .env SPACE_URL that might be wrong
+const INTERNAL_API_URL = `http://127.0.0.1:${PORT}`;
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -128,7 +129,7 @@ async function startBot(retryCount = 0) {
                 const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
 
                 try {
-                    const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                    const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: 'morning' })
@@ -196,7 +197,7 @@ async function startBot(retryCount = 0) {
                 const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET || "paisamitra-daily-2025";
 
                 try {
-                    const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                    const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: 'night' })
@@ -373,7 +374,7 @@ async function startBot(retryCount = 0) {
         if (allowedAdmins.includes(msg.from) && lowerBody === '!trigger_night') {
             await msg.reply("⏳ Fetching and triggering Night Tips manually...");
             try {
-                const response = await fetch(`${SPACE_URL}/api/trigger-daily-tips/`, {
+                const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'night', force: true })
@@ -545,7 +546,7 @@ async function startBot(retryCount = 0) {
             try {
                 await msg.reply(`⏳ Sending Push Notification: *${selected.title}*...`);
                 // Use SPACE_URL to call the Django endpoint
-                const url = `${SPACE_URL}/api/send-admin-push/`;
+                const url = `${INTERNAL_API_URL}/api/send-admin-push/`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -581,7 +582,7 @@ async function startBot(retryCount = 0) {
             
             try {
                 await msg.reply(`⏳ Sending Custom Push Notification: *${title}*...`);
-                const url = `${SPACE_URL}/api/send-admin-push/`;
+                const url = `${INTERNAL_API_URL}/api/send-admin-push/`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -610,26 +611,15 @@ async function startBot(retryCount = 0) {
 
             let response;
             try {
-                response = await fetch(`${SPACE_URL}/api/voice-expense/`, {
+                response = await fetch(`${INTERNAL_API_URL}/api/voice-expense/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone, text }),
                     signal: controller.signal
                 });
             } catch (fetchErr) {
-                // If it fails (e.g. connection refused on port 7860 locally), try port 8000
-                if (SPACE_URL.includes("7860") && (fetchErr.code === 'ECONNREFUSED' || fetchErr.message.includes('fetch failed') || fetchErr.message.includes('connect ECONNREFUSED'))) {
-                    console.log("⚠️ Failed to connect to SPACE_URL, trying local fallback on port 8000...");
-                    const localUrl = SPACE_URL.replace("7860", "8000");
-                    response = await fetch(`${localUrl}/api/voice-expense/`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone, text }),
-                        signal: controller.signal
-                    });
-                } else {
-                    throw fetchErr;
-                }
+                console.error("⚠️ Failed to connect to INTERNAL_API_URL:", fetchErr.message);
+                throw fetchErr;
             }
             clearTimeout(timeout);
 
