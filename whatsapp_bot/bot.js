@@ -6,8 +6,8 @@ const { Pool } = require('pg');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 
-const SPACE_URL = process.env.SPACE_URL || "https://ajay160380-paisa-mitra.hf.space";
-
+const PORT = process.env.PORT || 8000;
+const SPACE_URL = process.env.SPACE_URL || `http://127.0.0.1:${PORT}`;
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
