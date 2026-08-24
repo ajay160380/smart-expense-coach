@@ -3,7 +3,7 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install essential system dependencies (libcairo for reportlab/charts, tesseract for receipt OCR), plus Supervisor and Node.js
+# Install essential system dependencies (libcairo for reportlab/charts, tesseract for receipt OCR), plus Supervisor, Node.js and Puppeteer deps
 RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
@@ -12,6 +12,19 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     tesseract-ocr \
     supervisor \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
