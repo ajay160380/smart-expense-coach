@@ -9,8 +9,9 @@
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc14",
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "node-cache": "^5.1.2",
-    "node-cron": "^4.4.1",
+    "node-cron": "^4.6.0",
     "pg": "^8.23.0",
     "pino": "^10.3.1",
     "qrcode-terminal": "^0.12.0"
