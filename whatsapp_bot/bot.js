@@ -7,8 +7,8 @@ const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 
 const PORT = process.env.PORT || 8000;
-// Always use the local container port for API calls, ignoring any .env SPACE_URL that might be wrong
-const INTERNAL_API_URL = `http://127.0.0.1:${PORT}`;
+// Use DJANGO_URL if provided (e.g. on HF connecting to Render), else fallback to localhost for monolithic deployment
+const INTERNAL_API_URL = process.env.DJANGO_URL || `http://127.0.0.1:${PORT}`;
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,

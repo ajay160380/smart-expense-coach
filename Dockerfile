@@ -45,12 +45,14 @@ RUN cd backend && pip install --no-cache-dir --user -r requirements.txt
 COPY --chown=user whatsapp_bot/package*.json whatsapp_bot/
 RUN cd whatsapp_bot && npm install
 
-# Copy all project files
-COPY --chown=user . $HOME/app
+# Copy the rest of the application
+COPY --chown=user . .
+RUN chmod +x start.sh
 
-# Port
+# Expose port (Render sets PORT env var)
 EXPOSE 7860
+EXPOSE 8000
+EXPOSE 10000
 
-# Start Supervisor (which runs both Django and WhatsApp Bot 24/7)
-CMD ["supervisord", "-c", "supervisord.conf"]
-
+# Start script decides what to run based on PLATFORM env var
+CMD ["./start.sh"]
