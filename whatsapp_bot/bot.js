@@ -794,8 +794,8 @@ async function startBot(retryCount = 0) {
         }
     });
 
-    server.listen(3001, () => {
-        console.log('🌐 Internal Bot API listening on port 3001');
+    server.listen(3001, '127.0.0.1', () => {
+        console.log('🌐 Internal Bot API listening on port 3001 (Localhost only)');
     });
 }
 
