@@ -462,7 +462,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     
     User Context:
     - Name: {user_name}
-    - Dashboard Link: https://ajay160380-paisa-mitra.hf.space
+    - Dashboard Link: https://smart-expense-coach.onrender.com
     - Monthly Budget: ₹{user_context.get('budget', 20000)}
     - Total Spent This Month: ₹{user_context.get('spent', 0)}
     - Remaining Budget: ₹{user_context.get('remaining', 0)}
@@ -1495,7 +1495,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             if not profile or not profile.user:
                 return JsonResponse({
                     "status":  "error",
-                    "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://ajay160380-paisa-mitra.hf.space/register/"
+                    "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://smart-expense-coach.onrender.com/register/"
                 })
         target_user = profile.user
     budget = float(getattr(target_user.profile, 'monthly_budget', 20000))

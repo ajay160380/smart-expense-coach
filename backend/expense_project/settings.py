@@ -141,7 +141,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-CSRF_TRUSTED_ORIGINS = ['https://ajay160380-paisa-mitra.hf.space', 'https://*.hf.space', 'https://huggingface.co']
+CSRF_TRUSTED_ORIGINS = ['https://smart-expense-coach.onrender.com', 'https://*.hf.space', 'https://huggingface.co']
 
 # Hugging Face iframe cookie settings (Required for cross-origin embedding)
 import sys

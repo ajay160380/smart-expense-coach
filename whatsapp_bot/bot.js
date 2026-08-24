@@ -156,7 +156,7 @@ async function startBot() {
         }
 
         if (allowedAdmins.includes(remoteJid) && lowerBody.startsWith('!broadcast_update')) {
-            const downloadLink = "https://ajay160380-paisa-mitra.hf.space/static/downloads/ExpenseTracker.apk";
+            const downloadLink = "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk";
             const defaultMsg = `🚀 *Expense Tracker - Update Available!*\n\n✨ *What's New:*\n• Smart Notepad\n• Refreshed Branding\n\n📲 *Download Now:* ${downloadLink}`;
             const customMessage = text.replace(/^!broadcast_update/i, '').trim() || defaultMsg;
 

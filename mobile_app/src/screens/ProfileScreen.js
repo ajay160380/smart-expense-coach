@@ -366,8 +366,8 @@ export default function ProfileScreen({ navigation }) {
           <MenuItem
             ionIcon="globe-outline"
             label="Web Dashboard"
-            sub="ajay160380-paisa-mitra.hf.space"
-            onPress={() => openLink('https://ajay160380-paisa-mitra.hf.space')}
+            sub="smart-expense-coach.onrender.com"
+            onPress={() => openLink('https://smart-expense-coach.onrender.com')}
             showArrow
           />
           <MenuItem

@@ -9,7 +9,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Base URL — change for production ──
-export const BASE_URL = 'https://ajay160380-paisa-mitra.hf.space';
+export const BASE_URL = 'https://smart-expense-coach.onrender.com';
 console.log('🔴🔴🔴 CURRENT API URL IS:', BASE_URL);
 
 // ── Axios Instance ──

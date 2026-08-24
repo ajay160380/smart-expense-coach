@@ -15,7 +15,7 @@ export default function Logo({ size = 1, showText = true, circle = true }) {
         circle ? { backgroundColor: '#FFF', borderRadius: 110 * s, shadowColor: '#000', shadowOffset: { width: 0, height: 10 * s }, shadowOpacity: 0.1, shadowRadius: 20 * s, elevation: 10 } : {}
       ]}>
         <Image 
-          source={{ uri: 'https://ajay160380-paisa-mitra.hf.space/static/tracker/images/icon.png' }} 
+          source={{ uri: 'https://smart-expense-coach.onrender.com/static/tracker/images/icon.png' }} 
           resizeMode="contain"
           style={{ width: 180 * s, height: 180 * s }} 
         />

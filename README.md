@@ -1,179 +1,106 @@
----
-title: Expense Tracker
-emoji: 💰
-colorFrom: green
-colorTo: blue
-sdk: gradio
-python_version: "3.12"
-app_file: app.py
-pinned: false
----
+<div align="center">
+  <img src="backend/tracker/static/tracker/images/icon.png" alt="Paisa Mitra Logo" width="120" height="120" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+  
+  <h1>Smart Expense Coach (Paisa Mitra) 💸🤖</h1>
+  <p><strong>Your AI-Powered Personal Finance Assistant & WhatsApp Bot</strong></p>
 
-# 💸 ExpenseTracker — Smart Expense Coach
-
-![Django](https://img.shields.io/badge/Django-6.0.4-092e20?style=for-the-badge&logo=django)
-![Python](https://img.shields.io/badge/Python-3.12-3776ab?style=for-the-badge&logo=python)
-![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=node.js)
-![Status](https://img.shields.io/badge/Status-Production-brightgreen?style=for-the-badge)
-![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=for-the-badge)
+  [![Visit Website](https://img.shields.io/badge/🌐%20Visit%20Website-blue?style=for-the-badge)](https://smart-expense-coach.onrender.com)
+  [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](#)
+  [![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python)](https://python.org)
+  [![Django](https://img.shields.io/badge/Django-5.0-success?style=for-the-badge&logo=django)](https://djangoproject.com)
+  [![Baileys](https://img.shields.io/badge/Baileys-WhatsApp_Bot-25D366?style=for-the-badge&logo=whatsapp)](#)
+</div>
 
 ---
 
-## 🌐 Live Website
+## 🌟 Overview
 
-Visit the live website here:
+**Smart Expense Coach** (also known as Paisa Mitra) is a modern, AI-powered expense tracking ecosystem. Unlike traditional apps where you have to manually enter data, Paisa Mitra lets you track your expenses entirely via **WhatsApp** using natural language (e.g., *"Maine aaj ₹150 ka pizza khaya"*). 
 
-**🔗 https://ajay160380-paisa-mitra.hf.space**
-
-Or simply click below:
-
-[![Visit Website](https://img.shields.io/badge/🌐%20Visit%20Website-yellow?style=for-the-badge&logo=huggingface)](https://ajay160380-paisa-mitra.hf.space)
+The system uses **Groq AI (Llama 3.1)** to intelligently parse your message, categorize the expense, and save it to your dashboard. It also features a beautiful React Native mobile app and a comprehensive web dashboard!
 
 ---
 
-<p align="center">
-A premium AI-powered personal finance tracker with <b>WhatsApp integration</b>.<br/>
-Track expenses via WhatsApp messages, get AI-powered spending insights, and manage your finances with a beautiful dark-themed dashboard.
-</p>
+## ✨ Key Features
 
-<p align="center">
-  <img src="https://img.shields.io/badge/💬_WhatsApp_Native-25D366?style=flat-square&logoColor=white" />
-  <img src="https://img.shields.io/badge/🤖_AI_Powered-Groq_Llama_3.1-orange?style=flat-square" />
-  <img src="https://img.shields.io/badge/🎮_Gamified-XP_%7C_Streaks_%7C_Badges-purple?style=flat-square" />
-  <img src="https://img.shields.io/badge/🗣️_Hinglish_Support-blue?style=flat-square" />
-</p>
+- 💬 **WhatsApp Bot Integration:** Powered by the ultra-lightweight `@whiskeysockets/baileys` library. Talk to the bot normally to add expenses!
+- 🧠 **Groq AI Processing:** Understands natural Hindi/Hinglish/English via the blazing-fast `llama-3.1-70b-versatile` model.
+- 📱 **React Native Mobile App:** A sleek, modern app (Expo) with dark mode, animations, and a seamless UI.
+- 📊 **Web Dashboard:** A Django-powered interface to visualize spending, check budgets, and export data.
+- 🔔 **Smart Push Notifications:** Automated morning/night reminders and custom admin push notifications directly to WhatsApp and the Mobile App.
+- 💾 **Neon PostgreSQL:** Fast, serverless database for robust cloud storage.
 
 ---
 
-## ✨ Features
+## 🏗️ Architecture
 
-### 💬 WhatsApp & AI Core
-| Feature | Description |
-| :--- | :--- |
-| 🤖 **WhatsApp Bot** | Track expenses by sending messages like *"500 petrol"* |
-| 🧠 **AI Chat Coach** | Groq LLM-powered financial coach with Hinglish support |
-| 🎙️ **Voice Expense** | Speech-to-expense via browser microphone |
-| ☀️ **Daily Tips** | Personalized money-saving tips via WhatsApp (8 AM IST) |
-
-### 📊 Money Management
-| Feature | Description |
-| :--- | :--- |
-| 🚨 **Smart Alerts** | Budget warnings, spending spikes, category dominance |
-| 🎯 **Savings Goals** | Set & track savings targets with progress tracking |
-| 🤝 **Expense Splits** | Split bills with friends, auto-calculate settlements |
-| 📅 **Monthly Comparison** | Compare spending with previous month |
-| 🔁 **Subscription Engine** | Auto-deducts recurring bills on billing dates |
-
-### 🎮 Engagement & Insights
-| Feature | Description |
-| :--- | :--- |
-| 🏆 **Gamification** | XP, levels, streaks, badges, and quests |
-| 📈 **Analytics Dashboard** | Charts, heatmaps, category breakdowns |
-| 📤 **CSV/JSON Export** | One-click transaction history download |
+- **Backend:** Django, Django REST Framework, Gunicorn, PostgreSQL.
+- **AI Engine:** Groq API (`llama-3.1-70b-versatile`).
+- **WhatsApp Bot:** Node.js, Express, `@whiskeysockets/baileys` (runs alongside Django in a single Docker container via Supervisord).
+- **Mobile App:** React Native, Expo, React Navigation, Reanimated.
+- **Hosting:** Render (Free Tier - 512MB RAM Optimized).
 
 ---
 
-## 🏗️ System Architecture
+## 🚀 Live Demo
 
-```mermaid
-flowchart TD
-    A[User on WhatsApp] -->|Sends message: '500 petrol'| B[WhatsApp Bot<br/>whatsapp-web.js + Puppeteer]
-    B --> C[Django REST API]
-    C --> D[Groq LLM<br/>Llama 3.1 8B Instant]
-    D -->|Parsed expense + insight| C
-    C --> E[(PostgreSQL<br/>Neon DB)]
-    C --> F[Analytics Engine]
-    F --> G[Dashboard<br/>Charts • Heatmaps • Trends]
-    C --> H[Daily Tips Scheduler<br/>8 AM IST]
-    H --> B
-    C --> I[Subscription Engine<br/>Auto-deduct recurring bills]
-    E --> F
+**Web Dashboard:** [https://smart-expense-coach.onrender.com](https://smart-expense-coach.onrender.com)
+
+*(Note: Since this is hosted on a free tier, it may take 30-50 seconds to wake up if inactive).*
+
+---
+
+## 🛠️ Local Setup Instructions
+
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+
+- PostgreSQL (or Neon DB)
+
+### 2. Environment Variables (`.env`)
+Create a `.env` file in the root directory:
+```env
+DEBUG=True
+DATABASE_URL=postgres://user:pass@host/dbname
+GROQ_API_KEY=gsk_your_groq_api_key
+DJANGO_SECRET_KEY=your_secret_key
+MY_WHATSAPP_NUMBER=919876543210@c.us
 ```
 
-**Flow summary:**
-1. User sends an expense message on WhatsApp (e.g. "500 petrol").
-2. The bot forwards it to the Django backend.
-3. Groq LLM parses the message into structured expense data and generates coaching insights.
-4. Data is stored in PostgreSQL and reflected instantly on the analytics dashboard.
-5. A scheduler sends daily money-saving tips back through WhatsApp every morning.
-
----
-
-## 📊 Data Flow — Expense Lifecycle
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant W as WhatsApp Bot
-    participant D as Django Backend
-    participant AI as Groq AI
-    participant DB as PostgreSQL
-
-    U->>W: "500 petrol"
-    W->>D: Forward message
-    D->>AI: Parse + categorize expense
-    AI-->>D: {amount: 500, category: "fuel"}
-    D->>DB: Save transaction
-    D->>W: Confirmation + smart tip
-    W-->>U: "✅ ₹500 logged under Fuel. You're 20% over budget this week."
-```
-
----
-
-## 🛠️ Tech Stack
-
-- **Backend:** Django 6.0, Django REST Framework
-- **AI:** Groq API (Llama 3.1 8B Instant)
-- **WhatsApp:** whatsapp-web.js + Puppeteer
-- **Database:** PostgreSQL (Neon)
-- **Deployment:** Docker + Supervisor on HuggingFace Spaces
-
----
-
-## 🚀 Local Setup
+### 3. Run the Project
+To run both the Django website and the WhatsApp Bot simultaneously using the provided `start.sh` script:
 
 ```bash
-# 1. Clone
-git clone https://github.com/ajay160380/-smart-expense-coach.git
-cd -smart-expense-coach
-
-# 2. Python setup
-python3 -m venv env && source env/bin/activate
+# Install Python dependencies
 pip install -r requirements.txt
 
-# 3. Node setup (for WhatsApp bot)
-npm install
+# Install Node dependencies for the bot
+cd whatsapp_bot && npm install && cd ..
 
-# 4. Environment variables
-cp .env.example .env  # Edit with your keys
-
-# 5. Database
-python manage.py migrate
-
-# 6. Run Django
-python manage.py runserver
-
-# 7. Run WhatsApp bot (separate terminal)
-node bot.js
+# Start everything!
+chmod +x start.sh
+./start.sh
 ```
 
 ---
 
-## 📄 License
+## 📱 Mobile App Setup
 
-This project is protected under a **proprietary, all-rights-reserved license** — see [LICENSE](LICENSE) for full terms.
-
-> ⚠️ Viewing this repository does **not** grant permission to copy, modify, redistribute, or reuse this code — in whole or in part, with or without changes — in any personal, academic, or commercial project. This repository is shared publicly **for portfolio and evaluation purposes only**.
-
-For collaboration or usage requests, contact the author directly.
+If you want to run the React Native mobile app:
+```bash
+cd mobile_app
+npm install
+npx expo start
+```
+*Note: Make sure to scan the Expo QR code using the Expo Go app on your phone.*
 
 ---
 
-## 📌 Author
+## 🤝 Contributing
 
-**Ajay Vishwakarma**
-- 🎓 B.Tech CSE (AI) — Babu Banarasi Das University (BBDU)
-- 🌐 [Portfolio](https://ajay-portfolio-r176.onrender.com)
-- 🐙 [GitHub](https://github.com/ajay160380)
+Contributions, issues, and feature requests are welcome! 
+Feel free to check [issues page](#).
 
-Built with ❤️ using Django & AI.
+## 📝 License
+
+This project is open-source and available under the [MIT License](LICENSE).
