@@ -73,6 +73,7 @@ async function startBot(retryCount = 0) {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
+                '--single-process', // EXTREME RAM SAVING
                 '--disable-gpu',
                 '--disable-extensions',
                 '--disable-sync',
@@ -81,6 +82,15 @@ async function startBot(retryCount = 0) {
                 '--ignore-certificate-errors',
                 '--proxy-server="direct://"',
                 '--proxy-bypass-list=*',
+                '--disable-software-rasterizer',
+                '--disable-background-networking',
+                '--disable-default-apps',
+                '--disable-translate',
+                '--metrics-recording-only',
+                '--no-default-browser-check',
+                '--safebrowsing-disable-auto-update',
+                '--disable-logging',
+                '--disk-cache-size=1000000',
                 '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
             ]
         }
