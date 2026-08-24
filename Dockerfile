@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
     libpq-dev \
-    libcairo2 \
+    libcairo2-dev \
     pkg-config \
     tesseract-ocr \
     supervisor \
