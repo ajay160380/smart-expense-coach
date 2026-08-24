@@ -46,6 +46,7 @@ async function startBot() {
         
         if (qr) {
             console.log('\n\n📌 SCAN THIS QR CODE WITH WHATSAPP TO LOGIN 📌\n');
+            qrcode.generate(qr, { small: true });
         }
 
         if (connection === 'close') {
