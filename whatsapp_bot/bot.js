@@ -19,7 +19,8 @@ const pool = new Pool({
 const allowedAdmins = [
     "917905398965@s.whatsapp.net",
     "7905398965@s.whatsapp.net",
-    "917379053923@s.whatsapp.net"
+    "917379053923@s.whatsapp.net",
+    "260391116484637@s.whatsapp.net"
 ];
 
 if (process.env.MY_WHATSAPP_NUMBER) {
