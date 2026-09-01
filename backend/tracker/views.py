@@ -853,7 +853,7 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.85,
             max_tokens=1000,
         )
@@ -888,7 +888,7 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.85,
             max_tokens=1000,
         )
@@ -923,7 +923,7 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.75,
             max_tokens=1000,
         )
@@ -1834,7 +1834,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
         response = _groq_client().chat.completions.create(
             messages=messages,
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.2,
             max_tokens=1000,
         )
@@ -2073,7 +2073,7 @@ TOP SPENDING CATEGORIES:
     try:
         resp = _groq_client().chat.completions.create(
             messages=messages_payload,
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.7,
             max_tokens=1000,
         )
@@ -2710,7 +2710,7 @@ def habit_warnings(request):
     try:
         response = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.8,
             max_tokens=1000,
         )
@@ -3098,7 +3098,7 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.9,
             max_tokens=1000,
         )
