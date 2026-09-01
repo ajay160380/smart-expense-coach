@@ -44,6 +44,8 @@ async function startSessionGeneration(sessionNumber) {
     console.log(`🔄 Generating QR Code for Session ${sessionNumber} / ${MAX_SESSIONS}`);
     console.log(`=========================================\n`);
     
+    let isProceeding = false;
+    
     const { state, saveCreds } = await usePostgresAuthState(pool, sessionName);
 
     const sock = makeWASocket({
@@ -67,7 +69,6 @@ async function startSessionGeneration(sessionNumber) {
             <html>
             <head>
                 <title>Scan WhatsApp QR - Session ${sessionNumber}</title>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
                 <style>
                     body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f0f2f5; }
                     h1 { color: #128C7E; }
@@ -79,15 +80,10 @@ async function startSessionGeneration(sessionNumber) {
             </head>
             <body>
                 <h1>📱 Scan for Session ${sessionNumber} / ${MAX_SESSIONS}</h1>
-                <div id="qrcode"></div>
+                <div id="qrcode">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}" alt="QR Code" width="300" height="300">
+                </div>
                 <p>Open WhatsApp > Linked Devices > Link a Device and scan this.</p>
-                <script>
-                    new QRCode(document.getElementById("qrcode"), {
-                        text: "${qr}",
-                        width: 300,
-                        height: 300
-                    });
-                </script>
             </body>
             </html>
             `;
@@ -100,6 +96,7 @@ async function startSessionGeneration(sessionNumber) {
         }
 
         if (connection === 'close') {
+            if (isProceeding) return;
             const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
             if (shouldReconnect) {
                 console.log('Reconnecting...');
@@ -135,6 +132,7 @@ async function startSessionGeneration(sessionNumber) {
 
             // Disconnect and proceed to the next session
             setTimeout(() => {
+                isProceeding = true;
                 sock.ws.close();
                 startSessionGeneration(sessionNumber + 1);
             }, 5000);
