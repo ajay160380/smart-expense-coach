@@ -15,6 +15,26 @@ const MAX_SESSIONS = 4;
 async function startSessionGeneration(sessionNumber) {
     if (sessionNumber > MAX_SESSIONS) {
         console.log('\n🎉 ALL SESSIONS GENERATED SUCCESSFULLY! 🎉');
+        
+        const doneHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>All Done!</title>
+            <style>
+                body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #e6f7ff; }
+                h1 { color: #0277bd; }
+                p { font-size: 20px; color: #555; }
+            </style>
+        </head>
+        <body>
+            <h1>🎉 All 4 Sessions Generated & Saved!</h1>
+            <p>You can close this page now. The bot on Render will use these automatically.</p>
+        </body>
+        </html>
+        `;
+        require('fs').writeFileSync('scan_me.html', doneHtml);
+        
         console.log('You can now start the bot normally (node bot.js or start.sh).');
         process.exit(0);
     }
@@ -92,6 +112,27 @@ async function startSessionGeneration(sessionNumber) {
             console.log(`\n✅ Session ${sessionNumber} (${sessionName}) successfully linked and saved!`);
             console.log(`Waiting 5 seconds before preparing next session...\n`);
             
+            const successHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Success - Session ${sessionNumber}</title>
+                <style>
+                    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #e6ffe6; }
+                    h1 { color: #2e7d32; font-size: 40px; }
+                    p { font-size: 20px; color: #555; }
+                </style>
+                <!-- Auto refresh to load next QR -->
+                <meta http-equiv="refresh" content="5">
+            </head>
+            <body>
+                <h1>✅ Session ${sessionNumber} Successfully Saved!</h1>
+                <p>Please wait 5 seconds. The next QR code will appear automatically...</p>
+            </body>
+            </html>
+            `;
+            require('fs').writeFileSync('scan_me.html', successHtml);
+
             // Disconnect and proceed to the next session
             setTimeout(() => {
                 sock.ws.close();
