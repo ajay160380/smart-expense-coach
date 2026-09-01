@@ -150,14 +150,14 @@ async function startBot(sessionName = null) {
 
         const lowerBody = text.toLowerCase();
 
+        const isAllowedAdmin = allowedAdmins.some(admin => remoteJid.startsWith(admin.split('@')[0]));
+
         // ── ADMIN HELP ──
         if (isAllowedAdmin && (lowerBody.includes('!admin_help') || lowerBody.includes('!help_admin') || lowerBody.includes('kaise bheju'))) {
             const helpText = `👑 *Admin Commands Guide*\n\n1️⃣ *App Push Notification*\n\`!push 1\` se lekar \`!push 6\`\n\n2️⃣ *Custom Push*\n\`!custom_push Title | Message\`\n\n3️⃣ *Broadcast*\n\`!broadcast Hello sabhi ko!\`\n\n4️⃣ *Update Broadcast*\n\`!broadcast_update [Message]\`\n\n5️⃣ *Trigger Night Tips*\n\`!trigger_night\``;
             await safeReply(remoteJid, helpText, msg);
             return;
         }
-
-        const isAllowedAdmin = allowedAdmins.some(admin => remoteJid.startsWith(admin.split('@')[0]));
 
         // ── MANUAL TRIGGER FOR NIGHT TIPS ──
         if (isAllowedAdmin && lowerBody === '!trigger_night') {
