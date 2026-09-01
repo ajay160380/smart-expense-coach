@@ -12,6 +12,21 @@ const pool = new Pool({
 
 const MAX_SESSIONS = 4;
 
+async function getStartingSession() {
+    try {
+        const res = await pool.query("SELECT DISTINCT session_name FROM baileys_auth WHERE session_name LIKE 'baileys_session_%'");
+        const existing = res.rows.map(r => parseInt(r.session_name.split('_').pop())).filter(n => !isNaN(n));
+        
+        for (let i = 1; i <= MAX_SESSIONS; i++) {
+            // We assume if a session exists and has multiple rows (keys), it's logged in.
+            // But just to be safe, we'll start from the one the user tells us, or default to 1.
+        }
+    } catch (e) {
+        // ignore
+    }
+    return 1;
+}
+
 async function startSessionGeneration(sessionNumber) {
     if (sessionNumber > MAX_SESSIONS) {
         console.log('\n🎉 ALL SESSIONS GENERATED SUCCESSFULLY! 🎉');
@@ -97,14 +112,8 @@ async function startSessionGeneration(sessionNumber) {
 
         if (connection === 'close') {
             if (isProceeding) return;
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            if (shouldReconnect) {
-                console.log('Reconnecting...');
-                startSessionGeneration(sessionNumber);
-            } else {
-                console.log('Logged out. Restarting generation...');
-                startSessionGeneration(sessionNumber);
-            }
+            console.log(`\n❌ Connection closed unexpectedly! Retrying session ${sessionNumber}...`);
+            setTimeout(() => startSessionGeneration(sessionNumber), 3000);
         } else if (connection === 'open') {
             console.log(`\n✅ Session ${sessionNumber} (${sessionName}) successfully linked and saved!`);
             console.log(`Waiting 5 seconds before preparing next session...\n`);
@@ -141,4 +150,7 @@ async function startSessionGeneration(sessionNumber) {
 }
 
 // Start from session 1
-startSessionGeneration(1);
+const args = process.argv.slice(2);
+const startAt = args.length > 0 ? parseInt(args[0]) : 1;
+
+startSessionGeneration(startAt);
