@@ -27,6 +27,7 @@ if (process.env.MY_WHATSAPP_NUMBER) {
 }
 
 let currentSessionName = 'baileys_session';
+let globalSock = null;
 
 async function getNextAvailableSession(failedSessionName = null) {
     try {
@@ -64,6 +65,7 @@ async function startBot(sessionName = null) {
         logger: pino({ level: 'silent' }), // Silence logs for clean output
         browser: ['Expense Tracker Bot', 'Chrome', '3.0.0']
     });
+    globalSock = sock;
 
     sock.ev.on('creds.update', saveCreds);
 
@@ -376,15 +378,20 @@ const app = express();
 app.use(express.json());
 
 app.post('/api/send-message', async (req, res) => {
-    const { to, message } = req.body;
+    const to = req.body.to || req.body.phone_number;
+    const message = req.body.message;
+    
     if (!to || !message) return res.status(400).json({ error: "Missing to/message" });
 
     try {
-        let cleanPhone = to.replace(/[^0-9]/g, '');
-        // Note: safeReply needs sock, but it's inside startBot. 
-        // We need a global sock reference or we just don't use this route much.
-        console.log(`API request to send to ${cleanPhone}: ${message}`);
-        res.json({ success: true, message: `Request logged` });
+        let cleanPhone = String(to).replace(/[^0-9]/g, '');
+        if (!globalSock) {
+            return res.status(503).json({ error: "WhatsApp bot not connected yet" });
+        }
+        
+        await globalSock.sendMessage(`${cleanPhone}@s.whatsapp.net`, { text: message });
+        console.log(`✅ API successfully sent message to ${cleanPhone}`);
+        res.json({ success: true, message: `Message sent` });
     } catch (err) {
         console.error('API Send Error:', err);
         res.status(500).json({ error: err.message });
