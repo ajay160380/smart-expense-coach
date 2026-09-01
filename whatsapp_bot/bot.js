@@ -122,9 +122,15 @@ async function startBot(sessionName = null) {
     // ── Helper: Safe Reply ──
     async function safeReply(jid, text, quotedMsg = null) {
         try {
-            await sock.sendMessage(jid, { text }, { quoted: quotedMsg });
+            const options = quotedMsg ? { quoted: quotedMsg } : undefined;
+            await sock.sendMessage(jid, { text }, options);
         } catch (e) {
-            console.error('❌ Failed to send message:', e.message);
+            console.warn('⚠️ Failed to send message (possibly invalid quote), retrying without quote:', e.message);
+            try {
+                await sock.sendMessage(jid, { text });
+            } catch (e2) {
+                console.error('❌ Failed to send message entirely:', e2.message);
+            }
         }
     }
 
