@@ -26,11 +26,37 @@ if (process.env.MY_WHATSAPP_NUMBER) {
     allowedAdmins.push(process.env.MY_WHATSAPP_NUMBER.replace('@c.us', '@s.whatsapp.net'));
 }
 
-async function startBot() {
-    console.log('🔄 Starting WhatsApp Bot (Baileys)...');
+let currentSessionName = 'baileys_session';
+
+async function getNextAvailableSession(failedSessionName = null) {
+    try {
+        const res = await pool.query("SELECT DISTINCT session_name FROM baileys_auth WHERE session_name LIKE 'baileys_session_%' OR session_name = 'baileys_session'");
+        let availableSessions = res.rows.map(r => r.session_name);
+        
+        if (failedSessionName) {
+            availableSessions = availableSessions.filter(s => s !== failedSessionName);
+        }
+        
+        availableSessions.sort();
+        
+        if (availableSessions.length > 0) {
+            return availableSessions[0];
+        }
+    } catch (err) {
+        console.error("Error fetching sessions from DB:", err);
+    }
+    return null;
+}
+
+async function startBot(sessionName = null) {
+    if (!sessionName) {
+        sessionName = await getNextAvailableSession(null) || 'baileys_session';
+    }
+    currentSessionName = sessionName;
+    console.log(`🔄 Starting WhatsApp Bot (Baileys) with session: ${currentSessionName}...`);
     
     // Auth State from PostgreSQL
-    const { state, saveCreds, clearSession } = await usePostgresAuthState(pool, 'baileys_session');
+    const { state, saveCreds, clearSession } = await usePostgresAuthState(pool, currentSessionName);
 
     const sock = makeWASocket({
         auth: state,
@@ -56,13 +82,22 @@ async function startBot() {
             console.log('❌ Connection closed due to', lastDisconnect.error, ', reconnecting:', shouldReconnect);
             
             if (!shouldReconnect) {
-                console.log('🗑️ Logged out completely! Clearing session...');
+                console.log(`🗑️ Logged out completely from ${currentSessionName}! Clearing session...`);
                 await clearSession();
-                process.exit(1); // Exit to restart cleanly
+                
+                const nextSession = await getNextAvailableSession(currentSessionName);
+                if (nextSession) {
+                    console.log(`⚠️ Falling back to next available session: ${nextSession}`);
+                    startBot(nextSession);
+                } else {
+                    console.log(`🚨 CRITICAL: All backup sessions have been logged out! No more sessions available. Exiting...`);
+                    process.exit(1); 
+                }
+            } else {
+                startBot(currentSessionName); // Reconnect
             }
-            startBot(); // Reconnect
         } else if (connection === 'open') {
-            console.log('✅ WhatsApp Bot is ready and connected!');
+            console.log(`✅ WhatsApp Bot is ready and connected using ${currentSessionName}!`);
         }
     });
 
