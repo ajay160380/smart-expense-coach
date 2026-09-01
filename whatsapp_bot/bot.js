@@ -71,10 +71,18 @@ async function startBot(sessionName = null) {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
-            console.log('\n\n📌 SCAN THIS QR CODE WITH WHATSAPP TO LOGIN 📌\n');
-            console.log('Agar upar wala QR code scan nahi ho raha, toh is RAW code ko copy karke kisi bhi QR Generator website (jaise the-qrcode-generator.com) par paste karein aur wahan se scan karein:');
-            console.log('\n=========================================\nRAW_QR_CODE_START\n' + qr + '\nRAW_QR_CODE_END\n=========================================\n');
-            qrcode.generate(qr, { small: true });
+            console.log(`⚠️ Session ${currentSessionName} requires login (unauthorized/empty). Deleting it and falling back...`);
+            await clearSession();
+            
+            const nextSession = await getNextAvailableSession(currentSessionName);
+            if (nextSession) {
+                console.log(`⚠️ Falling back to next available session: ${nextSession}`);
+                startBot(nextSession);
+            } else {
+                console.log(`🚨 CRITICAL: All backup sessions are invalid or logged out! Exiting...`);
+                process.exit(1); 
+            }
+            return;
         }
 
         if (connection === 'close') {
