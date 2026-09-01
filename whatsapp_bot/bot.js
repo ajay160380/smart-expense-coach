@@ -151,14 +151,16 @@ async function startBot(sessionName = null) {
         const lowerBody = text.toLowerCase();
 
         // ── ADMIN HELP ──
-        if (allowedAdmins.includes(remoteJid) && (lowerBody.includes('!admin_help') || lowerBody.includes('!help_admin') || lowerBody.includes('kaise bheju'))) {
+        if (isAllowedAdmin && (lowerBody.includes('!admin_help') || lowerBody.includes('!help_admin') || lowerBody.includes('kaise bheju'))) {
             const helpText = `👑 *Admin Commands Guide*\n\n1️⃣ *App Push Notification*\n\`!push 1\` se lekar \`!push 6\`\n\n2️⃣ *Custom Push*\n\`!custom_push Title | Message\`\n\n3️⃣ *Broadcast*\n\`!broadcast Hello sabhi ko!\`\n\n4️⃣ *Update Broadcast*\n\`!broadcast_update [Message]\`\n\n5️⃣ *Trigger Night Tips*\n\`!trigger_night\``;
             await safeReply(remoteJid, helpText, msg);
             return;
         }
 
+        const isAllowedAdmin = allowedAdmins.some(admin => remoteJid.startsWith(admin.split('@')[0]));
+
         // ── MANUAL TRIGGER FOR NIGHT TIPS ──
-        if (allowedAdmins.includes(remoteJid) && lowerBody === '!trigger_night') {
+        if (isAllowedAdmin && lowerBody === '!trigger_night') {
             await safeReply(remoteJid, "⏳ Fetching and triggering Night Tips manually...", msg);
             try {
                 const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
@@ -191,7 +193,7 @@ async function startBot(sessionName = null) {
         }
 
         // ── ADMIN BROADCAST ──
-        if (allowedAdmins.includes(remoteJid) && lowerBody.startsWith('!broadcast ')) {
+        if (isAllowedAdmin && lowerBody.startsWith('!broadcast ')) {
             const customMessage = text.replace(/^!broadcast /i, '').trim();
             if (!customMessage) return;
 
@@ -215,7 +217,7 @@ async function startBot(sessionName = null) {
             return;
         }
 
-        if (allowedAdmins.includes(remoteJid) && lowerBody.startsWith('!broadcast_update')) {
+        if (isAllowedAdmin && lowerBody.startsWith('!broadcast_update')) {
             const downloadLink = "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk";
             const defaultMsg = `🚀 *Expense Tracker - Update Available!*\n\n✨ *What's New:*\n• Smart Notepad\n• Refreshed Branding\n\n📲 *Download Now:* ${downloadLink}`;
             const customMessage = text.replace(/^!broadcast_update/i, '').trim() || defaultMsg;
@@ -241,7 +243,7 @@ async function startBot(sessionName = null) {
         }
 
         // ── ADMIN PUSH NOTIFICATION ──
-        if (allowedAdmins.includes(remoteJid) && (lowerBody.startsWith('!push ') || lowerBody.startsWith('!custom_push '))) {
+        if (isAllowedAdmin && (lowerBody.startsWith('!push ') || lowerBody.startsWith('!custom_push '))) {
             let title = "🔔 Notification";
             let body = "Update";
 
