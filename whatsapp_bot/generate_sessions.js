@@ -40,7 +40,43 @@ async function startSessionGeneration(sessionNumber) {
         
         if (qr) {
             console.log(`\n📌 SCAN THIS QR CODE FOR SESSION ${sessionNumber} 📌\n`);
-            qrcode.generate(qr, { small: true });
+            
+            // Create a nice HTML file for the user to open and scan easily
+            const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Scan WhatsApp QR - Session ${sessionNumber}</title>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+                <style>
+                    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f0f2f5; }
+                    h1 { color: #128C7E; }
+                    #qrcode { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+                    p { margin-top: 20px; color: #555; font-size: 18px; }
+                </style>
+                <!-- Auto refresh the page every 5 seconds to get new QR codes if generated -->
+                <meta http-equiv="refresh" content="5">
+            </head>
+            <body>
+                <h1>📱 Scan for Session ${sessionNumber} / ${MAX_SESSIONS}</h1>
+                <div id="qrcode"></div>
+                <p>Open WhatsApp > Linked Devices > Link a Device and scan this.</p>
+                <script>
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: "${qr}",
+                        width: 300,
+                        height: 300
+                    });
+                </script>
+            </body>
+            </html>
+            `;
+            require('fs').writeFileSync('scan_me.html', htmlContent);
+            
+            console.log(`\n=========================================`);
+            console.log(`🌐 PLEASE OPEN THIS FILE IN YOUR BROWSER:`);
+            console.log(`file:///Users/ajayvishwakarma/Desktop/expense_project/whatsapp_bot/scan_me.html`);
+            console.log(`=========================================\n`);
         }
 
         if (connection === 'close') {
