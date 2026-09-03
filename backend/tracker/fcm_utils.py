@@ -48,7 +48,6 @@ def send_push_notification(fcm_token, title, body, data=None):
                 priority='high',
                 notification=messaging.AndroidNotification(
                     sound='default',
-                    channel_id='default',
                 ),
             ),
             apns=messaging.APNSConfig(

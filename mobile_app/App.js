@@ -21,7 +21,7 @@ import * as Updates from 'expo-updates';
 import Logo from './src/components/Logo';
 import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
 import { getToken } from './src/utils/auth';
-import messaging from '@react-native-firebase/messaging';
+import messaging from './src/utils/messaging';
 import { saveNotification } from './src/utils/notifications';
 
 // ── Auth Screens ──

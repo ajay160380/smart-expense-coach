@@ -1,5 +1,5 @@
 import { registerRootComponent } from 'expo';
-import messaging from '@react-native-firebase/messaging';
+import messaging from './src/utils/messaging';
 import { saveNotification } from './src/utils/notifications';
 
 import App from './App';

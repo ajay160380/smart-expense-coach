@@ -17,7 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import messaging from '@react-native-firebase/messaging';
+import messaging from '../utils/messaging';
 import { PermissionsAndroid } from 'react-native';
 import api from '../api/config';
 import { clearAuthData, getUsername } from '../utils/auth';
