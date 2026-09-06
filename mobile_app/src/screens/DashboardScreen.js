@@ -221,6 +221,42 @@ export default function DashboardScreen({ navigation }) {
   const compDiff = comparison?.diff_percent || 0;
   const compMore = comparison?.is_more || false;
 
+  // ── Calculated Real-Time Smart Metrics ──
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayExpenses = recentExpenses.filter(e => e.date && e.date.startsWith(todayStr));
+  const spentToday = todayExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+  const safeDailySpend = daysLeft > 0 ? Math.max(0, Math.round(remaining / daysLeft)) : 0;
+
+  let healthScore = 94;
+  let healthLabel = 'Saver Pro';
+  let healthColor = '#10B981';
+  if (overspent || usedPercent > 100) {
+    healthScore = 35;
+    healthLabel = 'Overspent';
+    healthColor = '#EF4444';
+  } else if (usedPercent > 85) {
+    healthScore = 55;
+    healthLabel = 'Caution';
+    healthColor = '#F59E0B';
+  } else if (usedPercent > 65) {
+    healthScore = 75;
+    healthLabel = 'Balanced';
+    healthColor = '#3B82F6';
+  } else {
+    healthScore = 94;
+    healthLabel = 'Saver Pro';
+    healthColor = '#10B981';
+  }
+
+  const QUICK_SHORTCUTS = [
+    { label: 'Chai / Coffee', amount: '20', category: 'food', icon: '☕', color: '#F59E0B' },
+    { label: 'Snacks / Food', amount: '100', category: 'food', icon: '🍔', color: '#EC4899' },
+    { label: 'Petrol / Fuel', amount: '200', category: 'transport', icon: '⛽', color: '#06B6D4' },
+    { label: 'Auto / Cab', amount: '80', category: 'transport', icon: '🚕', color: '#EAB308' },
+    { label: 'Groceries', amount: '300', category: 'shopping', icon: '🛒', color: '#10B981' },
+    { label: 'Fun / Movie', amount: '250', category: 'entertainment', icon: '🍿', color: '#8B5CF6' },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -261,6 +297,7 @@ export default function DashboardScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* ── GREETING ── */}
+
         <View style={styles.greetingSection}>
           <Text style={styles.greetText}>
             {getGreeting()}, <Text style={{ color: COLORS.primary }}>{username}</Text> 👋
@@ -376,6 +413,101 @@ export default function DashboardScreen({ navigation }) {
           <StatCard label="SAVINGS RATE" value={`${Math.round(savingsRate)}%`} color={savingsRate > 50 ? COLORS.green : COLORS.red} />
           <StatCard label="DAYS LEFT" value={`${daysLeft}`} color={COLORS.cyan} />
         </View>
+
+        {/* ── 1-TAP QUICK LOG SHORTCUTS ── */}
+        <View style={styles.quickSection}>
+          <View style={styles.quickHeaderRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.quickSectionTitle}>⚡ 1-TAP QUICK LOG</Text>
+              <View style={styles.fastPill}>
+                <Text style={styles.fastPillText}>INSTANT</Text>
+              </View>
+            </View>
+            <Text style={styles.quickSectionSub}>Frequent Daily Expenses</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8, paddingVertical: 4 }}>
+            {QUICK_SHORTCUTS.map((item, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.quickTile, { borderColor: item.color + '45' }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  navigation.navigate('AddExpense', {
+                    prefillAmount: item.amount,
+                    prefillCategory: item.category,
+                    prefillDescription: item.label,
+                  });
+                }}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={[item.color + '22', item.color + '0A']}
+                  style={styles.quickTileGrad}
+                >
+                  <Text style={{ fontSize: 22, marginBottom: 4 }}>{item.icon}</Text>
+                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800' }}>₹{item.amount}</Text>
+                  <Text style={{ color: COLORS.textMuted, fontSize: 10, marginTop: 2 }} numberOfLines={1}>{item.label}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* ── DAILY SAFE SPEND & HEALTH SCORE ── */}
+        <LinearGradient
+          colors={['#141E33', '#0C1322']}
+          style={styles.dailyBudgetCard}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 11, color: '#94A3B8', fontWeight: '700', letterSpacing: 0.6 }}>🎯 TODAY'S SAFE LIMIT</Text>
+                <View style={[styles.statusDot, { backgroundColor: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} />
+              </View>
+              <Text style={{ fontSize: 24, fontWeight: '900', color: safeDailySpend > 0 ? '#10B981' : '#EF4444', marginTop: 3 }}>
+                ₹{safeDailySpend.toLocaleString('en-IN')}<Text style={{ fontSize: 13, color: '#94A3B8', fontWeight: '500' }}> / day</Text>
+              </Text>
+              <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                {spentToday > 0 ? `Spent today: ₹${spentToday.toLocaleString('en-IN')}` : 'No expenses logged today (Safe!)'}
+              </Text>
+            </View>
+
+            <View style={[styles.healthBadge, { borderColor: healthColor + '70' }]}>
+              <Text style={{ color: healthColor, fontSize: 18, fontWeight: '900' }}>{healthScore}</Text>
+              <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 }}>FIN-SCORE</Text>
+              <Text style={{ color: healthColor, fontSize: 9.5, fontWeight: '700', marginTop: 1 }} numberOfLines={1}>{healthLabel}</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        {/* ── MAGIC SHAKE INTERACTIVE CARD ── */}
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            navigation.navigate('AddExpense');
+          }}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['rgba(139, 92, 246, 0.22)', 'rgba(79, 70, 229, 0.08)']}
+            style={styles.shakeBanner}
+          >
+            <View style={styles.shakeIconBox}>
+              <Text style={{ fontSize: 22 }}>📱</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Magic Shake Feature</Text>
+                <View style={styles.livePill}>
+                  <View style={styles.liveDot} />
+                  <Text style={{ color: '#10B981', fontSize: 9, fontWeight: '800' }}>ACTIVE</Text>
+                </View>
+              </View>
+              <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }}>Shake your phone or tap here to add expense!</Text>
+            </View>
+            <Ionicons name="flash" size={18} color="#A78BFA" />
+          </LinearGradient>
+        </TouchableOpacity>
 
         {/* ── MONTHLY COMPARISON ── */}
         {comparison && comparison.has_prev_data && (
@@ -1008,4 +1140,118 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cyan, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 24,
   },
   addFabText: { color: '#0f172a', fontWeight: 'bold', fontSize: 14 },
+
+  // ── Quick Log Shortcuts ──
+  quickSection: {
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  quickHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  quickSectionTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#CBD5E1',
+    letterSpacing: 0.8,
+  },
+  fastPill: {
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  fastPillText: {
+    color: '#06B6D4',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  quickSectionSub: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  quickTile: {
+    width: 104,
+    height: 82,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginRight: 10,
+    overflow: 'hidden',
+    backgroundColor: '#0F172A',
+  },
+  quickTileGrad: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Daily Safe Limit Card ──
+  dailyBudgetCard: {
+    padding: 16,
+    borderRadius: RADIUS.lg,
+    marginTop: 10,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginLeft: 6,
+  },
+  healthBadge: {
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 84,
+  },
+
+  // ── Magic Shake Card ──
+  shakeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: RADIUS.lg,
+    marginTop: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.35)',
+  },
+  shakeIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(139, 92, 246, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  liveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#10B981',
+    marginRight: 4,
+  },
 });
