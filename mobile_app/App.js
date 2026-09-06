@@ -13,16 +13,18 @@ import React, { useEffect, useState, useRef } from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View, StyleSheet, Platform, Alert, PermissionsAndroid } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Updates from 'expo-updates';
+import { Accelerometer } from 'expo-sensors';
 import Logo from './src/components/Logo';
 import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
 import { getToken } from './src/utils/auth';
 import messaging from './src/utils/messaging';
 import { saveNotification } from './src/utils/notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Auth Screens ──
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -161,7 +163,15 @@ function MainTabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeStackScreen} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeStackScreen} 
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            navigation.navigate('Home', { screen: 'DashboardMain' });
+          },
+        })}
+      />
       <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       <Tab.Screen
         name="Add"
@@ -183,22 +193,128 @@ function MainTabNavigator() {
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [shakeSensitivity, setShakeSensitivity] = useState(1.8); // Default to Medium (1.8 delta)
 
   useEffect(() => {
-    const downloadUpdateSilently = async () => {
+    const loadSettings = async () => {
+      try {
+        const val = await AsyncStorage.getItem('shake_sensitivity');
+        if (val) {
+          if (val === 'disabled') setShakeSensitivity(0);
+          else if (val === '2.0' || val === '1.2') setShakeSensitivity(1.2);
+          else if (val === '3.5' || val === '1.8') setShakeSensitivity(1.8);
+          else if (val === '5.0' || val === '2.6') setShakeSensitivity(2.6);
+          else setShakeSensitivity(parseFloat(val) || 1.8);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    loadSettings();
+
+    const listener = DeviceEventEmitter.addListener('shake_sensitivity_changed', (val) => {
+      if (val === 'disabled') {
+        setShakeSensitivity(0);
+      } else {
+        setShakeSensitivity(parseFloat(val) || 1.8);
+      }
+    });
+
+    return () => {
+      listener.remove();
+    };
+  }, []);
+
+  // Shake Gesture Listener (Delta-based jerk detection)
+  useEffect(() => {
+    let subscription = null;
+    let lastUpdate = 0;
+    let lastX = 0;
+    let lastY = 0;
+    let lastZ = 0;
+
+    if (isAuthenticated && shakeSensitivity > 0) {
+      Accelerometer.setUpdateInterval(100); // Sample every 100ms
+      subscription = Accelerometer.addListener((data) => {
+        const { x, y, z } = data;
+        const delta = Math.abs(x - lastX) + Math.abs(y - lastY) + Math.abs(z - lastZ);
+        lastX = x;
+        lastY = y;
+        lastZ = z;
+
+        if (delta > shakeSensitivity) {
+          const now = Date.now();
+          if (now - lastUpdate > 1800) { // Throttle to 1 shake per 1.8 seconds
+            lastUpdate = now;
+            
+            // Haptic vibration feedback
+            Vibration.vibrate(60);
+            
+            if (navigationRef.isReady()) {
+              console.log('Shake detected! Navigating to AddExpense');
+              try {
+                navigationRef.navigate('MainTabs', {
+                  screen: 'Home',
+                  params: { screen: 'AddExpense' },
+                });
+              } catch (navErr) {
+                console.log('Nav error:', navErr);
+                navigationRef.navigate('AddExpense');
+              }
+            }
+          }
+        }
+      });
+    }
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, [isAuthenticated, shakeSensitivity]);
+
+  useEffect(() => {
+    const checkForAppUpdate = async () => {
       try {
         if (!__DEV__) {
           const update = await Updates.checkForUpdateAsync();
           if (update.isAvailable) {
             await Updates.fetchUpdateAsync();
+            Alert.alert(
+              '🚀 New Update Ready!',
+              'Expense Tracker has been updated with new features and improvements. Restart now to apply?',
+              [
+                { text: 'Later', style: 'cancel' },
+                {
+                  text: 'Restart Now',
+                  onPress: async () => {
+                    await Updates.reloadAsync();
+                  },
+                },
+              ]
+            );
           }
         }
       } catch (e) {
-        console.log("Error fetching update:", e);
+        console.log("Error checking for update:", e);
       }
     };
-    downloadUpdateSilently();
 
+    checkForAppUpdate();
+
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        checkForAppUpdate();
+      }
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
     const setupFCM = async (authToken) => {
       try {
         if (Platform.OS === 'android' && Platform.Version >= 33) {
@@ -310,8 +426,25 @@ export default function App() {
     );
   }
 
+  const linking = {
+    prefixes: ['paisamitra://'],
+    config: {
+      screens: {
+        MainTabs: {
+          screens: {
+            Home: {
+              screens: {
+                AddExpense: 'add',
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       <StatusBar style="light" />
       <Stack.Navigator
         initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}

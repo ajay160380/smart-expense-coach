@@ -41,7 +41,9 @@ export default function AddExpenseScreen({ route, navigation }) {
       ? expense.amount.toString() 
       : (route?.params?.prefillAmount ? route.params.prefillAmount.toString() : '')
   );
-  const [category, setCategory] = useState(expense.category || 'other');
+  const [category, setCategory] = useState(
+    expense.category || route?.params?.prefillCategory || 'food'
+  );
   const [description, setDescription] = useState(
     expense.description || route?.params?.prefillDescription || ''
   );
@@ -77,7 +79,12 @@ export default function AddExpenseScreen({ route, navigation }) {
       Alert.alert(
         isEdit ? '✅ Expense Updated!' : '✅ Expense Saved!',
         res.data?.message || `₹${parseFloat(cleanAmount).toLocaleString('en-IN')} for ${category}`,
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ 
+          text: 'OK', 
+          onPress: () => {
+            navigation.navigate('DashboardMain');
+          } 
+        }]
       );
     } catch (error) {
       console.error(error);
@@ -103,7 +110,16 @@ export default function AddExpenseScreen({ route, navigation }) {
         >
           {/* ── Header ── */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <TouchableOpacity 
+              onPress={() => {
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.replace('DashboardMain');
+                }
+              }} 
+              style={styles.backBtn}
+            >
               <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.title}>Add Expense</Text>
