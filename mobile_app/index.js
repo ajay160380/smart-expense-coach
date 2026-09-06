@@ -3,6 +3,10 @@ import messaging from './src/utils/messaging';
 import { saveNotification } from './src/utils/notifications';
 
 import App from './App';
+import { registerWidgetTaskHandler } from 'react-native-android-widget';
+import { widgetTaskHandler } from './src/widgets/WidgetTaskHandler';
+
+registerWidgetTaskHandler(widgetTaskHandler);
 
 // Register background handler
 messaging().setBackgroundMessageHandler(async remoteMessage => {
