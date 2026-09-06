@@ -5,11 +5,12 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, Platform, RefreshControl, Alert,
   ActivityIndicator, Linking, Image, Modal, TextInput, KeyboardAvoidingView,
+  DeviceEventEmitter
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +24,8 @@ import api from '../api/config';
 import { clearAuthData, getUsername } from '../utils/auth';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
 import { GlassCard, SectionHeader } from '../components/SharedComponents';
+import { requestPinAppWidget } from 'react-native-android-widget';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen({ navigation }) {
   const [profile, setProfile] = useState(null);
@@ -37,6 +40,7 @@ export default function ProfileScreen({ navigation }) {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
+  const [shakeLevel, setShakeLevel] = useState('3.5');
 
   const fetchProfile = async () => {
     try {
@@ -50,7 +54,13 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  useFocusEffect(useCallback(() => { fetchProfile(); }, []));
+  useFocusEffect(useCallback(() => {
+    fetchProfile();
+    AsyncStorage.getItem('shake_sensitivity').then(val => {
+      if (val) setShakeLevel(val);
+      else setShakeLevel('3.5');
+    });
+  }, []));
   const onRefresh = () => { setRefreshing(true); fetchProfile(); };
 
   const pickImage = async () => {
@@ -162,6 +172,25 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const openLink = (url) => Linking.openURL(url);
+
+  const getShakeText = (level) => {
+    if (level === '1.2' || level === '2.0') return 'High (Very Sensitive)';
+    if (level === '1.8' || level === '3.5') return 'Medium (Normal)';
+    if (level === '2.6' || level === '5.0') return 'Low (Hard Shake)';
+    return 'Disabled';
+  };
+
+  const toggleShake = async () => {
+    let next = '1.8';
+    if (shakeLevel === '1.8' || shakeLevel === '3.5') next = '1.2';
+    else if (shakeLevel === '1.2' || shakeLevel === '2.0') next = '2.6';
+    else if (shakeLevel === '2.6' || shakeLevel === '5.0') next = 'disabled';
+    else next = '1.8';
+    
+    setShakeLevel(next);
+    await AsyncStorage.setItem('shake_sensitivity', next);
+    DeviceEventEmitter.emit('shake_sensitivity_changed', next);
+  };
 
   if (loading) {
     return (
@@ -357,6 +386,29 @@ export default function ProfileScreen({ navigation }) {
                 Alert.alert("Error", "Could not enable notifications.");
               }
             }}
+          />
+          {Platform.OS === 'android' && (
+            <MenuItem
+              icon="📱"
+              ionIcon="apps-outline"
+              label="Add Home Screen Widget"
+              sub="Quickly add expenses from home screen"
+              onPress={async () => {
+                try {
+                  await requestPinAppWidget('AddExpenseWidget');
+                } catch (e) {
+                  console.log('Error pinning widget:', e);
+                  Alert.alert('Notice', 'Your launcher might not support pinning widgets automatically.');
+                }
+              }}
+            />
+          )}
+          <MenuItem
+            icon="📳"
+            ionIcon="options-outline"
+            label="Shake Sensitivity"
+            sub={`Current: ${getShakeText(shakeLevel)}`}
+            onPress={toggleShake}
           />
         </GlassCard>
 
