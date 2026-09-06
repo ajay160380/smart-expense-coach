@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "scheme": "paisamitra",
     "updates": {
       "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/4159228e-c70e-46d2-a231-eda454c6eb0d"
@@ -39,7 +40,22 @@
       "expo-audio",
       "expo-font",
       "expo-asset",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "AddExpenseWidget",
+              "label": "Expense Tracker",
+              "minWidth": "140dp",
+              "minHeight": "140dp",
+              "description": "Quickly add an expense",
+              "updatePeriodMillis": 3600000
+            }
+          ]
+        }
+      ]
     ],
     "extra": {
       "eas": {
