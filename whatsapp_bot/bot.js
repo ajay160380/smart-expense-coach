@@ -31,6 +31,7 @@ let currentSessionName = 'baileys_session';
 let globalSock = null;
 let isConnecting = false; // Lock to prevent multiple simultaneous connections
 let reconnectAttempts = 0;
+let latestQR = null; // Store latest QR for web endpoint
 const MAX_RECONNECT_ATTEMPTS = 10;
 const BASE_RECONNECT_DELAY = 5000; // 5 seconds base delay
 const CONFLICT_RECONNECT_DELAY = 30000; // 30 seconds delay on conflict errors
@@ -108,8 +109,11 @@ async function startBot(sessionName = null) {
             } else {
                 console.log(`\n\n🚨 CRITICAL: No valid backup sessions available!`);
                 console.log(`📌 SCAN THIS QR CODE WITH WHATSAPP TO LOGIN 📌\n`);
+                console.log(`🌐 Or visit: https://smart-expense-coach.onrender.com/qr\n`);
                 console.log('Agar upar wala QR code scan nahi ho raha, toh is RAW code ko copy karke kisi bhi QR Generator website (jaise the-qrcode-generator.com) par paste karein aur wahan se scan karein:');
                 console.log('\n=========================================\nRAW_QR_CODE_START\n' + qr + '\nRAW_QR_CODE_END\n=========================================\n');
+                
+                latestQR = qr; // Store for web endpoint
                 
                 try {
                     qrcode.generate(qr, { small: true });
@@ -157,6 +161,7 @@ async function startBot(sessionName = null) {
             }
         } else if (connection === 'open') {
             reconnectAttempts = 0; // Reset on successful connection
+            latestQR = null; // Clear QR on successful connection
             console.log(`✅ WhatsApp Bot is ready and connected using ${currentSessionName}!`);
         }
     });
@@ -445,6 +450,73 @@ app.post('/api/send-message', async (req, res) => {
     } catch (err) {
         console.error('API Send Error:', err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+// ── QR CODE WEB PAGE ──
+app.get('/qr', (req, res) => {
+    if (!latestQR) {
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>WhatsApp Bot - Status</title>
+                <meta http-equiv="refresh" content="5">
+                <style>
+                    body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1a1a2e; color: #eee; margin: 0; }
+                    .card { background: #16213e; padding: 40px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); text-align: center; }
+                    h1 { color: #25D366; margin-bottom: 10px; }
+                    p { color: #aaa; font-size: 18px; }
+                    .status { font-size: 48px; margin-bottom: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <div class="status">✅</div>
+                    <h1>Bot Connected!</h1>
+                    <p>WhatsApp Bot is already connected and running.</p>
+                    <p style="color:#666; font-size:14px;">This page auto-refreshes every 5 seconds.</p>
+                </div>
+            </body>
+            </html>
+        `);
+    } else {
+        const encodedQR = encodeURIComponent(latestQR);
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Scan WhatsApp QR Code</title>
+                <meta http-equiv="refresh" content="10">
+                <style>
+                    body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1a1a2e; color: #eee; margin: 0; }
+                    .card { background: #16213e; padding: 40px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); text-align: center; }
+                    h1 { color: #25D366; margin-bottom: 10px; }
+                    .qr-container { background: white; padding: 20px; border-radius: 12px; display: inline-block; margin: 20px 0; }
+                    p { color: #aaa; font-size: 16px; }
+                    .warning { color: #ff6b6b; font-weight: bold; }
+                    .steps { text-align: left; color: #ccc; margin-top: 15px; line-height: 2; }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <h1>📱 Scan QR Code</h1>
+                    <p>Link your WhatsApp to the Expense Tracker Bot</p>
+                    <div class="qr-container">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedQR}" alt="QR Code" width="300" height="300">
+                    </div>
+                    <div class="steps">
+                        <p>📋 <strong>Steps:</strong></p>
+                        <p>1️⃣ Open WhatsApp on your phone</p>
+                        <p>2️⃣ Go to Settings → Linked Devices</p>
+                        <p>3️⃣ Tap "Link a Device"</p>
+                        <p>4️⃣ Scan this QR code</p>
+                    </div>
+                    <p class="warning">⚠️ QR refreshes every ~20s. Page auto-refreshes every 10s.</p>
+                </div>
+            </body>
+            </html>
+        `);
     }
 });
 

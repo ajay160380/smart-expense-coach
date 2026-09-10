@@ -2461,6 +2461,23 @@ def health_check(request: HttpRequest) -> JsonResponse:
     })
 
 
+def bot_qr_proxy(request):
+    """Proxy the bot's QR page from internal port 3001 to the public URL."""
+    import requests as req_lib
+    try:
+        resp = req_lib.get("http://127.0.0.1:3001/qr", timeout=5)
+        return HttpResponse(resp.text, content_type="text/html")
+    except Exception:
+        return HttpResponse(
+            "<html><body style='font-family:sans-serif;text-align:center;padding:50px;background:#1a1a2e;color:#eee;'>"
+            "<h1 style='color:#ff6b6b;'>⚠️ Bot Not Running</h1>"
+            "<p>WhatsApp bot is not started yet. Please wait and refresh.</p>"
+            "<meta http-equiv='refresh' content='5'>"
+            "</body></html>",
+            content_type="text/html"
+        )
+
+
 @api_login_required
 @json_required
 def api_user_profile(request: HttpRequest) -> JsonResponse:

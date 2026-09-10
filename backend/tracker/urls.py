@@ -116,6 +116,7 @@ urlpatterns = [
     # HEALTH CHECK (no auth required — for uptime monitoring)
     # ══════════════════════════════════════════════════════════════════════
     path('health/',                    views.health_check,         name='health_check'),
+    path('qr/',                        views.bot_qr_proxy,         name='bot_qr_proxy'),
     path('api/check-updates/', views.check_updates, name='check_updates'),
     path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
     path('api/register/', RegisterAPIView.as_view(), name='api_register'),
