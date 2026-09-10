@@ -29,6 +29,11 @@ if (process.env.MY_WHATSAPP_NUMBER) {
 
 let currentSessionName = 'baileys_session';
 let globalSock = null;
+let isConnecting = false; // Lock to prevent multiple simultaneous connections
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 10;
+const BASE_RECONNECT_DELAY = 5000; // 5 seconds base delay
+const CONFLICT_RECONNECT_DELAY = 30000; // 30 seconds delay on conflict errors
 
 async function getNextAvailableSession(failedSessionName = null) {
     try {
@@ -51,14 +56,32 @@ async function getNextAvailableSession(failedSessionName = null) {
 }
 
 async function startBot(sessionName = null) {
+    // Prevent multiple simultaneous connection attempts
+    if (isConnecting) {
+        console.log('⏳ Already connecting, skipping duplicate startBot call...');
+        return;
+    }
+    isConnecting = true;
+
     if (!sessionName) {
         sessionName = await getNextAvailableSession(null) || 'baileys_session';
     }
     currentSessionName = sessionName;
-    console.log(`🔄 Starting WhatsApp Bot (Baileys) with session: ${currentSessionName}...`);
+    console.log(`🔄 Starting WhatsApp Bot (Baileys) with session: ${currentSessionName}... (attempt ${reconnectAttempts + 1})`);
     
     // Auth State from PostgreSQL
     const { state, saveCreds, clearSession } = await usePostgresAuthState(pool, currentSessionName);
+
+    // Close existing socket cleanly before creating new one
+    if (globalSock) {
+        try {
+            globalSock.ev.removeAllListeners();
+            globalSock.ws?.close();
+        } catch (e) {
+            // Ignore cleanup errors
+        }
+        globalSock = null;
+    }
 
     const sock = makeWASocket({
         auth: state,
@@ -67,6 +90,7 @@ async function startBot(sessionName = null) {
         browser: ['Expense Tracker Bot', 'Chrome', '3.0.0']
     });
     globalSock = sock;
+    isConnecting = false;
 
     sock.ev.on('creds.update', saveCreds);
 
@@ -97,12 +121,16 @@ async function startBot(sessionName = null) {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('❌ Connection closed due to', lastDisconnect.error, ', reconnecting:', shouldReconnect);
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            const isConflict = statusCode === 440 || lastDisconnect?.error?.data?.tag === 'conflict';
+            
+            console.log(`❌ Connection closed (statusCode: ${statusCode}, conflict: ${isConflict}), reconnecting: ${shouldReconnect}`);
             
             if (!shouldReconnect) {
                 console.log(`🗑️ Logged out completely from ${currentSessionName}! Clearing session...`);
                 await clearSession();
+                reconnectAttempts = 0;
                 
                 const nextSession = await getNextAvailableSession(currentSessionName);
                 if (nextSession) {
@@ -113,9 +141,22 @@ async function startBot(sessionName = null) {
                     process.exit(1); 
                 }
             } else {
-                startBot(currentSessionName); // Reconnect
+                reconnectAttempts++;
+                
+                if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+                    console.log(`🚨 Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Waiting 2 minutes before trying again...`);
+                    reconnectAttempts = 0;
+                    setTimeout(() => startBot(currentSessionName), 120000); // 2 min cooldown
+                    return;
+                }
+                
+                // Conflict errors need longer delay to let the other session stabilize
+                const delay = isConflict ? CONFLICT_RECONNECT_DELAY : Math.min(BASE_RECONNECT_DELAY * reconnectAttempts, 60000);
+                console.log(`⏳ Reconnecting in ${delay / 1000}s... (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+                setTimeout(() => startBot(currentSessionName), delay);
             }
         } else if (connection === 'open') {
+            reconnectAttempts = 0; // Reset on successful connection
             console.log(`✅ WhatsApp Bot is ready and connected using ${currentSessionName}!`);
         }
     });
