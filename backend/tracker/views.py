@@ -1489,11 +1489,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 pass
                 
         if not target_user:
-            import phonenumbers
             # Try exact match first (supports raw LIDs or unformatted numbers)
             profile = UserProfile.objects.filter(whatsapp_number=incoming_phone).select_related("user").first()
             
             if not profile:
+                import phonenumbers
                 # Fallback to E164 formatting
                 try:
                     incoming_parsed = phonenumbers.parse("+" + incoming_phone.lstrip("+"), None)
