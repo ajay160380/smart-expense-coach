@@ -1474,9 +1474,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         else:
             return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
     else:
-        from django.core.cache import cache
-        cache_key = f"wa_auth_{incoming_phone}"
-        cached_user_id = cache.get(cache_key)
+        global _WA_AUTH_CACHE
+        if '_WA_AUTH_CACHE' not in globals():
+            _WA_AUTH_CACHE = {}
+            
+        cached_user_id = _WA_AUTH_CACHE.get(incoming_phone)
         
         target_user = None
         if cached_user_id:
@@ -1507,6 +1509,12 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 if len(clean_phone) >= 10:
                     last10 = clean_phone[-10:]
                     profile = UserProfile.objects.filter(phone_number__endswith=last10).select_related("user").first()
+                    
+                    # 🚀 CRITICAL FIX: If we found them using the slow method, SAVE the whatsapp_number permanently!
+                    # This ensures all future lookups are exact matches taking 0.001s
+                    if profile:
+                        profile.whatsapp_number = incoming_phone
+                        profile.save(update_fields=['whatsapp_number'])
                 
                 if not profile or not profile.user:
                     return JsonResponse({
@@ -1514,7 +1522,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                         "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://smart-expense-coach.onrender.com/register/"
                     })
             target_user = profile.user
-            cache.set(cache_key, target_user.id, timeout=86400 * 7) # Cache for 7 days
+            _WA_AUTH_CACHE[incoming_phone] = target_user.id
             
     t_start_db = time.time()
     budget = float(getattr(target_user.profile, 'monthly_budget', 20000))
