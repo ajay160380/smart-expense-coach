@@ -1986,8 +1986,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 msg_lines.append("")
                 msg_lines.append(smart_alert)
                 
-            total_time = time.time() - start_time_view
-            msg_lines.append(f"\n⏱️ `Auth: {t_start_db - start_time_view:.2f}s | DB(Spent): {t_spent - t_budget:.2f}s | Session: {t_sess_end - t_sess_start:.2f}s | Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`")
+            # 🔔 Smart Spending Alert (only run on the first expense or largest for now to avoid spam)
+            smart_alert = check_and_generate_alert(target_user, created_expenses[0])
+            if smart_alert:
+                msg_lines.append("")
+                msg_lines.append(smart_alert)
                 
             final_message = "\n".join(msg_lines)
             
@@ -2003,26 +2006,23 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 note_text = spoken_text
                 
             note = Note.objects.create(user=target_user, text=note_text)
-            total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.\n\n⏱️ `Auth: {t_start_db - start_time_view:.2f}s | DB(Spent): {t_spent - t_budget:.2f}s | Session: {t_sess_end - t_sess_start:.2f}s | Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`",
+                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.",
             })
             
         elif action == "ask_clarification":
             chat_response = ai_data.get("chat_response", "Should I add this to your expenses or save it to Notepad?")
-            total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"🤔 *Wait a second...*\n\n{chat_response}\n\n⏱️ `Auth: {t_start_db - start_time_view:.2f}s | DB(Spent): {t_spent - t_budget:.2f}s | Session: {t_sess_end - t_sess_start:.2f}s | Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`"
+                "message": f"🤔 *Wait a second...*\n\n{chat_response}"
             })
             
         else:
             chat_response = ai_data.get("chat_response", "Mujhe samajh nahi aaya, bhai.")
-            total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"{chat_response}\n\n⏱️ `Auth: {t_start_db - start_time_view:.2f}s | DB(Spent): {t_spent - t_budget:.2f}s | Session: {t_sess_end - t_sess_start:.2f}s | Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`"
+                "message": f"{chat_response}"
             })
 
     except json.JSONDecodeError as e:
