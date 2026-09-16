@@ -1501,12 +1501,20 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://smart-expense-coach.onrender.com/register/"
                 })
         target_user = profile.user
+    t_start_db = time.time()
     budget = float(getattr(target_user.profile, 'monthly_budget', 20000))
+    t_budget = time.time()
+
     today = date.today()
     first_day = today.replace(day=1)
+    
     spent = Expense.objects.filter(user=target_user, date__gte=first_day).aggregate(Sum('amount'))['amount__sum'] or 0
+    t_spent = time.time()
     
     user_name = target_user.first_name.title() if target_user.first_name else target_user.username.title()
+    t_user = time.time()
+    
+    print(f"DEBUG TIMING: Auth/Budget: {t_budget - t_start_db:.3f}s | Spent Query: {t_spent - t_budget:.3f}s | User: {t_user - t_spent:.3f}s")
     
     # ── AI Conversations & Expense Routing ────────────────────────────────────
     try:
@@ -1515,7 +1523,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
         # ── WhatsApp Session / Feedback Flow ──
         session_id_str = incoming_phone if incoming_phone else str(target_user.id)
+        
+        t_sess_start = time.time()
         session, _ = WhatsAppSession.objects.get_or_create(user=target_user, phone_number=session_id_str)
+        t_sess_end = time.time()
+        print(f"DEBUG TIMING: Session get_or_create: {t_sess_end - t_sess_start:.3f}s")
         
         if session.state == 'AWAITING_FEEDBACK':
             Feedback.objects.create(user=target_user, text=spoken_text, source='whatsapp')
@@ -1952,7 +1964,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 msg_lines.append(smart_alert)
                 
             total_time = time.time() - start_time_view
-            msg_lines.append(f"\n⏱️ `Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`")
+            msg_lines.append(f"\n⏱️ `Auth: {t_start_db - start_time_view:.2f}s | DB(Spent): {t_spent - t_budget:.2f}s | Session: {t_sess_end - t_sess_start:.2f}s | Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`")
                 
             final_message = "\n".join(msg_lines)
             
@@ -1971,7 +1983,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.\n\n⏱️ `Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`",
+                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.\n\n⏱️ `Auth: {t_start_db - start_time_view:.2f}s | DB(Spent): {t_spent - t_budget:.2f}s | Session: {t_sess_end - t_sess_start:.2f}s | Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`",
             })
             
         elif action == "ask_clarification":
@@ -1979,7 +1991,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"🤔 *Wait a second...*\n\n{chat_response}\n\n⏱️ `Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`"
+                "message": f"🤔 *Wait a second...*\n\n{chat_response}\n\n⏱️ `Auth: {t_start_db - start_time_view:.2f}s | DB(Spent): {t_spent - t_budget:.2f}s | Session: {t_sess_end - t_sess_start:.2f}s | Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`"
             })
             
         else:
@@ -1987,7 +1999,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"{chat_response}\n\n⏱️ `Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`"
+                "message": f"{chat_response}\n\n⏱️ `Auth: {t_start_db - start_time_view:.2f}s | DB(Spent): {t_spent - t_budget:.2f}s | Session: {t_sess_end - t_sess_start:.2f}s | Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`"
             })
 
     except json.JSONDecodeError as e:
