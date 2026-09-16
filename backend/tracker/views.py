@@ -1474,33 +1474,48 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         else:
             return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
     else:
-        import phonenumbers
-        # Try exact match first (supports raw LIDs or unformatted numbers)
-        profile = UserProfile.objects.filter(whatsapp_number=incoming_phone).select_related("user").first()
+        from django.core.cache import cache
+        cache_key = f"wa_auth_{incoming_phone}"
+        cached_user_id = cache.get(cache_key)
         
-        if not profile:
-            # Fallback to E164 formatting
+        target_user = None
+        if cached_user_id:
+            from django.contrib.auth.models import User
             try:
-                incoming_parsed = phonenumbers.parse("+" + incoming_phone.lstrip("+"), None)
-                incoming_e164 = phonenumbers.format_number(incoming_parsed, phonenumbers.PhoneNumberFormat.E164)
-                profile = UserProfile.objects.filter(whatsapp_number=incoming_e164).select_related("user").first()
-            except phonenumbers.NumberParseException:
+                target_user = User.objects.get(id=cached_user_id)
+            except User.DoesNotExist:
                 pass
-
-        if not profile or not profile.user:
-            # Last resort: try matching by phone_number (registration number)
-            clean_phone = incoming_phone.lstrip('+').lstrip('0')
-            # Try last 10 digits match for Indian numbers
-            if len(clean_phone) >= 10:
-                last10 = clean_phone[-10:]
-                profile = UserProfile.objects.filter(phone_number__endswith=last10).select_related("user").first()
+                
+        if not target_user:
+            import phonenumbers
+            # Try exact match first (supports raw LIDs or unformatted numbers)
+            profile = UserProfile.objects.filter(whatsapp_number=incoming_phone).select_related("user").first()
             
+            if not profile:
+                # Fallback to E164 formatting
+                try:
+                    incoming_parsed = phonenumbers.parse("+" + incoming_phone.lstrip("+"), None)
+                    incoming_e164 = phonenumbers.format_number(incoming_parsed, phonenumbers.PhoneNumberFormat.E164)
+                    profile = UserProfile.objects.filter(whatsapp_number=incoming_e164).select_related("user").first()
+                except phonenumbers.NumberParseException:
+                    pass
+
             if not profile or not profile.user:
-                return JsonResponse({
-                    "status":  "error",
-                    "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://smart-expense-coach.onrender.com/register/"
-                })
-        target_user = profile.user
+                # Last resort: try matching by phone_number (registration number)
+                clean_phone = incoming_phone.lstrip('+').lstrip('0')
+                # Try last 10 digits match for Indian numbers
+                if len(clean_phone) >= 10:
+                    last10 = clean_phone[-10:]
+                    profile = UserProfile.objects.filter(phone_number__endswith=last10).select_related("user").first()
+                
+                if not profile or not profile.user:
+                    return JsonResponse({
+                        "status":  "error",
+                        "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://smart-expense-coach.onrender.com/register/"
+                    })
+            target_user = profile.user
+            cache.set(cache_key, target_user.id, timeout=86400 * 7) # Cache for 7 days
+            
     t_start_db = time.time()
     budget = float(getattr(target_user.profile, 'monthly_budget', 20000))
     t_budget = time.time()
