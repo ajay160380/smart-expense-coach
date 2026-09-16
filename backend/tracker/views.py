@@ -1382,6 +1382,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     - WhatsApp mode: Phone number se UserProfile dhoondo, uska user lo.
     - Mobile App mode: Accepts audio files for speech-to-text via Whisper.
     """
+    import time
+    start_time_view = time.time()
+    
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "Only POST allowed."}, status=405)
 
@@ -1804,9 +1807,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     filename = f"ExpenseTracker_{just_month}_Report.csv"
                     msg_text = f"📄 *{user_name}*, here is your detailed CSV expense report for {month_name_str}.\n\n(Tip: Open this file in Excel or Google Sheets!)"
                 
+                total_time = time.time() - start_time_view
                 return JsonResponse({
                     "status": "success",
-                    "message": msg_text,
+                    "message": msg_text + f"\n\n⏱️ `Total API Time: {total_time:.2f}s`",
                     "media": {
                         "mimetype": mimetype,
                         "filename": filename,
@@ -1814,7 +1818,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     }
                 })
 
-
+            total_time = time.time() - start_time_view
+            msg_lines.append(f"\n⏱️ `Total API Time: {total_time:.2f}s`")
             return JsonResponse({
                 "status": "success",
                 "message": "\n".join(msg_lines)
@@ -1947,6 +1952,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 msg_lines.append("")
                 msg_lines.append(smart_alert)
                 
+            total_time = time.time() - start_time_view
+            msg_lines.append(f"\n⏱️ `Total API Time: {total_time:.2f}s`")
+                
             final_message = "\n".join(msg_lines)
             
             return JsonResponse({
@@ -1961,23 +1969,26 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 note_text = spoken_text
                 
             note = Note.objects.create(user=target_user, text=note_text)
+            total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.",
+                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.\n\n⏱️ `Total API Time: {total_time:.2f}s`",
             })
             
         elif action == "ask_clarification":
             chat_response = ai_data.get("chat_response", "Should I add this to your expenses or save it to Notepad?")
+            total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"🤔 *Wait a second...*\n\n{chat_response}"
+                "message": f"🤔 *Wait a second...*\n\n{chat_response}\n\n⏱️ `Total API Time: {total_time:.2f}s`"
             })
             
         else:
             chat_response = ai_data.get("chat_response", "Mujhe samajh nahi aaya, bhai.")
+            total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": chat_response
+                "message": f"{chat_response}\n\n⏱️ `Total API Time: {total_time:.2f}s`"
             })
 
     except json.JSONDecodeError as e:
