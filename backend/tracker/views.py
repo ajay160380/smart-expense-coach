@@ -1505,27 +1505,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     today = date.today()
     first_day = today.replace(day=1)
     spent = Expense.objects.filter(user=target_user, date__gte=first_day).aggregate(Sum('amount'))['amount__sum'] or 0
-    recent_qs = Expense.objects.filter(user=target_user).order_by('-date')[:5]
-    recent_str = ", ".join([f"{e.category}: ₹{e.amount}" for e in recent_qs]) or "No recent expenses"
-    
-    category_breakdown = Expense.objects.filter(user=target_user, date__gte=first_day).values('category').annotate(total=Sum('amount')).order_by('-total')
-    cat_str = ", ".join([f"{c['category'].title()}: ₹{c['total']}" for c in category_breakdown]) if category_breakdown else "No expenses this month."
-    
-    recent_notes_qs = Note.objects.filter(user=target_user).order_by('-updated_at')[:5]
-    recent_notes_str = ", ".join([f"\"{n.text}\"" for n in recent_notes_qs]) or "No notes saved yet."
     
     user_name = target_user.first_name.title() if target_user.first_name else target_user.username.title()
     
-    user_context = {
-        "name": user_name,
-        "budget": budget,
-        "spent": float(spent),
-        "remaining": max(0, budget - float(spent)),
-        "recent_expenses": recent_str,
-        "category_breakdown": cat_str,
-        "recent_notes": recent_notes_str
-    }
-
     # ── AI Conversations & Expense Routing ────────────────────────────────────
     try:
         normalized_text = normalize_hinglish_numbers(spoken_text)
@@ -1828,6 +1810,20 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         # ──────────────────────────────────────────────────────────────────────
         # AI PATH (Fallback for chatting and unknown questions)
         # ──────────────────────────────────────────────────────────────────────
+        # Note: Heavy queries (recent expenses, category breakdowns) have been 
+        # removed from here because they take 4 seconds on free DB tiers. 
+        # If the user asks for a summary, it gets intercepted by FAST PATH 2 anyway!
+        
+        user_context = {
+            "name": user_name,
+            "budget": budget,
+            "spent": float(spent),
+            "remaining": max(0, budget - float(spent)),
+            "recent_expenses": "Check Dashboard for details",
+            "category_breakdown": "Check Dashboard for details",
+            "recent_notes": "Check Dashboard for details"
+        }
+
         system_prompt = build_conversational_ai_prompt(today, user_context)
         
         # Use WhatsAppSession for persistent memory
@@ -1837,12 +1833,15 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         messages.extend(chat_history)
         messages.append({"role": "user", "content": normalized_text})
 
+        ai_start_time = time.time()
         response = _groq_client().chat.completions.create(
             messages=messages,
             model="qwen/qwen3.8-27b",
             temperature=0.2,
             max_tokens=1000,
         )
+        ai_time = time.time() - ai_start_time
+        
         full_response = response.choices[0].message.content
         raw_response = re.sub(r"<think>(?:.*?</think>|.*$)", "", full_response, flags=re.DOTALL).strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
@@ -1953,7 +1952,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 msg_lines.append(smart_alert)
                 
             total_time = time.time() - start_time_view
-            msg_lines.append(f"\n⏱️ `Total API Time: {total_time:.2f}s`")
+            msg_lines.append(f"\n⏱️ `Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`")
                 
             final_message = "\n".join(msg_lines)
             
@@ -1972,7 +1971,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.\n\n⏱️ `Total API Time: {total_time:.2f}s`",
+                "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.\n\n⏱️ `Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`",
             })
             
         elif action == "ask_clarification":
@@ -1980,7 +1979,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"🤔 *Wait a second...*\n\n{chat_response}\n\n⏱️ `Total API Time: {total_time:.2f}s`"
+                "message": f"🤔 *Wait a second...*\n\n{chat_response}\n\n⏱️ `Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`"
             })
             
         else:
@@ -1988,7 +1987,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             total_time = time.time() - start_time_view
             return JsonResponse({
                 "status": "success",
-                "message": f"{chat_response}\n\n⏱️ `Total API Time: {total_time:.2f}s`"
+                "message": f"{chat_response}\n\n⏱️ `Groq: {ai_time:.2f}s | Total API: {total_time:.2f}s`"
             })
 
     except json.JSONDecodeError as e:
