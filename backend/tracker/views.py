@@ -2297,6 +2297,7 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
     
     return JsonResponse({
         "budget":            budget,
+        "budget_cycle_start_day": getattr(request.user.profile, 'budget_cycle_start_day', 1) if hasattr(request.user, 'profile') else 1,
         "total_spent":       round(stats["total_spent"], 2),
         "remaining":         round(stats["remaining_budget"], 2),
         "budget_percent":    round(stats["budget_percent"], 1),
