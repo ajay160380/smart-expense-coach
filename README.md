@@ -1,7 +1,7 @@
 <div align="center">
   <img src="backend/tracker/static/tracker/images/icon.png" alt="Paisa Mitra Logo" width="120" height="120" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
 
-  <h1>Smart Expense Coach (Paisa Mitra) 💸🤖</h1>
+  <h1> Smart Expense Tracker 💸🤖</h1>
   <p><strong>Your AI-Powered Personal Finance Assistant & WhatsApp Bot</strong></p>
 
   [![Visit Website](https://img.shields.io/badge/🌐%20Visit%20Website-blue?style=for-the-badge)](https://smart-expense-coach.onrender.com)
