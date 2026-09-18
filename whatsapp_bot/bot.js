@@ -379,9 +379,15 @@ async function startBot(sessionName = null) {
 
     // ── CRON JOBS ──
     const isCronScheduled = process.env.NODE_APP_INSTANCE === '0' || !process.env.NODE_APP_INSTANCE;
-    if (isCronScheduled) {
-        cron.schedule('0 8 * * *', async () => {
-            console.log('⏰ Running morning tip cron job (8 AM)...');
+    
+    async function checkAndSendTips() {
+        const now = new Date();
+        const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+        const istHour = istTime.getHours();
+
+        // Morning window: 8 AM to 11:59 AM
+        if (istHour >= 8 && istHour < 12) {
+            console.log('⏰ Checking morning tip window...');
             try {
                 const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
                     method: 'POST',
@@ -399,12 +405,13 @@ async function startBot(sessionName = null) {
                     }
                 }
             } catch (err) {
-                console.error('❌ Morning tip cron failed:', err.message);
+                console.error('❌ Morning tip fetch failed:', err.message);
             }
-        }, { timezone: "Asia/Kolkata" });
+        }
 
-        cron.schedule('0 22 * * *', async () => {
-            console.log('⏰ Running night tip cron job (10 PM)...');
+        // Night window: 10 PM to 11:59 PM
+        if (istHour >= 22) {
+            console.log('⏰ Checking night tip window...');
             try {
                 const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
                     method: 'POST',
@@ -422,9 +429,17 @@ async function startBot(sessionName = null) {
                     }
                 }
             } catch (err) {
-                console.error('❌ Night tip cron failed:', err.message);
+                console.error('❌ Night tip fetch failed:', err.message);
             }
-        }, { timezone: "Asia/Kolkata" });
+        }
+    }
+
+    if (isCronScheduled) {
+        // Run immediately on boot in case Render just woke up
+        setTimeout(checkAndSendTips, 10000); // 10s delay to allow full init
+
+        // Run every 15 minutes
+        cron.schedule('*/15 * * * *', checkAndSendTips);
     }
 }
 
