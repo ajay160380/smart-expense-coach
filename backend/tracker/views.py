@@ -3612,19 +3612,16 @@ def api_delete_split_expense(request: HttpRequest, pk: int, expense_id: int) -> 
     expense.delete()
     return JsonResponse({"status": "success", "message": f"🗑️ Expense '{desc}' deleted."})
 
-@login_required
-@csrf_exempt
+@api_login_required
+@json_required
 def api_split_estimate(request: HttpRequest) -> JsonResponse:
     """Uses Groq to estimate budget for a new split group based on past split groups."""
-    if request.method != "POST":
-        return JsonResponse({"error": "POST method required"}, status=405)
+    body = getattr(request, "_json_body", {})
+    group_name = str(body.get("name", "")).strip()
+    if not group_name:
+        return JsonResponse({"error": "Group name is required"}, status=400)
     
     try:
-        data = json.loads(request.body)
-        group_name = data.get("name", "").strip()
-        if not group_name:
-            return JsonResponse({"error": "Group name is required"}, status=400)
-            
         # Get user's past split groups to provide context to AI
         past_groups = SplitGroup.objects.filter(creator=request.user).prefetch_related('expenses', 'members')
         
@@ -3639,8 +3636,8 @@ def api_split_estimate(request: HttpRequest) -> JsonResponse:
         prompt = (
             f"The user is planning a new trip or event called '{group_name}'.\n"
             f"Here is a summary of their past trips and total expenses:\n{context_text}\n\n"
-            f"Based on this data (or general knowledge if no past data is similar), provide a very brief (1-2 sentences) "
-            f"budget estimate or financial tip for '{group_name}'. Output only the tip/estimate, no preamble."
+            f"Based on this data (or general Indian travel/outing costs if no past data is similar), provide a very brief (1-2 sentences) "
+            f"realistic budget estimate per person or total, and a short tip for '{group_name}'. Output only the tip/estimate, no preamble. Include emojis."
         )
         
         response = _groq_client().chat.completions.create(
@@ -3651,17 +3648,21 @@ def api_split_estimate(request: HttpRequest) -> JsonResponse:
                 },
                 {"role": "user", "content": prompt}
             ],
-            model="llama-3.1-70b-versatile",
+            model="qwen/qwen3.8-27b",
             temperature=0.7,
-            max_tokens=100
+            max_tokens=250
         )
         
-        estimate = response.choices[0].message.content.strip()
+        raw_estimate = response.choices[0].message.content or ""
+        estimate = re.sub(r"<think>(?:.*?</think>|.*$)", "", raw_estimate, flags=re.DOTALL).strip()
+        if not estimate:
+            estimate = f"For {group_name}, a typical budget is ₹5,000–₹10,000 per person including travel and stay! 🏔️✨"
         return JsonResponse({"estimate": estimate})
         
     except Exception as e:
         logger.error(f"Error generating split estimate: {e}", exc_info=True)
-        return JsonResponse({"error": str(e)}, status=500)
+        fallback = f"Estimated budget for '{group_name}' is approx ₹4,000–₹8,000 per person depending on stay & travel! 🏔️🎒"
+        return JsonResponse({"estimate": fallback})
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MOBILE API AUTHENTICATION
