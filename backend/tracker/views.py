@@ -3152,9 +3152,9 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
             f"Write a completely UNIQUE and HIGHLY CREATIVE {time_of_day} WhatsApp message for the user. \n"
             f"Requirements:\n"
             f"- Start with a warm 'Good {time_of_day}' greeting! (e.g. 'Good {time_of_day} {user_name} Bhai! ☀️'). You can mix a bit of Hinglish for a friendly tone.\n"
-            f"- Include exactly ONE brilliant, insightful money tip related to their '{cat_name}' spending or general budget.\n"
-            f"- Make it sound conversational, warm, and witty.\n"
-            f"- Keep it under 60 words. Use 2-3 emojis.\n"
+            f"- Include ONE very brief insight about their '{cat_name}' spending or budget.\n"
+            f"- Make it VERY SHORT, crisp, and conversational.\n"
+            f"- MAXIMUM 20-25 words limit! Do not write long sentences. Use 1-2 emojis.\n"
             f"- Format it beautifully for WhatsApp (use *bold* or _italics_ where appropriate).\n"
             f"ONLY return the exact message to be sent."
         )
