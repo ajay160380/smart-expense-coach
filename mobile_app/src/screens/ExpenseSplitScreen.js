@@ -30,6 +30,8 @@ export default function ExpenseSplitScreen({ navigation }) {
   const [groupName, setGroupName] = useState('');
   const [members, setMembers] = useState(['', '']);
   const [submitting, setSubmitting] = useState(false);
+  const [aiEstimate, setAiEstimate] = useState(null);
+  const [loadingEstimate, setLoadingEstimate] = useState(false);
 
   // Add expense
   const [showExpenseModal, setShowExpenseModal] = useState(null);
@@ -76,6 +78,24 @@ export default function ExpenseSplitScreen({ navigation }) {
       Alert.alert('Error', error.response?.data?.error || 'Failed to create group');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleGetEstimate = async () => {
+    const name = sanitizeInput(groupName).trim();
+    if (!name) {
+      Alert.alert('Error', 'Please enter a group name first to get an estimate');
+      return;
+    }
+    setLoadingEstimate(true);
+    setAiEstimate(null);
+    try {
+      const res = await api.post('/splits/estimate/', { name });
+      setAiEstimate(res.data.estimate);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get AI estimate');
+    } finally {
+      setLoadingEstimate(false);
     }
   };
 
@@ -315,6 +335,12 @@ export default function ExpenseSplitScreen({ navigation }) {
                     <Text style={styles.groupMeta}>Settled • ₹{Math.round(g.total).toLocaleString('en-IN')} total</Text>
                   </View>
                 </View>
+                <View style={[styles.groupActions, { borderTopWidth: 0, paddingTop: 0 }]}>
+                  <TouchableOpacity style={styles.groupBtn} onPress={() => viewSummary(g.id)}>
+                    <Ionicons name="receipt-outline" size={16} color={COLORS.primary} />
+                    <Text style={[styles.groupBtnText, { color: COLORS.primary }]}>View Summary</Text>
+                  </TouchableOpacity>
+                </View>
               </GlassCard>
             ))}
           </>
@@ -338,7 +364,18 @@ export default function ExpenseSplitScreen({ navigation }) {
             </View>
 
             <Text style={styles.label}>GROUP NAME</Text>
-            <TextInput style={styles.input} placeholder="e.g., Goa Trip" placeholderTextColor={COLORS.textMuted} value={groupName} onChangeText={setGroupName} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="e.g., Goa Trip" placeholderTextColor={COLORS.textMuted} value={groupName} onChangeText={setGroupName} />
+              <TouchableOpacity onPress={handleGetEstimate} style={styles.aiEstimateBtn}>
+                {loadingEstimate ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.aiEstimateText}>✨ AI Estimate</Text>}
+              </TouchableOpacity>
+            </View>
+
+            {aiEstimate && (
+              <View style={styles.aiEstimateBox}>
+                <Text style={styles.aiEstimateBoxText}>{aiEstimate}</Text>
+              </View>
+            )}
 
             <Text style={styles.label}>MEMBERS</Text>
             {members.map((m, idx) => (
@@ -568,4 +605,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.whatsapp, borderRadius: 14, padding: 14, marginTop: 16, marginBottom: 20,
   },
   waShareText: { color: '#fff', fontWeight: 'bold', fontSize: 15, marginLeft: 8 },
+  
+  aiEstimateBtn: {
+    backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 14,
+    borderRadius: 12, marginLeft: 8, justifyContent: 'center', alignItems: 'center',
+  },
+  aiEstimateText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  aiEstimateBox: {
+    backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: 12, borderRadius: 12,
+    borderWidth: 1, borderColor: 'rgba(99, 102, 241, 0.3)', marginBottom: 16,
+  },
+  aiEstimateBoxText: { color: COLORS.textPrimary, fontSize: 13, lineHeight: 18, fontStyle: 'italic' },
 });

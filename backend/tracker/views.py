@@ -3612,6 +3612,56 @@ def api_delete_split_expense(request: HttpRequest, pk: int, expense_id: int) -> 
     expense.delete()
     return JsonResponse({"status": "success", "message": f"🗑️ Expense '{desc}' deleted."})
 
+@login_required
+@csrf_exempt
+def api_split_estimate(request: HttpRequest) -> JsonResponse:
+    """Uses Groq to estimate budget for a new split group based on past split groups."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST method required"}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        group_name = data.get("name", "").strip()
+        if not group_name:
+            return JsonResponse({"error": "Group name is required"}, status=400)
+            
+        # Get user's past split groups to provide context to AI
+        past_groups = SplitGroup.objects.filter(creator=request.user).prefetch_related('expenses', 'members')
+        
+        context_lines = []
+        for g in past_groups:
+            total = sum(e.amount for e in g.expenses.all())
+            if total > 0:
+                context_lines.append(f"- {g.name}: ₹{total} (for {g.members.count()} members)")
+                
+        context_text = "\n".join(context_lines) if context_lines else "No past trips recorded yet."
+        
+        prompt = (
+            f"The user is planning a new trip or event called '{group_name}'.\n"
+            f"Here is a summary of their past trips and total expenses:\n{context_text}\n\n"
+            f"Based on this data (or general knowledge if no past data is similar), provide a very brief (1-2 sentences) "
+            f"budget estimate or financial tip for '{group_name}'. Output only the tip/estimate, no preamble."
+        )
+        
+        response = _groq_client().chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a witty Indian AI financial coach helping users budget for trips. Keep it extremely concise, max 2 sentences. Use emojis."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            model="llama-3.1-70b-versatile",
+            temperature=0.7,
+            max_tokens=100
+        )
+        
+        estimate = response.choices[0].message.content.strip()
+        return JsonResponse({"estimate": estimate})
+        
+    except Exception as e:
+        logger.error(f"Error generating split estimate: {e}", exc_info=True)
+        return JsonResponse({"error": str(e)}, status=500)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MOBILE API AUTHENTICATION

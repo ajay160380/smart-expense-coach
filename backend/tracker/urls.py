@@ -161,6 +161,7 @@ urlpatterns = [
     # ══════════════════════════════════════════════════════════════════════
     path('api/splits/',                         views.api_split_groups,       name='api_split_groups'),
     path('api/splits/create/',                  views.api_create_split,       name='api_create_split'),
+    path('api/splits/estimate/',                views.api_split_estimate,     name='api_split_estimate'),
     path('api/splits/<int:pk>/add-expense/',    views.api_add_split_expense,  name='api_add_split_expense'),
     path('api/splits/<int:pk>/summary/',        views.api_split_summary,      name='api_split_summary'),
     path('api/splits/<int:pk>/settle/',         views.api_settle_split,       name='api_settle_split'),
