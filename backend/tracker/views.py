@@ -3245,9 +3245,88 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
             "message": msg,
             "user_id": profile.user.id,
         })
-        cache.set(ck, True, 86400)  # Mark as sent for 24 hours
+        # Note: We do NOT cache.set here! We only mark as sent when the bot confirms successful delivery.
 
     return JsonResponse({"tips": tips, "count": len(tips)})
+
+
+@csrf_exempt
+def api_confirm_tip_sent(request: HttpRequest) -> JsonResponse:
+    """Marks a daily tip as sent for a user after successful WhatsApp delivery."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        body = {}
+
+    secret = body.get("secret", "")
+    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', 'paisamitra-daily-2025')
+    if secret != expected_secret:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    user_id = body.get("user_id")
+    tip_type = body.get("type", "night")
+
+    if user_id:
+        ck = f"{tip_type}_tip_sent_{user_id}_{date.today().isoformat()}"
+        cache.set(ck, True, 86400)
+        return JsonResponse({"status": "confirmed", "user_id": user_id, "type": tip_type})
+
+    return JsonResponse({"error": "user_id required"}, status=400)
+
+
+@csrf_exempt
+def api_admin_trigger_night_tips(request: HttpRequest) -> JsonResponse:
+    """Admin endpoint to immediately trigger and deliver night tips to all linked users via WhatsApp bot."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        body = {}
+
+    secret = body.get("secret", "")
+    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', 'paisamitra-daily-2025')
+    if secret != expected_secret:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    import requests as req_lib
+    linked_profiles = UserProfile.objects.filter(
+        whatsapp_linked=True
+    ).exclude(
+        whatsapp_number__isnull=True
+    ).exclude(
+        whatsapp_number=''
+    ).select_related('user')
+
+    seen_numbers = set()
+    results = []
+
+    for profile in linked_profiles:
+        target_number = profile.phone_number or profile.whatsapp_number
+        if not target_number or target_number in seen_numbers:
+            continue
+        seen_numbers.add(target_number)
+
+        try:
+            msg = generate_daily_tip(profile.user, "night")
+            res = req_lib.post("http://127.0.0.1:3001/api/send-message", json={
+                "phone_number": target_number,
+                "message": msg
+            }, timeout=10)
+            if res.status_code == 200:
+                ck = f"night_tip_sent_{profile.user.id}_{date.today().isoformat()}"
+                cache.set(ck, True, 86400)
+                results.append({"number": target_number, "status": "sent"})
+            else:
+                results.append({"number": target_number, "status": "failed", "error": res.text})
+        except Exception as ex:
+            results.append({"number": target_number, "status": "error", "error": str(ex)})
+
+    return JsonResponse({"status": "completed", "results": results})
 
 
 # ══════════════════════════════════════════════════════════════════════════════

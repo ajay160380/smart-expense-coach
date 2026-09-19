@@ -30,6 +30,7 @@ if (process.env.MY_WHATSAPP_NUMBER) {
 let currentSessionName = 'baileys_session';
 let globalSock = null;
 let isConnecting = false; // Lock to prevent multiple simultaneous connections
+let isBotConnected = false;
 let reconnectAttempts = 0;
 let latestQR = null; // Store latest QR for web endpoint
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -54,6 +55,23 @@ async function getNextAvailableSession(failedSessionName = null) {
         console.error("Error fetching sessions from DB:", err);
     }
     return null;
+}
+
+// ── Helper: Safe Reply ──
+async function safeReply(jid, text, quotedMsg = null) {
+    if (!globalSock) throw new Error("WhatsApp socket not ready");
+    try {
+        const options = quotedMsg ? { quoted: quotedMsg } : undefined;
+        await globalSock.sendMessage(jid, { text }, options);
+    } catch (e) {
+        console.warn('⚠️ Failed to send message (possibly invalid quote), retrying without quote:', e.message);
+        try {
+            await globalSock.sendMessage(jid, { text });
+        } catch (e2) {
+            console.error('❌ Failed to send message entirely:', e2.message);
+            throw e2;
+        }
+    }
 }
 
 async function startBot(sessionName = null) {
@@ -82,6 +100,7 @@ async function startBot(sessionName = null) {
             // Ignore cleanup errors
         }
         globalSock = null;
+        isBotConnected = false;
     }
 
     const sock = makeWASocket({
@@ -125,6 +144,7 @@ async function startBot(sessionName = null) {
         }
 
         if (connection === 'close') {
+            isBotConnected = false;
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
             const isConflict = statusCode === 440 || lastDisconnect?.error?.data?.tag === 'conflict';
@@ -160,26 +180,15 @@ async function startBot(sessionName = null) {
                 setTimeout(() => startBot(currentSessionName), delay);
             }
         } else if (connection === 'open') {
+            isBotConnected = true;
             reconnectAttempts = 0; // Reset on successful connection
             latestQR = null; // Clear QR on successful connection
             console.log(`✅ WhatsApp Bot is ready and connected using ${currentSessionName}!`);
+            
+            // Check immediately on successful connection if daily tips are due!
+            setTimeout(checkAndSendTips, 3000);
         }
     });
-
-    // ── Helper: Safe Reply ──
-    async function safeReply(jid, text, quotedMsg = null) {
-        try {
-            const options = quotedMsg ? { quoted: quotedMsg } : undefined;
-            await sock.sendMessage(jid, { text }, options);
-        } catch (e) {
-            console.warn('⚠️ Failed to send message (possibly invalid quote), retrying without quote:', e.message);
-            try {
-                await sock.sendMessage(jid, { text });
-            } catch (e2) {
-                console.error('❌ Failed to send message entirely:', e2.message);
-            }
-        }
-    }
 
     sock.ev.on('messages.upsert', async (m) => {
         const msg = m.messages[0];
@@ -223,7 +232,12 @@ async function startBot(sessionName = null) {
                             let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
                             let targetJid = `${cleanPhone}@s.whatsapp.net`;
                             await safeReply(targetJid, tip.message);
-                            await new Promise(r => setTimeout(r, 5000));
+                            await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: 'night' })
+                            }).catch(e => {});
+                            await new Promise(r => setTimeout(r, 4000));
                         } catch (e) {
                             console.warn(`Failed to send to ${tip.whatsapp_number}:`, e.message);
                         }
@@ -377,70 +391,91 @@ async function startBot(sessionName = null) {
         }
     });
 
-    // ── CRON JOBS ──
-    const isCronScheduled = process.env.NODE_APP_INSTANCE === '0' || !process.env.NODE_APP_INSTANCE;
-    
-    async function checkAndSendTips() {
-        const now = new Date();
-        const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-        const istHour = istTime.getHours();
+    // end of startBot
+}
 
-        // Morning window: 8 AM to 11:59 AM
-        if (istHour >= 8 && istHour < 12) {
-            console.log('⏰ Checking morning tip window...');
-            try {
-                const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'morning' })
-                });
-                const data = await response.json();
-                if (data.tips && data.tips.length > 0) {
-                    for (const tip of data.tips) {
-                        try {
-                            let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
-                            await safeReply(`${cleanPhone}@s.whatsapp.net`, tip.message);
-                            await new Promise(r => setTimeout(r, 5000));
-                        } catch (e) {}
+// ── CRON JOBS (Tip Scheduler) ──
+async function checkAndSendTips() {
+    if (!isBotConnected || !globalSock) {
+        console.log('⏰ Skipping tip check: WhatsApp bot is not connected yet.');
+        return;
+    }
+
+    const now = new Date();
+    const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const istHour = istTime.getHours();
+
+    // Morning window: 8 AM to 11:59 AM (08:00 - 11:59 IST)
+    if (istHour >= 8 && istHour < 12) {
+        console.log('⏰ Checking morning tip window...');
+        try {
+            const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'morning' })
+            });
+            const data = await response.json();
+            if (data.tips && data.tips.length > 0) {
+                console.log(`☀️ Delivering ${data.tips.length} morning tips...`);
+                for (const tip of data.tips) {
+                    try {
+                        let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                        await safeReply(`${cleanPhone}@s.whatsapp.net`, tip.message);
+                        console.log(`✅ Delivered morning tip to ${cleanPhone}`);
+                        await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: 'morning' })
+                        }).catch(e => {});
+                        await new Promise(r => setTimeout(r, 4000));
+                    } catch (e) {
+                        console.error(`❌ Failed delivering morning tip to ${tip.whatsapp_number}:`, e.message);
                     }
                 }
-            } catch (err) {
-                console.error('❌ Morning tip fetch failed:', err.message);
             }
-        }
-
-        // Night window: 10 PM to 11:59 PM
-        if (istHour >= 22) {
-            console.log('⏰ Checking night tip window...');
-            try {
-                const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'night' })
-                });
-                const data = await response.json();
-                if (data.tips && data.tips.length > 0) {
-                    for (const tip of data.tips) {
-                        try {
-                            let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
-                            await safeReply(`${cleanPhone}@s.whatsapp.net`, tip.message);
-                            await new Promise(r => setTimeout(r, 5000));
-                        } catch (e) {}
-                    }
-                }
-            } catch (err) {
-                console.error('❌ Night tip fetch failed:', err.message);
-            }
+        } catch (err) {
+            console.error('❌ Morning tip fetch failed:', err.message);
         }
     }
 
-    if (isCronScheduled) {
-        // Run immediately on boot in case Render just woke up
-        setTimeout(checkAndSendTips, 10000); // 10s delay to allow full init
-
-        // Run every 15 minutes
-        cron.schedule('*/15 * * * *', checkAndSendTips);
+    // Night window: 10 PM to 11:59 PM (22:00 - 23:59 IST)
+    if (istHour >= 22) {
+        console.log('⏰ Checking night tip window...');
+        try {
+            const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'night' })
+            });
+            const data = await response.json();
+            if (data.tips && data.tips.length > 0) {
+                console.log(`🌙 Delivering ${data.tips.length} night tips...`);
+                for (const tip of data.tips) {
+                    try {
+                        let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                        await safeReply(`${cleanPhone}@s.whatsapp.net`, tip.message);
+                        console.log(`✅ Delivered night tip to ${cleanPhone}`);
+                        await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: 'night' })
+                        }).catch(e => {});
+                        await new Promise(r => setTimeout(r, 4000));
+                    } catch (e) {
+                        console.error(`❌ Failed delivering night tip to ${tip.whatsapp_number}:`, e.message);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('❌ Night tip fetch failed:', err.message);
+        }
     }
+}
+
+const isCronScheduled = process.env.NODE_APP_INSTANCE === '0' || !process.env.NODE_APP_INSTANCE;
+if (isCronScheduled) {
+    // Run every 5 minutes so container wakeups or delays catch up immediately
+    cron.schedule('*/5 * * * *', checkAndSendTips);
 }
 
 // ── EXPRESS API SERVER ──

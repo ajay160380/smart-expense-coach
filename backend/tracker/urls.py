@@ -148,6 +148,8 @@ urlpatterns = [
     # ══════════════════════════════════════════════════════════════════════
     path('api/daily-tip/',              views.api_daily_tip,           name='api_daily_tip'),
     path('api/trigger-daily-tips/',     views.api_trigger_daily_tips,  name='api_trigger_daily_tips'),
+    path('api/confirm-tip-sent/',       views.api_confirm_tip_sent,    name='api_confirm_tip_sent'),
+    path('api/admin-trigger-night-tips/', views.api_admin_trigger_night_tips, name='api_admin_trigger_night_tips'),
 
     # ══════════════════════════════════════════════════════════════════════
     # FEATURE: AI NOTEPAD
