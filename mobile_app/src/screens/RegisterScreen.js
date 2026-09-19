@@ -41,6 +41,7 @@ export default function RegisterScreen({ navigation }) {
 
     if (!cleanUsername) { Alert.alert('Error', 'Username is required'); return; }
     if (cleanUsername.length < 3) { Alert.alert('Error', 'Username must be at least 3 characters'); return; }
+    if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) { Alert.alert('Error', 'Username cannot contain spaces or special characters. Use letters, numbers, and _ only.'); return; }
     if (!cleanPhone || !isValidPhone(cleanPhone)) { Alert.alert('Error', 'Enter a valid phone number (10-15 digits)'); return; }
     if (!password) { Alert.alert('Error', 'Password is required'); return; }
     if (password.length < 6) { Alert.alert('Error', 'Password must be at least 6 characters'); return; }
