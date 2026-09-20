@@ -2575,11 +2575,14 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
 
     profile = UserProfile.objects.filter(user=user).first()
     profile_pic_url = None
-    if profile and profile.profile_picture:
-        url = request.build_absolute_uri(profile.profile_picture.url)
-        if url.startswith("http://") and "localhost" not in url and "127.0.0.1" not in url:
-            url = url.replace("http://", "https://")
-        profile_pic_url = url
+    if profile:
+        if profile.profile_picture_b64:
+            profile_pic_url = profile.profile_picture_b64
+        elif profile.profile_picture:
+            url = request.build_absolute_uri(profile.profile_picture.url)
+            if url.startswith("http://") and "localhost" not in url and "127.0.0.1" not in url:
+                url = url.replace("http://", "https://")
+            profile_pic_url = url
 
     return JsonResponse({
         "username":       user.username,

@@ -10,6 +10,7 @@ class UserProfile(models.Model):
 
     phone_number = models.CharField(max_length=15, unique=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_picture_b64 = models.TextField(blank=True, null=True) # For Render ephemeral storage fix
     
     # --- WhatsApp Linking Fields ---
     whatsapp_number = models.CharField(max_length=20, blank=True, null=True)
