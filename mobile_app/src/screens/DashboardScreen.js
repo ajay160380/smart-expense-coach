@@ -941,9 +941,9 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, flexGrow: 1 },
 
   // ── Greeting ──
-  greetingSection: { marginBottom: 16 },
-  greetText: { color: COLORS.textPrimary, fontSize: 22, fontWeight: 'bold' },
-  greetSub: { color: COLORS.textSecondary, fontSize: 13, marginTop: 4 },
+  greetingSection: { marginBottom: 20 },
+  greetText: { color: '#FFFFFF', fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
+  greetSub: { color: '#94A3B8', fontSize: 14, fontWeight: '600', marginTop: 4 },
 
   // ── Alert Banner ──
   alertBanner: { marginBottom: 16 },
@@ -977,17 +977,27 @@ const styles = StyleSheet.create({
   waButtonText: { color: COLORS.whatsapp, fontWeight: '600', fontSize: 12 },
 
   // ── Main Card ──
-  mainCard: { borderRadius: RADIUS.xl, padding: 22, marginBottom: 14, ...SHADOW.lg },
+  mainCard: { 
+    borderRadius: RADIUS.xl, 
+    padding: 26, 
+    marginBottom: 18, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.15)',
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
+  },
   mainCardHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 16,
+    alignItems: 'center', marginBottom: 20,
   },
   mainCardTitle: {
-    color: 'rgba(255,255,255,0.7)', fontSize: 11,
-    fontWeight: 'bold', letterSpacing: 1.2,
+    color: '#38BDF8', fontSize: 12,
+    fontWeight: '900', letterSpacing: 1.5,
   },
   overspentBadge: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
   },
   overspentText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
