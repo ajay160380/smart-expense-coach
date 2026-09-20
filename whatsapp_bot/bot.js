@@ -214,19 +214,23 @@ async function startBot(sessionName = null) {
             return;
         }
 
-        // ── MANUAL TRIGGER FOR NIGHT TIPS ──
-        if (isAllowedAdmin && lowerBody === '!trigger_night') {
-            await safeReply(remoteJid, "⏳ Fetching and triggering Night Tips manually...", msg);
+        // ── MANUAL TRIGGER FOR NIGHT / MORNING TIPS ──
+        if (isAllowedAdmin && (lowerBody === '!goodnight' || lowerBody === '!good night' || lowerBody === '!trigger_night' || lowerBody === '!goodmorning' || lowerBody === '!good morning' || lowerBody === '!trigger_morning')) {
+            const tipType = (lowerBody === '!goodnight' || lowerBody === '!good night' || lowerBody === '!trigger_night') ? 'night' : 'morning';
+            const tipLabel = tipType === 'night' ? 'Night' : 'Morning';
+            const tipEmoji = tipType === 'night' ? '🌙' : '☀️';
+            
+            await safeReply(remoteJid, `⏳ Fetching and triggering ${tipLabel} Tips manually...`, msg);
             try {
                 const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'night', force: true })
+                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType, force: true })
                 });
                 const data = await response.json();
 
                 if (data.tips && data.tips.length > 0) {
-                    await safeReply(remoteJid, `🌙 Found ${data.tips.length} tips. Sending now...`, msg);
+                    await safeReply(remoteJid, `${tipEmoji} Found ${data.tips.length} tips. Sending now...`, msg);
                     for (const tip of data.tips) {
                         try {
                             let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
@@ -235,19 +239,19 @@ async function startBot(sessionName = null) {
                             await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: 'night' })
+                                body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: tipType })
                             }).catch(e => {});
                             await new Promise(r => setTimeout(r, 4000));
                         } catch (e) {
                             console.warn(`Failed to send to ${tip.whatsapp_number}:`, e.message);
                         }
                     }
-                    await safeReply(remoteJid, `✅ Night tips manual broadcast complete!`, msg);
+                    await safeReply(remoteJid, `✅ ${tipLabel} tips manual broadcast complete!`, msg);
                 } else {
-                    await safeReply(remoteJid, '🌙 No night tips to send today.', msg);
+                    await safeReply(remoteJid, `${tipEmoji} No ${tipType} tips to send today.`, msg);
                 }
             } catch (err) {
-                await safeReply(remoteJid, `❌ Failed to trigger night tips: ${err.message}`, msg);
+                await safeReply(remoteJid, `❌ Failed to trigger ${tipType} tips: ${err.message}`, msg);
             }
             return;
         }
@@ -394,19 +398,27 @@ async function startBot(sessionName = null) {
     // end of startBot
 }
 
+let isProcessingTips = false;
+
 // ── CRON JOBS (Tip Scheduler) ──
 async function checkAndSendTips() {
     if (!isBotConnected || !globalSock) {
         console.log('⏰ Skipping tip check: WhatsApp bot is not connected yet.');
         return;
     }
+    if (isProcessingTips) {
+        console.log('⏰ Skipping tip check: Already processing tips from previous run.');
+        return;
+    }
+    isProcessingTips = true;
+    try {
 
     const now = new Date();
     const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
     const istHour = istTime.getHours();
 
-    // Morning window: 8 AM to 11:59 AM (08:00 - 11:59 IST)
-    if (istHour >= 8 && istHour < 12) {
+    // Morning window: Exactly 8 AM (08:00 - 08:59 IST)
+    if (istHour === 8) {
         console.log('⏰ Checking morning tip window...');
         try {
             const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
@@ -438,8 +450,8 @@ async function checkAndSendTips() {
         }
     }
 
-    // Night window: 10 PM to 11:59 PM (22:00 - 23:59 IST)
-    if (istHour >= 22) {
+    // Night window: Exactly 10 PM (22:00 - 22:59 IST)
+    if (istHour === 22) {
         console.log('⏰ Checking night tip window...');
         try {
             const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
@@ -469,6 +481,10 @@ async function checkAndSendTips() {
         } catch (err) {
             console.error('❌ Night tip fetch failed:', err.message);
         }
+    }
+    
+    } finally {
+        isProcessingTips = false;
     }
 }
 
