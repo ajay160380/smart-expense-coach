@@ -225,7 +225,7 @@ async function startBot(sessionName = null) {
                 const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType, force: true })
+                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType })
                 });
                 const data = await response.json();
 
