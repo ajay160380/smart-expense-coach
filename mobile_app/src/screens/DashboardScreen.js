@@ -98,12 +98,6 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const fetchDashboardData = async (isInitial = false) => {
-    // Show loading on first open, refreshing spinner on subsequent calls
-    if (isInitial) {
-      setLoading(true);
-    } else {
-      setRefreshing(true);
-    }
     try {
       const name = await getUsername();
       if (name) setUsername(name);
@@ -113,7 +107,22 @@ export default function DashboardScreen({ navigation }) {
         setShakeBannerVisible(false);
       }
 
-      // Fetch all dashboard data in parallel
+      // ── 1. LOAD CACHED DATA IMMEDIATELY (Offline-First) ──
+      const cachedDashboard = await AsyncStorage.getItem('dashboard_cache');
+      if (cachedDashboard) {
+        const parsed = JSON.parse(cachedDashboard);
+        if (parsed.stats) setStats(parsed.stats);
+        if (parsed.tip) setDailyTip(parsed.tip);
+        if (parsed.comp) setComparison(parsed.comp);
+        if (parsed.anom) setAnomalies(parsed.anom);
+        if (isInitial) setLoading(false); // Stop loading spinner instantly!
+      } else if (isInitial) {
+        setLoading(true); // Only show loader if no cache exists
+      } else {
+        setRefreshing(true);
+      }
+
+      // ── 2. FETCH FRESH DATA IN BACKGROUND ──
       const [statsRes, tipRes, compRes, anomRes] = await Promise.allSettled([
         api.get('/summary-stats/'),
         api.get('/daily-tip/'),
@@ -121,10 +130,33 @@ export default function DashboardScreen({ navigation }) {
         api.get('/anomalies/'),
       ]);
 
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
-      if (tipRes.status === 'fulfilled') setDailyTip(tipRes.value.data?.tip);
-      if (compRes.status === 'fulfilled') setComparison(compRes.value.data);
-      if (anomRes.status === 'fulfilled') setAnomalies(anomRes.value.data?.alerts || []);
+      let newStats, newTip, newComp, newAnom = [];
+      
+      if (statsRes.status === 'fulfilled') {
+        newStats = statsRes.value.data;
+        setStats(newStats);
+      }
+      if (tipRes.status === 'fulfilled') {
+        newTip = tipRes.value.data?.tip;
+        setDailyTip(newTip);
+      }
+      if (compRes.status === 'fulfilled') {
+        newComp = compRes.value.data;
+        setComparison(newComp);
+      }
+      if (anomRes.status === 'fulfilled') {
+        newAnom = anomRes.value.data?.alerts || [];
+        setAnomalies(newAnom);
+      }
+
+      // ── 3. SAVE FRESH DATA TO CACHE ──
+      await AsyncStorage.setItem('dashboard_cache', JSON.stringify({
+        stats: newStats || stats,
+        tip: newTip || dailyTip,
+        comp: newComp || comparison,
+        anom: newAnom || anomalies
+      }));
+
     } catch (error) {
       console.error('Dashboard fetch error:', error);
       if (error.response?.status === 401) {

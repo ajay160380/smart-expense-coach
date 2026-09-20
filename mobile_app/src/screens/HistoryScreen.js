@@ -19,12 +19,26 @@ export default function HistoryScreen({ navigation }) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const fetchHistory = useCallback(async () => {
-    setLoading(true);
     const month = currentDate.getMonth() + 1;
     const year = currentDate.getFullYear();
+    const cacheKey = `history_cache_${year}_${month}`;
+
     try {
+      // 1. Load from cache instantly
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        setData(JSON.parse(cached));
+        setLoading(false); // Stop loader instantly
+      } else {
+        setLoading(true);
+      }
+
+      // 2. Fetch fresh data
       const res = await api.get(`/transactions-history/?month=${month}&year=${year}`);
+      
+      // 3. Update state and cache
       setData(res.data);
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(res.data));
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to fetch transaction history');
