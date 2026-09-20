@@ -3182,15 +3182,18 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
 
 @api_login_required
 def api_daily_tip(request: HttpRequest) -> JsonResponse:
-    """Get today's personalized money tip."""
-    ck = f"daily_tip_{request.user.id}_{date.today().isoformat()}"
+    """Get today's personalized money tip (morning or night based on time)."""
+    now = timezone.localtime(timezone.now())
+    tip_type = "night" if now.hour >= 18 else "morning"
+
+    ck = f"daily_tip_{tip_type}_{request.user.id}_{date.today().isoformat()}"
     cached = cache.get(ck)
     if cached:
-        return JsonResponse({"tip": cached, "cached": True})
+        return JsonResponse({"tip": cached, "cached": True, "type": tip_type})
 
-    tip = generate_daily_tip(request.user)
+    tip = generate_daily_tip(request.user, tip_type)
     cache.set(ck, tip, 86400)  # Cache for 24 hours
-    return JsonResponse({"tip": tip, "cached": False})
+    return JsonResponse({"tip": tip, "cached": False, "type": tip_type})
 
 
 @csrf_exempt
