@@ -229,14 +229,22 @@ export default function App() {
   useEffect(() => {
     let subscription = null;
     let lastUpdate = 0;
-    let lastX = 0;
-    let lastY = 0;
-    let lastZ = 0;
+    let lastX = null;
+    let lastY = null;
+    let lastZ = null;
 
     if (isAuthenticated && shakeSensitivity > 0) {
-      Accelerometer.setUpdateInterval(100); // Sample every 100ms
+      Accelerometer.setUpdateInterval(150); // Sample every 150ms
       subscription = Accelerometer.addListener((data) => {
         const { x, y, z } = data;
+        
+        if (lastX === null) {
+          lastX = x;
+          lastY = y;
+          lastZ = z;
+          return;
+        }
+
         const delta = Math.abs(x - lastX) + Math.abs(y - lastY) + Math.abs(z - lastZ);
         lastX = x;
         lastY = y;

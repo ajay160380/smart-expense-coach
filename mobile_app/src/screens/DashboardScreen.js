@@ -38,7 +38,7 @@ export default function DashboardScreen({ navigation }) {
   const [newBudget, setNewBudget] = useState('');
   const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
-
+  const [shakeBannerVisible, setShakeBannerVisible] = useState(true);
   const handleSaveBudget = async () => {
     const parsedBudget = parseFloat(newBudget);
     if (isNaN(parsedBudget) || parsedBudget <= 0) {
@@ -107,6 +107,11 @@ export default function DashboardScreen({ navigation }) {
     try {
       const name = await getUsername();
       if (name) setUsername(name);
+      
+      const shakeDismissed = await AsyncStorage.getItem('shake_banner_dismissed');
+      if (shakeDismissed === 'true') {
+        setShakeBannerVisible(false);
+      }
 
       // Fetch all dashboard data in parallel
       const [statsRes, tipRes, compRes, anomRes] = await Promise.allSettled([
@@ -481,33 +486,45 @@ export default function DashboardScreen({ navigation }) {
         </LinearGradient>
 
         {/* ── MAGIC SHAKE INTERACTIVE CARD ── */}
-        <TouchableOpacity
-          onPress={() => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            navigation.navigate('AddExpense');
-          }}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={['rgba(139, 92, 246, 0.22)', 'rgba(79, 70, 229, 0.08)']}
-            style={styles.shakeBanner}
+        {shakeBannerVisible && (
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              navigation.navigate('AddExpense');
+            }}
+            activeOpacity={0.8}
           >
-            <View style={styles.shakeIconBox}>
-              <Text style={{ fontSize: 22 }}>📱</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Magic Shake Feature</Text>
-                <View style={styles.livePill}>
-                  <View style={styles.liveDot} />
-                  <Text style={{ color: '#10B981', fontSize: 9, fontWeight: '800' }}>ACTIVE</Text>
-                </View>
+            <LinearGradient
+              colors={['rgba(139, 92, 246, 0.22)', 'rgba(79, 70, 229, 0.08)']}
+              style={styles.shakeBanner}
+            >
+              <View style={styles.shakeIconBox}>
+                <Text style={{ fontSize: 22 }}>📱</Text>
               </View>
-              <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }}>Shake your phone or tap here to add expense!</Text>
-            </View>
-            <Ionicons name="flash" size={18} color="#A78BFA" />
-          </LinearGradient>
-        </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Magic Shake Feature</Text>
+                  <View style={styles.livePill}>
+                    <View style={styles.liveDot} />
+                    <Text style={{ color: '#10B981', fontSize: 9, fontWeight: '800' }}>ACTIVE</Text>
+                  </View>
+                </View>
+                <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }}>Shake your phone or tap here to add expense!</Text>
+              </View>
+              <TouchableOpacity 
+                onPress={async (e) => {
+                  e.stopPropagation();
+                  setShakeBannerVisible(false);
+                  await AsyncStorage.setItem('shake_banner_dismissed', 'true');
+                }}
+                style={{ padding: 5 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={20} color="#A78BFA" />
+              </TouchableOpacity>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
 
         {/* ── MONTHLY COMPARISON ── */}
         {comparison && comparison.has_prev_data && (
@@ -1200,6 +1217,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   statusDot: {
     width: 6,
@@ -1228,6 +1250,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
     borderColor: 'rgba(139, 92, 246, 0.35)',
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
   },
   shakeIconBox: {
     width: 40,
