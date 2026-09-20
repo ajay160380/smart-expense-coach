@@ -246,31 +246,35 @@ export default function ProfileScreen({ navigation }) {
         </LinearGradient>
 
         {/* ── Lifetime Stats ── */}
-        <SectionHeader title="📊 Lifetime Stats" />
-        <View style={styles.statsGrid}>
-          <GlassCard style={styles.statItem}>
+        <View style={{ marginTop: -40, paddingHorizontal: 16 }}>
+          <GlassCard style={{ paddingTop: 20 }}>
+            <SectionHeader title="📊 Lifetime Stats" style={{ marginTop: 0 }} />
+            <View style={styles.statsGrid}>
+          <View style={styles.statItem}>
             <Text style={styles.statEmoji}>💸</Text>
             <Text style={styles.statValue}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
             <Text style={styles.statLabel}>Total Spent</Text>
-          </GlassCard>
-          <GlassCard style={styles.statItem}>
+          </View>
+          <View style={styles.statItem}>
             <Text style={styles.statEmoji}>📝</Text>
             <Text style={styles.statValue}>{totalTxns}</Text>
             <Text style={styles.statLabel}>Transactions</Text>
-          </GlassCard>
-          <GlassCard style={styles.statItem}>
+          </View>
+          <View style={styles.statItem}>
             <Text style={styles.statEmoji}>💰</Text>
             <Text style={styles.statValue}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
             <Text style={styles.statLabel}>Monthly Budget</Text>
-          </GlassCard>
-          <GlassCard style={styles.statItem}>
+          </View>
+          <View style={styles.statItem}>
             <Text style={styles.statEmoji}>📅</Text>
             <Text style={styles.statValue}>{memberDays}</Text>
             <Text style={styles.statLabel}>Days Active</Text>
+          </View>
+            </View>
           </GlassCard>
         </View>
 
-        {/* ── Quick Actions ── */}
+        {/* ── Menu Section ── */}
         <SectionHeader title="⚡ Quick Actions (Auto-Updated!)" />
         <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
           <MenuItem
@@ -577,28 +581,37 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1 },
 
   // ── Profile Header ──
-  profileHeader: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+  profileHeader: { 
+    alignItems: 'center', 
+    paddingVertical: 50, 
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    ...SHADOW.lg,
+    paddingBottom: 60,
+  },
   avatarLarge: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 2, borderColor: COLORS.cyan,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 14,
+    width: 110, height: 110, borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 3, borderColor: COLORS.cyan,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 16,
+    ...SHADOW.md,
   },
   avatarLargeImage: {
-    width: 80, height: 80, borderRadius: 40,
-    borderWidth: 2, borderColor: COLORS.cyan,
-    marginBottom: 14,
+    width: 110, height: 110, borderRadius: 55,
+    borderWidth: 3, borderColor: COLORS.cyan,
+    marginBottom: 16,
   },
   avatarOverlay: {
-    width: 80, height: 80, borderRadius: 40,
+    width: 110, height: 110, borderRadius: 55,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center', alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   editIconBadge: {
-    position: 'absolute', bottom: 14, right: 0,
-    backgroundColor: COLORS.cyan, width: 26, height: 26, borderRadius: 13,
+    position: 'absolute', bottom: 16, right: 0,
+    backgroundColor: COLORS.cyan, width: 32, height: 32, borderRadius: 16,
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: COLORS.bg,
+    borderWidth: 3, borderColor: COLORS.bg,
   },
   avatarLargeText: { color: COLORS.cyan, fontSize: 32, fontWeight: 'bold' },
   profileName: { color: '#fff', fontSize: 24, fontWeight: 'bold' },

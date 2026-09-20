@@ -2576,7 +2576,10 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
     profile = UserProfile.objects.filter(user=user).first()
     profile_pic_url = None
     if profile and profile.profile_picture:
-        profile_pic_url = request.build_absolute_uri(profile.profile_picture.url)
+        url = request.build_absolute_uri(profile.profile_picture.url)
+        if url.startswith("http://") and "localhost" not in url and "127.0.0.1" not in url:
+            url = url.replace("http://", "https://")
+        profile_pic_url = url
 
     return JsonResponse({
         "username":       user.username,
@@ -2620,6 +2623,8 @@ def api_upload_profile_photo(request: HttpRequest) -> JsonResponse:
         profile.save()
         
         photo_url = request.build_absolute_uri(profile.profile_picture.url)
+        if photo_url.startswith("http://") and "localhost" not in photo_url and "127.0.0.1" not in photo_url:
+            photo_url = photo_url.replace("http://", "https://")
         return JsonResponse({"status": "success", "profile_picture": photo_url})
     
     return JsonResponse({"error": "Invalid method"}, status=405)
