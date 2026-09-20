@@ -185,8 +185,6 @@ async function startBot(sessionName = null) {
             latestQR = null; // Clear QR on successful connection
             console.log(`✅ WhatsApp Bot is ready and connected using ${currentSessionName}!`);
             
-            // Check immediately on successful connection if daily tips are due!
-            setTimeout(checkAndSendTips, 3000);
         }
     });
 
@@ -490,8 +488,9 @@ async function checkAndSendTips() {
 
 const isCronScheduled = process.env.NODE_APP_INSTANCE === '0' || !process.env.NODE_APP_INSTANCE;
 if (isCronScheduled) {
-    // Run every 5 minutes so container wakeups or delays catch up immediately
-    cron.schedule('*/5 * * * *', checkAndSendTips);
+    // Run exactly at 8:00 AM and 10:00 PM IST
+    cron.schedule('0 8 * * *', checkAndSendTips, { timezone: "Asia/Kolkata" });
+    cron.schedule('0 22 * * *', checkAndSendTips, { timezone: "Asia/Kolkata" });
 }
 
 // ── EXPRESS API SERVER ──
