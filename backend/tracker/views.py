@@ -44,7 +44,7 @@ from django.http import JsonResponse
 import json
 from django.conf import settings
 import random
-from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, WhatsAppSession, OTPVerification, Note
+from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, SplitSettlement, WhatsAppSession, OTPVerification, Note
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
 
 from rest_framework import status
@@ -3802,58 +3802,72 @@ def compute_group_settlement(group, host_domain=None):
 
     net = {m: balances[m] - per_person for m in members}
 
+    # Factor in recorded direct payments / settlements between members
+    recorded_settlements = list(group.settlements.all().order_by("-date", "-id"))
+    for s in recorded_settlements:
+        d_name = name_lookup.get(s.debtor.lower(), s.debtor)
+        c_name = name_lookup.get(s.creditor.lower(), s.creditor)
+        amt = float(s.amount)
+        if d_name in net:
+            net[d_name] += amt
+        if c_name in net:
+            net[c_name] -= amt
+
     settlements = []
-    debtors = [(m, -amt) for m, amt in net.items() if amt < -0.01]
-    creditors = [(m, amt) for m, amt in net.items() if amt > 0.01]
+    if not group.is_settled:
+        debtors = [(m, -amt) for m, amt in net.items() if amt < -0.01]
+        creditors = [(m, amt) for m, amt in net.items() if amt > 0.01]
 
-    debtors.sort(key=lambda x: x[1], reverse=True)
-    creditors.sort(key=lambda x: x[1], reverse=True)
+        debtors.sort(key=lambda x: x[1], reverse=True)
+        creditors.sort(key=lambda x: x[1], reverse=True)
 
-    debtors_copy = [[m, amt] for m, amt in debtors]
-    creditors_copy = [[m, amt] for m, amt in creditors]
+        debtors_copy = [[m, amt] for m, amt in debtors]
+        creditors_copy = [[m, amt] for m, amt in creditors]
 
-    i, j = 0, 0
-    while i < len(debtors_copy) and j < len(creditors_copy):
-        debtor, debt = debtors_copy[i]
-        creditor, credit = creditors_copy[j]
-        transfer = min(debt, credit)
+        i, j = 0, 0
+        while i < len(debtors_copy) and j < len(creditors_copy):
+            debtor, debt = debtors_copy[i]
+            creditor, credit = creditors_copy[j]
+            transfer = min(debt, credit)
 
-        if transfer > 0.01:
-            creditor_phone = member_phones.get(creditor.lower(), "")
-            if not creditor_phone and creditor.lower() in [group.creator.username.lower(), (group.creator.first_name or "").lower()]:
-                creditor_phone = getattr(getattr(group.creator, 'profile', None), 'phone_number', '') or ''
-            
-            clean_phone = re.sub(r'[^0-9]', '', creditor_phone)
-            clean_10 = clean_phone[-10:] if len(clean_phone) >= 10 else clean_phone
-            vpa = f"{clean_10}@upi" if (clean_10 and len(clean_10) == 10) else ""
-            upi_link = f"upi://pay?pa={vpa}&pn={quote(creditor)}&am={transfer:.2f}&cu=INR" if vpa else ""
+            if transfer > 0.01:
+                creditor_phone = member_phones.get(creditor.lower(), "")
+                if not creditor_phone and creditor.lower() in [group.creator.username.lower(), (group.creator.first_name or "").lower()]:
+                    creditor_phone = getattr(getattr(group.creator, 'profile', None), 'phone_number', '') or ''
+                
+                clean_phone = re.sub(r'[^0-9]', '', creditor_phone)
+                clean_10 = clean_phone[-10:] if len(clean_phone) >= 10 else clean_phone
+                vpa = f"{clean_10}@upi" if (clean_10 and len(clean_10) == 10) else ""
+                upi_link = f"upi://pay?pa={vpa}&pn={quote(creditor)}&am={transfer:.2f}&cu=INR" if vpa else ""
 
-            settlements.append({
-                "from": debtor,
-                "to": creditor,
-                "amount": round(transfer, 2),
-                "upi_link": upi_link,
-                "vpa": vpa,
-                "creditor_phone": creditor_phone
-            })
+                settlements.append({
+                    "from": debtor,
+                    "to": creditor,
+                    "amount": round(transfer, 2),
+                    "upi_link": upi_link,
+                    "vpa": vpa,
+                    "creditor_phone": creditor_phone
+                })
 
-        debtors_copy[i][1] -= transfer
-        creditors_copy[j][1] -= transfer
+            debtors_copy[i][1] -= transfer
+            creditors_copy[j][1] -= transfer
 
-        if debtors_copy[i][1] < 0.01:
-            i += 1
-        if creditors_copy[j][1] < 0.01:
-            j += 1
+            if debtors_copy[i][1] < 0.01:
+                i += 1
+            if creditors_copy[j][1] < 0.01:
+                j += 1
 
     member_breakdown = []
     for m in members:
         paid = balances[m]
+        cur_net = 0.0 if group.is_settled else net[m]
+        status = "settled" if (group.is_settled or abs(cur_net) <= 0.01) else ("gets_back" if cur_net > 0.01 else "owes")
         member_breakdown.append({
             "name": m,
             "paid": round(paid, 2),
             "share": per_person,
-            "net": round(net[m], 2),
-            "status": "gets_back" if net[m] > 0.01 else ("owes" if net[m] < -0.01 else "settled"),
+            "net": round(cur_net, 2),
+            "status": status,
         })
 
     if not host_domain:
@@ -3861,8 +3875,13 @@ def compute_group_settlement(group, host_domain=None):
     public_url = f"{host_domain.rstrip('/')}/split/{group.share_token}/"
 
     settle_lines = []
-    for s in settlements:
-        settle_lines.append(f"• *{s['from']}* ➡️ *{s['to']}*: ₹{s['amount']:,.0f}")
+    if group.is_settled:
+        settle_lines = ["🎉 *This group is fully settled and closed!* All debts cleared."]
+    else:
+        for s in settlements:
+            settle_lines.append(f"• *{s['from']}* ➡️ *{s['to']}*: ₹{s['amount']:,.0f}")
+        if not settle_lines:
+            settle_lines = ["🎉 *All members are completely settled up!*"]
     if not settle_lines:
         settle_lines = ["All settled! ✅"]
 
@@ -3903,6 +3922,17 @@ def compute_group_settlement(group, host_domain=None):
         for exp in expenses
     ]
 
+    settled_history = [
+        {
+            "id": s.pk,
+            "debtor": s.debtor,
+            "creditor": s.creditor,
+            "amount": float(s.amount),
+            "date": s.date.isoformat(),
+        }
+        for s in recorded_settlements
+    ]
+
     return {
         "group_id": group.pk,
         "group_name": group.name,
@@ -3916,6 +3946,7 @@ def compute_group_settlement(group, host_domain=None):
         "members": member_breakdown,
         "settlements": settlements,
         "expenses": expense_list,
+        "settled_history": settled_history,
         "is_settled": group.is_settled,
         "whatsapp_message": whatsapp_message,
     }
@@ -3937,10 +3968,14 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
         f"1. Extract the group/trip name (e.g. 'Goa Trip', 'Room Rent', 'Flatmates', 'Dinner'). If none mentioned, default to 'Group Split'.\n"
         f"2. Extract who paid what. If the user refers to themselves ('maine', 'mera', 'me', 'i paid', 'self'), set 'paid_by' to '{user_name}'.\n"
         f"3. For each expense item, extract: 'paid_by' (Capitalized person name), 'amount' (number), and 'description' (e.g. 'cab', 'dinner', 'snacks').\n"
-        f"4. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'show split goa'), set 'is_query_only': true.\n\n"
+        f"4. If the message wants to settle/close/finish the group completely (e.g. 'Goa trip settle kar do', 'Goa trip khatam ho gaya', 'close goa trip', 'settle goa trip'), set 'is_settle_all': true.\n"
+        f"5. If one member paid another directly to settle (e.g. 'Rahul paid Ajay 133 in Goa trip', 'Rahul ne Aman ko 733 de diye'), set 'settlement_payment': {{\"debtor\": \"Rahul\", \"creditor\": \"Ajay\", \"amount\": 133}}.\n"
+        f"6. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'show split goa'), set 'is_query_only': true.\n\n"
         f"Output format: Strictly output a JSON object with this exact structure, with NO markdown code fences or conversational text:\n"
         f"{{\n"
         f"  \"is_query_only\": false,\n"
+        f"  \"is_settle_all\": false,\n"
+        f"  \"settlement_payment\": null,\n"
         f"  \"group_name\": \"Goa Trip\",\n"
         f"  \"expenses\": [\n"
         f"    {{\"paid_by\": \"Rahul\", \"amount\": 400, \"description\": \"cab\"}},\n"
@@ -3972,10 +4007,60 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
 
     group_name = data.get("group_name", "Group Split").strip()
     is_query_only = data.get("is_query_only", False)
+    is_settle_all = data.get("is_settle_all", False)
+    settle_payment = data.get("settlement_payment")
 
     group = SplitGroup.objects.filter(creator=target_user, name__iexact=group_name).first()
     if not group:
         group = SplitGroup.objects.filter(creator=target_user, name__icontains=group_name).first()
+
+    if is_settle_all:
+        if not group:
+            return {
+                "status": "error",
+                "message": f"❌ Could not find an active split group named '{group_name}' to settle."
+            }
+        group.is_settled = True
+        group.save(update_fields=["is_settled"])
+        settlement = compute_group_settlement(group, host_domain)
+        return {
+            "status": "success",
+            "message": (
+                f"🎉 *{group.name} — Marked as Fully Settled!* 🏁\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"All balances and hisaab have been closed.\n\n"
+                f"🔗 *View Group Page:*\n{settlement['public_url']}"
+            ),
+            "data": settlement
+        }
+
+    if settle_payment and isinstance(settle_payment, dict) and group:
+        d = str(settle_payment.get("debtor", "")).strip().title()
+        c = str(settle_payment.get("creditor", "")).strip().title()
+        amt_raw = settle_payment.get("amount", 0)
+        try:
+            amt = Decimal(str(amt_raw))
+            if d and c and amt > 0:
+                SplitSettlement.objects.create(
+                    group=group,
+                    debtor=d,
+                    creditor=c,
+                    amount=amt,
+                    date=date.today()
+                )
+                settlement = compute_group_settlement(group, host_domain)
+                return {
+                    "status": "success",
+                    "message": (
+                        f"✅ *Payment Recorded for {group.name}!*\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"💸 *{d}* paid *₹{amt:,.0f}* to *{c}*\n\n"
+                        f"{settlement['whatsapp_message']}"
+                    ),
+                    "data": settlement
+                }
+        except Exception as e:
+            logger.error("Error saving settlement payment: %s", e)
 
     if is_query_only:
         if not group:
@@ -4073,6 +4158,7 @@ def public_split_page(request: HttpRequest, share_token: str) -> HttpResponse:
         "members": settlement["members"],
         "settlements": settlement["settlements"],
         "expenses": settlement["expenses"],
+        "settled_history": settlement.get("settled_history", []),
         "total": settlement["total"],
         "per_person": settlement["per_person"],
         "public_url": settlement["public_url"],
@@ -4138,6 +4224,75 @@ def api_public_add_expense(request: HttpRequest, share_token: str) -> JsonRespon
         "status": "success",
         "message": f"Added ₹{amount:,.0f} by {paid_by} for '{description}'!",
         "settlement": settlement
+    })
+
+
+@csrf_exempt
+def api_public_settle_payment(request: HttpRequest, share_token: str) -> JsonResponse:
+    """Public endpoint to record a direct settlement payment between two members."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    group = get_object_or_404(SplitGroup, share_token=share_token)
+    try:
+        body = json.loads(request.body)
+    except Exception:
+        body = request.POST
+
+    debtor = str(body.get("debtor", "")).strip().title()
+    creditor = str(body.get("creditor", "")).strip().title()
+    amount_raw = body.get("amount", 0)
+
+    if not debtor or not creditor:
+        return JsonResponse({"error": "Both debtor and creditor are required"}, status=400)
+
+    try:
+        amount = Decimal(str(amount_raw))
+        if amount <= 0:
+            raise ValueError
+    except Exception:
+        return JsonResponse({"error": "Valid positive amount required"}, status=400)
+
+    SplitSettlement.objects.create(
+        group=group,
+        debtor=debtor,
+        creditor=creditor,
+        amount=amount,
+        date=date.today()
+    )
+
+    host_domain = request.build_absolute_uri('/')[:-1]
+    res = compute_group_settlement(group, host_domain)
+    if not res["settlements"] and not group.is_settled:
+        group.is_settled = True
+        group.save(update_fields=["is_settled"])
+        res["is_settled"] = True
+
+    return JsonResponse({
+        "status": "success",
+        "message": f"Payment recorded: {debtor} paid ₹{amount:,.0f} to {creditor}! ✅",
+        "data": res
+    })
+
+
+@csrf_exempt
+def api_public_toggle_group_settled(request: HttpRequest, share_token: str) -> JsonResponse:
+    """Public endpoint allowing users to mark the entire group as settled / closed (or re-open)."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    group = get_object_or_404(SplitGroup, share_token=share_token)
+    group.is_settled = not group.is_settled
+    group.save(update_fields=["is_settled"])
+
+    host_domain = request.build_absolute_uri('/')[:-1]
+    res = compute_group_settlement(group, host_domain)
+    msg = "🎉 Group marked as fully settled and closed!" if group.is_settled else "🔄 Group re-opened for new expenses."
+    return JsonResponse({
+        "status": "success",
+        "is_settled": group.is_settled,
+        "message": msg,
+        "data": res
     })
 
 

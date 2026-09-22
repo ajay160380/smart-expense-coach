@@ -458,6 +458,89 @@
     .upi-pay-btn:active {
       transform: scale(0.96);
     }
+    .mark-paid-btn {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #A5B4FC;
+      padding: 8px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .mark-paid-btn:hover {
+      background: rgba(99, 102, 241, 0.3);
+      color: white;
+      border-color: #818CF8;
+      transform: translateY(-1px);
+    }
+    .mark-paid-btn:active {
+      transform: scale(0.96);
+    }
+    .toggle-settle-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text2);
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .toggle-settle-btn:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--primary-light);
+      color: #FFFFFF;
+    }
+    .toggle-settle-btn.reopen {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34D399;
+    }
+    .settled-log {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .settled-log-head {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .settled-log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .settled-log-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text2);
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .settled-log-amt {
+      font-family: var(--mono);
+      font-weight: 700;
+      color: #34D399;
+    }
 
     /* ─── Member Breakdown List ─── */
     .member-list {
@@ -804,10 +887,24 @@
     <div class="section-card">
       <div class="section-head">
         <div class="section-title">⚖️ Settlement (Who Owes Whom)</div>
-        <span class="section-badge">{{ settlements|length }} transfer{{ settlements|length|pluralize }}</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="toggle-settle-btn {% if group.is_settled %}reopen{% endif %}" onclick="toggleGroupSettle()">
+            {% if group.is_settled %}
+              <span>🔄 Re-open Group</span>
+            {% else %}
+              <span>🏁 Settle All</span>
+            {% endif %}
+          </button>
+          <span class="section-badge">{{ settlements|length }} transfer{{ settlements|length|pluralize }}</span>
+        </div>
       </div>
 
       <div class="settle-list" id="settle-container">
+        {% if group.is_settled %}
+        <div style="text-align: center; padding: 24px; color: #34D399; font-weight: 700; background: var(--green-bg); border-radius: var(--radius-sm); border: 1px dashed rgba(16, 185, 129, 0.3);">
+          🏁 This group is fully settled and closed! All debts have been cleared.
+        </div>
+        {% else %}
         {% for s in settlements %}
         <div class="settle-item">
           <div class="settle-info">
@@ -825,6 +922,9 @@
               <span>Pay UPI 📲</span>
             </button>
             {% endif %}
+            <button type="button" class="mark-paid-btn" onclick="confirmSettlePayment('{{ s.from|escapejs }}', '{{ s.to|escapejs }}', '{{ s.amount|floatformat:0 }}')">
+              <span>✓ Mark Paid</span>
+            </button>
           </div>
         </div>
         {% empty %}
@@ -832,7 +932,22 @@
           🎉 All members are completely settled up!
         </div>
         {% endfor %}
+        {% endif %}
       </div>
+
+      {% if settled_history %}
+      <div class="settled-log">
+        <div class="settled-log-head">✅ Settled Payments ({{ settled_history|length }})</div>
+        <div class="settled-log-list">
+          {% for sh in settled_history %}
+          <div class="settled-log-item">
+            <span>✓ <strong>{{ sh.debtor }}</strong> paid <strong>{{ sh.creditor }}</strong></span>
+            <span class="settled-log-amt">₹{{ sh.amount|floatformat:0 }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- Member Breakdown -->
@@ -1136,6 +1251,53 @@
       }).catch(() => {
         showToast('Failed to copy');
       });
+    }
+
+    async function confirmSettlePayment(debtor, creditor, amount) {
+      if (!confirm(`Mark payment of ₹${amount} from ${debtor} to ${creditor} as settled?`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/public-split/${SHARE_TOKEN}/settle/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ debtor, creditor, amount })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast(data.message || 'Payment recorded! ✅');
+          setTimeout(() => { window.location.reload(); }, 600);
+        } else {
+          showToast('❌ ' + (data.error || 'Failed to settle payment'));
+        }
+      } catch (err) {
+        showToast('❌ Network error. Please try again.');
+      }
+    }
+
+    async function toggleGroupSettle() {
+      const isCurrentlySettled = {% if group.is_settled %}true{% else %}false{% endif %};
+      const msg = isCurrentlySettled 
+        ? "Re-open this split group for active expenses and balances?"
+        : "Mark the entire trip as fully settled and closed? All debt transfers will be marked complete.";
+      if (!confirm(msg)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/public-split/${SHARE_TOKEN}/toggle-settle/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast(data.message);
+          setTimeout(() => { window.location.reload(); }, 600);
+        } else {
+          showToast('❌ Failed to update group status');
+        }
+      } catch (err) {
+        showToast('❌ Network error. Please try again.');
+      }
     }
   </script>
 </body>

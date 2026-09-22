@@ -177,6 +177,8 @@ urlpatterns = [
     path('split/<str:share_token>/', views.public_split_page, name='public_split_page'),
     path('api/public-split/<str:share_token>/', views.api_public_split_data, name='api_public_split_data'),
     path('api/public-split/<str:share_token>/add/', views.api_public_add_expense, name='api_public_add_expense'),
+    path('api/public-split/<str:share_token>/settle/', views.api_public_settle_payment, name='api_public_settle_payment'),
+    path('api/public-split/<str:share_token>/toggle-settle/', views.api_public_toggle_group_settled, name='api_public_toggle_group_settled'),
 
     # ══════════════════════════════════════════════════════════════════════
     # NEW FEATURE: ADMIN PANEL, ANALYTICS & EXPORTS

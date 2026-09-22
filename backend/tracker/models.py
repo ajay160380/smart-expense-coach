@@ -195,3 +195,18 @@ class SplitExpense(models.Model):
 
     def __str__(self):
         return f"{self.description} - ₹{self.amount} (paid by {self.paid_by})"
+
+
+class SplitSettlement(models.Model):
+    group = models.ForeignKey(SplitGroup, on_delete=models.CASCADE, related_name='settlements')
+    debtor = models.CharField(max_length=100)      # Person who paid the settlement
+    creditor = models.CharField(max_length=100)    # Person who received the settlement
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField(default=date.today)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.debtor} paid ₹{self.amount} to {self.creditor} ({self.group.name})"
