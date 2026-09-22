@@ -88,6 +88,9 @@ urlpatterns = [
     # Quick summary stats for dashboard widgets (lightweight, no AI)
     path('api/summary-stats/',         views.api_summary_stats,    name='api_summary_stats'),
     
+    # Safe-to-Spend dynamic daily allowance
+    path('api/safe-to-spend/',         views.api_safe_to_spend,    name='api_safe_to_spend'),
+    
     # Custom history for any month
     path('api/transactions-history/',  views.api_transactions_history, name='api_transactions_history'),
 
@@ -169,6 +172,11 @@ urlpatterns = [
     path('api/splits/<int:pk>/settle/',         views.api_settle_split,       name='api_settle_split'),
     path('api/splits/<int:pk>/delete/',         views.api_delete_split,       name='api_delete_split'),
     path('api/splits/<int:pk>/delete-expense/<int:expense_id>/', views.api_delete_split_expense, name='api_delete_split_expense'),
+
+    # Public 1-Click Web Split Links (Zero Login)
+    path('split/<str:share_token>/', views.public_split_page, name='public_split_page'),
+    path('api/public-split/<str:share_token>/', views.api_public_split_data, name='api_public_split_data'),
+    path('api/public-split/<str:share_token>/add/', views.api_public_add_expense, name='api_public_add_expense'),
 
     # ══════════════════════════════════════════════════════════════════════
     # NEW FEATURE: ADMIN PANEL, ANALYTICS & EXPORTS

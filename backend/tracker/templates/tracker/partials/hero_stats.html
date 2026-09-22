@@ -19,6 +19,50 @@
   </div>
 </div>
 
+<!-- SAFE-TO-SPEND DAILY ALLOWANCE WIDGET -->
+<div class="safe-spend-card" style="margin: 16px 0; background: var(--surface, rgba(255, 255, 255, 0.75)); border: 1px solid var(--border, rgba(148, 163, 184, 0.2)); border-radius: var(--radius, 16px); padding: 18px 20px; box-shadow: var(--shadow, 0 4px 24px -4px rgba(0,0,0,0.06)); backdrop-filter: var(--glass-filter, blur(24px)); transition: all 0.3s ease;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 38px; height: 38px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); display: flex; align-items: center; justify-content: center; font-size: 19px;">
+        🎯
+      </div>
+      <div>
+        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3, #94A3B8);">Daily Dynamic Allowance</div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--text, #0F172A);">Safe-to-Spend Today</div>
+      </div>
+    </div>
+    <div id="safe-spend-badge" style="font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.6px; background: {{ safe_to_spend.status_color }}18; color: {{ safe_to_spend.status_color }}; border: 1px solid {{ safe_to_spend.status_color }}33;">
+      ● {{ safe_to_spend.status_label|default:"Safe to Spend" }}
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+    <div>
+      <span style="font-size: 28px; font-weight: 800; font-family: 'Outfit', var(--font); color: var(--text, #0F172A); letter-spacing: -0.5px;" id="safe-limit-val">
+        ₹{{ safe_to_spend.safe_limit_today|floatformat:0 }}
+      </span>
+      <span style="font-size: 13px; font-weight: 500; color: var(--text3, #94A3B8); margin-left: 6px;">daily target</span>
+    </div>
+    <div style="text-align: right; font-size: 13px; color: var(--text2, #475569);">
+      Spent today: <strong id="safe-today-spent" style="color: var(--text, #0F172A); font-weight: 700;">₹{{ safe_to_spend.today_spent|floatformat:0 }}</strong>
+      {% if safe_to_spend.remaining_today >= 0 %}
+      <span style="color: var(--green, #10B981); font-weight: 600; margin-left: 4px;">(₹{{ safe_to_spend.remaining_today|floatformat:0 }} left)</span>
+      {% else %}
+      <span style="color: var(--red, #EF4444); font-weight: 600; margin-left: 4px;">(₹{{ safe_to_spend.remaining_today|floatformat:0|cut:"-" }} over)</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="height: 7px; background: var(--surface3, #E2E8F0); border-radius: 100px; overflow: hidden; margin-bottom: 10px;">
+    <div id="safe-progress-fill" style="height: 100%; width: {{ safe_to_spend.pct_used_today|default:0 }}%; background: {{ safe_to_spend.status_color }}; border-radius: 100px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text3, #94A3B8); flex-wrap: wrap; gap: 4px;">
+    <span>⏳ {{ safe_to_spend.days_remaining }} day{{ safe_to_spend.days_remaining|pluralize }} remaining in cycle</span>
+    <span>💡 Recalibrates daily based on spending</span>
+  </div>
+</div>
+
 <!-- STAT BENTO BOXES -->
 <div class="stat-row">
   <div class="stat-card">

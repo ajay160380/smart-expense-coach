@@ -17,6 +17,7 @@ from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 from functools import wraps
 from typing import Optional
+from urllib.parse import quote
 
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -290,7 +291,7 @@ def api_login_required(view_func):
 def ai_rate_limited(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
+        if not hasattr(request, 'user') or not request.user.is_authenticated:
             return view_func(request, *args, **kwargs)
         ck = f"ai_rate_{request.user.id}"
         count = cache.get(ck, 0)
@@ -582,6 +583,115 @@ def get_budget_cycle_dates(user, reference_date=None):
         end_date = date(y, m, next_sd) - timedelta(days=1)
         
     return start_date, end_date
+
+
+def calculate_safe_to_spend(user, target_date=None):
+    """
+    Calculates the dynamic daily 'Safe-to-Spend' allowance for the user.
+    Formula:
+      Days remaining in cycle (including today) = (cycle_end - target_date).days + 1
+      Spent before today = total_cycle_spent - today_spent
+      Remaining budget for rest of cycle = max(0, monthly_budget - spent_before_today)
+      Daily safe limit = round(remaining_budget_for_rest / days_remaining, 2)
+    All text summaries generated here are strictly in 100% pure English.
+    """
+    if target_date is None:
+        target_date = date.today()
+
+    profile = getattr(user, 'profile', None)
+    monthly_budget = float(getattr(profile, 'monthly_budget', 20000)) if profile else 20000.0
+    if monthly_budget <= 0:
+        monthly_budget = 20000.0
+
+    start_date, end_date = get_budget_cycle_dates(user, target_date)
+    
+    # Days left in cycle including today, minimum 1
+    days_remaining = max((end_date - target_date).days + 1, 1)
+
+    cycle_expenses = Expense.objects.filter(user=user, date__range=(start_date, end_date))
+    agg = cycle_expenses.aggregate(
+        cycle_total=Sum("amount"),
+        today_total=Sum("amount", filter=Q(date=target_date))
+    )
+
+    total_cycle_spent = float(agg["cycle_total"] or 0)
+    today_spent = float(agg["today_total"] or 0)
+
+    spent_before_today = max(0.0, total_cycle_spent - today_spent)
+    remaining_for_cycle = max(0.0, monthly_budget - spent_before_today)
+
+    if remaining_for_cycle <= 0:
+        safe_limit_today = 0.0
+    else:
+        safe_limit_today = round(remaining_for_cycle / days_remaining, 2)
+
+    remaining_today = round(safe_limit_today - today_spent, 2)
+
+    # Status evaluation
+    if monthly_budget - total_cycle_spent <= 0 and safe_limit_today <= 0:
+        status = "exhausted"
+        status_label = "Budget Exhausted"
+        status_color = "#EF4444"
+    elif today_spent > safe_limit_today:
+        status = "exceeded"
+        status_label = "Daily Limit Exceeded"
+        status_color = "#EF4444"
+    elif safe_limit_today > 0 and today_spent >= (safe_limit_today * 0.75):
+        status = "warning"
+        status_label = "Approaching Limit"
+        status_color = "#F59E0B"
+    else:
+        status = "safe"
+        status_label = "Safe to Spend"
+        status_color = "#10B981"
+
+    pct_used_today = min(100.0, round((today_spent / safe_limit_today * 100), 1)) if safe_limit_today > 0 else (100.0 if today_spent > 0 else 0.0)
+
+    user_name = user.first_name.title() if (user and user.first_name) else (user.username.title() if user else "Friend")
+
+    # Pure English WhatsApp message (strictly NO Hindi or Hinglish)
+    english_message_lines = [
+        f"📊 *Safe-to-Spend Daily Allowance*",
+        f"━━━━━━━━━━━━━━━━━━",
+        f"👤 *User:* {user_name}",
+        f"🎯 *Today's Safe Limit:* ₹{safe_limit_today:,.2f}",
+        f"💸 *Spent Today:* ₹{today_spent:,.2f}",
+        f"🟢 *Remaining for Today:* ₹{max(0.0, remaining_today):,.2f}",
+        f"━━━━━━━━━━━━━━━━━━",
+        f"📈 *Monthly Overview:*",
+        f"• Monthly Budget: ₹{monthly_budget:,.2f}",
+        f"• Cycle Spent So Far: ₹{total_cycle_spent:,.2f}",
+        f"• Days Remaining in Cycle: {days_remaining} days",
+        f"━━━━━━━━━━━━━━━━━━",
+    ]
+
+    if status == "exhausted":
+        english_message_lines.append("⚠️ *Alert:* Your monthly budget is completely exhausted. Please avoid non-essential spending!")
+    elif status == "exceeded":
+        english_message_lines.append(f"🚨 *Caution:* You have exceeded today's limit by ₹{abs(remaining_today):,.2f}. Try pausing additional expenses today to keep future days balanced!")
+    elif status == "warning":
+        english_message_lines.append(f"⚠️ *Notice:* You have utilized {pct_used_today:.0f}% of today's allowance. Spend mindfully for the rest of the day.")
+    else:
+        english_message_lines.append("✨ *Great Job:* You are well within your daily spending goal. Have a productive and mindful day ahead!")
+
+    english_message = "\n".join(english_message_lines)
+
+    return {
+        "monthly_budget": monthly_budget,
+        "total_cycle_spent": total_cycle_spent,
+        "remaining_monthly_budget": max(0.0, monthly_budget - total_cycle_spent),
+        "days_remaining": days_remaining,
+        "cycle_start": start_date.isoformat(),
+        "cycle_end": end_date.isoformat(),
+        "safe_limit_today": safe_limit_today,
+        "today_spent": today_spent,
+        "remaining_today": remaining_today,
+        "pct_used_today": pct_used_today,
+        "status": status,
+        "status_label": status_label,
+        "status_color": status_color,
+        "english_message": english_message,
+    }
 
 
 def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
@@ -1260,6 +1370,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "savings_goals":         savings_goals,
         "completed_goals_count": completed_goals,
         "active_splits":         active_splits,
+        "safe_to_spend":         calculate_safe_to_spend(user, today),
         **stats,  
     }
     return render(request, "tracker/dashboard.html", context)
@@ -1469,7 +1580,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     target_user = None
 
     if not incoming_phone:
-        if request.user.is_authenticated:
+        if hasattr(request, 'user') and request.user.is_authenticated:
             target_user = request.user
         else:
             return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
@@ -1563,6 +1674,39 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             session.save()
             return JsonResponse({"status": "success", "message": "Kripya apna feedback likhein:"})
 
+        # ── Intercept Safe-to-Spend / Daily Allowance (100% Pure English) ──
+        safe_to_spend_triggers = [
+            "safe to spend", "safetospend", "safe-to-spend",
+            "daily limit", "today limit", "today's limit", "todays limit",
+            "daily allowance", "allowance", "pocket money",
+            "/safe", "/safetospend", "/allowance",
+            "how much can i spend today", "what is my daily limit",
+            "daily budget"
+        ]
+        if any(trg in lower_text for trg in safe_to_spend_triggers):
+            safe_data = calculate_safe_to_spend(target_user, today)
+            return JsonResponse({
+                "status": "success",
+                "message": safe_data["english_message"],
+                "data": safe_data
+            })
+
+        # ── Intercept Group Split (Hybrid: WhatsApp Forwardable Card + 1-Click Web Split) ──
+        split_triggers = [
+            "split:", "/split", "trip:", "hisaab:", "hisab:", "group split", "bill split"
+        ]
+        is_split_intent = any(kw in lower_text for kw in split_triggers) or (
+            ("split" in lower_text or "trip" in lower_text or "room" in lower_text or "dinner" in lower_text or "lunch" in lower_text) and 
+            any(w in lower_text for w in ["paid", "diya", "dost", "cab", "hotel", "rent", "snacks", "petrol", "food"]) and
+            any(char.isdigit() for char in lower_text)
+        )
+        if is_split_intent:
+            host_domain = request.build_absolute_uri('/')[:-1]
+            if "localhost" in host_domain or "127.0.0.1" in host_domain:
+                host_domain = "https://smart-expense-coach.onrender.com"
+            res = parse_and_handle_split_message(target_user, spoken_text, host_domain)
+            return JsonResponse(res)
+
         # ── Intercept Budget ──
         if lower_text.startswith("budget set"):
             return JsonResponse({"status": "success", "message": "Aap App ya Website par jake apna budget set kar lijiye. Wahan easily set ho jayega! 🎯"})
@@ -1573,7 +1717,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
         # ── Intercept Help ──
         if lower_text in ["help", "features", "what can i do?", "what can i do", "what can you do"]:
-            return JsonResponse({"status": "success", "message": "Main ExpenseTracker bot hoon! Main ye sab kar sakta hoon:\n\n1. Add Expense: '500 for dinner' ya 'auto 150'\n2. Show Budget: 'how much budget left'\n3. Feedback: Type 'feedback'\n\nTry it now! 🚀"})
+            return JsonResponse({"status": "success", "message": "Main ExpenseTracker bot hoon! Main ye sab kar sakta hoon:\n\n1. Add Expense: '500 for dinner' ya 'auto 150'\n2. Show Budget: 'how much budget left'\n3. Safe-to-Spend: 'safe to spend' ya '/safe' (Daily Allowance)\n4. Feedback: Type 'feedback'\n\nTry it now! 🚀"})
 
         # ──────────────────────────────────────────────────────────────────────
         # FAST PATH FOR LARGE LISTS
@@ -2309,10 +2453,19 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
         "recent_expenses":   list(recent_qs),
         "user_phone":        request.user.profile.phone_number if hasattr(request.user, 'profile') else "",
         "whatsapp_linked":   request.user.profile.whatsapp_linked if hasattr(request.user, 'profile') else False,
+        "safe_to_spend":     calculate_safe_to_spend(request.user, today),
         "days_left": (
             (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
         ).days,
     })
+
+
+@api_login_required
+def api_safe_to_spend(request: HttpRequest) -> JsonResponse:
+    """REST endpoint returning current daily safe-to-spend allowance and metrics."""
+    safe_data = calculate_safe_to_spend(request.user)
+    return JsonResponse(safe_data)
+
 
 @api_login_required
 def api_transactions_history(request: HttpRequest) -> JsonResponse:
@@ -3150,10 +3303,13 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
         time_of_day = "Morning" if tip_type == "morning" else "Night"
 
         if tip_type == "morning":
+            safe_info = calculate_safe_to_spend(user)
+            safe_allowance = safe_info["safe_limit_today"]
             prompt = (
                 f"You are a sophisticated, uplifting, and friendly personal financial coach.\n"
                 f"User Name: {user_name}\n"
                 f"Time: Morning\n"
+                f"Today's Safe-to-Spend Allowance: ₹{safe_allowance:,.0f}\n"
                 f"Past 7 days total spent: ₹{week_total:,.0f}\n"
                 f"Top spending category: {cat_name} (₹{cat_total:,.0f})\n"
                 f"Monthly budget status: {budget_pct:.0f}% of ₹{budget:,.0f} budget used (₹{month_spent:,.0f} spent)\n\n"
@@ -3161,10 +3317,11 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
                 f"STRICT RULES:\n"
                 f"1. LANGUAGE: 100% PURE, ELEGANT ENGLISH ONLY. Absolutely NO Hindi or Hinglish words (NO 'bhai', 'yaar', 'aap', 'kharcha', 'dost', etc.).\n"
                 f"2. GREETING: Start with a warm, energetic greeting like '*Good Morning, {user_name}!* ☀️' or '*Good Morning, {user_name}!* 🌅'.\n"
-                f"3. CONTENT: Provide ONE crisp, actionable financial wisdom or smart habit for the day ahead (e.g., mindful spending on {cat_name} or staying in budget).\n"
-                f"4. TONE: Inspiring, positive, clear, and professional yet friendly.\n"
-                f"5. LENGTH: 20-30 words maximum! Keep it short, crisp, and high-impact.\n"
-                f"6. FORMAT: Use WhatsApp *bold* formatting for key phrases and 1-2 lovely emojis.\n"
+                f"3. SAFE-TO-SPEND: Clearly highlight today's Safe-to-Spend limit of *₹{safe_allowance:,.0f}* as their daily spending guideline.\n"
+                f"4. CONTENT: Provide ONE crisp, actionable financial wisdom or smart habit for the day ahead.\n"
+                f"5. TONE: Inspiring, positive, clear, and professional yet friendly.\n"
+                f"6. LENGTH: 25-35 words maximum! Keep it short, crisp, and high-impact.\n"
+                f"7. FORMAT: Use WhatsApp *bold* formatting for key phrases and 1-2 lovely emojis.\n"
                 f"Return ONLY the final message to be sent."
             )
         else:
@@ -3204,10 +3361,15 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
         logger.error("Daily tip generation error: %s", e)
         user_name = user.first_name.title() if (user and user.first_name) else (user.username.title() if user else "Friend")
         if tip_type == "morning":
+            try:
+                safe_info = calculate_safe_to_spend(user)
+                safe_allowance = safe_info["safe_limit_today"]
+            except Exception:
+                safe_allowance = 500.0
             tips_fallback = [
-                f"☀️ *Good Morning, {user_name}!* Start your day with clear goals and mindful spending. Every smart financial choice today builds your future! 📈✨",
-                f"🌅 *Good Morning, {user_name}!* A fresh day brings fresh possibilities. Keep track of your expenses and watch your savings grow! 💼💰",
-                f"☕ *Good Morning, {user_name}!* Make today count financially. Stay mindful of your daily budget and take charge of your goals! 🚀💸",
+                f"☀️ *Good Morning, {user_name}!* Today's Safe-to-Spend limit is *₹{safe_allowance:,.0f}*. Spend mindfully today to keep your savings on track! 📈✨",
+                f"🌅 *Good Morning, {user_name}!* Your daily spending target today is *₹{safe_allowance:,.0f}*. Every smart choice today builds financial freedom! 💼💰",
+                f"☕ *Good Morning, {user_name}!* Make today count financially with a Safe-to-Spend allowance of *₹{safe_allowance:,.0f}*. Stay focused on your goals! 🚀💸",
             ]
         else:
             tips_fallback = [
@@ -3501,6 +3663,8 @@ def api_split_groups(request: HttpRequest) -> JsonResponse:
         data.append({
             "id": g.pk,
             "name": g.name,
+            "share_token": g.share_token,
+            "share_url": f"/split/{g.share_token}/",
             "members": members,
             "member_count": len(members),
             "total": total,
@@ -3616,95 +3780,336 @@ def api_add_split_expense(request: HttpRequest, pk: int) -> JsonResponse:
     }, status=201)
 
 
-@api_login_required
-def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
-    """Calculate who owes whom — minimized transactions."""
-    group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
-    members = list(group.members.values_list('name', flat=True))
-    expenses = group.expenses.all()
+def compute_group_settlement(group, host_domain=None):
+    """Calculate who owes whom with minimized transactions, UPI links, and WhatsApp card."""
+    members_qs = group.members.all()
+    members = list(members_qs.values_list('name', flat=True))
+    member_phones = {m.name.lower(): (m.phone or "") for m in members_qs}
+    expenses = group.expenses.all().order_by("-date", "-id")
 
     total = _safe_float(expenses.aggregate(t=Sum("amount"))["t"])
-    per_person = total / max(len(members), 1)
+    member_count = max(len(members), 1)
+    per_person = round(total / member_count, 2)
 
-    # Build a case-insensitive lookup: lowercased name → stored name
     name_lookup = {m.lower(): m for m in members}
-
-    # Calculate balances (positive = owed money, negative = owes money)
     balances = {m: 0.0 for m in members}
     for exp in expenses:
-        # Match paid_by to a member name case-insensitively
         stored_name = name_lookup.get(exp.paid_by.lower())
         if stored_name:
             balances[stored_name] += float(exp.amount)
         elif exp.paid_by in balances:
-            # Exact match fallback
             balances[exp.paid_by] += float(exp.amount)
 
-    # Each person's net = paid - share
     net = {m: balances[m] - per_person for m in members}
 
-    # Minimize transactions
     settlements = []
-    debtors = [(m, -amt) for m, amt in net.items() if amt < -0.01]  # owes money
-    creditors = [(m, amt) for m, amt in net.items() if amt > 0.01]  # owed money
+    debtors = [(m, -amt) for m, amt in net.items() if amt < -0.01]
+    creditors = [(m, amt) for m, amt in net.items() if amt > 0.01]
 
     debtors.sort(key=lambda x: x[1], reverse=True)
     creditors.sort(key=lambda x: x[1], reverse=True)
 
+    debtors_copy = [[m, amt] for m, amt in debtors]
+    creditors_copy = [[m, amt] for m, amt in creditors]
+
     i, j = 0, 0
-    while i < len(debtors) and j < len(creditors):
-        debtor, debt = debtors[i]
-        creditor, credit = creditors[j]
+    while i < len(debtors_copy) and j < len(creditors_copy):
+        debtor, debt = debtors_copy[i]
+        creditor, credit = creditors_copy[j]
         transfer = min(debt, credit)
 
         if transfer > 0.01:
+            creditor_phone = member_phones.get(creditor.lower(), "")
+            if not creditor_phone and creditor.lower() in [group.creator.username.lower(), (group.creator.first_name or "").lower()]:
+                creditor_phone = getattr(getattr(group.creator, 'profile', None), 'phone_number', '') or ''
+            
+            clean_phone = re.sub(r'[^0-9]', '', creditor_phone)
+            vpa = f"{clean_phone}@upi" if (clean_phone and len(clean_phone) >= 10) else ""
+            upi_link = f"upi://pay?pa={vpa}&pn={quote(creditor)}&am={transfer:.2f}&cu=INR" if vpa else ""
+
             settlements.append({
                 "from": debtor,
                 "to": creditor,
                 "amount": round(transfer, 2),
+                "upi_link": upi_link,
+                "creditor_phone": creditor_phone
             })
 
-        debtors[i] = (debtor, debt - transfer)
-        creditors[j] = (creditor, credit - transfer)
+        debtors_copy[i][1] -= transfer
+        creditors_copy[j][1] -= transfer
 
-        if debtors[i][1] < 0.01:
+        if debtors_copy[i][1] < 0.01:
             i += 1
-        if creditors[j][1] < 0.01:
+        if creditors_copy[j][1] < 0.01:
             j += 1
 
-    # Per-member breakdown
     member_breakdown = []
     for m in members:
         paid = balances[m]
-        share = per_person
         member_breakdown.append({
             "name": m,
             "paid": round(paid, 2),
-            "share": round(share, 2),
+            "share": per_person,
             "net": round(net[m], 2),
             "status": "gets_back" if net[m] > 0.01 else ("owes" if net[m] < -0.01 else "settled"),
         })
 
-    # Build WhatsApp share message
-    settle_lines = [f"• {s['from']} ➡️ {s['to']}: ₹{s['amount']:,.0f}" for s in settlements]
-    wa_msg = (
-        f"📱 *{group.name} — Split Summary*\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
-        f"💰 Total: ₹{total:,.0f}\n"
-        f"👥 Per Person: ₹{per_person:,.0f}\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
-        f"🔄 *Settlements:*\n" + "\n".join(settle_lines or ["All settled! ✅"])
-    )
+    if not host_domain:
+        host_domain = "https://smart-expense-coach.onrender.com"
+    public_url = f"{host_domain.rstrip('/')}/split/{group.share_token}/"
 
-    return JsonResponse({
+    settle_lines = []
+    for s in settlements:
+        settle_lines.append(f"• *{s['from']}* ➡️ *{s['to']}*: ₹{s['amount']:,.0f}")
+    if not settle_lines:
+        settle_lines = ["All settled! ✅"]
+
+    wa_msg_lines = [
+        f"🏖️ *{group.name} — Split Hisaab*",
+        f"━━━━━━━━━━━━━━━━━━",
+        f"💰 *Total Expense:* ₹{total:,.0f}",
+        f"👥 *Per Person:* ₹{per_person:,.0f} ({len(members)} Members)",
+        f"━━━━━━━━━━━━━━━━━━",
+        f"⚖️ *Settlement (Who Owes Whom):*",
+        *settle_lines,
+        f"━━━━━━━━━━━━━━━━━━",
+    ]
+
+    upi_lines = []
+    for s in settlements:
+        if s.get("upi_link"):
+            upi_lines.append(f"📲 Pay {s['to']}: {s['upi_link']}")
+    if upi_lines:
+        wa_msg_lines.extend(upi_lines)
+        wa_msg_lines.append("━━━━━━━━━━━━━━━━━━")
+
+    wa_msg_lines.extend([
+        f"🔗 *Live Group Page (Zero Login):*",
+        f"{public_url}",
+        f"_(Tap to view live details or add new expenses)_"
+    ])
+    whatsapp_message = "\n".join(wa_msg_lines)
+
+    expense_list = [
+        {
+            "id": exp.pk,
+            "paid_by": exp.paid_by,
+            "description": exp.description,
+            "amount": float(exp.amount),
+            "date": exp.date.isoformat(),
+        }
+        for exp in expenses
+    ]
+
+    return {
+        "group_id": group.pk,
         "group_name": group.name,
+        "share_token": group.share_token,
+        "public_url": public_url,
+        "creator": group.creator.username,
+        "creator_id": group.creator.id,
         "total": total,
-        "per_person": round(per_person, 2),
+        "per_person": per_person,
         "member_count": len(members),
         "members": member_breakdown,
         "settlements": settlements,
+        "expenses": expense_list,
         "is_settled": group.is_settled,
-        "whatsapp_message": wa_msg,
+        "whatsapp_message": whatsapp_message,
+    }
+
+
+def parse_and_handle_split_message(target_user, text: str, host_domain: str = None) -> dict:
+    """
+    Parses natural language split expense commands via Groq AI,
+    creates/updates the SplitGroup, SplitMembers, SplitExpenses,
+    and returns the ready-to-forward WhatsApp message + public web link.
+    """
+    user_name = target_user.first_name.title() if target_user.first_name else target_user.username.title()
+
+    prompt = (
+        f"You are an expert AI parser for Indian group expense splits (Splitwise style).\n"
+        f"Target User Name: {user_name}\n"
+        f"Incoming Message: \"{text}\"\n\n"
+        f"Instructions:\n"
+        f"1. Extract the group/trip name (e.g. 'Goa Trip', 'Room Rent', 'Flatmates', 'Dinner'). If none mentioned, default to 'Group Split'.\n"
+        f"2. Extract who paid what. If the user refers to themselves ('maine', 'mera', 'me', 'i paid', 'self'), set 'paid_by' to '{user_name}'.\n"
+        f"3. For each expense item, extract: 'paid_by' (Capitalized person name), 'amount' (number), and 'description' (e.g. 'cab', 'dinner', 'snacks').\n"
+        f"4. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'show split goa'), set 'is_query_only': true.\n\n"
+        f"Output format: Strictly output a JSON object with this exact structure, with NO markdown code fences or conversational text:\n"
+        f"{{\n"
+        f"  \"is_query_only\": false,\n"
+        f"  \"group_name\": \"Goa Trip\",\n"
+        f"  \"expenses\": [\n"
+        f"    {{\"paid_by\": \"Rahul\", \"amount\": 400, \"description\": \"cab\"}},\n"
+        f"    {{\"paid_by\": \"Aman\", \"amount\": 1200, \"description\": \"dinner\"}},\n"
+        f"    {{\"paid_by\": \"{user_name}\", \"amount\": 300, \"description\": \"snacks\"}}\n"
+        f"  ]\n"
+        f"}}"
+    )
+
+    try:
+        r = _groq_client().chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="qwen/qwen3.8-27b",
+            temperature=0.1,
+            max_tokens=500,
+        )
+        raw_output = r.choices[0].message.content or ""
+        cleaned = re.sub(r"<think>(?:.*?</think>|.*$)", "", raw_output, flags=re.DOTALL).strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```[a-zA-Z]*\s*", "", cleaned)
+            cleaned = re.sub(r"\s*```$", "", cleaned)
+        data = json.loads(cleaned.strip())
+    except Exception as e:
+        logger.error("Failed to parse split message via AI: %s", e)
+        return {
+            "status": "error",
+            "message": "⚠️ Could not understand group split details. Please write like:\n*Goa Trip: Rahul paid 400 cab, Aman paid 1200 dinner, maine 300 snacks*"
+        }
+
+    group_name = data.get("group_name", "Group Split").strip()
+    is_query_only = data.get("is_query_only", False)
+
+    group = SplitGroup.objects.filter(creator=target_user, name__iexact=group_name).first()
+    if not group:
+        group = SplitGroup.objects.filter(creator=target_user, name__icontains=group_name).first()
+
+    if is_query_only:
+        if not group:
+            return {
+                "status": "error",
+                "message": f"❌ Could not find an active split group named '{group_name}'."
+            }
+        settlement = compute_group_settlement(group, host_domain)
+        return {
+            "status": "success",
+            "message": settlement["whatsapp_message"],
+            "data": settlement
+        }
+
+    expenses_data = data.get("expenses", [])
+    if not expenses_data:
+        return {
+            "status": "error",
+            "message": "⚠️ No expense items detected. Please specify amounts and who paid!"
+        }
+
+    if not group:
+        group = SplitGroup.objects.create(creator=target_user, name=group_name)
+
+    creator_member, _ = SplitMember.objects.get_or_create(group=group, name=user_name)
+    if hasattr(target_user, 'profile') and target_user.profile.phone_number and not creator_member.phone:
+        creator_member.phone = target_user.profile.phone_number
+        creator_member.save(update_fields=["phone"])
+
+    for item in expenses_data:
+        p_name = str(item.get("paid_by", "")).strip().title()
+        amt = Decimal(str(item.get("amount", 0)))
+        desc = str(item.get("description", "Expense")).strip()
+        if p_name and amt > 0:
+            SplitMember.objects.get_or_create(group=group, name=p_name)
+            SplitExpense.objects.create(
+                group=group,
+                paid_by=p_name,
+                description=desc,
+                amount=amt,
+                date=date.today()
+            )
+
+    settlement = compute_group_settlement(group, host_domain)
+    return {
+        "status": "success",
+        "message": settlement["whatsapp_message"],
+        "data": settlement
+    }
+
+
+@api_login_required
+def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
+    """Calculate who owes whom — minimized transactions."""
+    group = get_object_or_404(SplitGroup, pk=pk, creator=request.user)
+    host_domain = request.build_absolute_uri('/')[:-1]
+    res = compute_group_settlement(group, host_domain)
+    return JsonResponse(res)
+
+
+def public_split_page(request: HttpRequest, share_token: str) -> HttpResponse:
+    """Public, zero-login page to view split group details, debts, and UPI pay links."""
+    group = get_object_or_404(SplitGroup, share_token=share_token)
+    host_domain = request.build_absolute_uri('/')[:-1]
+    settlement = compute_group_settlement(group, host_domain)
+    context = {
+        "group": group,
+        "settlement": settlement,
+        "members": settlement["members"],
+        "settlements": settlement["settlements"],
+        "expenses": settlement["expenses"],
+        "total": settlement["total"],
+        "per_person": settlement["per_person"],
+        "public_url": settlement["public_url"],
+    }
+    return render(request, "tracker/public_split.html", context)
+
+
+def api_public_split_data(request: HttpRequest, share_token: str) -> JsonResponse:
+    """Public JSON endpoint for live polling of group split data."""
+    group = get_object_or_404(SplitGroup, share_token=share_token)
+    host_domain = request.build_absolute_uri('/')[:-1]
+    settlement = compute_group_settlement(group, host_domain)
+    return JsonResponse(settlement)
+
+
+@csrf_exempt
+def api_public_add_expense(request: HttpRequest, share_token: str) -> JsonResponse:
+    """Public endpoint allowing any friend to add an expense to this split group without logging in."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    group = get_object_or_404(SplitGroup, share_token=share_token)
+    if group.is_settled:
+        return JsonResponse({"error": "This split group is already settled!"}, status=400)
+
+    try:
+        body = json.loads(request.body)
+    except Exception:
+        body = request.POST
+
+    paid_by = str(body.get("paid_by", "")).strip().title()
+    description = str(body.get("description", "")).strip() or "Expense"
+    amount_raw = body.get("amount", 0)
+
+    if not paid_by:
+        return JsonResponse({"error": "Please enter your name"}, status=400)
+
+    try:
+        amount = Decimal(str(amount_raw))
+        if amount <= 0:
+            raise ValueError
+    except Exception:
+        return JsonResponse({"error": "Please enter a valid positive amount"}, status=400)
+
+    exp_date_str = body.get("date", "")
+    try:
+        exp_date = date.fromisoformat(str(exp_date_str)) if exp_date_str else date.today()
+    except ValueError:
+        exp_date = date.today()
+
+    SplitMember.objects.get_or_create(group=group, name=paid_by)
+    SplitExpense.objects.create(
+        group=group,
+        paid_by=paid_by,
+        description=description,
+        amount=amount,
+        date=exp_date
+    )
+
+    host_domain = request.build_absolute_uri('/')[:-1]
+    settlement = compute_group_settlement(group, host_domain)
+    return JsonResponse({
+        "status": "success",
+        "message": f"Added ₹{amount:,.0f} by {paid_by} for '{description}'!",
+        "settlement": settlement
     })
 
 
