@@ -15,10 +15,8 @@ def test():
     if profile:
         print("User:", profile.user.username)
         try:
-            tip = generate_daily_tip(profile.user, "night")
-            print("--- TIP ---")
-            print(repr(tip))
-            print("-----------")
+            print("MORNING:", generate_daily_tip(profile.user, "morning"))
+            print("NIGHT:", generate_daily_tip(profile.user, "night"))
         except Exception as e:
             print("ERROR:", e)
 
