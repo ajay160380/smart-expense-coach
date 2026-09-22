@@ -3148,24 +3148,43 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
     try:
         user_name = user.first_name.title() if user.first_name else user.username.title()
         time_of_day = "Morning" if tip_type == "morning" else "Night"
-        
-        prompt = (
-            f"You are Paisa Mitra, a highly engaging, friendly financial coach. Never use 'Tu/Tera', always 'Aap/Bhai/Dost'.\n"
-            f"User: {user_name}\n"
-            f"Time: {time_of_day}\n"
-            f"Weekly spent: ₹{week_total:,.0f}\n"
-            f"Top category: {cat_name} (₹{cat_total:,.0f})\n"
-            f"Budget used: {budget_pct:.0f}%\n"
-            f"Monthly spent: ₹{month_spent:,.0f} / ₹{budget:,.0f}\n\n"
-            f"Write a completely UNIQUE and HIGHLY CREATIVE {time_of_day} WhatsApp message for the user. \n"
-            f"Requirements:\n"
-            f"- Start with a warm 'Good {time_of_day}' greeting! (e.g. 'Good {time_of_day} {user_name} Bhai! ☀️'). You can mix a bit of Hinglish for a friendly tone.\n"
-            f"- Include ONE very brief insight about their '{cat_name}' spending or budget.\n"
-            f"- Make it VERY SHORT, crisp, and conversational.\n"
-            f"- MAXIMUM 20-25 words limit! Do not write long sentences. Use 1-2 emojis.\n"
-            f"- Format it beautifully for WhatsApp (use *bold* or _italics_ where appropriate).\n"
-            f"ONLY return the exact message to be sent."
-        )
+
+        if tip_type == "morning":
+            prompt = (
+                f"You are a sophisticated, uplifting, and friendly personal financial coach.\n"
+                f"User Name: {user_name}\n"
+                f"Time: Morning\n"
+                f"Past 7 days total spent: ₹{week_total:,.0f}\n"
+                f"Top spending category: {cat_name} (₹{cat_total:,.0f})\n"
+                f"Monthly budget status: {budget_pct:.0f}% of ₹{budget:,.0f} budget used (₹{month_spent:,.0f} spent)\n\n"
+                f"Write a delightful, inspiring Good Morning message for WhatsApp.\n"
+                f"STRICT RULES:\n"
+                f"1. LANGUAGE: 100% PURE, ELEGANT ENGLISH ONLY. Absolutely NO Hindi or Hinglish words (NO 'bhai', 'yaar', 'aap', 'kharcha', 'dost', etc.).\n"
+                f"2. GREETING: Start with a warm, energetic greeting like '*Good Morning, {user_name}!* ☀️' or '*Good Morning, {user_name}!* 🌅'.\n"
+                f"3. CONTENT: Provide ONE crisp, actionable financial wisdom or smart habit for the day ahead (e.g., mindful spending on {cat_name} or staying in budget).\n"
+                f"4. TONE: Inspiring, positive, clear, and professional yet friendly.\n"
+                f"5. LENGTH: 20-30 words maximum! Keep it short, crisp, and high-impact.\n"
+                f"6. FORMAT: Use WhatsApp *bold* formatting for key phrases and 1-2 lovely emojis.\n"
+                f"Return ONLY the final message to be sent."
+            )
+        else:
+            prompt = (
+                f"You are a sophisticated, uplifting, and friendly personal financial coach.\n"
+                f"User Name: {user_name}\n"
+                f"Time: Night\n"
+                f"Past 7 days total spent: ₹{week_total:,.0f}\n"
+                f"Top spending category: {cat_name} (₹{cat_total:,.0f})\n"
+                f"Monthly budget status: {budget_pct:.0f}% of ₹{budget:,.0f} budget used (₹{month_spent:,.0f} spent)\n\n"
+                f"Write a peaceful, encouraging Good Night message for WhatsApp.\n"
+                f"STRICT RULES:\n"
+                f"1. LANGUAGE: 100% PURE, ELEGANT ENGLISH ONLY. Absolutely NO Hindi or Hinglish words (NO 'bhai', 'yaar', 'aap', 'kharcha', 'dost', etc.).\n"
+                f"2. GREETING: Start with a warm, relaxing greeting like '*Good Night, {user_name}!* 🌙' or '*Good Night, {user_name}!* ✨'.\n"
+                f"3. CONTENT: Provide a gentle evening reflection or reminder to log today's expenses, celebrate budget discipline, and sleep with peace of mind.\n"
+                f"4. TONE: Calming, appreciative, encouraging, and warm.\n"
+                f"5. LENGTH: 20-30 words maximum! Keep it short, crisp, and high-impact.\n"
+                f"6. FORMAT: Use WhatsApp *bold* formatting for key phrases and 1-2 lovely emojis.\n"
+                f"Return ONLY the final message to be sent."
+            )
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
