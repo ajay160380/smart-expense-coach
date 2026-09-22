@@ -3189,20 +3189,32 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
             model="qwen/qwen3.8-27b",
-            temperature=0.9,
-            max_tokens=1000,
+            temperature=0.8,
+            max_tokens=250,
         )
-        ans = (r.choices[0].message.content or "").strip()
+        raw_text = r.choices[0].message.content or ""
+        ans = re.sub(r"<think>(?:.*?</think>|.*$)", "", raw_text, flags=re.DOTALL).strip()
+        if (ans.startswith('"') and ans.endswith('"')) or (ans.startswith("'") and ans.endswith("'")):
+            ans = ans[1:-1].strip()
+
         if not ans:
-            raise ValueError("Empty response from AI (possibly only think tags)")
+            raise ValueError("Empty response from AI")
         return ans
     except Exception as e:
         logger.error("Daily tip generation error: %s", e)
-        time_greeting = "Good Morning" if tip_type == "morning" else "Good Night"
-        tips_fallback = [
-            f"🌟 {time_greeting}! Small savings today build a stronger tomorrow. Keep tracking your expenses and watch your wealth grow! 📈💸",
-            f"✨ {time_greeting}! Before you spend today, ask yourself: 'Do I really need this?'. Your wallet will thank you later! 💼💰",
-        ]
+        user_name = user.first_name.title() if (user and user.first_name) else (user.username.title() if user else "Friend")
+        if tip_type == "morning":
+            tips_fallback = [
+                f"☀️ *Good Morning, {user_name}!* Start your day with clear goals and mindful spending. Every smart financial choice today builds your future! 📈✨",
+                f"🌅 *Good Morning, {user_name}!* A fresh day brings fresh possibilities. Keep track of your expenses and watch your savings grow! 💼💰",
+                f"☕ *Good Morning, {user_name}!* Make today count financially. Stay mindful of your daily budget and take charge of your goals! 🚀💸",
+            ]
+        else:
+            tips_fallback = [
+                f"🌙 *Good Night, {user_name}!* Take a quiet moment to log today's expenses before you sleep. Rest easy knowing your finances are on track! 😴✨",
+                f"✨ *Good Night, {user_name}!* Financial peace of mind comes from daily consistency. Sleep well and recharge for a prosperous tomorrow! 🛌🌠",
+                f"🌌 *Good Night, {user_name}!* Great job staying mindful of your spending today. Relax, unwind, and have sweet dreams! 🌙💫",
+            ]
         import random
         return random.choice(tips_fallback)
 
