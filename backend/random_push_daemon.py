@@ -12,46 +12,46 @@ from tracker.fcm_utils import send_push_notification, initialize_firebase
 from firebase_admin import messaging
 
 MORNING_MESSAGES = [
-    {"title": "🌅 Good Morning!", "body": "Naya din, nayi shuruaat! Apna budget check karna na bhoolein. 💰"},
-    {"title": "☕ Morning Chai/Coffee?", "body": "Did you grab a coffee? Log that expense to keep your budget on track! 📝"},
-    {"title": "🚀 Wake up and win!", "body": "Start your day by reviewing your financial goals. You got this! 💪"},
-    {"title": "🌞 Happy Morning!", "body": "Have a great day ahead! Remember, small savings everyday make a big difference. 📊"}
+    {"title": "🌅 Good Morning!", "body": "A brand new day begins! Take a quick moment to check your daily budget. 💰"},
+    {"title": "☕ Morning Coffee?", "body": "Enjoying your morning tea or coffee? Remember to log your expenses to stay on track! 📝"},
+    {"title": "🚀 Wake Up & Win!", "body": "Start your day with clear financial goals. Every mindful decision counts! 💪"},
+    {"title": "🌞 Bright Morning!", "body": "Have an amazing day ahead! Remember: small daily savings create lasting wealth. 📊"}
 ]
 
 AFTERNOON_MESSAGES = [
-    {"title": "🍽️ Lunch time!", "body": "Bahar khaya ya ghar ka? Don't forget to add your lunch expenses! 🍛"},
-    {"title": "☀️ Afternoon Check-in", "body": "Half the day is gone. Are you staying within your daily budget limit? 💸"},
-    {"title": "💡 Tip of the day!", "body": "Avoid impulsive purchases today. Think twice before you buy! 🤔"},
-    {"title": "🏃 Keep tracking!", "body": "Take a 2-minute break and update your expense tracker. 📝"}
+    {"title": "🍽️ Lunch Break!", "body": "Dined out or ordered in? Don't forget to record your lunch expenses! 🍛"},
+    {"title": "☀️ Afternoon Check-in", "body": "Half the day has passed. Are you staying right within your budget target? 💸"},
+    {"title": "💡 Smart Money Tip", "body": "Avoid impulse buys today. A 10-second pause before purchasing saves thousands! 🤔"},
+    {"title": "🏃 Quick Check-in", "body": "Take 30 seconds to update your expense tracker and keep your finances crystal clear. 📝"}
 ]
 
 EVENING_MESSAGES = [
-    {"title": "🌆 Shaam ho gayi!", "body": "Kya aaj kuch savings ki? Check your dashboard and relax. 🛋️"},
-    {"title": "🛒 Shopping Check", "body": "Did you go grocery shopping today? Log it to keep your budget updated. 🥬"},
-    {"title": "☕ Evening Tea?", "body": "Shaam ki chai aur nashta ka kharcha add kar dijiye! ☕"}
+    {"title": "🌆 Evening Wind Down", "body": "How did your spending go today? Check your dashboard and relax with peace of mind. 🛋️"},
+    {"title": "🛒 Shopping Check", "body": "Picked up groceries or essentials this evening? Log them to keep your budget accurate! 🥬"},
+    {"title": "☕ Evening Refreshment", "body": "Enjoying evening snacks or coffee? Add the expense and keep your streak alive! ☕"}
 ]
 
 NIGHT_MESSAGES = [
-    {"title": "🌙 Good Night!", "body": "Sone se pehle aaj ka hisaab kitab zaroor add karein. Sweet dreams! 😴"},
-    {"title": "😴 Time to sleep!", "body": "Din bhar ki expenses add kar li? Great! Now get some rest. 🛌"},
-    {"title": "💸 Daily Review", "body": "Check your spending for today one last time before you sleep. Good night! 🌠"},
-    {"title": "📊 Financial Fitness", "body": "Consistency is key. Log your daily expenses before sleeping! 💪"}
+    {"title": "🌙 Good Night!", "body": "Review today's expenses one last time before bed. Sleep peacefully and dream big! 😴"},
+    {"title": "😴 Time to Rest!", "body": "All expenses logged for the day? Wonderful job! Now get some well-deserved rest. 🛌"},
+    {"title": "💸 Daily Wrap-Up", "body": "Take a quick glance at your daily spending before you sleep. Good night! 🌠"},
+    {"title": "📊 Financial Fitness", "body": "Consistency is the foundation of wealth. Log your expenses and rest easy tonight! 💪"}
 ]
 
 WEEKEND_MESSAGES = [
-    {"title": "🎉 Weekend Vibes!", "body": "Weekend outings are fun, but don't let them ruin your budget! Log your expenses. 🍿"},
-    {"title": "🍕 Weekend Treat?", "body": "Ordered food or went to a movie? Add it to your tracker right away! 🎬"},
-    {"title": "📅 Sunday Review", "body": "Weekend is almost over. Time to review your weekly spending! 📈"}
+    {"title": "🎉 Weekend Vibes!", "body": "Enjoy your weekend plans while keeping your budget happy by logging as you go! 🍿"},
+    {"title": "🍕 Weekend Treat?", "body": "Enjoying a treat or movie with loved ones? Add it to your tracker right away! 🎬"},
+    {"title": "📅 Sunday Review", "body": "The weekend is wrapping up. Take 2 minutes to review your weekly spending progress! 📈"}
 ]
 
 MONTH_END_MESSAGES = [
-    {"title": "📉 Month is ending!", "body": "Review your monthly expenses to see how much you saved this month! 💰"},
-    {"title": "🗓️ Budget Check", "body": "It's almost the end of the month. Did you stick to your budget? Check now! 📊"}
+    {"title": "📉 Month-End Review", "body": "Check your monthly summary to see how much you saved this month! 💰"},
+    {"title": "🗓️ Budget Check", "body": "The month is closing. Did you hit your savings goal? Take a look at your report! 📊"}
 ]
 
 MONTH_START_MESSAGES = [
-    {"title": "🗓️ New Month, New Goals!", "body": "Happy New Month! Apna naya budget set karein aur savings start karein. 🚀"},
-    {"title": "💰 Salary Day?", "body": "If you received your salary, don't forget to allocate your budget for this month! 💸"}
+    {"title": "🗓️ New Month, New Goals!", "body": "Happy new month! Set your fresh budget targets and start strong. 🚀"},
+    {"title": "💰 Payday Planning", "body": "Plan your monthly budget today and allocate your savings first! 💸"}
 ]
 
 def get_message_for_time(scheduled_time):
