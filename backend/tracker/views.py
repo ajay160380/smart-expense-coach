@@ -3824,7 +3824,8 @@ def compute_group_settlement(group, host_domain=None):
                 creditor_phone = getattr(getattr(group.creator, 'profile', None), 'phone_number', '') or ''
             
             clean_phone = re.sub(r'[^0-9]', '', creditor_phone)
-            vpa = f"{clean_phone}@upi" if (clean_phone and len(clean_phone) >= 10) else ""
+            clean_10 = clean_phone[-10:] if len(clean_phone) >= 10 else clean_phone
+            vpa = f"{clean_10}@upi" if (clean_10 and len(clean_10) == 10) else ""
             upi_link = f"upi://pay?pa={vpa}&pn={quote(creditor)}&am={transfer:.2f}&cu=INR" if vpa else ""
 
             settlements.append({
@@ -3832,6 +3833,7 @@ def compute_group_settlement(group, host_domain=None):
                 "to": creditor,
                 "amount": round(transfer, 2),
                 "upi_link": upi_link,
+                "vpa": vpa,
                 "creditor_phone": creditor_phone
             })
 

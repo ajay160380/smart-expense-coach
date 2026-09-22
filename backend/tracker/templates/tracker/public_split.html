@@ -323,6 +323,9 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
       transition: all 0.2s;
     }
     .upi-pay-btn:hover {
@@ -565,9 +568,9 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <div class="settle-amt">₹{{ s.amount|floatformat:0 }}</div>
             {% if s.upi_link %}
-            <a href="{{ s.upi_link }}" class="upi-pay-btn" target="_blank">
+            <button type="button" class="upi-pay-btn" onclick="handleUpiPay('{{ s.upi_link|escapejs }}', '{{ s.to|escapejs }}', '{{ s.amount|floatformat:0 }}', '{{ s.vpa|escapejs }}')">
               <span>Pay UPI 📲</span>
-            </a>
+            </button>
             {% endif %}
           </div>
         </div>
@@ -674,6 +677,47 @@
     </div>
   </div>
 
+  <!-- UPI Payment / QR Modal -->
+  <div class="modal-backdrop" id="upiModal" onclick="if(event.target === this) closeUpiModal()">
+    <div class="modal-box" style="text-align: center; max-width: 380px;">
+      <div class="modal-title" style="margin-bottom: 8px;">
+        <span id="upiModalTitle">📲 Pay via UPI</span>
+        <button class="close-btn" onclick="closeUpiModal()" type="button">&times;</button>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.4;">
+        Scan with <strong>Google Pay, PhonePe, Paytm</strong> or any UPI app to settle directly.
+      </p>
+
+      <!-- QR Box -->
+      <div style="background: #ffffff; padding: 12px; border-radius: 16px; display: inline-block; box-shadow: 0 8px 24px rgba(0,0,0,0.35); margin-bottom: 16px;">
+        <img id="upiQrImg" src="" alt="UPI QR Code" width="200" height="200" style="display: block; border-radius: 6px;" />
+      </div>
+
+      <!-- Amount Display -->
+      <div style="margin-bottom: 14px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); font-weight: 700;">Transfer Amount</div>
+        <div id="upiModalAmt" style="font-size: 26px; font-weight: 800; font-family: var(--mono); color: var(--green);">₹0</div>
+      </div>
+
+      <!-- UPI ID Copy Card -->
+      <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;">
+        <div style="text-align: left; overflow: hidden;">
+          <div style="font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase;">UPI ID / VPA</div>
+          <div id="upiModalVpa" style="font-size: 13px; font-family: var(--mono); font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+        </div>
+        <button type="button" id="copyVpaBtn" onclick="copyUpiVpa()" style="background: rgba(99,102,241,0.18); border: 1px solid var(--primary); color: #818CF8; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+          📋 Copy
+        </button>
+      </div>
+
+      <!-- Direct App Button (Mobile Fallback) -->
+      <a id="upiAppDirectBtn" href="#" class="add-expense-btn" style="text-decoration: none; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #059669, var(--green)); color: #051A10;">
+        ⚡ Open in UPI App
+      </a>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
@@ -746,6 +790,72 @@
         navigator.clipboard.writeText(window.location.href);
         showToast('📋 Link copied to clipboard!');
       }
+    }
+
+    let currentUpiVpa = "";
+
+    function isMobileDevice() {
+      return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    function handleUpiPay(upiLink, toName, amount, vpa) {
+      if (isMobileDevice()) {
+        // Direct launch on mobile phone
+        window.location.href = upiLink;
+      } else {
+        // On Desktop / Mac / PC: Show QR Code Modal to scan with phone camera / UPI app
+        openUpiModal(toName, amount, upiLink, vpa);
+      }
+    }
+
+    function openUpiModal(toName, amount, upiLink, vpa) {
+      currentUpiVpa = vpa || "";
+      document.getElementById('upiModalTitle').textContent = `📲 Pay ${toName}`;
+      document.getElementById('upiModalAmt').textContent = `₹${amount}`;
+      document.getElementById('upiModalVpa').textContent = vpa || "Not configured";
+
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&data=${encodeURIComponent(upiLink)}`;
+      document.getElementById('upiQrImg').src = qrUrl;
+
+      const directBtn = document.getElementById('upiAppDirectBtn');
+      directBtn.href = upiLink;
+      if (!isMobileDevice()) {
+        directBtn.onclick = function(e) {
+          e.preventDefault();
+          showToast('📱 Please scan the QR code above with Google Pay or PhonePe on your phone!');
+        };
+      } else {
+        directBtn.onclick = null;
+      }
+
+      const copyBtn = document.getElementById('copyVpaBtn');
+      copyBtn.textContent = '📋 Copy';
+      copyBtn.style.color = '#818CF8';
+
+      document.getElementById('upiModal').classList.add('open');
+    }
+
+    function closeUpiModal() {
+      document.getElementById('upiModal').classList.remove('open');
+    }
+
+    function copyUpiVpa() {
+      if (!currentUpiVpa) {
+        showToast('No UPI ID found');
+        return;
+      }
+      navigator.clipboard.writeText(currentUpiVpa).then(() => {
+        const copyBtn = document.getElementById('copyVpaBtn');
+        copyBtn.textContent = '✅ Copied!';
+        copyBtn.style.color = 'var(--green)';
+        showToast(`📋 Copied UPI ID: ${currentUpiVpa}`);
+        setTimeout(() => {
+          copyBtn.textContent = '📋 Copy';
+          copyBtn.style.color = '#818CF8';
+        }, 2500);
+      }).catch(() => {
+        showToast('Failed to copy');
+      });
     }
   </script>
 </body>
