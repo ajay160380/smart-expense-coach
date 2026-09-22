@@ -3,57 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>{{ group.name }} — Split Hisaab | Paisa Mitra</title>
-  <meta name="description" content="View live split expenses, settlement balances, and pay via UPI for {{ group.name }} on Paisa Mitra.">
+  <title>{{ group.name }} — Split Hisaab | Expense Tracker</title>
+  <meta name="description" content="View live split expenses, settlement balances, and pay via UPI for {{ group.name }} on Expense Tracker.">
 
-  <!-- Fonts -->
+  <!-- Google Fonts: Plus Jakarta Sans, Outfit, Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg: #0B0F19;
-      --surface: rgba(22, 28, 45, 0.75);
-      --surface2: rgba(30, 39, 63, 0.85);
-      --surface3: rgba(45, 58, 92, 0.9);
+      --bg: #070A12;
+      --surface: rgba(17, 24, 39, 0.72);
+      --surface2: rgba(26, 35, 58, 0.78);
+      --surface3: rgba(38, 50, 82, 0.85);
       --border: rgba(255, 255, 255, 0.08);
-      --border-focus: rgba(0, 122, 255, 0.5);
+      --border-focus: rgba(99, 102, 241, 0.6);
       --text: #F8FAFC;
       --text2: #94A3B8;
       --text3: #64748B;
-      --primary: #3B82F6;
-      --primary-glow: rgba(59, 130, 246, 0.25);
+      --primary: #4F46E5;
+      --primary-light: #6366F1;
+      --primary-glow: rgba(99, 102, 241, 0.35);
       --accent: #8B5CF6;
+      --cyan: #06B6D4;
       --green: #10B981;
+      --green-glow: rgba(16, 185, 129, 0.3);
       --green-bg: rgba(16, 185, 129, 0.12);
       --amber: #F59E0B;
       --amber-bg: rgba(245, 158, 11, 0.12);
-      --red: #EF4444;
-      --red-bg: rgba(239, 68, 68, 0.12);
+      --red: #F43F5E;
+      --red-bg: rgba(244, 63, 94, 0.12);
+      --radius-xl: 24px;
       --radius: 18px;
       --radius-sm: 12px;
-      --radius-pill: 100px;
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --radius-pill: 9999px;
+      --font: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
       --heading: 'Outfit', sans-serif;
       --mono: 'JetBrains Mono', monospace;
-      --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
     body {
       background-color: var(--bg);
       background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.12) 0px, transparent 50%);
+        radial-gradient(circle at 10% 0%, rgba(79, 70, 229, 0.22) 0px, transparent 45%),
+        radial-gradient(circle at 90% 10%, rgba(139, 92, 246, 0.18) 0px, transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(6, 182, 212, 0.12) 0px, transparent 50%);
       background-attachment: fixed;
       color: var(--text);
       font-family: var(--font);
       min-height: 100vh;
-      padding: 16px;
+      padding: 16px 12px 32px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      -webkit-font-smoothing: antialiased;
     }
 
     .container {
@@ -63,14 +70,20 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      animation: pageIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Brand Bar */
+    @keyframes pageIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Top Brand Bar ─── */
     .brand-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 4px;
+      padding: 6px 4px;
     }
     .brand-logo {
       display: flex;
@@ -78,48 +91,75 @@
       gap: 10px;
       text-decoration: none;
       color: var(--text);
-      font-family: var(--heading);
-      font-weight: 700;
-      font-size: 17px;
     }
     .brand-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4F46E5, #8B5CF6);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
-      box-shadow: 0 4px 12px var(--primary-glow);
+      font-size: 19px;
+      box-shadow: 0 4px 16px var(--primary-glow);
+      position: relative;
+    }
+    .brand-text-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-title {
+      font-family: var(--heading);
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.3px;
+      background: linear-gradient(135deg, #FFFFFF, #E2E8F0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .brand-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #818CF8;
     }
     .share-btn {
       background: var(--surface2);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 7px 14px;
+      padding: 8px 16px;
       border-radius: var(--radius-pill);
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
     .share-btn:hover {
       background: var(--surface3);
-      border-color: var(--primary);
+      border-color: var(--primary-light);
+      transform: translateY(-1px);
+    }
+    .share-btn:active {
+      transform: scale(0.96);
     }
 
-    /* Hero Card */
+    /* ─── Hero Overview Card ─── */
     .hero-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-xl);
       padding: 24px;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
       box-shadow: var(--shadow);
       position: relative;
       overflow: hidden;
@@ -129,7 +169,7 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 4px;
-      background: linear-gradient(90deg, var(--primary), var(--accent), var(--green));
+      background: linear-gradient(90deg, #4F46E5, #8B5CF6, #06B6D4, #10B981);
     }
     .hero-top {
       display: flex;
@@ -140,30 +180,58 @@
     }
     .group-title {
       font-family: var(--heading);
-      font-size: 26px;
+      font-size: 27px;
       font-weight: 800;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.6px;
+      line-height: 1.2;
+      color: #FFFFFF;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .group-creator {
-      font-size: 13px;
+    .group-creator-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 600;
       color: var(--text2);
-      margin-top: 4px;
+      margin-top: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
     .status-badge {
-      padding: 4px 12px;
+      padding: 5px 12px;
       border-radius: var(--radius-pill);
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
     }
     .status-badge.active {
       background: var(--green-bg);
-      color: var(--green);
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #34D399;
+      display: inline-block;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
     }
     .status-badge.settled {
       background: var(--surface3);
@@ -171,7 +239,7 @@
       border: 1px solid var(--border);
     }
 
-    /* Stat Grid */
+    /* ─── Metric Stat Cards ─── */
     .stat-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -182,62 +250,93 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 14px 16px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
     }
+    .stat-box:hover {
+      transform: translateY(-2px);
+    }
+    .stat-box::after {
+      content: '';
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .stat-box.primary::after { background: var(--primary-light); }
+    .stat-box.green::after { background: var(--green); }
+
     .stat-label {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text3);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .stat-val {
       font-family: var(--heading);
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 800;
+      letter-spacing: -0.5px;
       color: var(--text);
     }
     .stat-val.primary {
-      background: linear-gradient(135deg, #60A5FA, #A78BFA);
+      background: linear-gradient(135deg, #818CF8, #C084FC);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     .stat-val.green {
-      color: var(--green);
+      background: linear-gradient(135deg, #34D399, #10B981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    /* Quick Action Button */
+    /* ─── Add Expense Hero Button ─── */
     .add-expense-btn {
       width: 100%;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #6366F1 100%);
+      background-size: 200% auto;
       color: white;
       border: none;
       border-radius: var(--radius-sm);
-      padding: 14px;
+      padding: 15px;
       font-size: 15px;
-      font-weight: 700;
-      font-family: var(--heading);
+      font-weight: 800;
+      font-family: var(--font);
+      letter-spacing: -0.2px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 20px var(--primary-glow);
-      transition: all 0.2s;
+      box-shadow: 0 6px 20px var(--primary-glow);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .add-expense-btn:hover {
+      background-position: right center;
       transform: translateY(-2px);
-      box-shadow: 0 6px 24px var(--primary-glow);
+      box-shadow: 0 8px 26px rgba(99, 102, 241, 0.5);
+    }
+    .add-expense-btn:active {
+      transform: scale(0.98);
     }
 
-    /* Section Cards */
+    /* ─── Section Card Wrapper ─── */
     .section-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-xl);
       padding: 20px;
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       box-shadow: var(--shadow);
     }
     .section-head {
@@ -249,21 +348,24 @@
     .section-title {
       font-family: var(--heading);
       font-size: 17px;
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: -0.3px;
       display: flex;
       align-items: center;
       gap: 8px;
+      color: #FFFFFF;
     }
     .section-badge {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text2);
       background: var(--surface2);
-      padding: 2px 8px;
+      padding: 3px 10px;
       border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
     }
 
-    /* Settlement Items */
+    /* ─── Settlement Cards ─── */
     .settle-list {
       display: flex;
       flex-direction: column;
@@ -279,96 +381,167 @@
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
+      transition: all 0.2s;
+    }
+    .settle-item:hover {
+      background: var(--surface3);
+      border-color: rgba(255, 255, 255, 0.12);
     }
     .settle-info {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
     .settle-avatar {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--red);
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(244, 63, 94, 0.4));
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #FB7185;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 14px;
+      font-weight: 800;
+      font-size: 15px;
+      box-shadow: 0 2px 8px rgba(244, 63, 94, 0.15);
     }
     .settle-names {
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
+      color: #F1F5F9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .settle-arrow {
       color: var(--text3);
-      margin: 0 4px;
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1px 7px;
+      border-radius: var(--radius-pill);
+    }
+    .settle-action-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .settle-amt {
       font-family: var(--mono);
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text);
+      font-size: 17px;
+      font-weight: 800;
+      color: #FFFFFF;
     }
     .upi-pay-btn {
-      background: var(--green);
-      color: #051A10;
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #032014;
       text-decoration: none;
-      padding: 8px 14px;
+      padding: 9px 15px;
       border-radius: var(--radius-pill);
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       border: none;
       cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
+      font-family: var(--font);
+      box-shadow: 0 4px 14px var(--green-glow);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .upi-pay-btn:hover {
-      background: #059669;
-      color: white;
-      transform: scale(1.03);
+      background: linear-gradient(135deg, #34D399, #10B981);
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+    }
+    .upi-pay-btn:active {
+      transform: scale(0.96);
     }
 
-    /* Member List */
+    /* ─── Member Breakdown List ─── */
     .member-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
     .member-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
       background: var(--surface2);
+      border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      font-size: 13px;
-    }
-    .member-name {
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .member-net {
-      font-family: var(--mono);
-      font-weight: 700;
-      font-size: 13px;
-    }
-    .member-net.green { color: var(--green); }
-    .member-net.red { color: var(--red); }
-    .member-net.settled { color: var(--text3); }
-
-    /* Expenses Timeline */
-    .expense-timeline {
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+    }
+    .member-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .member-name-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .member-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #A5B4FC;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .member-details {
+      display: flex;
+      flex-direction: column;
+    }
+    .member-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .member-paid-tag {
+      font-size: 11px;
+      color: var(--text3);
+      font-weight: 600;
+    }
+    .member-net {
+      font-family: var(--mono);
+      font-weight: 800;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .member-net.green {
+      background: var(--green-bg);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .member-net.red {
+      background: var(--red-bg);
+      color: #FB7185;
+      border: 1px solid rgba(244, 63, 94, 0.25);
+    }
+    .member-net.settled {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text3);
+      border: 1px solid var(--border);
+    }
+
+    /* ─── Expenses Timeline ─── */
+    .expense-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .expense-row {
       display: flex;
@@ -376,12 +549,32 @@
       justify-content: space-between;
       padding: 12px 14px;
       background: var(--surface2);
+      border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      border-left: 3px solid var(--primary);
+      transition: background 0.2s;
+    }
+    .expense-row:hover {
+      background: var(--surface3);
+    }
+    .exp-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .exp-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
     }
     .expense-desc {
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text);
     }
     .expense-meta {
@@ -389,20 +582,65 @@
       color: var(--text2);
       margin-top: 2px;
     }
+    .expense-meta strong {
+      color: #E2E8F0;
+    }
     .expense-amount {
       font-family: var(--heading);
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text);
+      font-size: 17px;
+      font-weight: 800;
+      color: #FFFFFF;
     }
 
-    /* Modal */
+    /* ─── Footer ─── */
+    .footer {
+      text-align: center;
+      padding: 20px 8px 8px;
+      font-size: 12px;
+      color: var(--text3);
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #818CF8;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* ─── Quick Member Chips in Modal ─── */
+    .member-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .chip-btn {
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary-light);
+    }
+
+    /* ─── Modals (Add Expense & UPI QR) ─── */
     .modal-backdrop {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(10px);
+      background: rgba(3, 7, 18, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -412,14 +650,15 @@
       display: flex;
     }
     .modal-box {
-      background: #111827;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      background: #0F172A;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-xl);
       padding: 24px;
       width: 100%;
-      max-width: 440px;
-      box-shadow: var(--shadow);
-      animation: popModal 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      animation: popModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
     }
     @keyframes popModal {
       from { transform: scale(0.92); opacity: 0; }
@@ -428,30 +667,37 @@
     .modal-title {
       font-family: var(--heading);
       font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 16px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      color: #FFFFFF;
     }
     .close-btn {
       background: transparent;
       border: none;
       color: var(--text2);
-      font-size: 22px;
+      font-size: 24px;
       cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 8px;
+      transition: color 0.2s;
     }
+    .close-btn:hover { color: #FFFFFF; }
+
     .form-group {
       margin-bottom: 14px;
     }
     .form-label {
       display: block;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
       color: var(--text2);
       margin-bottom: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
     }
     .form-input {
       width: 100%;
@@ -463,44 +709,37 @@
       font-size: 14px;
       font-family: var(--font);
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
     }
     .form-input:focus {
-      border-color: var(--primary);
+      border-color: var(--primary-light);
+      background: var(--surface3);
+      box-shadow: 0 0 0 3px var(--primary-glow);
     }
 
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: 20px 0;
-      font-size: 12px;
-      color: var(--text3);
-    }
-    .footer a {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    /* Toast Notification */
+    /* ─── Toast ─── */
     .toast {
+      display: none;
       position: fixed;
       bottom: 24px;
-      background: #1E293B;
-      color: white;
-      border: 1px solid var(--border);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #FFFFFF;
+      padding: 12px 22px;
       border-radius: var(--radius-pill);
-      padding: 10px 20px;
       font-size: 13px;
-      font-weight: 600;
-      box-shadow: var(--shadow);
-      display: none;
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
       z-index: 2000;
-      animation: fadeIn 0.3s ease;
+      white-space: nowrap;
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translate(-50%, 12px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
     }
   </style>
 </head>
@@ -511,11 +750,18 @@
     <!-- Top Brand Bar -->
     <div class="brand-bar">
       <a href="/" class="brand-logo">
-        <div class="brand-icon">💸</div>
-        <span>Paisa Mitra</span>
+        <div class="brand-icon">
+          <span>⚡</span>
+        </div>
+        <div class="brand-text-col">
+          <div class="brand-title">
+            <span>Expense Tracker</span>
+          </div>
+          <span class="brand-tag">Smart Group Split</span>
+        </div>
       </a>
       <button class="share-btn" onclick="shareGroup()">
-        <span>📲 Share</span>
+        <span>📲 Share Group</span>
       </button>
     </div>
 
@@ -524,20 +770,27 @@
       <div class="hero-top">
         <div>
           <h1 class="group-title">🏖️ {{ group.name }}</h1>
-          <div class="group-creator">Created by {{ group.creator.first_name|default:group.creator.username|title }}</div>
+          <div class="group-creator-pill">
+            <span>👤 Organized by {{ group.creator.first_name|default:group.creator.username|title }}</span>
+          </div>
         </div>
         <div class="status-badge {% if group.is_settled %}settled{% else %}active{% endif %}">
-          {% if group.is_settled %}● Settled{% else %}● Active{% endif %}
+          {% if group.is_settled %}
+            <span>✓ Settled</span>
+          {% else %}
+            <span class="pulse-dot"></span>
+            <span>Active</span>
+          {% endif %}
         </div>
       </div>
 
       <div class="stat-grid">
-        <div class="stat-box">
-          <div class="stat-label">Total Expense</div>
+        <div class="stat-box primary">
+          <div class="stat-label">💳 Total Expense</div>
           <div class="stat-val primary" id="total-val">₹{{ total|floatformat:0 }}</div>
         </div>
-        <div class="stat-box">
-          <div class="stat-label">Per Person ({{ members|length }})</div>
+        <div class="stat-box green">
+          <div class="stat-label">👥 Per Person ({{ members|length }})</div>
           <div class="stat-val green" id="pp-val">₹{{ per_person|floatformat:0 }}</div>
         </div>
       </div>
@@ -565,7 +818,7 @@
               <span>{{ s.to }}</span>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="settle-action-group">
             <div class="settle-amt">₹{{ s.amount|floatformat:0 }}</div>
             {% if s.upi_link %}
             <button type="button" class="upi-pay-btn" onclick="handleUpiPay('{{ s.upi_link|escapejs }}', '{{ s.to|escapejs }}', '{{ s.amount|floatformat:0 }}', '{{ s.vpa|escapejs }}')">
@@ -575,7 +828,7 @@
           </div>
         </div>
         {% empty %}
-        <div style="text-align: center; padding: 20px; color: var(--green); font-weight: 600;">
+        <div style="text-align: center; padding: 24px; color: var(--green); font-weight: 700; background: var(--green-bg); border-radius: var(--radius-sm); border: 1px dashed rgba(16, 185, 129, 0.3);">
           🎉 All members are completely settled up!
         </div>
         {% endfor %}
@@ -592,18 +845,23 @@
       <div class="member-list" id="member-container">
         {% for m in members %}
         <div class="member-row">
-          <div class="member-name">
-            <span>{{ m.name }}</span>
-            <span style="font-size: 11px; color: var(--text3);">(paid ₹{{ m.paid|floatformat:0 }})</span>
-          </div>
-          <div class="member-net {% if m.status == 'gets_back' %}green{% elif m.status == 'owes' %}red{% else %}settled{% endif %}">
-            {% if m.status == 'gets_back' %}
-            +₹{{ m.net|floatformat:0 }}
-            {% elif m.status == 'owes' %}
-            -₹{{ m.net|floatformat:0|cut:"-" }}
-            {% else %}
-            Settled
-            {% endif %}
+          <div class="member-top">
+            <div class="member-name-group">
+              <div class="member-avatar">{{ m.name|slice:":1"|upper }}</div>
+              <div class="member-details">
+                <span class="member-name">{{ m.name }}</span>
+                <span class="member-paid-tag">Paid ₹{{ m.paid|floatformat:0 }} out of pocket</span>
+              </div>
+            </div>
+            <div class="member-net {% if m.status == 'gets_back' %}green{% elif m.status == 'owes' %}red{% else %}settled{% endif %}">
+              {% if m.status == 'gets_back' %}
+                +₹{{ m.net|floatformat:0 }} <small style="font-size: 10px; opacity: 0.85;">(Gets)</small>
+              {% elif m.status == 'owes' %}
+                -₹{{ m.net|floatformat:0|cut:"-" }} <small style="font-size: 10px; opacity: 0.85;">(Owes)</small>
+              {% else %}
+                ✓ Settled
+              {% endif %}
+            </div>
           </div>
         </div>
         {% endfor %}
@@ -620,9 +878,20 @@
       <div class="expense-timeline" id="expenses-container">
         {% for exp in expenses %}
         <div class="expense-row">
-          <div>
-            <div class="expense-desc">{{ exp.description }}</div>
-            <div class="expense-meta">Paid by <strong>{{ exp.paid_by }}</strong> · {{ exp.date }}</div>
+          <div class="exp-left">
+            <div class="exp-icon">
+              {% with d=exp.description|lower %}
+                {% if "cab" in d or "uber" in d or "ola" in d or "taxi" in d or "auto" in d or "petrol" in d or "fuel" in d %}🚕
+                {% elif "dinner" in d or "lunch" in d or "food" in d or "snacks" in d or "cafe" in d or "chai" in d or "beer" in d %}🍔
+                {% elif "room" in d or "hotel" in d or "stay" in d or "airbnb" in d %}🏨
+                {% elif "groceries" in d or "market" in d or "ration" in d %}🛒
+                {% else %}🧾{% endif %}
+              {% endwith %}
+            </div>
+            <div>
+              <div class="expense-desc">{{ exp.description }}</div>
+              <div class="expense-meta">Paid by <strong>{{ exp.paid_by }}</strong> · {{ exp.date }}</div>
+            </div>
           </div>
           <div class="expense-amount">₹{{ exp.amount|floatformat:0 }}</div>
         </div>
@@ -636,15 +905,15 @@
 
     <!-- Footer -->
     <div class="footer">
-      Powered by <a href="/">Paisa Mitra (Smart Expense Coach)</a> · Zero-App WhatsApp & Web Expense Manager 🤖
+      Powered by <a href="/">Expense Tracker</a> · Smart WhatsApp & Web Expense Manager ⚡
     </div>
 
   </div>
 
   <!-- Add Expense Modal -->
-  <div class="modal-backdrop" id="addModal">
+  <div class="modal-backdrop" id="addModal" onclick="if(event.target === this) closeAddModal()">
     <div class="modal-box">
-      <div class="modal-title">
+      <div class="modal-title" style="margin-bottom: 16px;">
         <span>➕ Add Expense</span>
         <button class="close-btn" onclick="closeAddModal()">&times;</button>
       </div>
@@ -658,6 +927,17 @@
             <option value="{{ m.name }}">
             {% endfor %}
           </datalist>
+
+          <!-- Quick Name Chips -->
+          {% if members %}
+          <div class="member-chips">
+            {% for m in members %}
+            <button type="button" class="chip-btn" onclick="document.getElementById('inputPaidBy').value = '{{ m.name|escapejs }}'">
+              + {{ m.name }}
+            </button>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
 
         <div class="form-group">
@@ -670,7 +950,7 @@
           <input type="text" id="inputDesc" class="form-input" placeholder="e.g. Dinner, Fuel, Cabs" required>
         </div>
 
-        <button type="submit" class="add-expense-btn" id="submitBtn" style="margin-top: 8px;">
+        <button type="submit" class="add-expense-btn" id="submitBtn" style="margin-top: 12px;">
           <span>Save Expense</span>
         </button>
       </form>
@@ -690,35 +970,35 @@
       </p>
 
       <!-- QR Box -->
-      <div style="background: #ffffff; padding: 12px; border-radius: 16px; display: inline-block; box-shadow: 0 8px 24px rgba(0,0,0,0.35); margin-bottom: 16px;">
-        <img id="upiQrImg" src="" alt="UPI QR Code" width="200" height="200" style="display: block; border-radius: 6px;" />
+      <div style="background: #ffffff; padding: 12px; border-radius: 18px; display: inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.4); margin-bottom: 16px;">
+        <img id="upiQrImg" src="" alt="UPI QR Code" width="200" height="200" style="display: block; border-radius: 8px;" />
       </div>
 
       <!-- Amount Display -->
       <div style="margin-bottom: 14px;">
-        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); font-weight: 700;">Transfer Amount</div>
-        <div id="upiModalAmt" style="font-size: 26px; font-weight: 800; font-family: var(--mono); color: var(--green);">₹0</div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); font-weight: 700;">Transfer Amount</div>
+        <div id="upiModalAmt" style="font-size: 28px; font-weight: 800; font-family: var(--mono); color: #34D399;">₹0</div>
       </div>
 
       <!-- UPI ID Copy Card -->
       <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;">
         <div style="text-align: left; overflow: hidden;">
           <div style="font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase;">UPI ID / VPA</div>
-          <div id="upiModalVpa" style="font-size: 13px; font-family: var(--mono); font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+          <div id="upiModalVpa" style="font-size: 13px; font-family: var(--mono); font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
         </div>
-        <button type="button" id="copyVpaBtn" onclick="copyUpiVpa()" style="background: rgba(99,102,241,0.18); border: 1px solid var(--primary); color: #818CF8; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+        <button type="button" id="copyVpaBtn" onclick="copyUpiVpa()" style="background: rgba(99,102,241,0.2); border: 1px solid var(--primary-light); color: #A5B4FC; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
           📋 Copy
         </button>
       </div>
 
       <!-- Direct App Button (Mobile Fallback) -->
-      <a id="upiAppDirectBtn" href="#" class="add-expense-btn" style="text-decoration: none; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #059669, var(--green)); color: #051A10;">
+      <a id="upiAppDirectBtn" href="#" class="add-expense-btn" style="text-decoration: none; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #10B981, #059669); color: #042417;">
         ⚡ Open in UPI App
       </a>
     </div>
   </div>
 
-  <!-- Toast -->
+  <!-- Toast Notification -->
   <div class="toast" id="toast"></div>
 
   <script>
@@ -779,10 +1059,10 @@
     }
 
     function shareGroup() {
-      const text = `🏖️ *{{ group.name }}* hisaab is live on Paisa Mitra!\nCheck balances, settle via UPI, or add expenses here:\n${window.location.href}`;
+      const text = `🏖️ *{{ group.name }}* hisaab is live on Expense Tracker!\nCheck balances, settle via UPI, or add expenses here:\n${window.location.href}`;
       if (navigator.share) {
         navigator.share({
-          title: '{{ group.name }} — Split Hisaab',
+          title: '{{ group.name }} — Split Hisaab | Expense Tracker',
           text: text,
           url: window.location.href
         }).catch(() => {});
@@ -830,7 +1110,7 @@
 
       const copyBtn = document.getElementById('copyVpaBtn');
       copyBtn.textContent = '📋 Copy';
-      copyBtn.style.color = '#818CF8';
+      copyBtn.style.color = '#A5B4FC';
 
       document.getElementById('upiModal').classList.add('open');
     }
@@ -847,11 +1127,11 @@
       navigator.clipboard.writeText(currentUpiVpa).then(() => {
         const copyBtn = document.getElementById('copyVpaBtn');
         copyBtn.textContent = '✅ Copied!';
-        copyBtn.style.color = 'var(--green)';
+        copyBtn.style.color = '#34D399';
         showToast(`📋 Copied UPI ID: ${currentUpiVpa}`);
         setTimeout(() => {
           copyBtn.textContent = '📋 Copy';
-          copyBtn.style.color = '#818CF8';
+          copyBtn.style.color = '#A5B4FC';
         }, 2500);
       }).catch(() => {
         showToast('Failed to copy');
