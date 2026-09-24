@@ -4397,11 +4397,11 @@ class CustomAuthToken(ObtainAuthToken):
             return Response({'error': 'Please provide identifier (phone/email/username) and password.'}, status=400)
             
         user = None
-        user_qs = User.objects.filter(username=identifier)
+        user_qs = User.objects.filter(username__iexact=identifier)
         if user_qs.exists():
             user = user_qs.first()
         else:
-            user_qs = User.objects.filter(email=identifier)
+            user_qs = User.objects.filter(email__iexact=identifier)
             if user_qs.exists():
                 user = user_qs.first()
             else:
