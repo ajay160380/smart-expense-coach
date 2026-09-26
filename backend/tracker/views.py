@@ -1709,7 +1709,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             host_domain = request.build_absolute_uri('/')[:-1]
             if "localhost" in host_domain or "127.0.0.1" in host_domain:
                 host_domain = "https://smart-expense-coach.onrender.com"
-            res = parse_and_handle_split_message(target_user, spoken_text, host_domain)
+            res = parse_and_handle_split_message(target_user, spoken_text, host_domain, session)
             return JsonResponse(res)
 
         # ── Intercept Budget ──
@@ -3957,7 +3957,7 @@ def compute_group_settlement(group, host_domain=None):
     }
 
 
-def parse_and_handle_split_message(target_user, text: str, host_domain: str = None) -> dict:
+def parse_and_handle_split_message(target_user, text: str, host_domain: str = None, session=None) -> dict:
     """
     Parses natural language split expense commands via Groq AI,
     creates/updates the SplitGroup, SplitMembers, SplitExpenses,
@@ -3965,17 +3965,17 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
     """
     user_name = target_user.first_name.title() if target_user.first_name else target_user.username.title()
 
-    prompt = (
+    system_prompt = (
         f"You are an expert AI parser for Indian group expense splits (Splitwise style).\n"
-        f"Target User Name: {user_name}\n"
-        f"Incoming Message: \"{text}\"\n\n"
+        f"Target User Name: {user_name}\n\n"
         f"Instructions:\n"
         f"1. Extract the group/trip name (e.g. 'Goa Trip', 'Room Rent', 'Flatmates', 'Dinner'). If none mentioned, default to 'Group Split'.\n"
         f"2. Extract who paid what. If the user refers to themselves ('maine', 'mera', 'me', 'i paid', 'self'), set 'paid_by' to '{user_name}'.\n"
         f"3. For each expense item, extract: 'paid_by' (Capitalized person name), 'amount' (number), and 'description' (e.g. 'cab', 'dinner', 'snacks').\n"
         f"4. If the message wants to settle/close/finish the group completely (e.g. 'Goa trip settle kar do', 'Goa trip khatam ho gaya', 'close goa trip', 'settle goa trip'), set 'is_settle_all': true.\n"
         f"5. If one member paid another directly to settle (e.g. 'Rahul paid Ajay 133 in Goa trip', 'Rahul ne Aman ko 733 de diye'), set 'settlement_payment': {{\"debtor\": \"Rahul\", \"creditor\": \"Ajay\", \"amount\": 133}}.\n"
-        f"6. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'show split goa'), set 'is_query_only': true.\n\n"
+        f"6. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'show split goa'), set 'is_query_only': true.\n"
+        f"7. If the user is asking to 'reopen' a trip, extract the expenses from their previous messages in the chat history.\n\n"
         f"Output format: Strictly output a JSON object with this exact structure, with NO markdown code fences or conversational text:\n"
         f"{{\n"
         f"  \"is_query_only\": false,\n"
@@ -3990,9 +3990,19 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
         f"}}"
     )
 
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    if session and session.context and "reopen" in text.lower():
+        if isinstance(session.context, list):
+            for m in session.context[-4:]:
+                if isinstance(m, dict) and 'role' in m and 'content' in m:
+                    messages.append({"role": m['role'], "content": m['content']})
+                    
+    messages.append({"role": "user", "content": f"Incoming Message: \"{text}\""})
+
     try:
         r = _groq_client().chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
             model="qwen/qwen3.8-27b",
             temperature=0.1,
             max_tokens=500,
