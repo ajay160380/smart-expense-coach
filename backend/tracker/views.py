@@ -1383,7 +1383,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 def my_splits_view(request: HttpRequest) -> HttpResponse:
     """Dedicated page for viewing all trips/splits history."""
     from django.db.models import Sum, F
-    active_splits = request.user.splitgroup_set.all().order_by('-id')
+    active_splits = SplitGroup.objects.filter(creator=request.user).order_by('-id')
     for s in active_splits:
         tot = sum(e.amount for e in s.expenses.all())
         s.tot = tot
