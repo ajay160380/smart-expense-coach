@@ -616,6 +616,31 @@ export default function DashboardScreen({ navigation }) {
           </>
         )}
 
+        {/* ── GROUP TRIPS & SPLITS ── */}
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate('ExpenseSplit');
+          }}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#1F2937', '#111827']}
+            style={styles.aiBanner}
+          >
+            <View style={styles.aiIconBox}>
+              <Text style={{ fontSize: 24 }}>✈️</Text>
+            </View>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.3 }}>Trips & Group Splits</Text>
+              </View>
+              <Text style={{ color: '#9CA3AF', fontSize: 11.5, lineHeight: 16 }}>Manage shared bills, view trip history & settle up with friends easily.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+          </LinearGradient>
+        </TouchableOpacity>
+
         {/* ── AI FINANCIAL COACH ── */}
         <TouchableOpacity 
           onPress={() => {
