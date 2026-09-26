@@ -1698,6 +1698,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         import re
         has_multiple_amounts = len(re.findall(r'\b\d+\b', lower_text)) > 1
         is_split_intent = any(kw in lower_text for kw in split_triggers) or (
+            ("reopen" in lower_text or "new " in lower_text or "naya " in lower_text) and 
+            ("trip" in lower_text or "split" in lower_text or "hisaab" in lower_text)
+        ) or (
             ("split" in lower_text or "trip" in lower_text or "room" in lower_text or "dinner" in lower_text or "lunch" in lower_text or "goa" in lower_text) and 
             (any(w in lower_text for w in ["paid", "diya", "dost", "cab", "hotel", "rent", "snacks", "petrol", "food", "mai ", "aur ", "or ", "mera", "maine"]) or has_multiple_amounts) and
             any(char.isdigit() for char in lower_text)
