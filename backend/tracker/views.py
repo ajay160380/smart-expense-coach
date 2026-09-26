@@ -1693,11 +1693,13 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
         # ── Intercept Group Split (Hybrid: WhatsApp Forwardable Card + 1-Click Web Split) ──
         split_triggers = [
-            "split:", "/split", "trip:", "hisaab:", "hisab:", "group split", "bill split"
+            "split:", "/split", "trip:", "trip :", "trip -", "hisaab:", "hisab:", "hisaab :", "hisab :", "group split", "bill split"
         ]
+        import re
+        has_multiple_amounts = len(re.findall(r'\b\d+\b', lower_text)) > 1
         is_split_intent = any(kw in lower_text for kw in split_triggers) or (
-            ("split" in lower_text or "trip" in lower_text or "room" in lower_text or "dinner" in lower_text or "lunch" in lower_text) and 
-            any(w in lower_text for w in ["paid", "diya", "dost", "cab", "hotel", "rent", "snacks", "petrol", "food"]) and
+            ("split" in lower_text or "trip" in lower_text or "room" in lower_text or "dinner" in lower_text or "lunch" in lower_text or "goa" in lower_text) and 
+            (any(w in lower_text for w in ["paid", "diya", "dost", "cab", "hotel", "rent", "snacks", "petrol", "food", "mai ", "aur ", "or ", "mera", "maine"]) or has_multiple_amounts) and
             any(char.isdigit() for char in lower_text)
         )
         if is_split_intent:
@@ -4010,9 +4012,9 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
     is_settle_all = data.get("is_settle_all", False)
     settle_payment = data.get("settlement_payment")
 
-    group = SplitGroup.objects.filter(creator=target_user, name__iexact=group_name).first()
+    group = SplitGroup.objects.filter(creator=target_user, name__iexact=group_name).order_by('-id').first()
     if not group:
-        group = SplitGroup.objects.filter(creator=target_user, name__icontains=group_name).first()
+        group = SplitGroup.objects.filter(creator=target_user, name__icontains=group_name).order_by('-id').first()
 
     if is_settle_all:
         if not group:
@@ -4074,6 +4076,24 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
             "message": settlement["whatsapp_message"],
             "data": settlement
         }
+
+    if group and group.is_settled:
+        if "reopen" in text.lower():
+            group.is_settled = False
+            group.save(update_fields=["is_settled"])
+            if not data.get("expenses"):
+                return {
+                    "status": "success",
+                    "message": f"✅ *{group.name}* is now reopened! You can now add new expenses to it."
+                }
+        elif "new" in text.lower() or "naya" in text.lower():
+            # Force create a new group
+            group = None
+        else:
+            return {
+                "status": "error",
+                "message": f"🛑 Your *'{group.name}'* is already settled!\n\nDo you want to add this to the old one or create a new one?\n\n👉 Reply with: *Reopen {group.name}* (or just add 'reopen' in your message)\nOR\n👉 Reply with: *New {group.name} : [your expenses]*"
+            }
 
     expenses_data = data.get("expenses", [])
     if not expenses_data:
