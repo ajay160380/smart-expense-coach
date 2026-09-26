@@ -14,7 +14,23 @@
             </div>
             <div class="split-total" id="split-total-{{ split.pk }}">₹{{ split.tot|floatformat:0 }}</div>
             <div class="split-pp" id="split-pp-{{ split.pk }}">Per person: ₹{{ split.pp|floatformat:0 }}</div>
-            <div class="split-actions-row">
+
+            {% if split.expenses.count > 0 %}
+            <div class="split-expenses-list" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--text3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">All Expenses</div>
+              {% for exp in split.expenses.all reversed %}
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 13px;">
+                <div style="flex: 1;">
+                  <div style="color: var(--text1); font-weight: 500;">{{ exp.description }}</div>
+                  <div style="color: var(--text3); font-size: 11px; margin-top: 2px;">{{ exp.paid_by|title }} paid • {{ exp.date|date:"d M" }}</div>
+                </div>
+                <div style="color: var(--text1); font-weight: 600;">₹{{ exp.amount|floatformat:0 }}</div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="split-actions-row" style="margin-top: 15px;">
               <button class="split-action" 
                       data-pk="{{ split.pk }}" 
                       data-name="{{ split.name|escapejs }}" 
