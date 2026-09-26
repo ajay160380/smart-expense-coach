@@ -175,6 +175,7 @@ urlpatterns = [
 
     # Public 1-Click Web Split Links (Zero Login)
     path('split/<str:share_token>/', views.public_split_page, name='public_split_page'),
+    path('splits/', views.my_splits_view, name='my_splits_view'),
     path('api/public-split/<str:share_token>/', views.api_public_split_data, name='api_public_split_data'),
     path('api/public-split/<str:share_token>/add/', views.api_public_add_expense, name='api_public_add_expense'),
     path('api/public-split/<str:share_token>/settle/', views.api_public_settle_payment, name='api_public_settle_payment'),

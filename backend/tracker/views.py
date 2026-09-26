@@ -1380,6 +1380,22 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @login_required(login_url="login")
+def my_splits_view(request: HttpRequest) -> HttpResponse:
+    """Dedicated page for viewing all trips/splits history."""
+    from django.db.models import Sum, F
+    active_splits = request.user.splitgroup_set.all().order_by('-id')
+    for s in active_splits:
+        tot = sum(e.amount for e in s.expenses.all())
+        s.tot = tot
+        mc = s.members.count()
+        s.pp = tot / mc if mc else 0
+        
+    context = {
+        'active_splits': active_splits,
+    }
+    return render(request, "tracker/my_splits.html", context)
+
+@login_required(login_url="login")
 @require_POST
 def add_expense(request: HttpRequest) -> HttpResponse:
     try:
@@ -1689,6 +1705,20 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "status": "success",
                 "message": safe_data["english_message"],
                 "data": safe_data
+            })
+
+        # ── Intercept Trip History / Split History ──
+        trip_history_triggers = [
+            "trip history", "split history", "my trips", "mere trips", "all trips", "show my trips"
+        ]
+        if any(trg in lower_text for trg in trip_history_triggers) and not any(char.isdigit() for char in lower_text):
+            host_domain = request.build_absolute_uri('/')[:-1]
+            if "localhost" in host_domain or "127.0.0.1" in host_domain:
+                host_domain = "https://smart-expense-coach.onrender.com"
+            splits_url = f"{host_domain}/splits/"
+            return JsonResponse({
+                "status": "success", 
+                "message": f"✈️ *Your Trip & Split History*\n\nAap is link par click karke apni saari trips manage, delete, ya dekh sakte hain:\n🔗 {splits_url}\n\n_(Kripya login karein jo number apne use kiya hai)_"
             })
 
         # ── Intercept Group Split (Hybrid: WhatsApp Forwardable Card + 1-Click Web Split) ──

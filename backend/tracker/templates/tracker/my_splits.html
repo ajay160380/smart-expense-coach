@@ -1,0 +1,15 @@
+{% extends 'tracker/base.html' %}
+{% block title %}My Trips & Splits | Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="content" style="max-width: 600px; margin: 20px auto; padding: 20px;">
+    <h2>✈️ My Trips & Splits History</h2>
+    <p style="color: var(--text3); margin-bottom: 20px;">Manage all your group expenses, trips, and shared bills here.</p>
+    
+    {% include 'tracker/partials/split_expenses.html' %}
+    
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{% url 'dashboard' %}" class="submit-btn" style="text-decoration: none; display: inline-block;">⬅️ Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}
