@@ -75,4 +75,187 @@
         <a href="{% url 'dashboard' %}" class="submit-btn" style="text-decoration: none; display: inline-block;">⬅️ Back to Dashboard</a>
     </div>
 </div>
+
+<!-- Modals & Scripts for Splits -->
+{% include 'tracker/partials/modals.html' %}
+<div id="toast" class="toast"></div>
+
+<script>
+// Utilities
+function esc(s) {
+  if (!s) return '';
+  return s.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function getCsrf() {
+  const c = document.cookie.match(/csrftoken=([\w-]+)/);
+  return c ? c[1] : '';
+}
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.style.background = type==='error'?'#EF4444':'#25D366';
+  t.style.transform = 'translate(-50%, 0)';
+  t.style.opacity = '1';
+  setTimeout(() => {
+    t.style.transform = 'translate(-50%, 100px)';
+    t.style.opacity = '0';
+  }, 3000);
+}
+
+// Split Logic
+async function createSplit() {
+  const name = document.getElementById('split-name').value;
+  const membersTxt = document.getElementById('split-members').value;
+  if (!name || !membersTxt) return showToast('Please fill all fields', 'error');
+  
+  const members = membersTxt.split('\n').map(m => m.trim()).filter(m => m);
+  if (members.length < 2) return showToast('Need at least 2 members', 'error');
+
+  try {
+    const res = await fetch('/api/splits/create/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({name, members})
+    });
+    if (res.ok) {
+      closeModal('splitModal');
+      showToast('Split group created! 👥', 'success');
+      location.reload();
+    } else {
+      const data = await res.json();
+      showToast(data.error || 'Failed to create group', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+let activeSplitId = null;
+function openAddSplitExpense(id, name, members) {
+  activeSplitId = id;
+  document.getElementById('split-exp-group-id').value = id;
+  document.getElementById('split-exp-modal-title').innerHTML = `💸 Add to ${esc(name)} <button class="modal-close" onclick="closeModal('splitExpModal')" type="button">✕</button>`;
+  
+  const select = document.getElementById('split-exp-paid-by');
+  select.innerHTML = members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  
+  openModal('splitExpModal');
+}
+
+async function addSplitExpense() {
+  if (!activeSplitId) return;
+  const amount = document.getElementById('split-exp-amount').value;
+  const description = document.getElementById('split-exp-desc').value;
+  const paidBy = document.getElementById('split-exp-paid-by').value;
+  if (!amount || !description || !paidBy) return showToast('Please fill all fields', 'error');
+
+  try {
+    const res = await fetch(`/api/splits/${activeSplitId}/add-expense/`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({amount, description, paid_by: paidBy})
+    });
+    if (res.ok) {
+      closeModal('splitExpModal');
+      showToast('Expense added to group!', 'success');
+      location.reload();
+    } else {
+      const data = await res.json();
+      showToast(data.error || 'Failed to add expense', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function deleteSplit(id) {
+  if (!confirm('Ye split group delete karna chahte ho?')) return;
+  try {
+    const res = await fetch(`/api/splits/${id}/delete/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCsrf()}
+    });
+    if (res.ok) {
+      const card = document.getElementById('split-card-' + id);
+      if (card) { card.style.transition='opacity 0.2s'; card.style.opacity='0'; setTimeout(() => card.remove(), 200); }
+      showToast('Split group deleted! 🗑️', 'success');
+    } else {
+      showToast('Failed to delete split group', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function viewSplitSummary(id) {
+  try {
+    const res = await fetch(`/api/splits/${id}/summary/`);
+    if (res.ok) {
+      const data = await res.json();
+      let html = `<div style="padding:15px;background:var(--bg3);border-radius:12px;margin-bottom:15px;">`;
+      html += `<div style="color:var(--text2);margin-bottom:15px;font-size:14px;">Total Group Expense: <b style="color:var(--text);">₹${data.total}</b> (₹${data.per_person} per person)</div>`;
+      
+      html += `<div style="margin-bottom:15px;">`;
+      data.members.forEach(m => {
+        html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;">
+          <span>👤 ${esc(m.name)}</span>
+          <span style="color:var(--text3);">Paid: ₹${m.paid}</span>
+        </div>`;
+      });
+      html += `</div><hr style="border-color:var(--border);margin-bottom:15px;">`;
+
+      if (data.settlements.length === 0) {
+        html += `<div style="color:var(--green);font-weight:600;text-align:center;">Everyone is settled up! 🎉</div>`;
+      } else {
+        html += `<div style="font-size:12px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;letter-spacing:0.05em;">Who owes whom</div>`;
+        data.settlements.forEach(s => {
+          html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);align-items:center;">
+            <span style="font-size:14px;"><b>${esc(s.from)}</b> owes <b>${esc(s.to)}</b></span>
+            <span style="color:var(--red);font-weight:700;font-family:var(--mono);">₹${s.amount}</span>
+          </div>`;
+        });
+      }
+      html += `</div>`;
+      
+      const summaryText = data.settlements.length ? 
+        encodeURIComponent(`*${data.group_name} Settlements*\n` + data.settlements.map(s => `${s.from} owes ${s.to}: ₹${s.amount}`).join('\n')) :
+        encodeURIComponent(`*${data.group_name}* is completely settled up! 🎉`);
+        
+      html += `<button class="submit-btn" style="background:#25D366;color:#fff;" onclick="window.open('https://wa.me/?text=${summaryText}', '_blank')">Share via WhatsApp 💬</button>`;
+      
+      document.getElementById('split-summary-content').innerHTML = html;
+      openModal('splitSummaryModal');
+    }
+  } catch (err) {
+    showToast('Failed to load summary', 'error');
+  }
+}
+
+async function settleSplit(id) {
+  if (!confirm('Mark this entire split group as completely settled?')) return;
+  try {
+    const res = await fetch(`/api/splits/${id}/settle/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCsrf()}
+    });
+    if (res.ok) {
+      showToast('Split marked as settled!', 'success');
+      location.reload();
+    } else {
+      showToast('Failed to settle group', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+</script>
 {% endblock %}
