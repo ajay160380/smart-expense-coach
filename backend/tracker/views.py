@@ -4104,32 +4104,6 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
 
     if not group:
         group = SplitGroup.objects.create(creator=target_user, name=group_name)
-    else:
-        # Check if this exact batch of expenses already exists to prevent duplicate submission
-        existing_expenses = list(group.expenses.values('paid_by', 'amount', 'description'))
-        if existing_expenses:
-            all_already_exist = True
-            for item in expenses_data:
-                p_name = str(item.get("paid_by", "")).strip().title()
-                amt = float(item.get("amount", 0))
-                desc = str(item.get("description", "Expense")).strip()
-                match = any(
-                    e['paid_by'].lower() == p_name.lower() and 
-                    abs(float(e['amount']) - amt) < 0.01 and 
-                    e['description'].lower() == desc.lower()
-                    for e in existing_expenses
-                )
-                if not match:
-                    all_already_exist = False
-                    break
-
-            if all_already_exist:
-                settlement = compute_group_settlement(group, host_domain)
-                return {
-                    "status": "success",
-                    "message": settlement["whatsapp_message"],
-                    "data": settlement
-                }
 
     creator_member, _ = SplitMember.objects.get_or_create(group=group, name=user_name)
     if hasattr(target_user, 'profile') and target_user.profile.phone_number and not creator_member.phone:
