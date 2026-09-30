@@ -24,6 +24,7 @@ import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
 import { getToken } from './src/utils/auth';
 import messaging from './src/utils/messaging';
 import { saveNotification } from './src/utils/notifications';
+import { scheduleRandomNotifications } from './src/utils/localNotifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Auth Screens ──
@@ -403,6 +404,7 @@ export default function App() {
         if (token) {
           setIsAuthenticated(true);
           setupFCM(token);
+          scheduleRandomNotifications();
         } else {
           setIsAuthenticated(false);
           setupFCM(null);
