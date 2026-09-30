@@ -3184,6 +3184,13 @@ expo-linear-gradient@^57.0.0:
   resolved "https://registry.npmjs.org/expo-linear-gradient/-/expo-linear-gradient-57.0.0.tgz"
   integrity sha512-jtZLklPhdc34QiGGGW0zGrOKMiBySPmxIi3uajQD4dPklpCUItx8FGzY1hqL5ygQyXqEIdCY4XEiQZIStkmFeg==
 
+expo-location@~57.0.20:
+  version "57.0.20"
+  resolved "https://registry.yarnpkg.com/expo-location/-/expo-location-57.0.20.tgz#1862a3440d1fe785edb3f5681d8cc01761041d54"
+  integrity sha512-E9cr7A5eQS91bm3McMx3FiWy7SCorVTPLq9gLFFW+7dfuSqQp5FLNBZQ6NFJaS8tVhCyl2WyKMFh0TAo/+7K9Q==
+  dependencies:
+    "@expo/image-utils" "^0.11.5"
+
 expo-manifests@~57.0.1:
   version "57.0.1"
   resolved "https://registry.npmjs.org/expo-manifests/-/expo-manifests-57.0.1.tgz"

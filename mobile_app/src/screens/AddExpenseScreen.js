@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import * as Location from 'expo-location';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW } from '../utils/theme';
@@ -49,6 +50,38 @@ export default function AddExpenseScreen({ route, navigation }) {
   );
   const [expDate, setExpDate] = useState(expense.date ? expense.date.split('T')[0] : TODAY);
   const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  const handleTagLocation = async () => {
+    setLocationLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission to access location was denied');
+        setLocationLoading(false);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const geocode = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      if (geocode.length > 0) {
+        const place = geocode[0];
+        const locName = place.name || place.street || place.city || place.region;
+        if (locName) {
+          setDescription((prev) => prev ? `${prev} (at ${locName})` : `Expense at ${locName}`);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Error', 'Could not fetch location');
+    } finally {
+      setLocationLoading(false);
+    }
+  };
 
   const handleAddExpense = async () => {
     const cleanAmount = sanitizeAmount(amount);
@@ -145,7 +178,16 @@ export default function AddExpenseScreen({ route, navigation }) {
 
           {/* ── Description ── */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>DESCRIPTION</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={styles.label}>DESCRIPTION</Text>
+              <TouchableOpacity onPress={handleTagLocation} disabled={locationLoading}>
+                {locationLoading ? (
+                  <ActivityIndicator size="small" color={COLORS.primary} style={{ marginBottom: 8 }} />
+                ) : (
+                  <Text style={{ color: COLORS.primary, fontSize: 12, fontWeight: 'bold', marginBottom: 8 }}>📍 Auto-Tag Location</Text>
+                )}
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="What was this for?"
