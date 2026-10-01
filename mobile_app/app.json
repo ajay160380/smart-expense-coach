@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expense Tracker",
     "slug": "expense-tracker",
-    "version": "1.0.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -63,6 +63,6 @@
       }
     },
     "owner": "ajay1506s-team",
-    "runtimeVersion": "1.0.0"
+    "runtimeVersion": "1.3.0"
   }
 }

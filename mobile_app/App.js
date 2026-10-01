@@ -22,7 +22,8 @@ import messaging from './src/utils/messaging';
 import { saveNotification } from './src/utils/notifications';
 import { scheduleRandomNotifications } from './src/utils/localNotifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import RNAndroidNotificationListener from 'react-native-android-notification-listener';
+import * as Notifications from 'expo-notifications';
 // ── Auth Screens ──
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -394,6 +395,21 @@ export default function App() {
       }
     });
 
+    // Handle Local Notification Clicks (from the Payment Listener)
+    const notificationTapListener = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data && data.action === 'add_expense') {
+        setTimeout(() => {
+          if (navigationRef.isReady()) {
+            navigationRef.navigate('MainTabs', {
+              screen: 'Home',
+              params: { screen: 'AddExpense', params: { prefillAmount: data.amount, prefillDescription: `Paid to ${data.merchant}` } },
+            });
+          }
+        }, 500);
+      }
+    });
+
     const checkAuth = async () => {
       try {
         const token = await getToken();
@@ -401,6 +417,20 @@ export default function App() {
           setIsAuthenticated(true);
           setupFCM(token);
           scheduleRandomNotifications();
+          
+          if (Platform.OS === 'android') {
+            const status = await RNAndroidNotificationListener.getPermissionStatus();
+            if (status !== 'authorized') {
+              Alert.alert(
+                'Auto-Track Expenses',
+                'Paisa Mitra can automatically track your UPI payments (GPay, PhonePe, Paytm). Please allow Notification Access on the next screen to enable this magic!',
+                [
+                  { text: 'Not Now', style: 'cancel' },
+                  { text: 'Enable Magic', onPress: () => RNAndroidNotificationListener.requestPermission() }
+                ]
+              );
+            }
+          }
         } else {
           setIsAuthenticated(false);
           setupFCM(null);
@@ -417,7 +447,12 @@ export default function App() {
       setIsAuthenticated(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (notificationTapListener) {
+        notificationTapListener.remove();
+      }
+    };
   }, []);
 
   if (isLoading) {

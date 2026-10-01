@@ -430,7 +430,7 @@ export default function ProfileScreen({ navigation }) {
           <MenuItem
             ionIcon="information-circle-outline"
             label="App Version"
-            sub="v2.0.0 — Built with ❤️ by Ajay Vishwakarma"
+            sub="v1.3.0 — Built with ❤️ by Ajay Vishwakarma"
           />
         </GlassCard>
 
