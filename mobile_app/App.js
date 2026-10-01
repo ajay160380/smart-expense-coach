@@ -9,11 +9,15 @@ import 'react-native-gesture-handler';
 if (__DEV__) {
   require('./src/reticle-dev');
 }
-import { useEffect, useState } from 'react';
-import { createNavigationContainerRef } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import Logo from './src/components/Logo';
 import * as Updates from 'expo-updates';
 import { Accelerometer } from 'expo-sensors';
 import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
