@@ -5,15 +5,11 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
-  StyleSheet, Text, View, TouchableOpacity,
-  SafeAreaView, Platform, ActivityIndicator, Alert,
+  StyleSheet, Platform, Alert,
   PanResponder,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';

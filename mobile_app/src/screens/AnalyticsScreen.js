@@ -5,18 +5,13 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, RefreshControl, ActivityIndicator,
+  StyleSheet, Platform,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import api from '../api/config';
-import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SPACING, FONT, SHADOW, getFallbackIcon } from '../utils/theme';
-import { GlassCard, SectionHeader, EmptyState } from '../components/SharedComponents';
+import { COLORS, CAT_COLORS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
 
 const { width } = Dimensions.get('window');
 const PERIODS = ['week', 'month', 'quarter', 'year'];

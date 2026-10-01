@@ -1,16 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
-  StyleSheet, View, Text, TouchableOpacity, Modal, 
-  TextInput, Linking, AppState, ActivityIndicator, Platform, Alert,
+  StyleSheet, Linking, AppState, Platform, Alert,
   Animated, Easing
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { useIsFocused } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
-import * as IntentLauncher from 'expo-intent-launcher';
 
 export default function UPIPaymentScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();

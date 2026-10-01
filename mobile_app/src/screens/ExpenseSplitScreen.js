@@ -5,20 +5,15 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, RefreshControl, TextInput,
-  Alert, Modal, ActivityIndicator, Linking, KeyboardAvoidingView,
+  StyleSheet, Platform,
+  Alert, Linking,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
-import { COLORS, RADIUS, FONT } from '../utils/theme';
-import { GlassCard, GradientButton, EmptyState, SectionHeader } from '../components/SharedComponents';
+import { COLORS } from '../utils/theme';
 
 export default function ExpenseSplitScreen({ navigation }) {
   const [groups, setGroups] = useState([]);

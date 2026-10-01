@@ -1,6 +1,3 @@
-import React from 'react';
-import { WidgetTaskHandlerProps } from 'react-native-android-widget';
-import { AddExpenseWidget } from './AddExpenseWidget';
 import { Linking } from 'react-native';
 
 export async function widgetTaskHandler(props) {

@@ -5,19 +5,14 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, TouchableOpacity,
-  SafeAreaView, Platform, FlatList, KeyboardAvoidingView,
-  ActivityIndicator, Keyboard,
+  StyleSheet, Platform, Keyboard,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
 import api from '../api/config';
 import { getUsername } from '../utils/auth';
 import { sanitizeInput } from '../utils/auth';
-import { COLORS, RADIUS, SPACING, FONT } from '../utils/theme';
+import { COLORS } from '../utils/theme';
 
 const QUICK_CHIPS = [
   { label: '💰 Budget Check', text: 'Budget kitna bacha hai?' },

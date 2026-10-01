@@ -1,1 +1,0 @@
-Fix AI bot popup layout on mobile

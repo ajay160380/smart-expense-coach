@@ -1,15 +1,7 @@
-import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, SafeAreaView, Platform,
-  KeyboardAvoidingView,
+import { useState } from 'react';
+import { StyleSheet, Alert, Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import Logo from '../components/Logo';
 import api from '../api/config';
-import { COLORS } from '../utils/theme';
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [step, setStep] = useState(1); // 1=Identifier, 2=OTP, 3=New Password

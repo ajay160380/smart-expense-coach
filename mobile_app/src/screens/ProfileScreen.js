@@ -5,25 +5,19 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, RefreshControl, Alert,
-  ActivityIndicator, Linking, Image, Modal, TextInput, KeyboardAvoidingView,
+  StyleSheet, Platform, Alert, Linking,
   DeviceEventEmitter
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import messaging from '../utils/messaging';
 import { PermissionsAndroid } from 'react-native';
 import api from '../api/config';
-import { clearAuthData, getUsername } from '../utils/auth';
+import { clearAuthData } from '../utils/auth';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
-import { GlassCard, SectionHeader } from '../components/SharedComponents';
 import { requestPinAppWidget } from 'react-native-android-widget';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

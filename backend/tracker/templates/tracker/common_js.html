@@ -1,0 +1,81 @@
+    const [year, month] = picker.value.split('-');
+    url += `?month=${month}&year=${year}`;
+  }
+  window.location.href = url;
+  showToast('Downloading CSV... ✅', 'success');
+}
+
+function exportPDF() {
+  const picker = document.getElementById('month-picker');
+  let url = '/api/export/pdf/';
+  if (picker && picker.value) {
+    const [year, month] = picker.value.split('-');
+    url += `?month=${month}&year=${year}`;
+  }
+  window.location.href = url;
+  showToast('Downloading PDF... 📄', 'success');
+}
+
+function openModal(id)  {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('open');
+  if (id === 'profileModal') loadProfileStats();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape') {
+    document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
+    profileOpen = false;
+    document.getElementById('profile-dropdown').classList.remove('open');
+  }
+});
+
+function openAI()   { if (!aiOpen) toggleAI(); }
+function toggleAI() {
+  aiOpen = !aiOpen;
+  document.getElementById('ai-popup').classList.toggle('open', aiOpen);
+  if (aiOpen) {
+    document.getElementById('ai-notif').style.display = 'none';
+    if (!aiHistory.length) sendWelcome();
+    setTimeout(() => document.getElementById('ai-input').focus(), 350);
+  }
+}
+
+function getFinancialContext() {
+  const f     = getFiltered();
+  const total = f.reduce((s,e) => s+e.amount, 0);
+  const rem   = Math.max(budget-total, 0);
+  const m     = {};
+  f.forEach(e => { m[e.cat]=(m[e.cat]||0)+e.amount; });
+  const topCat = Object.entries(m).sort((a,b)=>b[1]-a[1])[0];
+  return {total, rem, budget, topCat, count:f.length, pct:budget>0?Math.round(total/budget*100):0};
+}
+
+function sendWelcome() {
+  const ctx = getFinancialContext();
+  let msg = `Hello! I am ExpenseTracker 🙏\n\n`;
+  msg += `✅ Remaining: ${fmt(ctx.rem)}\n`;
+  msg += `📊 Budget used: ${ctx.pct}%\n`;
+  if (ctx.topCat) msg += `🔥 Top category: ${ctx.topCat[0].charAt(0).toUpperCase()+ctx.topCat[0].slice(1)} — ${fmt(ctx.topCat[1])}`;
+  msg += `\n\nWhat would you like to know? Ask me anything! 😊`;
+  addBotMsg(msg);
+}
+
+function quickAsk(btn) {
+  document.getElementById('ai-input').value = btn.textContent;
+  sendMsg();
+}
+
+function addUserMsg(text) {
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'ai-msg user';
+  div.innerHTML = `<div class="ai-bubble">${esc(text)}</div><div class="ai-time">${now}</div>`;
+  document.getElementById('ai-msgs').appendChild(div);
+  scrollMsgs();
+}
+
+function addBotMsg(text) {
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');

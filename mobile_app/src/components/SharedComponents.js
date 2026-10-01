@@ -7,9 +7,8 @@
 
 import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Animated, ActivityIndicator,
+  View, TouchableOpacity, StyleSheet, Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, RADIUS, SPACING, FONT, SHADOW } from '../utils/theme';
 
 // ═══════════════════════════════════════════════

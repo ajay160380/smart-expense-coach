@@ -126,9 +126,15 @@ def run_daemon():
     while True:
         now = datetime.datetime.now()
         
-        # Define the exact times for today
-        time1 = now.replace(hour=8, minute=0, second=0, microsecond=0)
-        time2 = now.replace(hour=22, minute=0, second=0, microsecond=0)
+        # Generate a random morning/afternoon time (between 9 AM and 2 PM)
+        random_hour_1 = random.randint(9, 14)
+        random_minute_1 = random.randint(0, 59)
+        time1 = now.replace(hour=random_hour_1, minute=random_minute_1, second=0, microsecond=0)
+        
+        # Generate a random evening/night time (between 5 PM and 9 PM)
+        random_hour_2 = random.randint(17, 21)
+        random_minute_2 = random.randint(0, 59)
+        time2 = now.replace(hour=random_hour_2, minute=random_minute_2, second=0, microsecond=0)
         
         times_to_fire = []
         if time1 > now:

@@ -1,5 +1,3 @@
-import React from 'react';
-import { FlexWidget, TextWidget } from 'react-native-android-widget';
 
 export function AddExpenseWidget() {
   return (

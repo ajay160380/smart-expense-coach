@@ -5,18 +5,13 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, RefreshControl, Alert,
-  ActivityIndicator, Dimensions,
+  StyleSheet, Platform, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import api from '../api/config';
-import { COLORS, RADIUS, SHADOW } from '../utils/theme';
-import { GlassCard, SectionHeader } from '../components/SharedComponents';
+import { COLORS } from '../utils/theme';
 
 export default function AdminPanelScreen({ navigation }) {
   const [users, setUsers] = useState([]);

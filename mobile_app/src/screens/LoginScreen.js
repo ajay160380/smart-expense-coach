@@ -5,16 +5,9 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, SafeAreaView, Platform,
-  KeyboardAvoidingView,
+import { useState } from 'react';
+import { StyleSheet, Alert, Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import Logo from '../components/Logo';
 import api from '../api/config';
 import {
   saveAuthData, sanitizeInput,
@@ -135,7 +128,7 @@ export default function LoginScreen({ navigation }) {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <TouchableOpacity onPress={() => navigation.replace('Register')}>
               <Text style={styles.linkText}>Create one</Text>
             </TouchableOpacity>

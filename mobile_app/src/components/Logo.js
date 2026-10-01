@@ -1,5 +1,3 @@
-import React from 'react';
-import { View, Text, Image } from 'react-native';
 
 export default function Logo({ size = 1, showText = true, circle = true }) {
   const s = size; 

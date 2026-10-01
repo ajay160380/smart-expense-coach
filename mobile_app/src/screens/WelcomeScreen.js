@@ -6,14 +6,9 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, SafeAreaView, Dimensions,
-  TouchableOpacity, FlatList, Animated, Platform
+import { useState, useRef, useEffect } from 'react';
+import { StyleSheet, Dimensions, Animated, Platform
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
-import Logo from '../components/Logo';
 
 const { width, height } = Dimensions.get('window');
 

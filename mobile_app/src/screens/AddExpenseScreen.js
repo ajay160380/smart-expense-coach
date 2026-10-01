@@ -5,20 +5,13 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, SafeAreaView, Platform,
-  ScrollView, KeyboardAvoidingView,
+import { useState } from 'react';
+import { StyleSheet, Alert, Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import * as Location from 'expo-location';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
-import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW } from '../utils/theme';
-import { GradientButton } from '../components/SharedComponents';
+import { COLORS, RADIUS } from '../utils/theme';
 
 const CATEGORIES = [
   { key: 'food', label: 'Food', icon: '🍜', color: '#6c5ce7' },

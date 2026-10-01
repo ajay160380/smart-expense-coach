@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
+import { useState, useEffect } from 'react';
+import { StyleSheet, Alert } from 'react-native';
 import api from '../api/config';
 
 const NotepadScreen = ({ navigation }) => {

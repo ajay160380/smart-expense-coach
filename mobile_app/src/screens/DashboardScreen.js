@@ -5,24 +5,19 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, RefreshControl, ActivityIndicator,
-  Dimensions, Linking, Alert, Modal, TextInput, KeyboardAvoidingView, Image
+  StyleSheet, Platform,
+  Dimensions, Linking, Alert
 } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import api from '../api/config';
 import { getUsername, clearAuthData } from '../utils/auth';
-import { COLORS, CAT_COLORS, CAT_ICONS, SPACING, RADIUS, FONT, SHADOW, getFallbackIcon } from '../utils/theme';
-import { GlassCard, AnimatedNumber, StatCard, SectionHeader, EmptyState } from '../components/SharedComponents';
+import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
 
 const { width } = Dimensions.get('window');
 

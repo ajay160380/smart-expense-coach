@@ -1,17 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, ActivityIndicator, Alert
+  StyleSheet, Alert
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/config';
-import { COLORS, CAT_COLORS, CAT_ICONS, SPACING, getFallbackIcon } from '../utils/theme';
-import { GlassCard, EmptyState, AnimatedNumber } from '../components/SharedComponents';
+import { COLORS, CAT_COLORS, CAT_ICONS, getFallbackIcon } from '../utils/theme';
 
 export default function HistoryScreen({ navigation }) {
   const [loading, setLoading] = useState(true);

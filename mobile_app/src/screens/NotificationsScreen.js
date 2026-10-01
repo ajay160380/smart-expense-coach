@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, FlatList } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import { COLORS, RADIUS } from '../utils/theme';
-import { StatusBar } from 'expo-status-bar';
 import { getNotifications, clearNotifications } from '../utils/notifications';
 
 export default function NotificationsScreen({ navigation }) {
