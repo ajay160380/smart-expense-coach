@@ -55,8 +55,7 @@
             }
           ]
         }
-      ],
-      "./withNotificationListener"
+      ]
     ],
     "extra": {
       "eas": {

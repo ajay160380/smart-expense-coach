@@ -8,12 +8,6 @@ import { widgetTaskHandler } from './src/widgets/WidgetTaskHandler';
 
 registerWidgetTaskHandler(widgetTaskHandler);
 
-import RNAndroidNotificationListener, { RNAndroidNotificationListenerHeadlessJsName } from 'react-native-android-notification-listener';
-import { headlessNotificationListener } from './src/utils/paymentListener';
-
-// Register background headless task for reading Android Push Notifications (PhonePe, GPay, etc.)
-import { AppRegistry } from 'react-native';
-AppRegistry.registerHeadlessTask(RNAndroidNotificationListenerHeadlessJsName, () => headlessNotificationListener);
 
 // Register background handler
 messaging().setBackgroundMessageHandler(async remoteMessage => {

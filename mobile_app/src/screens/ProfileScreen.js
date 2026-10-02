@@ -5,16 +5,23 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback } from 'react';
-import {
-  StyleSheet, Platform, Alert, Linking,
-  DeviceEventEmitter
-} from 'react-native';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+
+import Logo from '../components/Logo';
+import { GlassCard, SectionHeader } from '../components/SharedComponents';
+
+
+
+
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import messaging from '../utils/messaging';
-import { PermissionsAndroid } from 'react-native';
+
 import api from '../api/config';
 import { clearAuthData } from '../utils/auth';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
@@ -35,6 +42,7 @@ export default function ProfileScreen({ navigation }) {
   const [editLastName, setEditLastName] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
   const [shakeLevel, setShakeLevel] = useState('3.5');
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -53,6 +61,9 @@ export default function ProfileScreen({ navigation }) {
     AsyncStorage.getItem('shake_sensitivity').then(val => {
       if (val) setShakeLevel(val);
       else setShakeLevel('3.5');
+    });
+    AsyncStorage.getItem('biometric_enabled').then(val => {
+      setBiometricEnabled(val === 'true');
     });
   }, []));
   const onRefresh = () => { setRefreshing(true); fetchProfile(); };
@@ -184,6 +195,13 @@ export default function ProfileScreen({ navigation }) {
     setShakeLevel(next);
     await AsyncStorage.setItem('shake_sensitivity', next);
     DeviceEventEmitter.emit('shake_sensitivity_changed', next);
+  };
+
+  const toggleBiometric = async () => {
+    const nextState = !biometricEnabled;
+    setBiometricEnabled(nextState);
+    await AsyncStorage.setItem('biometric_enabled', nextState ? 'true' : 'false');
+    Alert.alert('App Lock', nextState ? 'Biometric App Lock enabled!' : 'Biometric App Lock disabled!');
   };
 
   if (loading) {
@@ -407,6 +425,13 @@ export default function ProfileScreen({ navigation }) {
             label="Shake Sensitivity"
             sub={`Current: ${getShakeText(shakeLevel)}`}
             onPress={toggleShake}
+          />
+          <MenuItem
+            icon="🔒"
+            ionIcon={biometricEnabled ? "lock-closed" : "lock-open-outline"}
+            label="App Lock (Biometric)"
+            sub={biometricEnabled ? "Enabled" : "Disabled"}
+            onPress={toggleBiometric}
           />
         </GlassCard>
 

@@ -26,8 +26,8 @@ import messaging from './src/utils/messaging';
 import { saveNotification } from './src/utils/notifications';
 import { scheduleRandomNotifications } from './src/utils/localNotifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import RNAndroidNotificationListener from 'react-native-android-notification-listener';
 import * as Notifications from 'expo-notifications';
+import * as LocalAuthentication from 'expo-local-authentication';
 // ── Auth Screens ──
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -195,7 +195,9 @@ function MainTabNavigator() {
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [shakeSensitivity, setShakeSensitivity] = useState(1.8); // Default to Medium (1.8 delta)
+  const [shakeSensitivity, setShakeSensitivity] = useState(1.8);
+  const [isBiometricUnlocked, setIsBiometricUnlocked] = useState(false);
+  const [appLocked, setAppLocked] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -208,8 +210,16 @@ export default function App() {
           else if (val === '5.0' || val === '2.6') setShakeSensitivity(2.6);
           else setShakeSensitivity(parseFloat(val) || 1.8);
         }
+        
+        const bioEnabled = await AsyncStorage.getItem('biometric_enabled');
+        if (bioEnabled === 'true') {
+          setAppLocked(true);
+        } else {
+          setIsBiometricUnlocked(true);
+        }
       } catch (e) {
         console.log(e);
+        setIsBiometricUnlocked(true);
       }
     };
     loadSettings();
@@ -399,21 +409,6 @@ export default function App() {
       }
     });
 
-    // Handle Local Notification Clicks (from the Payment Listener)
-    const notificationTapListener = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data;
-      if (data && data.action === 'add_expense') {
-        setTimeout(() => {
-          if (navigationRef.isReady()) {
-            navigationRef.navigate('MainTabs', {
-              screen: 'Home',
-              params: { screen: 'AddExpense', params: { prefillAmount: data.amount, prefillDescription: `Paid to ${data.merchant}` } },
-            });
-          }
-        }, 500);
-      }
-    });
-
     const checkAuth = async () => {
       try {
         const token = await getToken();
@@ -421,20 +416,6 @@ export default function App() {
           setIsAuthenticated(true);
           setupFCM(token);
           scheduleRandomNotifications();
-          
-          if (Platform.OS === 'android') {
-            const status = await RNAndroidNotificationListener.getPermissionStatus();
-            if (status !== 'authorized') {
-              Alert.alert(
-                'Auto-Track Expenses',
-                'Paisa Mitra can automatically track your UPI payments (GPay, PhonePe, Paytm). Please allow Notification Access on the next screen to enable this magic!',
-                [
-                  { text: 'Not Now', style: 'cancel' },
-                  { text: 'Enable Magic', onPress: () => RNAndroidNotificationListener.requestPermission() }
-                ]
-              );
-            }
-          }
         } else {
           setIsAuthenticated(false);
           setupFCM(null);
@@ -453,9 +434,6 @@ export default function App() {
 
     return () => {
       unsubscribe();
-      if (notificationTapListener) {
-        notificationTapListener.remove();
-      }
     };
   }, []);
 
@@ -466,6 +444,32 @@ export default function App() {
         <View style={styles.loadingContent}>
           <Logo size={0.7} circle={true} showText={false} />
           <ActivityIndicator size="small" color="#1A73E8" style={{ marginTop: 24 }} />
+        </View>
+      </View>
+    );
+  }
+
+  if (appLocked && !isBiometricUnlocked) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: '#0f1520' }]}>
+        <StatusBar style="light" />
+        <View style={styles.loadingContent}>
+          <Logo size={0.7} circle={true} showText={false} />
+          <Text style={{color: '#fff', fontSize: 18, marginTop: 24, fontWeight: 'bold'}}>Paisa Mitra is Locked</Text>
+          <TouchableOpacity 
+            style={{marginTop: 30, backgroundColor: '#8B5CF6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24}}
+            onPress={async () => {
+              const result = await LocalAuthentication.authenticateAsync({
+                promptMessage: 'Unlock Paisa Mitra',
+                fallbackLabel: 'Use Passcode',
+              });
+              if (result.success) {
+                setIsBiometricUnlocked(true);
+              }
+            }}
+          >
+            <Text style={{color: '#fff', fontWeight: '600'}}>Tap to Unlock</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
