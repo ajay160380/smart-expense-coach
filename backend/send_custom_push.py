@@ -8,9 +8,9 @@ from tracker.models import UserProfile
 from tracker.fcm_utils import send_push_notification, initialize_firebase
 from firebase_admin import messaging
 
-title = "🚀 Expense Tracker Update!"
-body = "A new update is here! Edit your profile, get faster app launches, and enjoy seamless silent updates. Re-open the app to apply! ⚡️"
-data = {"screen": "Dashboard"}
+title = "🔒 Biometric App Lock is Here!"
+body = "Apne kharchon ko secure karein! Profile me jaakar Fingerprint ya Face ID lock abhi ON karein. 🛡️"
+data = {"screen": "Profile"}
 
 print(f"Title: {title}")
 print(f"Body: {body}\n")
