@@ -13,7 +13,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -199,6 +199,27 @@ export default function App() {
   const [isBiometricUnlocked, setIsBiometricUnlocked] = useState(false);
   const [appLocked, setAppLocked] = useState(false);
 
+  const triggerBiometricUnlock = async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        setIsBiometricUnlocked(true);
+        return;
+      }
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock Expense Tracker',
+        fallbackLabel: 'Use Device Passcode',
+        disableDeviceFallback: false,
+      });
+      if (result.success) {
+        setIsBiometricUnlocked(true);
+      }
+    } catch (err) {
+      console.log('Biometric error:', err);
+    }
+  };
+
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -214,6 +235,7 @@ export default function App() {
         const bioEnabled = await AsyncStorage.getItem('biometric_enabled');
         if (bioEnabled === 'true') {
           setAppLocked(true);
+          triggerBiometricUnlock();
         } else {
           setIsBiometricUnlocked(true);
         }
@@ -451,24 +473,34 @@ export default function App() {
 
   if (appLocked && !isBiometricUnlocked) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: '#0f1520' }]}>
+      <View style={[styles.loadingContainer, { backgroundColor: '#0B0E14' }]}>
         <StatusBar style="light" />
         <View style={styles.loadingContent}>
           <Logo size={0.7} circle={true} showText={false} />
-          <Text style={{color: '#fff', fontSize: 18, marginTop: 24, fontWeight: 'bold'}}>Expense Tracker is Locked</Text>
+          <Text style={{ color: '#fff', fontSize: 20, marginTop: 28, fontWeight: '700' }}>
+            Expense Tracker is Locked
+          </Text>
+          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 6, textAlign: 'center', paddingHorizontal: 30 }}>
+            Authenticate with Fingerprint, Face or Screen Lock
+          </Text>
           <TouchableOpacity 
-            style={{marginTop: 30, backgroundColor: '#8B5CF6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24}}
-            onPress={async () => {
-              const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Unlock Expense Tracker',
-                fallbackLabel: 'Use Passcode',
-              });
-              if (result.success) {
-                setIsBiometricUnlocked(true);
-              }
+            style={{
+              marginTop: 32,
+              backgroundColor: '#8B5CF6',
+              paddingHorizontal: 28,
+              paddingVertical: 14,
+              borderRadius: 24,
+              flexDirection: 'row',
+              alignItems: 'center',
+              shadowColor: '#8B5CF6',
+              shadowOpacity: 0.4,
+              shadowRadius: 10,
+              elevation: 6
             }}
+            onPress={triggerBiometricUnlock}
           >
-            <Text style={{color: '#fff', fontWeight: '600'}}>Tap to Unlock</Text>
+            <Ionicons name="finger-print" size={22} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Unlock App</Text>
           </TouchableOpacity>
         </View>
       </View>

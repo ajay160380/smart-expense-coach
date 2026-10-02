@@ -198,10 +198,33 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const toggleBiometric = async () => {
-    const nextState = !biometricEnabled;
-    setBiometricEnabled(nextState);
-    await AsyncStorage.setItem('biometric_enabled', nextState ? 'true' : 'false');
-    Alert.alert('App Lock', nextState ? 'Biometric App Lock enabled!' : 'Biometric App Lock disabled!');
+    try {
+      const LocalAuthentication = require('expo-local-authentication');
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!biometricEnabled) {
+        if (!hasHardware || !isEnrolled) {
+          Alert.alert('Notice', 'Please set up a Fingerprint, Face ID, or Screen Lock in your phone settings first.');
+          return;
+        }
+        const res = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Confirm Identity to Enable App Lock',
+          fallbackLabel: 'Use PIN',
+        });
+        if (!res.success) {
+          return;
+        }
+      }
+
+      const nextState = !biometricEnabled;
+      setBiometricEnabled(nextState);
+      await AsyncStorage.setItem('biometric_enabled', nextState ? 'true' : 'false');
+      Alert.alert('App Lock', nextState ? 'App Lock enabled successfully! 🔒' : 'App Lock disabled.');
+    } catch (e) {
+      console.log('Error toggling biometric:', e);
+      Alert.alert('Error', 'Could not configure biometric lock.');
+    }
   };
 
   if (loading) {
