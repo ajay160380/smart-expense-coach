@@ -56,7 +56,7 @@ const SLIDES = [
     titleBold: 'WhatsApp\n',
     titleNormal: 'To Keep Budgets\n',
     titleLastBold: 'Updated',
-    subtitle: 'Send a quick message anytime, anywhere. We will log it directly into your ExpanseTracker dashboard.',
+    subtitle: 'Send a quick message anytime, anywhere. We will log it directly into your Expense Tracker dashboard.',
     layout: 'art-top',
     artType: 'chat',
   },

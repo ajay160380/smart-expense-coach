@@ -455,12 +455,12 @@ export default function App() {
         <StatusBar style="light" />
         <View style={styles.loadingContent}>
           <Logo size={0.7} circle={true} showText={false} />
-          <Text style={{color: '#fff', fontSize: 18, marginTop: 24, fontWeight: 'bold'}}>Paisa Mitra is Locked</Text>
+          <Text style={{color: '#fff', fontSize: 18, marginTop: 24, fontWeight: 'bold'}}>Expense Tracker is Locked</Text>
           <TouchableOpacity 
             style={{marginTop: 30, backgroundColor: '#8B5CF6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24}}
             onPress={async () => {
               const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Unlock Paisa Mitra',
+                promptMessage: 'Unlock Expense Tracker',
                 fallbackLabel: 'Use Passcode',
               });
               if (result.success) {

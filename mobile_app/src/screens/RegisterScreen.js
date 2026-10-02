@@ -133,7 +133,7 @@ export default function RegisterScreen({ navigation }) {
               <Logo size={0.7} circle={true} showText={false} />
             </View>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join PAISA MITRA — it's free!</Text>
+            <Text style={styles.subtitle}>Join Expense Tracker — it's free!</Text>
           </View>
 
           {/* Form */}
