@@ -6,7 +6,12 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking } from 'react-native';
+import { 
+  View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, 
+  KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, 
+  Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, 
+  SectionList, DeviceEventEmitter, RefreshControl, Linking, StatusBar as RNStatusBar 
+} from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -237,6 +242,8 @@ export default function ProfileScreen({ navigation }) {
   }
 
   const username = profile?.username || 'User';
+  const fullName = profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}`.trim() : username;
+  const initialLetter = (fullName ? fullName.charAt(0) : (username ? username.charAt(0) : 'U')).toUpperCase();
   const joined = profile?.joined || '';
   const lifetimeSpent = profile?.lifetime_spent || 0;
   const totalTxns = profile?.total_txns || 0;
@@ -247,65 +254,106 @@ export default function ProfileScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
+      {/* ── Top Navigation Bar ── */}
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBackBtn} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.topBarTitle}>Profile</Text>
+        <TouchableOpacity onPress={openEditProfile} style={styles.topEditBtn} activeOpacity={0.7}>
+          <Ionicons name="create-outline" size={19} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Profile Header ── */}
-        <LinearGradient colors={COLORS.gradDeepPurp} style={styles.profileHeader}>
-          <TouchableOpacity onPress={pickImage} disabled={uploadingImage} style={{position: 'relative'}}>
-            {profile?.profile_picture ? (
-              <Image source={{ uri: profile.profile_picture }} style={styles.avatarLargeImage} />
-            ) : (
-              <View style={styles.avatarLarge}>
-                <Text style={styles.avatarLargeText}>{username.charAt(0).toUpperCase()}</Text>
-              </View>
-            )}
-            {uploadingImage && (
-              <View style={[StyleSheet.absoluteFill, styles.avatarOverlay]}>
-                <ActivityIndicator color={COLORS.cyan} />
-              </View>
-            )}
-            <View style={styles.editIconBadge}>
-              <Ionicons name="camera" size={16} color="white" />
+        <LinearGradient colors={['#2E0854', '#1A0E38', '#0B0E14']} style={styles.profileHeader}>
+          {/* Subtle Ambient Glow Orb */}
+          <View style={styles.headerGlowCircle} />
+
+          {/* ── Avatar Initial DP (First Letter DP, No Photo Picker) ── */}
+          <View style={styles.avatarGlowWrapper}>
+            <LinearGradient
+              colors={['#A888FF', '#EC4899', '#06B6D4']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatarOuterRing}
+            >
+              <LinearGradient
+                colors={['#1E1B4B', '#0F172A']}
+                style={styles.avatarInner}
+              >
+                <Text style={styles.avatarLetterText}>{initialLetter}</Text>
+              </LinearGradient>
+            </LinearGradient>
+          </View>
+
+          <Text style={styles.profileName}>{fullName}</Text>
+          <View style={styles.usernameChip}>
+            <Text style={styles.usernameChipText}>@{username}</Text>
+          </View>
+
+          <View style={styles.profileMetaRow}>
+            <View style={styles.metaBadge}>
+              <Ionicons name="calendar-outline" size={13} color="#94A3B8" style={{ marginRight: 5 }} />
+              <Text style={styles.metaBadgeText}>Since {joined || '2026'}</Text>
             </View>
-          </TouchableOpacity>
-          <Text style={styles.profileName}>
-            {profile?.first_name ? `${profile.first_name} ${profile.last_name}`.trim() : username}
-          </Text>
-          <Text style={{color: 'rgba(255,255,255,0.7)', fontSize: 16}}>@{username}</Text>
-          <Text style={styles.profileSince}>Member since {joined}</Text>
-          <View style={styles.profileBadge}>
-            <Text style={styles.profileBadgeText}>🌟 {memberDays} days</Text>
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakBadgeText}>🌟 {memberDays} Days Active</Text>
+            </View>
           </View>
         </LinearGradient>
 
         {/* ── Lifetime Stats ── */}
-        <View style={{ marginTop: -40, paddingHorizontal: 16 }}>
-          <GlassCard style={{ paddingTop: 20 }}>
-            <SectionHeader title="📊 Lifetime Stats" style={{ marginTop: 0 }} />
+        <View style={{ marginTop: -25, paddingHorizontal: 16 }}>
+          <GlassCard style={styles.lifetimeCard}>
+            <View style={styles.statsHeaderRow}>
+              <View style={styles.statsHeaderLeft}>
+                <Ionicons name="stats-chart" size={15} color="#06B6D4" style={{ marginRight: 6 }} />
+                <Text style={styles.statsCardTitle}>LIFETIME METRICS</Text>
+              </View>
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="shield-checkmark" size={12} color="#10B981" style={{ marginRight: 4 }} />
+                <Text style={styles.verifiedText}>Verified</Text>
+              </View>
+            </View>
+
             <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>💸</Text>
-            <Text style={styles.statValue}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
-            <Text style={styles.statLabel}>Total Spent</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>📝</Text>
-            <Text style={styles.statValue}>{totalTxns}</Text>
-            <Text style={styles.statLabel}>Transactions</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>💰</Text>
-            <Text style={styles.statValue}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
-            <Text style={styles.statLabel}>Monthly Budget</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statEmoji}>📅</Text>
-            <Text style={styles.statValue}>{memberDays}</Text>
-            <Text style={styles.statLabel}>Days Active</Text>
-          </View>
+              <View style={styles.statItem}>
+                <LinearGradient colors={['rgba(239, 68, 68, 0.18)', 'rgba(239, 68, 68, 0.05)']} style={styles.statIconBox}>
+                  <Text style={styles.statEmoji}>💸</Text>
+                </LinearGradient>
+                <Text style={styles.statValue}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
+                <Text style={styles.statLabel}>TOTAL SPENT</Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <LinearGradient colors={['rgba(99, 102, 241, 0.18)', 'rgba(99, 102, 241, 0.05)']} style={styles.statIconBox}>
+                  <Text style={styles.statEmoji}>📝</Text>
+                </LinearGradient>
+                <Text style={styles.statValue}>{totalTxns}</Text>
+                <Text style={styles.statLabel}>TRANSACTIONS</Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <LinearGradient colors={['rgba(245, 158, 11, 0.18)', 'rgba(245, 158, 11, 0.05)']} style={styles.statIconBox}>
+                  <Text style={styles.statEmoji}>💰</Text>
+                </LinearGradient>
+                <Text style={styles.statValue}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
+                <Text style={styles.statLabel}>MONTHLY BUDGET</Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <LinearGradient colors={['rgba(16, 185, 129, 0.18)', 'rgba(16, 185, 129, 0.05)']} style={styles.statIconBox}>
+                  <Text style={styles.statEmoji}>📅</Text>
+                </LinearGradient>
+                <Text style={styles.statValue}>{memberDays}</Text>
+                <Text style={styles.statLabel}>DAYS ACTIVE</Text>
+              </View>
             </View>
           </GlassCard>
         </View>
@@ -619,58 +667,201 @@ function MenuItem({ icon, ionIcon, label, sub, onPress, showArrow }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg, paddingTop: Platform.OS === 'android' ? 30 : 0 },
+  container: { 
+    flex: 1, 
+    backgroundColor: COLORS.bg, 
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0 
+  },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { flexGrow: 1 },
+
+  // ── Top Bar ──
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#2E0854',
+  },
+  topBackBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  topBarTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  topEditBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(168, 136, 255, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(168, 136, 255, 0.25)',
+  },
 
   // ── Profile Header ──
   profileHeader: { 
     alignItems: 'center', 
-    paddingVertical: 50, 
+    paddingTop: 10,
+    paddingBottom: 48, 
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    ...SHADOW.lg,
-    paddingBottom: 60,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  avatarLarge: {
-    width: 110, height: 110, borderRadius: 55,
-    backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 3, borderColor: COLORS.cyan,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 16,
-    ...SHADOW.md,
+  headerGlowCircle: {
+    position: 'absolute',
+    top: -40,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(168, 136, 255, 0.12)',
   },
-  avatarLargeImage: {
-    width: 110, height: 110, borderRadius: 55,
-    borderWidth: 3, borderColor: COLORS.cyan,
-    marginBottom: 16,
+  avatarGlowWrapper: {
+    marginBottom: 14,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    elevation: 10,
   },
-  avatarOverlay: {
-    width: 110, height: 110, borderRadius: 55,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 16,
+  avatarOuterRing: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  editIconBadge: {
-    position: 'absolute', bottom: 16, right: 0,
-    backgroundColor: COLORS.cyan, width: 32, height: 32, borderRadius: 16,
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 3, borderColor: COLORS.bg,
+  avatarInner: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  avatarLargeText: { color: COLORS.cyan, fontSize: 32, fontWeight: 'bold' },
-  profileName: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  profileSince: { color: 'rgba(255,255,255,0.6)', fontSize: 14, marginTop: 4 },
-  profileBadge: {
-    backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16,
-    paddingHorizontal: 14, paddingVertical: 6, marginTop: 12,
+  avatarLetterText: {
+    color: '#FFFFFF',
+    fontSize: 44,
+    fontWeight: '900',
+    letterSpacing: -1,
   },
-  profileBadgeText: { color: COLORS.yellow, fontSize: 13, fontWeight: '600' },
+  profileName: { 
+    color: '#FFFFFF', 
+    fontSize: 23, 
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    textAlign: 'center',
+  },
+  usernameChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  usernameChipText: {
+    color: '#A888FF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  profileMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  metaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  metaBadgeText: { color: '#94A3B8', fontSize: 11, fontWeight: '600' },
+  streakBadge: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  streakBadgeText: { color: '#FBBF24', fontSize: 11, fontWeight: '700' },
 
-  // ── Stats Grid ──
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 },
-  statItem: { width: '46%', margin: '2%', alignItems: 'center', paddingVertical: 18 },
-  statEmoji: { fontSize: 28, marginBottom: 8 },
-  statValue: { color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' },
-  statLabel: { color: COLORS.textMuted, fontSize: 11, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  // ── Lifetime Stats ──
+  lifetimeCard: {
+    padding: 16,
+    borderRadius: 20,
+  },
+  statsHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingHorizontal: 4,
+  },
+  statsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statsCardTitle: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  verifiedText: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  statsGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'space-between' 
+  },
+  statItem: { 
+    width: '48%', 
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    alignItems: 'center', 
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    marginBottom: 10,
+  },
+  statIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statEmoji: { fontSize: 20 },
+  statValue: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
+  statLabel: { color: '#94A3B8', fontSize: 9.5, marginTop: 4, fontWeight: '700', letterSpacing: 0.6 },
 
   // ── Menu Item ──
   menuItem: {
