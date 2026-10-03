@@ -18,13 +18,15 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ── Global Singleton Dispatcher ──
 let alertListener = null;
+let pendingAlert = null;
 const originalRNAlert = RNAlert.alert;
 
 export function showCustomAlert(title, message, buttons, options) {
   if (alertListener) {
     alertListener({ title, message, buttons, options });
   } else {
-    originalRNAlert(title, message, buttons, options);
+    // Queue it so that when CustomAlertModal mounts, it presents the custom modal instead of falling back to native alert
+    pendingAlert = { title, message, buttons, options };
   }
 }
 
@@ -173,6 +175,16 @@ export default function CustomAlertModal() {
         }),
       ]).start();
     };
+
+    if (pendingAlert) {
+      const queued = pendingAlert;
+      pendingAlert = null;
+      setTimeout(() => {
+        if (alertListener) {
+          alertListener(queued);
+        }
+      }, 100);
+    }
 
     return () => {
       alertListener = null;

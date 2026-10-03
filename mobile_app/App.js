@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Logo from './src/components/Logo';
-import CustomAlertModal, { installGlobalAlert } from './src/components/CustomAlertModal';
+import CustomAlertModal, { installGlobalAlert, showCustomAlert } from './src/components/CustomAlertModal';
 import * as Updates from 'expo-updates';
 
 installGlobalAlert();
@@ -329,7 +329,7 @@ export default function App() {
           const update = await Updates.checkForUpdateAsync();
           if (update.isAvailable) {
             await Updates.fetchUpdateAsync();
-            Alert.alert(
+            showCustomAlert(
               '🚀 New Update Ready!',
               'Expense Tracker has been updated with new features and improvements. Restart now to apply?',
               [

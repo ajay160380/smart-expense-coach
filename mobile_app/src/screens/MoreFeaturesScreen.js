@@ -449,6 +449,22 @@ export default function MoreFeaturesScreen({ navigation }) {
           )}
         </View>
 
+        {/* ── Developer Footer ── */}
+        <TouchableOpacity
+          style={styles.devFooter}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Linking.openURL('https://github.com/ajay160380');
+          }}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="code-slash" size={13} color="#6366F1" style={{ marginRight: 6 }} />
+          <Text style={styles.devFooterText}>
+            Crafted with ❤️ by <Text style={styles.devFooterLink}>Ajay Vishwakarma</Text>
+          </Text>
+          <Ionicons name="logo-github" size={13} color="#94A3B8" style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
+
         <View style={{ height: 100 }} />
       </ScrollView>
 
@@ -989,5 +1005,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  devFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    marginBottom: 8,
+  },
+  devFooterText: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  devFooterLink: {
+    color: '#818CF8',
+    fontWeight: '700',
   },
 });
