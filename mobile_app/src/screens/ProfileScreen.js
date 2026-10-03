@@ -465,16 +465,15 @@ export default function ProfileScreen({ navigation }) {
                   `Your WhatsApp is successfully linked!\n\nText "500 petrol" or "today summary" anytime to +91 7379053923.`,
                   [
                     {
-                      text: 'Re-link Account',
-                      style: 'destructive',
+                      text: '💬 Chat on WhatsApp',
+                      onPress: () => Linking.openURL('https://wa.me/917379053923?text=Hi'),
+                    },
+                    {
+                      text: '🔄 Re-link Phone Number',
                       onPress: () => {
                         const cleanPhone = (rawPhone || '').replace(/[^0-9]/g, '');
                         Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(`Link ${cleanPhone || '91'}`)}`);
                       },
-                    },
-                    {
-                      text: 'Chat on WhatsApp 💬',
-                      onPress: () => Linking.openURL('https://wa.me/917379053923?text=Hi'),
                     },
                     { text: 'Close', style: 'cancel' },
                   ]

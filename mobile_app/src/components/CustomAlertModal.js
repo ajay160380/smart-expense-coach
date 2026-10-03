@@ -40,7 +40,22 @@ export function installGlobalAlert() {
 // Helper to determine type and styling
 function getAlertType(title = '', message = '') {
   const combined = `${title} ${message}`.toLowerCase();
-  
+
+  // WhatsApp Bot specific styling
+  if (combined.includes('whatsapp')) {
+    return {
+      type: 'whatsapp',
+      badge: 'WHATSAPP BOT',
+      badgeBg: 'rgba(37, 211, 102, 0.16)',
+      badgeBorder: 'rgba(37, 211, 102, 0.35)',
+      badgeColor: '#25D366',
+      icon: 'logo-whatsapp',
+      iconGrad: ['#25D366', '#128C7E'],
+      glow: '#25D366',
+      btnGrad: ['#25D366', '#128C7E'],
+    };
+  }
+
   if (
     combined.includes('update') ||
     combined.includes('restart') ||
@@ -63,11 +78,30 @@ function getAlertType(title = '', message = '') {
   }
 
   if (
+    combined.includes('warning') ||
+    combined.includes('caution') ||
+    combined.includes('⚠️')
+  ) {
+    return {
+      type: 'warning',
+      badge: 'WARNING',
+      badgeBg: 'rgba(245, 158, 11, 0.16)',
+      badgeBorder: 'rgba(245, 158, 11, 0.35)',
+      badgeColor: '#FBBF24',
+      icon: 'warning-outline',
+      iconGrad: ['#F59E0B', '#D97706'],
+      glow: '#F59E0B',
+      btnGrad: ['#F59E0B', '#D97706'],
+    };
+  }
+
+  if (
     combined.includes('success') ||
     combined.includes('saved') ||
     combined.includes('created') ||
     combined.includes('completed') ||
     combined.includes('congratulations') ||
+    combined.includes('linked') ||
     combined.includes('🎉') ||
     combined.includes('✅') ||
     combined.includes('💰') ||
@@ -132,7 +166,6 @@ export default function CustomAlertModal() {
 
   useEffect(() => {
     alertListener = ({ title, message, buttons, options }) => {
-      // Normalize buttons
       let safeButtons = buttons;
       if (!safeButtons || safeButtons.length === 0) {
         safeButtons = [{ text: 'OK', style: 'default' }];
@@ -149,7 +182,7 @@ export default function CustomAlertModal() {
       // Trigger soft haptic feedback
       try {
         const theme = getAlertType(title, message);
-        if (theme.type === 'success') {
+        if (theme.type === 'success' || theme.type === 'whatsapp') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } else if (theme.type === 'error') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -219,7 +252,32 @@ export default function CustomAlertModal() {
   if (!visible || !alertData) return null;
 
   const meta = getAlertType(alertData.title, alertData.message);
-  const isMultipleButtons = alertData.buttons.length > 1;
+
+  // Analyze button layout requirements
+  const rawButtons = alertData.buttons && alertData.buttons.length > 0
+    ? alertData.buttons
+    : [{ text: 'OK', style: 'default' }];
+  const numButtons = rawButtons.length;
+
+  // Decide whether to stack vertically or display horizontally
+  // Rule:
+  // - 1 button: full width single button
+  // - 3+ buttons: ALWAYS stack vertically (3 horizontal buttons never fit on mobile)
+  // - 2 buttons: stack vertically if any button text > 9 characters or total chars > 16
+  const hasLongText = rawButtons.some((b) => (b.text || '').length > 9);
+  const totalChars = rawButtons.reduce((acc, b) => acc + (b.text || '').length, 0);
+  const shouldStack = numButtons >= 3 || (numButtons === 2 && (hasLongText || totalChars > 16));
+
+  // If stacked, reorder buttons so that 'cancel' style is placed at the bottom,
+  // while non-cancel action buttons preserve their logical order at the top.
+  let displayButtons = [...rawButtons];
+  if (shouldStack) {
+    const cancelButtons = displayButtons.filter((b) => b.style === 'cancel');
+    const actionButtons = displayButtons.filter((b) => b.style !== 'cancel');
+    displayButtons = [...actionButtons, ...cancelButtons];
+  }
+
+  let actionCount = 0;
 
   return (
     <Modal
@@ -288,17 +346,28 @@ export default function CustomAlertModal() {
 
             {/* Message Body */}
             {Boolean(alertData.message) && (
-              <Text style={styles.messageText}>{alertData.message}</Text>
+              <ScrollView
+                style={styles.messageScroll}
+                contentContainerStyle={styles.messageScrollContent}
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+              >
+                <Text style={styles.messageText}>{alertData.message}</Text>
+              </ScrollView>
             )}
 
             {/* Action Buttons */}
             <View
               style={[
                 styles.buttonContainer,
-                isMultipleButtons ? styles.buttonRow : styles.buttonSingle,
+                shouldStack
+                  ? styles.buttonStack
+                  : numButtons === 1
+                  ? styles.buttonSingle
+                  : styles.buttonRow,
               ]}
             >
-              {alertData.buttons.map((btn, index) => {
+              {displayButtons.map((btn, index) => {
                 const isCancel = btn.style === 'cancel';
                 const isDestructive = btn.style === 'destructive';
 
@@ -306,36 +375,93 @@ export default function CustomAlertModal() {
                   return (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.cancelBtn, isMultipleButtons && { flex: 1 }]}
+                      style={[styles.cancelBtn, !shouldStack && { flex: 1 }]}
                       onPress={() => handleClose(btn.onPress)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.cancelBtnText}>{btn.text || 'Cancel'}</Text>
+                      <Text style={styles.cancelBtnText} numberOfLines={1} ellipsizeMode="tail">
+                        {btn.text || 'Cancel'}
+                      </Text>
                     </TouchableOpacity>
                   );
                 }
 
-                const gradColors = isDestructive
-                  ? ['#EF4444', '#B91C1C']
-                  : meta.btnGrad;
+                if (isDestructive) {
+                  const isPrimaryDestructive = actionCount === 0 && displayButtons.length <= 2;
+                  actionCount++;
+                  if (isPrimaryDestructive) {
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        style={[styles.primaryBtnTouch, !shouldStack && { flex: 1 }]}
+                        onPress={() => handleClose(btn.onPress)}
+                        activeOpacity={0.8}
+                      >
+                        <LinearGradient
+                          colors={['#EF4444', '#DC2626']}
+                          style={styles.primaryBtnGrad}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                        >
+                          <Text style={styles.primaryBtnText} numberOfLines={1} ellipsizeMode="tail">
+                            {btn.text || 'Delete'}
+                          </Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    );
+                  } else {
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        style={[styles.destructiveBtn, !shouldStack && { flex: 1 }]}
+                        onPress={() => handleClose(btn.onPress)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.destructiveBtnText} numberOfLines={1} ellipsizeMode="tail">
+                          {btn.text || 'Delete'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                }
 
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    style={[styles.primaryBtnTouch, isMultipleButtons && { flex: 1 }]}
-                    onPress={() => handleClose(btn.onPress)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient
-                      colors={gradColors}
-                      style={styles.primaryBtnGrad}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
+                const isPrimaryAction = actionCount === 0;
+                actionCount++;
+
+                if (isPrimaryAction) {
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.primaryBtnTouch, !shouldStack && { flex: 1 }]}
+                      onPress={() => handleClose(btn.onPress)}
+                      activeOpacity={0.8}
                     >
-                      <Text style={styles.primaryBtnText}>{btn.text || 'OK'}</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                );
+                      <LinearGradient
+                        colors={meta.btnGrad}
+                        style={styles.primaryBtnGrad}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        <Text style={styles.primaryBtnText} numberOfLines={1} ellipsizeMode="tail">
+                          {btn.text || 'OK'}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  );
+                } else {
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.secondaryBtn, !shouldStack && { flex: 1 }]}
+                      onPress={() => handleClose(btn.onPress)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={styles.secondaryBtnText} numberOfLines={1} ellipsizeMode="tail">
+                        {btn.text || 'OK'}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }
               })}
             </View>
           </LinearGradient>
@@ -350,22 +476,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
     zIndex: 99999,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(3, 7, 18, 0.82)',
+    backgroundColor: 'rgba(3, 7, 18, 0.84)',
   },
   cardContainer: {
-    width: Math.min(SCREEN_WIDTH * 0.86, 360),
-    borderRadius: 28,
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 26,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.5,
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.55,
     shadowRadius: 28,
-    elevation: 20,
+    elevation: 22,
     overflow: 'hidden',
   },
   cardGradient: {
@@ -377,10 +505,10 @@ const styles = StyleSheet.create({
   topGlow: {
     position: 'absolute',
     top: -50,
-    width: 140,
-    height: 100,
-    borderRadius: 70,
-    opacity: 0.18,
+    width: 150,
+    height: 110,
+    borderRadius: 75,
+    opacity: 0.22,
   },
   iconWrapper: {
     marginBottom: 12,
@@ -391,23 +519,23 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   iconCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.22)',
   },
   typeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 3.5,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 10,
   },
   typeBadgeText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
@@ -417,60 +545,106 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
     letterSpacing: 0.2,
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  messageScroll: {
+    maxHeight: 180,
+    width: '100%',
+    marginBottom: 18,
+  },
+  messageScrollContent: {
+    paddingHorizontal: 4,
   },
   messageText: {
     fontSize: 13.5,
-    lineHeight: 19.5,
+    lineHeight: 20,
     color: '#94A3B8',
     textAlign: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 4,
   },
   buttonContainer: {
     width: '100%',
-    marginTop: 4,
   },
   buttonRow: {
     flexDirection: 'row',
     gap: 10,
   },
+  buttonStack: {
+    flexDirection: 'column',
+    gap: 9,
+    width: '100%',
+  },
   buttonSingle: {
     width: '100%',
   },
   primaryBtnTouch: {
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: '#6366F1',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
+    width: '100%',
   },
   primaryBtnGrad: {
-    paddingVertical: 13,
-    paddingHorizontal: 18,
+    height: 48,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryBtnText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
-  cancelBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+  secondaryBtn: {
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    paddingVertical: 13,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderRadius: 14,
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+  },
+  secondaryBtnText: {
+    color: '#F1F5F9',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  destructiveBtn: {
+    height: 48,
+    backgroundColor: 'rgba(239, 68, 68, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.32)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  destructiveBtnText: {
+    color: '#FCA5A5',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  cancelBtn: {
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   cancelBtnText: {
-    color: '#CBD5E1',
+    color: '#94A3B8',
     fontSize: 14,
     fontWeight: '700',
   },
