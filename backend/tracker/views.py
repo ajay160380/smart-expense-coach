@@ -2508,22 +2508,51 @@ def api_transactions_history(request: HttpRequest) -> JsonResponse:
     try:
         month = int(request.GET.get('month', today.month))
         year = int(request.GET.get('year', today.year))
-    except ValueError:
+    except (ValueError, TypeError):
         month = today.month
         year = today.year
 
-    qs = Expense.objects.filter(user=request.user, date__year=year, date__month=month).order_by("-date", "-id")
+    if month < 1 or month > 12:
+        month = today.month
+
+    base_qs = Expense.objects.filter(user=request.user, date__year=year, date__month=month)
     
+    # Calculate month total and category breakdown before search filters
+    agg_total = base_qs.aggregate(total=Sum("amount"))
+    month_total_spent = _safe_float(agg_total["total"])
+
+    cat_breakdown = list(
+        base_qs.values('category')
+        .annotate(total=Sum('amount'), count=Count('id'))
+        .order_by('-total')
+    )
+
+    qs = base_qs
+    # Optional category filter
+    category = request.GET.get('category', '').strip()
+    if category and category.lower() != 'all':
+        qs = qs.filter(category__iexact=category)
+
+    # Optional search query (matches description or category)
+    q = request.GET.get('q', '').strip()
+    if q:
+        qs = qs.filter(Q(description__icontains=q) | Q(category__icontains=q))
+
+    qs = qs.order_by("-date", "-id")
+
     txns = qs.values('id', 'title', 'category', 'amount', 'date', 'icon', 'description') if hasattr(Expense, 'title') else qs.values('id', 'category', 'amount', 'date', 'icon', 'description')
     
-    agg = qs.aggregate(total=Sum("amount"))
-    total_spent = _safe_float(agg["total"])
-    
+    agg_filtered = qs.aggregate(total=Sum("amount"))
+    filtered_total_spent = _safe_float(agg_filtered["total"])
+
     month_name = date(year, month, 1).strftime("%B %Y")
 
     return JsonResponse({
         "month": month_name,
-        "total_spent": round(total_spent, 2),
+        "total_spent": round(month_total_spent, 2),
+        "filtered_total": round(filtered_total_spent, 2),
+        "count": qs.count(),
+        "category_breakdown": cat_breakdown,
         "transactions": list(txns),
     })
 
