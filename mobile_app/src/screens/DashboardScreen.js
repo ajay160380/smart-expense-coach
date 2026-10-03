@@ -28,6 +28,29 @@ import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '
 
 const { width } = Dimensions.get('window');
 
+const DEFAULT_QUICK_SHORTCUTS = [
+  { id: '1', label: 'Chai / Coffee', amount: '20', category: 'food', icon: '☕', color: '#F59E0B' },
+  { id: '2', label: 'Snacks / Food', amount: '100', category: 'food', icon: '🍔', color: '#EC4899' },
+  { id: '3', label: 'Petrol / Fuel', amount: '200', category: 'transport', icon: '⛽', color: '#06B6D4' },
+  { id: '4', label: 'Auto / Cab', amount: '80', category: 'transport', icon: '🚕', color: '#EAB308' },
+  { id: '5', label: 'Groceries', amount: '300', category: 'shopping', icon: '🛒', color: '#10B981' },
+  { id: '6', label: 'Fun / Movie', amount: '250', category: 'entertainment', icon: '🍿', color: '#8B5CF6' },
+];
+
+const AVAILABLE_SHORTCUT_ICONS = [
+  '☕', '🍔', '⛽', '🚕', '🛒', '🍿', '🥛', '🍕', '🏋️', '💊', '🎬', '👕', '💡', '📱', '🚬', '🍜', '🍩', '🍺', '🚗', '📚'
+];
+
+const AVAILABLE_SHORTCUT_CATEGORIES = [
+  { id: 'food', label: 'Food', color: '#EC4899' },
+  { id: 'transport', label: 'Transport', color: '#06B6D4' },
+  { id: 'shopping', label: 'Shopping', color: '#10B981' },
+  { id: 'entertainment', label: 'Fun', color: '#8B5CF6' },
+  { id: 'bills', label: 'Bills', color: '#EAB308' },
+  { id: 'health', label: 'Health', color: '#EF4444' },
+  { id: 'other', label: 'Other', color: '#64748B' },
+];
+
 export default function DashboardScreen({ navigation }) {
   const [stats, setStats] = useState(null);
   const [dailyTip, setDailyTip] = useState(null);
@@ -41,6 +64,122 @@ export default function DashboardScreen({ navigation }) {
   const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
   const [shakeBannerVisible, setShakeBannerVisible] = useState(true);
+
+  // ── 1-Tap Log Customizable State ──
+  const [quickShortcuts, setQuickShortcuts] = useState(DEFAULT_QUICK_SHORTCUTS);
+  const [shortcutsModalVisible, setShortcutsModalVisible] = useState(false);
+  const [shortcutFormVisible, setShortcutFormVisible] = useState(false);
+  const [editShortcutItem, setEditShortcutItem] = useState(null);
+  const [shortcutLabel, setShortcutLabel] = useState('');
+  const [shortcutAmount, setShortcutAmount] = useState('');
+  const [shortcutCategory, setShortcutCategory] = useState('food');
+  const [shortcutIcon, setShortcutIcon] = useState('☕');
+
+  const loadCustomShortcuts = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('custom_quick_shortcuts');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setQuickShortcuts(parsed);
+        }
+      }
+    } catch (e) {}
+  };
+
+  const saveQuickShortcuts = async (newList) => {
+    setQuickShortcuts(newList);
+    try {
+      await AsyncStorage.setItem('custom_quick_shortcuts', JSON.stringify(newList));
+    } catch (e) {}
+  };
+
+  const handleDeleteShortcut = (id) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const updated = quickShortcuts.filter(s => (s.id || s.label) !== id);
+    saveQuickShortcuts(updated);
+  };
+
+  const handleOpenAddShortcut = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEditShortcutItem(null);
+    setShortcutLabel('');
+    setShortcutAmount('');
+    setShortcutCategory('food');
+    setShortcutIcon('☕');
+    setShortcutFormVisible(true);
+  };
+
+  const handleOpenEditShortcut = (item) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEditShortcutItem(item);
+    setShortcutLabel(item.label || '');
+    setShortcutAmount(item.amount ? item.amount.toString() : '');
+    setShortcutCategory(item.category || 'food');
+    setShortcutIcon(item.icon || '☕');
+    setShortcutFormVisible(true);
+  };
+
+  const handleSaveShortcut = () => {
+    if (!shortcutLabel.trim()) {
+      Alert.alert('Notice', 'Please enter a name for this shortcut.');
+      return;
+    }
+    const parsedAmt = parseFloat(shortcutAmount);
+    if (isNaN(parsedAmt) || parsedAmt <= 0) {
+      Alert.alert('Notice', 'Please enter a valid amount.');
+      return;
+    }
+
+    const catObj = AVAILABLE_SHORTCUT_CATEGORIES.find(c => c.id === shortcutCategory);
+    const color = catObj ? catObj.color : '#06B6D4';
+
+    let updated;
+    if (editShortcutItem) {
+      updated = quickShortcuts.map(s => {
+        if ((s.id && s.id === editShortcutItem.id) || s.label === editShortcutItem.label) {
+          return {
+            ...s,
+            label: shortcutLabel.trim(),
+            amount: Math.round(parsedAmt).toString(),
+            category: shortcutCategory,
+            icon: shortcutIcon,
+            color,
+          };
+        }
+        return s;
+      });
+    } else {
+      const newItem = {
+        id: Date.now().toString(),
+        label: shortcutLabel.trim(),
+        amount: Math.round(parsedAmt).toString(),
+        category: shortcutCategory,
+        icon: shortcutIcon,
+        color,
+      };
+      updated = [...quickShortcuts, newItem];
+    }
+
+    saveQuickShortcuts(updated);
+    setShortcutFormVisible(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleResetShortcuts = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert('Reset Shortcuts', 'Restore original default 1-Tap Log shortcuts?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        style: 'destructive',
+        onPress: () => {
+          saveQuickShortcuts(DEFAULT_QUICK_SHORTCUTS);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
+    ]);
+  };
   const handleSaveBudget = async () => {
     const parsedBudget = parseFloat(newBudget);
     if (isNaN(parsedBudget) || parsedBudget <= 0) {
@@ -104,6 +243,8 @@ export default function DashboardScreen({ navigation }) {
       const name = await getUsername();
       if (name) setUsername(name);
       
+      loadCustomShortcuts();
+
       const shakeDismissed = await AsyncStorage.getItem('shake_banner_dismissed');
       if (shakeDismissed === 'true') {
         setShakeBannerVisible(false);
@@ -290,14 +431,7 @@ export default function DashboardScreen({ navigation }) {
     healthColor = '#10B981';
   }
 
-  const QUICK_SHORTCUTS = [
-    { label: 'Chai / Coffee', amount: '20', category: 'food', icon: '☕', color: '#F59E0B' },
-    { label: 'Snacks / Food', amount: '100', category: 'food', icon: '🍔', color: '#EC4899' },
-    { label: 'Petrol / Fuel', amount: '200', category: 'transport', icon: '⛽', color: '#06B6D4' },
-    { label: 'Auto / Cab', amount: '80', category: 'transport', icon: '🚕', color: '#EAB308' },
-    { label: 'Groceries', amount: '300', category: 'shopping', icon: '🛒', color: '#10B981' },
-    { label: 'Fun / Movie', amount: '250', category: 'entertainment', icon: '🍿', color: '#8B5CF6' },
-  ];
+
 
   const cleanTipText = (text) => {
     if (!text) return '';
@@ -583,20 +717,30 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* ── 1-TAP QUICK LOG (Sleek Horizontal Chips) ── */}
+        {/* ── 1-TAP QUICK LOG (Dynamic & Customizable) ── */}
         <View style={styles.quickSection}>
           <View style={styles.quickHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="flash" size={13} color="#F59E0B" style={{ marginRight: 5 }} />
               <Text style={styles.quickSectionTitle}>1-TAP LOG</Text>
             </View>
-            <Text style={styles.quickSectionSub}>Frequent Daily Expenses</Text>
+            <TouchableOpacity 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShortcutsModalVisible(true);
+              }}
+              style={styles.quickCustomizeBtn}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="create-outline" size={12} color="#06B6D4" style={{ marginRight: 4 }} />
+              <Text style={styles.quickCustomizeText}>Edit & Add</Text>
+            </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8, paddingVertical: 2 }}>
-            {QUICK_SHORTCUTS.map((item, i) => (
+            {quickShortcuts.map((item, i) => (
               <TouchableOpacity
-                key={i}
-                style={[styles.quickChip, { borderColor: item.color + '40' }]}
+                key={item.id || i}
+                style={[styles.quickChip, { borderColor: (item.color || '#06B6D4') + '40' }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   navigation.navigate('AddExpense', {
@@ -612,6 +756,16 @@ export default function DashboardScreen({ navigation }) {
                 <Text style={styles.quickChipLabel}>{item.label.split('/')[0].trim()}</Text>
               </TouchableOpacity>
             ))}
+
+            {/* Quick Add Pill */}
+            <TouchableOpacity
+              style={styles.quickAddChip}
+              onPress={handleOpenAddShortcut}
+              activeOpacity={0.75}
+            >
+              <Ionicons name="add" size={15} color="#06B6D4" style={{ marginRight: 4 }} />
+              <Text style={styles.quickAddChipText}>New</Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
 
@@ -950,6 +1104,247 @@ export default function DashboardScreen({ navigation }) {
                 )}
               </TouchableOpacity>
             </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── CUSTOMIZE SHORTCUTS MODAL ── */}
+      <Modal
+        visible={shortcutsModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShortcutsModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.sheetOverlay}
+        >
+          <View style={styles.sheetContent}>
+            <View style={styles.sheetHandle} />
+
+            <View style={styles.sheetHeader}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="flash" size={18} color="#F59E0B" style={{ marginRight: 6 }} />
+                  <Text style={styles.sheetTitle}>Customize 1-Tap Log</Text>
+                </View>
+                <Text style={styles.sheetSubtitle}>
+                  Add, edit, or remove your daily fast expense buttons
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShortcutsModalVisible(false)}
+                style={styles.sheetCloseBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={20} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              style={{ maxHeight: 380, marginVertical: 8 }}
+              showsVerticalScrollIndicator={false}
+            >
+              {quickShortcuts.map((item, idx) => {
+                const catObj = AVAILABLE_SHORTCUT_CATEGORIES.find(c => c.id === item.category);
+                const catColor = catObj ? catObj.color : '#06B6D4';
+                return (
+                  <View key={item.id || idx} style={styles.shortcutRow}>
+                    <View style={[styles.shortcutRowIcon, { borderColor: catColor + '50' }]}>
+                      <Text style={{ fontSize: 20 }}>{item.icon || '💸'}</Text>
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.shortcutRowTitle}>{item.label}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                        <Text style={[styles.shortcutRowCat, { color: catColor }]}>
+                          {(item.category || 'other').toUpperCase()}
+                        </Text>
+                        <Text style={styles.shortcutRowDot}>•</Text>
+                        <Text style={styles.shortcutRowAmt}>₹{item.amount}</Text>
+                      </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <TouchableOpacity
+                        onPress={() => handleOpenEditShortcut(item)}
+                        style={[styles.shortcutActionBtn, { backgroundColor: 'rgba(6, 182, 212, 0.12)' }]}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="pencil" size={15} color="#06B6D4" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteShortcut(item.id || item.label)}
+                        style={[styles.shortcutActionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.12)', marginLeft: 8 }]}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="trash-outline" size={15} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+              {quickShortcuts.length === 0 && (
+                <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                  <Text style={{ color: '#64748B', fontSize: 13 }}>No shortcuts configured yet.</Text>
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.sheetBottomBar}>
+              <TouchableOpacity
+                style={styles.addNewShortcutBtn}
+                onPress={handleOpenAddShortcut}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#6366F1', '#4F46E5']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.addNewShortcutGrad}
+                >
+                  <Ionicons name="add-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.addNewShortcutText}>Add New Shortcut</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleResetShortcuts}
+                style={styles.resetShortcutsBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.resetShortcutsText}>Restore Defaults</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── ADD / EDIT SHORTCUT MODAL ── */}
+      <Modal
+        visible={shortcutFormVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShortcutFormVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.sheetOverlay}
+        >
+          <View style={styles.sheetContent}>
+            <View style={styles.sheetHandle} />
+
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>
+                {editShortcutItem ? 'Edit 1-Tap Shortcut' : 'Create 1-Tap Shortcut'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShortcutFormVisible(false)}
+                style={styles.sheetCloseBtn}
+              >
+                <Ionicons name="close" size={20} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 460 }}>
+              {/* Select Icon */}
+              <Text style={styles.formInputLabel}>CHOOSE ICON</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingVertical: 4, gap: 8 }}
+              >
+                {AVAILABLE_SHORTCUT_ICONS.map((ic) => {
+                  const isSelected = shortcutIcon === ic;
+                  return (
+                    <TouchableOpacity
+                      key={ic}
+                      style={[styles.iconChoice, isSelected && styles.iconChoiceSelected]}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setShortcutIcon(ic);
+                      }}
+                    >
+                      <Text style={{ fontSize: 22 }}>{ic}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              {/* Shortcut Label */}
+              <Text style={[styles.formInputLabel, { marginTop: 14 }]}>SHORTCUT NAME</Text>
+              <TextInput
+                style={styles.shortcutTextInput}
+                value={shortcutLabel}
+                onChangeText={setShortcutLabel}
+                placeholder="e.g. Chai, Auto, Coffee, Cigarette"
+                placeholderTextColor="#64748B"
+                maxLength={24}
+              />
+
+              {/* Amount */}
+              <Text style={[styles.formInputLabel, { marginTop: 14 }]}>DEFAULT AMOUNT (₹)</Text>
+              <View style={styles.shortcutAmtInputWrap}>
+                <Text style={styles.shortcutAmtPrefix}>₹</Text>
+                <TextInput
+                  style={styles.shortcutAmtTextInput}
+                  value={shortcutAmount}
+                  onChangeText={setShortcutAmount}
+                  placeholder="0"
+                  placeholderTextColor="#64748B"
+                  keyboardType="numeric"
+                  maxLength={7}
+                />
+              </View>
+
+              {/* Category */}
+              <Text style={[styles.formInputLabel, { marginTop: 14 }]}>CATEGORY</Text>
+              <View style={styles.catChipsRow}>
+                {AVAILABLE_SHORTCUT_CATEGORIES.map((cat) => {
+                  const isSelected = shortcutCategory === cat.id;
+                  return (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.catChoiceChip,
+                        isSelected && { borderColor: cat.color, backgroundColor: cat.color + '22' }
+                      ]}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setShortcutCategory(cat.id);
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, marginRight: 4 }}>{cat.icon}</Text>
+                      <Text
+                        style={[
+                          styles.catChoiceChipText,
+                          isSelected && { color: cat.color, fontWeight: '700' }
+                        ]}
+                      >
+                        {cat.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Action Buttons */}
+              <TouchableOpacity
+                style={styles.saveShortcutActionBtn}
+                onPress={handleSaveShortcut}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#06B6D4', '#0891B2']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.saveShortcutActionGrad}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.saveShortcutActionText}>
+                    {editShortcutItem ? 'Update Shortcut' : 'Add to Dashboard'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -1768,5 +2163,261 @@ const styles = StyleSheet.create({
     color: COLORS.cyan,
     fontSize: 12,
     fontWeight: 'bold',
+  },
+
+  // ── Quick Log Customization Styles ──
+  quickCustomizeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+  },
+  quickCustomizeText: {
+    color: '#06B6D4',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  quickAddChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    borderRadius: 20,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.35)',
+    borderStyle: 'dashed',
+  },
+  quickAddChipText: {
+    color: '#06B6D4',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // ── Bottom Sheet Modals ──
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    justifyContent: 'flex-end',
+  },
+  sheetContent: {
+    backgroundColor: '#0F172A',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    ...SHADOW.lg,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    letterSpacing: -0.3,
+  },
+  sheetSubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ── Shortcut List Rows ──
+  shortcutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  shortcutRowIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  shortcutRowTitle: {
+    color: '#F1F5F9',
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  shortcutRowCat: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  shortcutRowDot: {
+    color: '#475569',
+    marginHorizontal: 5,
+    fontSize: 10,
+  },
+  shortcutRowAmt: {
+    color: '#F8FAFC',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  shortcutActionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ── Sheet Bottom Bar ──
+  sheetBottomBar: {
+    marginTop: 10,
+    gap: 8,
+  },
+  addNewShortcutBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  addNewShortcutGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+  },
+  addNewShortcutText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  resetShortcutsBtn: {
+    alignItems: 'center',
+    paddingVertical: 9,
+  },
+  resetShortcutsText: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // ── Form Inputs ──
+  formInputLabel: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  iconChoice: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  iconChoiceSelected: {
+    borderColor: '#06B6D4',
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+  },
+  shortcutTextInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    color: '#FFFFFF',
+    fontSize: 14.5,
+    fontWeight: '600',
+  },
+  shortcutAmtInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+  },
+  shortcutAmtPrefix: {
+    color: '#06B6D4',
+    fontSize: 18,
+    fontWeight: '800',
+    marginRight: 6,
+  },
+  shortcutAmtTextInput: {
+    flex: 1,
+    paddingVertical: 11,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  catChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
+    marginBottom: 16,
+  },
+  catChoiceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+  },
+  catChoiceChipText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  saveShortcutActionBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  saveShortcutActionGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  saveShortcutActionText: {
+    color: '#FFFFFF',
+    fontSize: 14.5,
+    fontWeight: '700',
   },
 });
