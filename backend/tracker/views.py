@@ -1510,6 +1510,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     - Mobile App mode: Accepts audio files for speech-to-text via Whisper.
     """
     import time
+    global _WA_AUTH_CACHE
     start_time_view = time.time()
     
     if request.method != "POST":
@@ -1570,27 +1571,84 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"status": "error", "message": "No text received."}, status=400)
 
     # ── Handle special "link" command ─────────────────────────────────────────
-    if spoken_text.lower().startswith("link "):
-        mobile_to_link = spoken_text.split(" ", 1)[-1].strip()
-        
-        # Check if it looks like a phone number (only +, -, digits, and spaces)
-        if re.match(r'^\+?[\d\s\-]+$', mobile_to_link):
-            # 1. Find profile by mobile number
-            profile = UserProfile.objects.filter(phone_number=mobile_to_link).first()
-            
-            if not profile:
-                return JsonResponse({"status": "error", "message": f"❌ Could not find an account with mobile number: {mobile_to_link}. Please check the number and try again."})
-    
-            # 2. Link the incoming WhatsApp JID/LID to this profile
-            profile.whatsapp_number = incoming_phone
-            profile.whatsapp_linked = True
-            profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
-            logger.info("WhatsApp linked for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
-            
+    spoken_stripped = spoken_text.strip()
+    if spoken_stripped.lower().startswith("link"):
+        parts = spoken_stripped.split(" ", 1)
+        if len(parts) < 2 or not parts[1].strip():
+            return JsonResponse({
+                "status": "error",
+                "message": (
+                    "📲 *Link Your Expense Tracker*\n\n"
+                    "Apna account WhatsApp bot se link karne ke liye apna registered mobile number likhein:\n\n"
+                    "👉 *Example:* `Link 917905398965`"
+                )
+            })
+
+        mobile_raw = parts[1].strip()
+        clean_phone = re.sub(r'[^0-9]', '', mobile_raw)
+
+        if not clean_phone or len(clean_phone) < 10:
+            return JsonResponse({
+                "status": "error",
+                "message": f"❌ *Invalid Mobile Number*\n\n`{mobile_raw}` ek valid 10-digit number nahi hai. Kripya apna registered number bhejein (jaise: `Link 917905398965`)."
+            })
+
+        # 1. Match profile (exact, with/without country code, or last 10 digits)
+        profile = UserProfile.objects.filter(phone_number=clean_phone).select_related("user").first()
+        if not profile:
+            profile = UserProfile.objects.filter(phone_number='+' + clean_phone).select_related("user").first()
+        if not profile and len(clean_phone) >= 10:
+            profile = UserProfile.objects.filter(phone_number__endswith=clean_phone[-10:]).select_related("user").first()
+
+        if not profile:
+            return JsonResponse({
+                "status": "error",
+                "message": (
+                    f"❌ *Account Not Found*\n\n"
+                    f"Mobile number `{clean_phone}` se koi registered account nahi mila.\n\n"
+                    f"Kripya app me check karein ki aapka account kis phone number se bana hai."
+                )
+            })
+
+        target_name = (profile.user.first_name or profile.user.username or "Dost").strip().title()
+
+        # 2. Check if this profile is ALREADY linked to this incoming WhatsApp ID
+        if profile.whatsapp_linked and profile.whatsapp_number == incoming_phone:
             return JsonResponse({
                 "status": "success",
-                "message": "✅ Verified! Your WhatsApp account has been successfully linked. You can start tracking expenses now! (e.g., '500 petrol')"
+                "message": (
+                    f"⚡ *Account Already Linked!*\n\n"
+                    f"Hello *{target_name}*! Aapka WhatsApp number pehle se hi successfully linked aur active hai. 🎉\n\n"
+                    f"Aap directly yahan text bhejkar kharche track kar sakte hain:\n"
+                    f"• *500 petrol*\n"
+                    f"• *200 chai snacks*\n"
+                    f"• *today summary*\n\n"
+                    f"Koi naya expense add karein? 💬"
+                )
             })
+
+        # 3. Perform linking / re-linking
+        profile.whatsapp_number = incoming_phone
+        profile.whatsapp_linked = True
+        profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
+        logger.info("WhatsApp linked for uid=%s with WA ID=%s (phone=%s)", profile.user.id, incoming_phone, clean_phone)
+
+        # Invalidate auth cache so future messages immediately resolve to this user
+        if '_WA_AUTH_CACHE' in globals():
+            _WA_AUTH_CACHE[incoming_phone] = profile.user.id
+
+        return JsonResponse({
+            "status": "success",
+            "message": (
+                f"🎉 *WhatsApp Successfully Linked!*\n\n"
+                f"Welcome *{target_name}*! Aapka Expense Tracker account ab link ho chuka hai. ✅\n\n"
+                f"Ab aap bina app khole yahan se direct kharche record kar sakte hain:\n"
+                f"• *'500 dinner'* ➔ Expense save ho jayega\n"
+                f"• *'Aaj ka kharcha'* ➔ Daily total summary\n"
+                f"• *'Budget'* ➔ Remaining balance check\n\n"
+                f"Try kijiye, abhi koi expense text karke dekhiye! 🚀"
+            )
+        })
 
     # ── Dual-mode user resolution ─────────────────────────────────────────────
     target_user = None
@@ -1601,7 +1659,6 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         else:
             return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
     else:
-        global _WA_AUTH_CACHE
         if '_WA_AUTH_CACHE' not in globals():
             _WA_AUTH_CACHE = {}
             
@@ -1725,7 +1782,6 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         split_triggers = [
             "split:", "/split", "trip:", "trip :", "trip -", "hisaab:", "hisab:", "hisaab :", "hisab :", "group split", "bill split"
         ]
-        import re
         has_multiple_amounts = len(re.findall(r'\b\d+\b', lower_text)) > 1
         is_split_intent = any(kw in lower_text for kw in split_triggers) or (
             ("reopen" in lower_text or "new " in lower_text or "naya " in lower_text) and 

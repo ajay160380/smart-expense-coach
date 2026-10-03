@@ -278,7 +278,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={styles.sectionTitle}>PRODUCTIVITY & SYNC</Text>
         </View>
 
-        {/* ── WhatsApp Smart Card (Live Status + 1-Tap Link) ── */}
+        {/* ── WhatsApp Smart Card (Clean Fintech Layout) ── */}
         <View style={styles.waCard}>
           <View style={styles.waHeader}>
             <View style={styles.waIconBox}>
@@ -286,7 +286,7 @@ export default function MoreFeaturesScreen({ navigation }) {
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <View style={styles.waTitleRow}>
-                <Text style={styles.waTitle}>Track via WhatsApp</Text>
+                <Text style={styles.waTitle}>WhatsApp Assistant</Text>
                 <View
                   style={[
                     styles.waBadge,
@@ -312,15 +312,26 @@ export default function MoreFeaturesScreen({ navigation }) {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.waSub} numberOfLines={1}>
-                {isWaLinked
-                  ? 'AI Bot active! Text "500 dinner" to log spends'
-                  : 'Link WhatsApp to auto-log spends with AI'}
+              <Text style={styles.waSub}>
+                {isWaLinked ? 'Sync & record expenses in real-time' : 'Track expenses by sending quick texts'}
               </Text>
             </View>
           </View>
 
-          {/* 1-Tap Link or Chat Actions */}
+          {/* Quick info chip */}
+          <View style={styles.waInfoChip}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+              <Ionicons name="chatbubbles-outline" size={13} color="#25D366" style={{ marginRight: 5 }} />
+              <Text style={styles.waInfoChipTitle}>Bot: +91 7379053923</Text>
+            </View>
+            <Text style={styles.waInfoChipSub}>
+              {isWaLinked
+                ? 'Try texting: "500 coffee" or "today summary"'
+                : 'Tap below to 1-tap link your registered phone number'}
+            </Text>
+          </View>
+
+          {/* Clean Action Buttons with Zero Text Overflow */}
           {!isWaLinked ? (
             <TouchableOpacity
               style={styles.waActionBtn}
@@ -328,34 +339,35 @@ export default function MoreFeaturesScreen({ navigation }) {
               activeOpacity={0.85}
             >
               <LinearGradient
-                colors={['#22C55E', '#16A34A']}
+                colors={['#25D366', '#128C7E']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.waActionGrad}
               >
                 <Ionicons name="flash" size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
                 <Text style={styles.waActionBtnText}>
-                  {userPhone ? `1-Tap Link (Send 'Link ${userPhone}')` : '1-Tap Link via WhatsApp'}
+                  {userPhone ? `1-Tap Link (+${userPhone})` : '1-Tap Link WhatsApp'}
                 </Text>
                 <Ionicons name="arrow-forward" size={14} color="#FFFFFF" style={{ marginLeft: 6 }} />
               </LinearGradient>
             </TouchableOpacity>
           ) : (
-            <View style={styles.waLinkedRow}>
+            <View style={styles.waActionRow}>
               <TouchableOpacity
                 style={styles.waChatBtn}
                 onPress={handleOpenWhatsAppChat}
                 activeOpacity={0.8}
               >
-                <Ionicons name="chatbubble-ellipses" size={15} color="#22C55E" style={{ marginRight: 6 }} />
-                <Text style={styles.waChatBtnText}>Open Bot Chat (+91 7379053923)</Text>
+                <Ionicons name="chatbubble-ellipses" size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.waChatBtnText}>Chat with Bot</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={styles.waRelinkPill}
+                style={styles.waRelinkBtn}
                 onPress={handleLinkWhatsApp}
                 activeOpacity={0.7}
               >
-                <Ionicons name="sync-outline" size={13} color="#94A3B8" style={{ marginRight: 3 }} />
+                <Ionicons name="sync-outline" size={14} color="#94A3B8" style={{ marginRight: 4 }} />
                 <Text style={styles.waRelinkText}>Re-link</Text>
               </TouchableOpacity>
             </View>
@@ -798,22 +810,23 @@ const styles = StyleSheet.create({
   // ── WhatsApp Smart Card ──
   waCard: {
     backgroundColor: '#111827',
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(37, 211, 102, 0.25)',
-    marginBottom: 14,
+    marginBottom: 16,
     ...SHADOW.md,
   },
   waHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
   waIconBox: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(37, 211, 102, 0.15)',
+    backgroundColor: 'rgba(37, 211, 102, 0.14)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -826,7 +839,7 @@ const styles = StyleSheet.create({
   },
   waTitle: {
     color: '#F8FAFC',
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '800',
   },
   waBadge: {
@@ -841,7 +854,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginRight: 4,
+    marginRight: 5,
   },
   waBadgeText: {
     fontSize: 10,
@@ -849,11 +862,29 @@ const styles = StyleSheet.create({
   },
   waSub: {
     color: '#94A3B8',
-    fontSize: 11.5,
-    marginTop: 3,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  waInfoChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.035)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  waInfoChipTitle: {
+    color: '#F1F5F9',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  waInfoChipSub: {
+    color: '#64748B',
+    fontSize: 11,
+    marginTop: 1,
   },
   waActionBtn: {
-    marginTop: 14,
     borderRadius: 14,
     overflow: 'hidden',
   },
@@ -866,46 +897,44 @@ const styles = StyleSheet.create({
   },
   waActionBtnText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
-  waLinkedRow: {
+  waActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 14,
   },
   waChatBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(37, 211, 102, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(37, 211, 102, 0.25)',
-    paddingVertical: 10,
-    borderRadius: 12,
+    backgroundColor: '#16A34A',
+    paddingVertical: 11,
+    borderRadius: 13,
     marginRight: 8,
   },
   waChatBtnText: {
-    color: '#22C55E',
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
-  waRelinkPill: {
+  waRelinkBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 13,
   },
   waRelinkText: {
     color: '#94A3B8',
-    fontSize: 11.5,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   // ── List Card ──
