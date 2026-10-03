@@ -6,23 +6,17 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, UIManager } from 'react-native';
+import { 
+  View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, 
+  KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, 
+  Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, 
+  SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, 
+  UIManager, PanResponder 
+} from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-
-
-
-
-
-
-
-
-
-
-
-
-
+import * as Haptics from 'expo-haptics';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -32,27 +26,34 @@ import { BASE_URL } from '../api/config';
 export default function VoiceExpenseScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  
+  let recorder = null;
+  try {
+    recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  } catch (e) {
+    console.log('AudioRecorder init error:', e);
+  }
+
   const isPrepared = useRef(false);
-  const isRecordingRef = useRef(false); // ref for PanResponder closure
+  const isRecordingRef = useRef(false);
 
   const startRecording = async () => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const { granted } = await requestRecordingPermissionsAsync();
       if (!granted) {
-        Alert.alert('Permission Denied', 'Microphone access is required.');
+        Alert.alert('Permission Denied', 'Microphone access is required to record voice expenses.');
         return;
       }
-      if (!isPrepared.current) {
+      if (recorder) {
         await recorder.prepareToRecordAsync();
-        isPrepared.current = true;
+        recorder.record();
+        isRecordingRef.current = true;
+        setIsRecording(true);
       }
-      recorder.record();
-      isRecordingRef.current = true;
-      setIsRecording(true);
     } catch (err) {
       console.error('Failed to start recording', err);
-      Alert.alert('Error', 'Failed to start recording: ' + err.message);
+      Alert.alert('Recording Notice', 'Microphone recording could not start: ' + err.message);
     }
   };
 
@@ -61,29 +62,24 @@ export default function VoiceExpenseScreen({ navigation }) {
     isRecordingRef.current = false;
     setIsRecording(false);
     setLoading(true);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     try {
-      await recorder.stop();
-      await new Promise(r => setTimeout(r, 300));
-      const uri = recorder.uri;
-      if (uri) {
-        await uploadAudio(uri);
-      } else {
-        throw new Error('No audio URI found after recording stopped');
+      if (recorder) {
+        await recorder.stop();
+        await new Promise(r => setTimeout(r, 400));
+        const uri = recorder.uri;
+        if (uri) {
+          await uploadAudio(uri);
+        } else {
+          throw new Error('No audio recorded');
+        }
       }
     } catch (error) {
       console.error('Failed to stop recording', error);
-      Alert.alert('Error', 'Failed to process audio.');
+      Alert.alert('Notice', 'Could not process audio. Please try speaking again.');
       setLoading(false);
     }
   };
-
-  // PanResponder: start on finger down, stop on finger up (even if finger moves)
-  const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => { startRecording(); },
-    onPanResponderRelease: () => { stopRecording(); },
-    onPanResponderTerminate: () => { stopRecording(); }, // e.g. notification pulls focus away
-  }), []);
 
   const uploadAudio = async (uri) => {
     try {
@@ -139,7 +135,7 @@ export default function VoiceExpenseScreen({ navigation }) {
       {/* ── Main Content ── */}
       <View style={styles.content}>
         <Text style={styles.instructionText}>
-          {isRecording ? 'Listening...' : loading ? 'Processing your expense...' : 'Tap the microphone and speak your expense.'}
+          {isRecording ? 'Listening...' : loading ? 'Processing your expense...' : 'Hold the microphone and speak your expense.'}
         </Text>
         
         <Text style={styles.subInstructionText}>
@@ -152,9 +148,13 @@ export default function VoiceExpenseScreen({ navigation }) {
               <ActivityIndicator size="large" color={COLORS.orange} />
             </View>
           ) : (
-            <View
-              {...panResponder.panHandlers}
-              style={[styles.micButton, isRecording && styles.micButtonRecording]}
+            <Pressable
+              onPressIn={startRecording}
+              onPressOut={stopRecording}
+              style={({ pressed }) => [
+                styles.micButton,
+                (pressed || isRecording) && styles.micButtonRecording
+              ]}
             >
               <LinearGradient 
                 colors={isRecording ? ['#ef4444', '#dc2626'] : COLORS.gradOrange} 
@@ -166,14 +166,14 @@ export default function VoiceExpenseScreen({ navigation }) {
                   color="#fff" 
                 />
               </LinearGradient>
-            </View>
+            </Pressable>
           )}
         </View>
         
         {isRecording ? (
-          <Text style={styles.stopText}>🔴 Release to stop</Text>
+          <Text style={styles.stopText}>🔴 Release to send</Text>
         ) : (
-          <Text style={styles.stopText}>Hold to speak</Text>
+          <Text style={styles.stopText}>Hold to speak • Release to send</Text>
         )}
       </View>
     </SafeAreaView>
