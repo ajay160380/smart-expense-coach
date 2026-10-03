@@ -363,36 +363,48 @@ export default function DashboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── GREETING ── */}
+        {/* ── GREETING & STATUS PILL ── */}
         <View style={styles.greetingSection}>
-          <Text style={styles.greetText}>
-            {getGreeting()}, <Text style={{ color: COLORS.primary }}>{username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Friend'}</Text> 👋
-          </Text>
-          <View style={styles.greetSubRow}>
-            <View style={styles.dateChip}>
-              <Ionicons name="calendar-outline" size={12} color="#94A3B8" style={{ marginRight: 5 }} />
-              <Text style={styles.dateChipText}>{stats?.month || 'This Month'}</Text>
+          <View style={styles.greetingHeaderRow}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.greetText}>
+                {getGreeting()}, <Text style={{ color: '#A5B4FC' }}>{username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Friend'}</Text> 👋
+              </Text>
+              <Text style={styles.greetSubtext}>Your monthly financial overview</Text>
             </View>
-            <View style={styles.daysChip}>
-              <Ionicons name="hourglass-outline" size={12} color="#06B6D4" style={{ marginRight: 5 }} />
-              <Text style={styles.daysChipText}>{daysLeft} days left</Text>
+            <View style={styles.unifiedPill}>
+              <Ionicons name="calendar-outline" size={11} color="#94A3B8" style={{ marginRight: 4 }} />
+              <Text style={styles.unifiedPillMonth}>{stats?.month || 'This Month'}</Text>
+              <View style={styles.pillDot} />
+              <Ionicons name="hourglass-outline" size={11} color="#06B6D4" style={{ marginRight: 3 }} />
+              <Text style={styles.unifiedPillDays}>{daysLeft}d left</Text>
             </View>
           </View>
         </View>
 
-        {/* ── ANOMALY ALERTS ── */}
+        {/* ── ANOMALY SPENDING INSIGHT ── */}
         {anomalies.length > 0 && (
           <View style={styles.alertBanner}>
             {anomalies.map((alert, idx) => (
-              <View key={idx} style={styles.alertItem}>
+              <LinearGradient
+                key={idx}
+                colors={['rgba(245, 158, 11, 0.14)', 'rgba(217, 119, 6, 0.05)']}
+                style={styles.alertItem}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
                 <View style={styles.alertIconBadge}>
-                  <Text style={styles.alertIcon}>{alert.icon}</Text>
+                  <Ionicons name="bulb-outline" size={18} color="#F59E0B" />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
+                <View style={{ flex: 1, paddingRight: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                    <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
+                    <View style={styles.alertBadgeDot} />
+                    <Text style={styles.alertBadgeSub}>Smart Advice</Text>
+                  </View>
                   <Text style={styles.alertText}>{alert.message}</Text>
                 </View>
-              </View>
+              </LinearGradient>
             ))}
           </View>
         )}
@@ -421,9 +433,9 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         )}
 
-        {/* ── MAIN BUDGET CARD ── */}
+        {/* ── LUXURY MAIN BUDGET CARD ── */}
         <LinearGradient
-          colors={overspent ? ['#450A0A', '#1E1B4B'] : ['#2D0B5A', '#1B1446', '#0B1120']}
+          colors={overspent ? ['#3D0C14', '#1E1226', '#0B0F19'] : ['#18213D', '#11172A', '#0A0E1A']}
           style={styles.mainCard}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -434,21 +446,23 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.mainCardHeader}>
             <View style={styles.mainCardTitleRow}>
               <View style={styles.walletIconBox}>
-                <Ionicons name="wallet-outline" size={13} color="#C4B5FD" />
+                <Ionicons name="wallet-outline" size={13} color="#818CF8" />
               </View>
               <Text style={styles.mainCardTitle}>TOTAL SPENT</Text>
             </View>
 
             {overspent ? (
-              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: '#EF4444' }]}>
-                <Text style={[styles.overspentText, { color: '#F87171' }]}>⚠️ OVERSPENT</Text>
+              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(239, 68, 68, 0.16)', borderColor: 'rgba(239, 68, 68, 0.4)' }]}>
+                <View style={[styles.liveDot, { backgroundColor: '#EF4444' }]} />
+                <Text style={[styles.overspentText, { color: '#F87171' }]}>OVERSPENT</Text>
               </View>
             ) : usedPercent > 85 ? (
-              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.2)', borderColor: '#F59E0B' }]}>
-                <Text style={[styles.overspentText, { color: '#FBBF24' }]}>⚡ 85%+ USED</Text>
+              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.16)', borderColor: 'rgba(245, 158, 11, 0.4)' }]}>
+                <View style={[styles.liveDot, { backgroundColor: '#F59E0B' }]} />
+                <Text style={[styles.overspentText, { color: '#FBBF24' }]}>85%+ USED</Text>
               </View>
             ) : (
-              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(16, 185, 129, 0.16)', borderColor: 'rgba(16, 185, 129, 0.35)' }]}>
+              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(16, 185, 129, 0.14)', borderColor: 'rgba(16, 185, 129, 0.35)' }]}>
                 <View style={styles.liveDot} />
                 <Text style={[styles.overspentText, { color: '#34D399' }]}>ON TRACK</Text>
               </View>
@@ -462,6 +476,7 @@ export default function DashboardScreen({ navigation }) {
               style={styles.balanceAmount}
             />
           </View>
+
           <TouchableOpacity 
             style={styles.budgetEditRow} 
             onPress={() => {
@@ -473,31 +488,38 @@ export default function DashboardScreen({ navigation }) {
             activeOpacity={0.7}
           >
             <Text style={styles.budgetSubtext}>of ₹{budget.toLocaleString('en-IN')} budget</Text>
-            <Ionicons name="pencil" size={12} color="#A78BFA" style={styles.budgetEditIcon} />
+            <Ionicons name="pencil" size={11} color="#06B6D4" style={styles.budgetEditIcon} />
           </TouchableOpacity>
 
           {/* Budget Progress Bar */}
           <View style={styles.progressBarBg}>
-            <View
+            <LinearGradient
+              colors={usedPercent > 90 ? ['#EF4444', '#DC2626'] : usedPercent > 70 ? ['#F59E0B', '#D97706'] : ['#10B981', '#06B6D4']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
               style={[styles.progressBarFill, {
                 width: `${Math.min(usedPercent, 100)}%`,
-                backgroundColor: usedPercent > 90 ? COLORS.red : usedPercent > 70 ? COLORS.orange : '#10B981',
               }]}
             />
           </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statBoxLabel}>USED</Text>
-              <Text style={styles.statBoxValue}>{Math.round(usedPercent)}%</Text>
+          {/* Connected 3-Metric Strip */}
+          <View style={styles.metricsStrip}>
+            <View style={styles.metricColumn}>
+              <Text style={styles.metricLabel}>USED</Text>
+              <Text style={styles.metricVal}>{Math.round(usedPercent)}%</Text>
             </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statBoxLabel}>REMAINING</Text>
-              <Text style={styles.statBoxValue}>₹{remaining.toLocaleString('en-IN')}</Text>
+            <View style={styles.metricDivider} />
+            <View style={styles.metricColumn}>
+              <Text style={styles.metricLabel}>REMAINING</Text>
+              <Text style={[styles.metricVal, { color: remaining >= 0 ? '#10B981' : '#EF4444' }]}>
+                ₹{remaining.toLocaleString('en-IN')}
+              </Text>
             </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statBoxLabel}>TXNS</Text>
-              <Text style={styles.statBoxValue}>{txCount}</Text>
+            <View style={styles.metricDivider} />
+            <View style={styles.metricColumn}>
+              <Text style={styles.metricLabel}>TXNS</Text>
+              <Text style={styles.metricVal}>{txCount}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -526,7 +548,7 @@ export default function DashboardScreen({ navigation }) {
             }}
             activeOpacity={0.8}
           >
-            <LinearGradient colors={['#EC4899', '#DB2777']} style={styles.actionDockIcon}>
+            <LinearGradient colors={['#F43F5E', '#E11D48']} style={styles.actionDockIcon}>
               <Ionicons name="mic" size={20} color="#fff" />
             </LinearGradient>
             <Text style={styles.actionDockLabel}>Voice</Text>
@@ -540,7 +562,7 @@ export default function DashboardScreen({ navigation }) {
             }}
             activeOpacity={0.8}
           >
-            <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.actionDockIcon}>
+            <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.actionDockIcon}>
               <Ionicons name="people" size={20} color="#fff" />
             </LinearGradient>
             <Text style={styles.actionDockLabel}>Split</Text>
@@ -1022,153 +1044,216 @@ const styles = StyleSheet.create({
 
   scrollContent: { padding: 16, flexGrow: 1 },
 
-  // ── Greeting ──
-  greetingSection: { marginBottom: 14 },
-  greetText: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '800', letterSpacing: -0.3 },
-  greetSubRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  dateChip: {
+  // ── Greeting & Date Pill ──
+  greetingSection: {
+    marginBottom: 12,
+  },
+  greetingHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  greetText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.4,
+  },
+  greetSubtext: {
+    color: '#64748B',
+    fontSize: 11.5,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  unifiedPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
+    paddingVertical: 5,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  dateChipText: { color: '#94A3B8', fontSize: 11, fontWeight: '600' },
-  daysChip: {
+  unifiedPillMonth: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  pillDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#64748B',
+    marginHorizontal: 6,
+  },
+  unifiedPillDays: {
+    color: '#06B6D4',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  // ── Smart Alert Banner ──
+  alertBanner: {
+    marginBottom: 12,
+  },
+  alertItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.25)',
-  },
-  daysChipText: { color: '#06B6D4', fontSize: 11, fontWeight: '700' },
-
-  // ── Alert Banner ──
-  alertBanner: { marginBottom: 14 },
-  alertItem: {
-    flexDirection: 'row', 
-    alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-    borderRadius: 16, 
+    borderRadius: 18,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.28)',
+    borderColor: 'rgba(245, 158, 11, 0.3)',
   },
   alertIconBadge: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    backgroundColor: 'rgba(245, 158, 11, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
-  alertIcon: { fontSize: 18 },
   alertCategoryTitle: {
-    color: '#FBBF24',
-    fontSize: 9.5,
+    color: '#F59E0B',
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 2,
+    letterSpacing: 0.6,
   },
-  alertText: { color: '#F1F5F9', fontSize: 12, lineHeight: 17, fontWeight: '500' },
+  alertBadgeDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#D97706',
+    marginHorizontal: 5,
+  },
+  alertBadgeSub: {
+    color: '#D97706',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  alertText: {
+    color: '#F1F5F9',
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '500',
+  },
 
   // ── WhatsApp ──
   waBanner: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg,
-    padding: 14, marginBottom: 16,
-    borderWidth: 1, borderColor: COLORS.borderLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
   waIconContainer: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: COLORS.whatsapp, justifyContent: 'center', alignItems: 'center', marginRight: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.whatsapp,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   waTextContainer: { flex: 1 },
   waTitle: { color: '#fff', fontWeight: 'bold', fontSize: 14, marginBottom: 2 },
   waSubtitle: { color: COLORS.textSecondary, fontSize: 11 },
   waButton: {
     backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
   },
   waButtonText: { color: COLORS.whatsapp, fontWeight: '600', fontSize: 12 },
 
-  // ── Main Card ──
+  // ── Luxury Main Budget Card ──
   mainCard: { 
-    borderRadius: 24, 
-    padding: 22, 
-    marginBottom: 14, 
-    borderWidth: 1.2,
-    borderColor: 'rgba(168, 136, 255, 0.25)',
+    borderRadius: 26, 
+    padding: 20, 
+    marginBottom: 12, 
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
     position: 'relative',
     overflow: 'hidden',
-    ...SHADOW.lg 
+    ...SHADOW.lg,
   },
   cardGlowCircle: {
     position: 'absolute',
     top: -40,
     right: -40,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(168, 136, 255, 0.12)',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
   },
   mainCardHeader: {
     flexDirection: 'row', 
     justifyContent: 'space-between',
     alignItems: 'center', 
-    marginBottom: 12,
+    marginBottom: 10,
   },
   mainCardTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   walletIconBox: {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
     borderRadius: 8,
-    backgroundColor: 'rgba(168, 136, 255, 0.15)',
+    backgroundColor: 'rgba(129, 140, 248, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 7,
   },
   mainCardTitle: {
-    color: 'rgba(255,255,255,0.75)', 
-    fontSize: 11,
+    color: '#94A3B8', 
+    fontSize: 10.5,
     fontWeight: '800', 
-    letterSpacing: 1.2,
+    letterSpacing: 1,
   },
   overspentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10, 
-    paddingVertical: 5, 
-    borderRadius: 12,
+    paddingHorizontal: 9, 
+    paddingVertical: 4, 
+    borderRadius: 10,
     borderWidth: 1,
   },
-  overspentText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  balanceContainer: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 2 },
-  currencySymbol: { color: '#C4B5FD', fontSize: 28, fontWeight: '700', marginRight: 4 },
-  balanceAmount: { color: '#fff', fontSize: 42, fontWeight: '800', letterSpacing: -1 },
+  overspentText: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5 },
+  balanceContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'baseline', 
+    marginBottom: 4,
+    marginTop: 2,
+  },
+  currencySymbol: { 
+    color: '#818CF8', 
+    fontSize: 26, 
+    fontWeight: '700', 
+    marginRight: 4,
+  },
+  balanceAmount: { 
+    color: '#FFFFFF', 
+    fontSize: 40, 
+    fontWeight: '900', 
+    letterSpacing: -1.2,
+  },
   budgetEditRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 16,
+    paddingVertical: 4.5,
+    borderRadius: 14,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   budgetSubtext: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600' },
   budgetEditIcon: {
@@ -1263,34 +1348,50 @@ const styles = StyleSheet.create({
 
   // ── Progress Bar ──
   progressBarBg: {
-    height: 8, 
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    height: 7, 
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 4, 
-    marginBottom: 18, 
+    marginBottom: 16, 
     overflow: 'hidden',
   },
-  progressBarFill: { height: '100%', borderRadius: 4 },
+  progressBarFill: { 
+    height: '100%', 
+    borderRadius: 4,
+  },
 
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  statBox: {
-    flex: 1, 
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+  // ── Connected 3-Metric Strip ──
+  metricsStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    paddingVertical: 10, 
-    paddingHorizontal: 4,
-    borderRadius: RADIUS.md, 
-    marginHorizontal: 3,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+  },
+  metricColumn: {
+    flex: 1,
     alignItems: 'center',
   },
-  statBoxLabel: {
-    color: 'rgba(255, 255, 255, 0.65)', 
-    fontSize: 10,
-    fontWeight: '700', 
-    marginBottom: 4, 
-    letterSpacing: 0.6,
+  metricDivider: {
+    width: 1,
+    height: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
-  statBoxValue: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  metricLabel: {
+    color: '#64748B',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: 3,
+  },
+  metricVal: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
 
   // ── Financial Pulse Card ──
   financialPulseCard: {
@@ -1624,10 +1725,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#121827',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 22,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    marginVertical: 14,
+    borderRadius: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    marginVertical: 12,
     ...SHADOW.md,
   },
   actionDockBtn: {
@@ -1635,20 +1736,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionDockIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50,
+    height: 50,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
   actionDockLabel: {
-    color: '#E2E8F0',
+    color: '#CBD5E1',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.2,
