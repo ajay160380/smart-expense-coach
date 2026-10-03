@@ -296,6 +296,11 @@ export default function DashboardScreen({ navigation }) {
     { label: 'Fun / Movie', amount: '250', category: 'entertainment', icon: '🍿', color: '#8B5CF6' },
   ];
 
+  const cleanTipText = (text) => {
+    if (!text) return '';
+    return text.replace(/\*([^*]+)\*/g, '$1').replace(/\*/g, '').trim();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -685,6 +690,25 @@ export default function DashboardScreen({ navigation }) {
           </>
         )}
 
+        {/* ── TODAY'S MONEY TIP ── */}
+        {dailyTip && (
+          <LinearGradient
+            colors={['rgba(16, 185, 129, 0.14)', 'rgba(6, 78, 59, 0.18)']}
+            style={styles.tipCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.tipHeader}>
+              <View style={styles.tipBadge}>
+                <Ionicons name="bulb" size={13} color="#10B981" style={{ marginRight: 5 }} />
+                <Text style={styles.tipBadgeText}>TODAY'S MONEY TIP</Text>
+              </View>
+              <Text style={{ fontSize: 16 }}>🌱</Text>
+            </View>
+            <Text style={styles.tipBodyText}>{cleanTipText(dailyTip)}</Text>
+          </LinearGradient>
+        )}
+
         {/* ── AI FINANCIAL COACH ── */}
         <TouchableOpacity 
           onPress={() => {
@@ -694,27 +718,34 @@ export default function DashboardScreen({ navigation }) {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={COLORS.gradCyan}
-            style={styles.aiCard}
+            colors={['rgba(99, 102, 241, 0.18)', 'rgba(6, 182, 212, 0.08)']}
+            style={styles.aiCoachCard}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            <View style={styles.aiIcon}>
-              <MaterialCommunityIcons name="robot-outline" size={24} color="#1e293b" />
+            <View style={styles.aiCoachIconBox}>
+              <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.aiCoachIconGrad}>
+                <MaterialCommunityIcons name="robot" size={22} color="#fff" />
+              </LinearGradient>
             </View>
-            <View style={styles.aiContent}>
-              <Text style={styles.aiTitle}>AI FINANCIAL COACH</Text>
-              <Text style={styles.aiText}>
+            <View style={styles.aiCoachContent}>
+              <View style={styles.aiCoachTagRow}>
+                <Text style={styles.aiCoachTag}>✨ AI COACH INSIGHT</Text>
+                <View style={styles.aiCoachActionPill}>
+                  <Text style={styles.aiCoachActionText}>Chat</Text>
+                  <Ionicons name="arrow-forward" size={11} color={COLORS.cyan} />
+                </View>
+              </View>
+              <Text style={styles.aiCoachMessage}>
                 {overspent
-                  ? `Budget exceeded! You've spent ₹${spent.toLocaleString('en-IN')} against ₹${budget.toLocaleString('en-IN')}. Tap to chat with AI for advice. 🚨`
+                  ? `Budget exceeded! You've spent ₹${spent.toLocaleString('en-IN')} against ₹${budget.toLocaleString('en-IN')}. Tap to get AI advice 🚨`
                   : `Great job! You used ${Math.round(usedPercent)}% of your budget — ₹${remaining.toLocaleString('en-IN')} remaining. Tap to chat! 🌟`}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#fff" style={{ opacity: 0.7 }} />
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* ── NOTEPAD ── */}
+        {/* ── NOTEPAD CARD ── */}
         <TouchableOpacity 
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -723,41 +754,25 @@ export default function DashboardScreen({ navigation }) {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#FF9A9E', '#FECFEF']}
-            style={styles.aiCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <View style={styles.aiIcon}>
-              <MaterialCommunityIcons name="note-edit-outline" size={24} color="#1e293b" />
-            </View>
-            <View style={styles.aiContent}>
-              <Text style={[styles.aiTitle, { color: '#333' }]}>NOTEPAD</Text>
-              <Text style={[styles.aiText, { color: '#444' }]}>
-                Save important text, unformatted lists, or shopping lists here. 📝
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#333" style={{ opacity: 0.7 }} />
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* ── DAILY MONEY TIP ── */}
-        {dailyTip && (
-          <LinearGradient
-            colors={COLORS.gradGreen}
-            style={styles.aiCard}
+            colors={['rgba(236, 72, 153, 0.12)', 'rgba(139, 92, 246, 0.08)']}
+            style={styles.notepadCard}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <View style={[styles.aiIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Ionicons name="bulb-outline" size={24} color="#fff" />
+            <View style={styles.notepadIconBox}>
+              <MaterialCommunityIcons name="notebook-outline" size={22} color="#F472B6" />
             </View>
-            <View style={styles.aiContent}>
-              <Text style={styles.aiTitle}>TODAY'S MONEY TIP</Text>
-              <Text style={styles.aiText}>{dailyTip}</Text>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                <Text style={styles.notepadTitle}>PERSONAL NOTEPAD</Text>
+                <View style={styles.notepadPill}>
+                  <Text style={styles.notepadPillText}>Open Notes 📝</Text>
+                </View>
+              </View>
+              <Text style={styles.notepadSub}>Save grocery lists, quick memos & budgeting thoughts.</Text>
             </View>
           </LinearGradient>
-        )}
+        </TouchableOpacity>
 
         {/* ── RECENT EXPENSES ── */}
         <View style={styles.sectionHeader}>
@@ -833,33 +848,8 @@ export default function DashboardScreen({ navigation }) {
           />
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
-
-      <View style={styles.fabContainer}>
-        <View style={styles.fabInner}>
-          <TouchableOpacity
-            style={styles.voiceFab}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('VoiceExpense');
-            }}
-          >
-            <MaterialCommunityIcons name="microphone" size={16} color="#fff" style={{ marginRight: 6 }} />
-            <Text style={styles.voiceFabText}>Voice</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.addFab}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('AddExpense');
-            }}
-          >
-            <Ionicons name="add" size={18} color="#0f172a" style={{ marginRight: 4 }} />
-            <Text style={styles.addFabText}>Add expense</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
       {/* Update Budget Modal */}
       <Modal
@@ -1219,21 +1209,140 @@ const styles = StyleSheet.create({
   catAmount: { color: COLORS.textPrimary, fontSize: 14, fontWeight: 'bold' },
 
   // ── AI Card ──
-  aiCard: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: 18, borderRadius: RADIUS.lg, marginBottom: 12,
+  // ── Today's Money Tip ──
+  tipCard: {
+    padding: 16,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    marginBottom: 12,
   },
-  aiIcon: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    justifyContent: 'center', alignItems: 'center', marginRight: 14,
+  tipHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  aiContent: { flex: 1 },
-  aiTitle: {
-    color: 'rgba(255,255,255,0.7)', fontSize: 10,
-    fontWeight: 'bold', letterSpacing: 1, marginBottom: 4,
+  tipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
   },
-  aiText: { color: '#fff', fontSize: 12.5, fontWeight: '500', lineHeight: 18 },
+  tipBadgeText: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  tipBodyText: {
+    color: '#E2E8F0',
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 19,
+  },
+
+  // ── AI Coach Card ──
+  aiCoachCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.35)',
+    marginBottom: 12,
+  },
+  aiCoachIconBox: {
+    marginRight: 12,
+  },
+  aiCoachIconGrad: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aiCoachContent: {
+    flex: 1,
+  },
+  aiCoachTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  aiCoachTag: {
+    color: '#818CF8',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  aiCoachActionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    gap: 2,
+  },
+  aiCoachActionText: {
+    color: COLORS.cyan,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  aiCoachMessage: {
+    color: '#F8FAFC',
+    fontSize: 12.5,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+
+  // ── Notepad Card ──
+  notepadCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 72, 153, 0.25)',
+    marginBottom: 12,
+  },
+  notepadIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(236, 72, 153, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  notepadTitle: {
+    color: '#F472B6',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  notepadPill: {
+    backgroundColor: 'rgba(236, 72, 153, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  notepadPillText: {
+    color: '#F472B6',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  notepadSub: {
+    color: '#94A3B8',
+    fontSize: 11.5,
+    marginTop: 2,
+  },
 
   // ── Expense Item ──
   expenseItem: {
@@ -1248,24 +1357,6 @@ const styles = StyleSheet.create({
   expCategory: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '600' },
   expDate: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
   expAmount: { color: COLORS.red, fontSize: 15, fontWeight: 'bold' },
-
-  // ── FAB ──
-  fabContainer: { position: 'absolute', bottom: 24, left: 0, right: 0, alignItems: 'center' },
-  fabInner: {
-    flexDirection: 'row', backgroundColor: 'rgba(30,41,59,0.95)',
-    padding: 6, borderRadius: 30, borderWidth: 1, borderColor: COLORS.glassBorder,
-    ...SHADOW.lg,
-  },
-  voiceFab: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.orange, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 24, marginRight: 6,
-  },
-  voiceFabText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  addFab: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.cyan, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 24,
-  },
-  addFabText: { color: '#0f172a', fontWeight: 'bold', fontSize: 14 },
 
   // ── Quick Log Shortcuts ──
   quickSection: {
