@@ -86,6 +86,31 @@ export default function MoreFeaturesScreen({ navigation }) {
     }
   };
 
+  const [phoneModalVisible, setPhoneModalVisible] = useState(false);
+  const [inputPhone, setInputPhone] = useState('');
+
+  const isWaLinked = Boolean(profile?.whatsapp_linked);
+  const userPhone = profile?.phone_number || profile?.user_phone || '';
+  const waBotNumber = '917379053923';
+
+  const handleLinkWhatsApp = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const rawPhone = profile?.phone_number || profile?.user_phone || '';
+    if (rawPhone) {
+      const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+      const text = `Link ${cleanPhone}`;
+      const url = `https://wa.me/${waBotNumber}?text=${encodeURIComponent(text)}`;
+      Linking.openURL(url);
+    } else {
+      setPhoneModalVisible(true);
+    }
+  };
+
+  const handleOpenWhatsAppChat = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Linking.openURL(`https://wa.me/${waBotNumber}?text=Hi`);
+  };
+
   const username = profile?.username || 'User';
   const fullName = profile?.first_name
     ? `${profile.first_name} ${profile.last_name || ''}`.trim()
@@ -164,65 +189,87 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={styles.sectionTitle}>AI & SMART FINANCE</Text>
         </View>
 
-        <View style={styles.gridContainer}>
-          <FeatureCard
-            icon="sparkles"
-            iconColor="#818CF8"
-            bgGrad={['rgba(99, 102, 241, 0.15)', 'rgba(99, 102, 241, 0.04)']}
-            borderColor="rgba(99, 102, 241, 0.25)"
-            title="AI Financial Coach"
-            desc="Chat with your personal AI advisor"
-            badge="AI"
-            badgeColor="#818CF8"
-            onPress={() => navigation.navigate('AIChat')}
-          />
-          <FeatureCard
-            icon="mic"
-            iconColor="#FB7185"
-            bgGrad={['rgba(244, 63, 94, 0.15)', 'rgba(244, 63, 94, 0.04)']}
-            borderColor="rgba(244, 63, 94, 0.25)"
-            title="Voice Expense"
-            desc="Speak naturally to log spends"
-            badge="Fast"
-            badgeColor="#FB7185"
-            onPress={() => navigation.navigate('VoiceExpense')}
-          />
-          <FeatureCard
-            icon="people"
-            iconColor="#A78BFA"
-            bgGrad={['rgba(167, 139, 250, 0.15)', 'rgba(167, 139, 250, 0.04)']}
-            borderColor="rgba(167, 139, 250, 0.25)"
-            title="Expense Split"
-            desc="Split bills with friends & groups"
-            onPress={() => navigation.navigate('ExpenseSplit')}
-          />
-          <FeatureCard
-            icon="repeat"
-            iconColor="#38BDF8"
-            bgGrad={['rgba(56, 189, 248, 0.15)', 'rgba(56, 189, 248, 0.04)']}
-            borderColor="rgba(56, 189, 248, 0.25)"
-            title="Subscriptions"
-            desc="Track Netflix, Spotify, bills"
-            onPress={() => navigation.navigate('Subscriptions')}
-          />
-          <FeatureCard
-            icon="flag"
-            iconColor="#F59E0B"
-            bgGrad={['rgba(245, 158, 11, 0.15)', 'rgba(245, 158, 11, 0.04)']}
-            borderColor="rgba(245, 158, 11, 0.25)"
-            title="Savings Goals"
-            desc="Milestone targets & piggy bank"
-            onPress={() => navigation.navigate('SavingsGoals')}
-          />
-          <FeatureCard
-            icon="bar-chart"
-            iconColor="#10B981"
-            bgGrad={['rgba(16, 185, 129, 0.15)', 'rgba(16, 185, 129, 0.04)']}
-            borderColor="rgba(16, 185, 129, 0.25)"
-            title="Analytics"
-            desc="Deep category breakdowns"
-            onPress={() => navigation.navigate('Analytics')}
-          />
+        <View style={styles.gridSection}>
+          {/* Row 1: AI Coach & Voice */}
+          <View style={styles.gridRow}>
+            <FeatureCard
+              icon="sparkles"
+              iconColor="#818CF8"
+              bgGrad={['rgba(99, 102, 241, 0.16)', 'rgba(99, 102, 241, 0.04)']}
+              borderColor="rgba(99, 102, 241, 0.28)"
+              title="AI Financial Coach"
+              desc="Chat with your personal AI advisor"
+              badge="AI"
+              badgeColor="#818CF8"
+              onPress={() => navigation.navigate('AIChat')}
+            />
+            <View style={{ width: 10 }} />
+            <FeatureCard
+              icon="mic"
+              iconColor="#FB7185"
+              bgGrad={['rgba(244, 63, 94, 0.16)', 'rgba(244, 63, 94, 0.04)']}
+              borderColor="rgba(244, 63, 94, 0.28)"
+              title="Voice Expense"
+              desc="Speak naturally to log spends"
+              badge="Fast"
+              badgeColor="#FB7185"
+              onPress={() => navigation.navigate('VoiceExpense')}
+            />
+          </View>
+
+          {/* Row 2: Split & Subscriptions */}
+          <View style={styles.gridRow}>
+            <FeatureCard
+              icon="people"
+              iconColor="#A78BFA"
+              bgGrad={['rgba(167, 139, 250, 0.16)', 'rgba(167, 139, 250, 0.04)']}
+              borderColor="rgba(167, 139, 250, 0.28)"
+              title="Expense Split"
+              desc="Split bills with friends & groups"
+              badge="Split"
+              badgeColor="#A78BFA"
+              onPress={() => navigation.navigate('ExpenseSplit')}
+            />
+            <View style={{ width: 10 }} />
+            <FeatureCard
+              icon="repeat"
+              iconColor="#38BDF8"
+              bgGrad={['rgba(56, 189, 248, 0.16)', 'rgba(56, 189, 248, 0.04)']}
+              borderColor="rgba(56, 189, 248, 0.28)"
+              title="Subscriptions"
+              desc="Track Netflix, Spotify, bills"
+              badge="Bills"
+              badgeColor="#38BDF8"
+              onPress={() => navigation.navigate('Subscriptions')}
+            />
+          </View>
+
+          {/* Row 3: Goals & Analytics */}
+          <View style={styles.gridRow}>
+            <FeatureCard
+              icon="flag"
+              iconColor="#F59E0B"
+              bgGrad={['rgba(245, 158, 11, 0.16)', 'rgba(245, 158, 11, 0.04)']}
+              borderColor="rgba(245, 158, 11, 0.28)"
+              title="Savings Goals"
+              desc="Milestone targets & piggy bank"
+              badge="Goals"
+              badgeColor="#F59E0B"
+              onPress={() => navigation.navigate('SavingsGoals')}
+            />
+            <View style={{ width: 10 }} />
+            <FeatureCard
+              icon="bar-chart"
+              iconColor="#10B981"
+              bgGrad={['rgba(16, 185, 129, 0.16)', 'rgba(16, 185, 129, 0.04)']}
+              borderColor="rgba(16, 185, 129, 0.28)"
+              title="Analytics"
+              desc="Deep category breakdowns"
+              badge="Stats"
+              badgeColor="#10B981"
+              onPress={() => navigation.navigate('Analytics')}
+            />
+          </View>
         </View>
 
         {/* ── SECTION 2: PRODUCTIVITY & SYNC ── */}
@@ -231,6 +278,91 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={styles.sectionTitle}>PRODUCTIVITY & SYNC</Text>
         </View>
 
+        {/* ── WhatsApp Smart Card (Live Status + 1-Tap Link) ── */}
+        <View style={styles.waCard}>
+          <View style={styles.waHeader}>
+            <View style={styles.waIconBox}>
+              <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <View style={styles.waTitleRow}>
+                <Text style={styles.waTitle}>Track via WhatsApp</Text>
+                <View
+                  style={[
+                    styles.waBadge,
+                    {
+                      backgroundColor: isWaLinked ? 'rgba(16, 185, 129, 0.16)' : 'rgba(245, 158, 11, 0.16)',
+                      borderColor: isWaLinked ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)',
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.waDot,
+                      { backgroundColor: isWaLinked ? '#10B981' : '#F59E0B' },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.waBadgeText,
+                      { color: isWaLinked ? '#10B981' : '#F59E0B' },
+                    ]}
+                  >
+                    {isWaLinked ? 'Linked' : 'Not Linked'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.waSub} numberOfLines={1}>
+                {isWaLinked
+                  ? 'AI Bot active! Text "500 dinner" to log spends'
+                  : 'Link WhatsApp to auto-log spends with AI'}
+              </Text>
+            </View>
+          </View>
+
+          {/* 1-Tap Link or Chat Actions */}
+          {!isWaLinked ? (
+            <TouchableOpacity
+              style={styles.waActionBtn}
+              onPress={handleLinkWhatsApp}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#22C55E', '#16A34A']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.waActionGrad}
+              >
+                <Ionicons name="flash" size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.waActionBtnText}>
+                  {userPhone ? `1-Tap Link (Send 'Link ${userPhone}')` : '1-Tap Link via WhatsApp'}
+                </Text>
+                <Ionicons name="arrow-forward" size={14} color="#FFFFFF" style={{ marginLeft: 6 }} />
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.waLinkedRow}>
+              <TouchableOpacity
+                style={styles.waChatBtn}
+                onPress={handleOpenWhatsAppChat}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="chatbubble-ellipses" size={15} color="#22C55E" style={{ marginRight: 6 }} />
+                <Text style={styles.waChatBtnText}>Open Bot Chat (+91 7379053923)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.waRelinkPill}
+                onPress={handleLinkWhatsApp}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="sync-outline" size={13} color="#94A3B8" style={{ marginRight: 3 }} />
+                <Text style={styles.waRelinkText}>Re-link</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* ── Secondary Productivity Utilities ── */}
         <View style={styles.listCard}>
           <ListItem
             icon="document-text-outline"
@@ -238,15 +370,6 @@ export default function MoreFeaturesScreen({ navigation }) {
             title="Personal Financial Notepad"
             desc="Memos, planned purchases & checklists"
             onPress={() => navigation.navigate('Notepad')}
-          />
-          <ListItem
-            icon="logo-whatsapp"
-            iconColor="#25D366"
-            title="Track via WhatsApp"
-            desc="Text '500 dinner' to +91 7379053923"
-            badge="Live"
-            badgeColor="#25D366"
-            onPress={() => openLink('https://wa.me/917379053923?text=Hi')}
           />
           {Platform.OS === 'android' && (
             <ListItem
@@ -366,6 +489,57 @@ export default function MoreFeaturesScreen({ navigation }) {
               ) : (
                 <Text style={styles.submitFeedbackText}>Submit Feedback</Text>
               )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── WhatsApp Phone Linking Modal (Fallback) ── */}
+      <Modal
+        visible={phoneModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPhoneModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="logo-whatsapp" size={20} color="#25D366" style={{ marginRight: 8 }} />
+                <Text style={styles.modalTitle}>Link WhatsApp Bot</Text>
+              </View>
+              <TouchableOpacity onPress={() => setPhoneModalVisible(false)}>
+                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={{ color: '#94A3B8', fontSize: 13, marginBottom: 14, lineHeight: 18 }}>
+              Enter your 10-digit mobile number. Tapping link will open WhatsApp with the verification text ready to send to +91 7379053923.
+            </Text>
+            <TextInput
+              style={[styles.feedbackInput, { minHeight: 48, paddingVertical: 10, fontSize: 16 }]}
+              placeholder="e.g. 9876543210"
+              placeholderTextColor={COLORS.textMuted}
+              keyboardType="phone-pad"
+              value={inputPhone}
+              onChangeText={setInputPhone}
+            />
+            <TouchableOpacity
+              style={[styles.submitFeedbackBtn, { backgroundColor: '#22C55E' }]}
+              onPress={() => {
+                const clean = inputPhone.replace(/[^0-9]/g, '');
+                if (clean.length < 10) {
+                  Alert.alert('Notice', 'Please enter a valid 10-digit mobile number.');
+                  return;
+                }
+                const formatted = clean.length === 10 ? `91${clean}` : clean;
+                setPhoneModalVisible(false);
+                Linking.openURL(`https://wa.me/${waBotNumber}?text=${encodeURIComponent(`Link ${formatted}`)}`);
+              }}
+            >
+              <Text style={styles.submitFeedbackText}>Open WhatsApp & Link</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -550,21 +724,25 @@ const styles = StyleSheet.create({
   },
 
   // ── Grid Bento ──
-  gridContainer: {
+  gridSection: {
+    marginBottom: 20,
+    width: '100%',
+  },
+  gridRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 22,
+    marginBottom: 10,
+    width: '100%',
   },
   gridItemWrapper: {
-    width: '48.5%',
+    flex: 1,
   },
   gridItemCard: {
     borderRadius: 18,
-    padding: 14,
+    padding: 13,
     borderWidth: 1,
-    minHeight: 120,
+    minHeight: 118,
     justifyContent: 'space-between',
+    flex: 1,
   },
   gridItemTop: {
     flexDirection: 'row',
@@ -599,6 +777,119 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 11,
     lineHeight: 14,
+  },
+
+  // ── WhatsApp Smart Card ──
+  waCard: {
+    backgroundColor: '#111827',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 211, 102, 0.25)',
+    marginBottom: 14,
+    ...SHADOW.md,
+  },
+  waHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  waIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(37, 211, 102, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 211, 102, 0.3)',
+  },
+  waTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  waTitle: {
+    color: '#F8FAFC',
+    fontSize: 14.5,
+    fontWeight: '800',
+  },
+  waBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  waDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 4,
+  },
+  waBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  waSub: {
+    color: '#94A3B8',
+    fontSize: 11.5,
+    marginTop: 3,
+  },
+  waActionBtn: {
+    marginTop: 14,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  waActionGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  waActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  waLinkedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  waChatBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(37, 211, 102, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 211, 102, 0.25)',
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  waChatBtnText: {
+    color: '#22C55E',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  waRelinkPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  waRelinkText: {
+    color: '#94A3B8',
+    fontSize: 11.5,
+    fontWeight: '600',
   },
 
   // ── List Card ──

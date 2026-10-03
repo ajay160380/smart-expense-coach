@@ -430,6 +430,50 @@ export default function ProfileScreen({ navigation }) {
               }
             }}
           />
+          <MenuItem
+            ionIcon="logo-whatsapp"
+            iconColor="#25D366"
+            label="WhatsApp Expense Bot"
+            sub={
+              profile?.whatsapp_linked
+                ? 'Linked to +91 7379053923 • Active'
+                : '1-tap link to log expenses via WhatsApp'
+            }
+            badge={profile?.whatsapp_linked ? 'Linked' : 'Not Linked'}
+            badgeColor={profile?.whatsapp_linked ? '#10B981' : '#F59E0B'}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              const rawPhone = profile?.phone_number || profile?.user_phone || '';
+              if (!profile?.whatsapp_linked) {
+                if (rawPhone) {
+                  const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+                  Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(`Link ${cleanPhone}`)}`);
+                } else {
+                  Linking.openURL('https://wa.me/917379053923?text=Link%2091');
+                }
+              } else {
+                Alert.alert(
+                  'WhatsApp Expense Bot 🟢',
+                  `Your WhatsApp is successfully linked!\n\nText "500 petrol" or "today summary" anytime to +91 7379053923.`,
+                  [
+                    {
+                      text: 'Re-link Account',
+                      style: 'destructive',
+                      onPress: () => {
+                        const cleanPhone = (rawPhone || '').replace(/[^0-9]/g, '');
+                        Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(`Link ${cleanPhone || '91'}`)}`);
+                      },
+                    },
+                    {
+                      text: 'Chat on WhatsApp 💬',
+                      onPress: () => Linking.openURL('https://wa.me/917379053923?text=Hi'),
+                    },
+                    { text: 'Close', style: 'cancel' },
+                  ]
+                );
+              }
+            }}
+          />
           {Platform.OS === 'android' && (
             <MenuItem
               ionIcon="grid-outline"

@@ -418,8 +418,13 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const openWhatsApp = () => {
-    const phoneParam = stats?.user_phone ? `Link ${stats.user_phone}` : 'Link 91';
-    Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(phoneParam)}`);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (stats?.whatsapp_linked) {
+      Linking.openURL('https://wa.me/917379053923?text=Hi');
+    } else {
+      const phoneParam = stats?.user_phone ? `Link ${stats.user_phone}` : 'Link 91';
+      Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(phoneParam)}`);
+    }
   };
 
   const exportData = async (format) => {

@@ -2837,6 +2837,8 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
         "budget_cycle_start_day": getattr(profile, 'budget_cycle_start_day', 1) if profile else 1,
         "member_days":    (date.today() - user.date_joined.date()).days,
         "profile_picture": profile_pic_url,
+        "phone_number":    profile.phone_number if profile else "",
+        "whatsapp_number": profile.whatsapp_number if profile else "",
         "whatsapp_linked": profile.whatsapp_linked if profile else False,
     })
 
