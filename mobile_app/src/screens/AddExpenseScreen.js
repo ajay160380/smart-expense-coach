@@ -25,6 +25,7 @@ import { GradientButton } from '../components/SharedComponents';
 
 
 import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { COLORS, RADIUS } from '../utils/theme';
@@ -182,6 +183,34 @@ export default function AddExpenseScreen({ route, navigation }) {
                 keyboardType="numeric"
                 autoFocus
               />
+              {amount ? (
+                <TouchableOpacity 
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setAmount('');
+                  }} 
+                  style={styles.clearAmountBtn}
+                >
+                  <Ionicons name="close-circle" size={22} color={COLORS.textMuted} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {/* Quick Amount Presets */}
+            <View style={styles.presetRow}>
+              {[50, 100, 200, 500, 1000].map((val) => (
+                <TouchableOpacity
+                  key={val}
+                  style={styles.presetChip}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    const current = parseFloat(amount) || 0;
+                    setAmount(String(current + val));
+                  }}
+                >
+                  <Text style={styles.presetText}>+₹{val}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
@@ -209,7 +238,31 @@ export default function AddExpenseScreen({ route, navigation }) {
 
           {/* ── Date ── */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>DATE</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={[styles.label, { marginBottom: 0 }]}>DATE</Text>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                <TouchableOpacity 
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setExpDate(TODAY);
+                  }}
+                  style={[styles.dateChip, expDate === TODAY && styles.dateChipActive]}
+                >
+                  <Text style={[styles.dateChipText, expDate === TODAY && styles.dateChipTextActive]}>Today</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    const y = new Date();
+                    y.setDate(y.getDate() - 1);
+                    setExpDate(y.toISOString().split('T')[0]);
+                  }}
+                  style={[styles.dateChip, expDate !== TODAY && styles.dateChipActive]}
+                >
+                  <Text style={[styles.dateChipText, expDate !== TODAY && styles.dateChipTextActive]}>Yesterday</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="YYYY-MM-DD"
@@ -306,6 +359,9 @@ const styles = StyleSheet.create({
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    position: 'relative',
+    justifyContent: 'center',
+    width: '100%',
   },
   rupee: {
     color: COLORS.primary,
@@ -319,6 +375,52 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     minWidth: 100,
     textAlign: 'center',
+  },
+  clearAmountBtn: {
+    position: 'absolute',
+    right: 8,
+    padding: 4,
+  },
+  presetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  presetChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full || 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  presetText: {
+    color: COLORS.cyan || '#06B6D4',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  dateChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full || 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  dateChipActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    borderColor: COLORS.primary,
+  },
+  dateChipText: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  dateChipTextActive: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
 
   // ── Fields ──
