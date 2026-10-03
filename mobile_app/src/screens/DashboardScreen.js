@@ -392,9 +392,17 @@ export default function DashboardScreen({ navigation }) {
         >
           <View style={styles.mainCardHeader}>
             <Text style={styles.mainCardTitle}>TOTAL SPENT</Text>
-            {overspent && (
+            {overspent ? (
               <View style={styles.overspentBadge}>
                 <Text style={styles.overspentText}>⚠️ OVERSPENT</Text>
+              </View>
+            ) : usedPercent > 85 ? (
+              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.2)', borderColor: '#F59E0B' }]}>
+                <Text style={[styles.overspentText, { color: '#F59E0B' }]}>⚡ 85%+ USED</Text>
+              </View>
+            ) : (
+              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981' }]}>
+                <Text style={[styles.overspentText, { color: '#10B981' }]}>🟢 ON TRACK</Text>
               </View>
             )}
           </View>
@@ -445,6 +453,65 @@ export default function DashboardScreen({ navigation }) {
             </View>
           </View>
         </LinearGradient>
+
+        {/* ── QUICK ACTION DOCK ── */}
+        <View style={styles.actionDock}>
+          <TouchableOpacity 
+            style={styles.actionDockBtn} 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('AddExpense');
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.actionDockIcon}>
+              <Ionicons name="add" size={24} color="#fff" />
+            </LinearGradient>
+            <Text style={styles.actionDockLabel}>Add</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionDockBtn} 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('VoiceExpense');
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearGradient colors={['#EC4899', '#DB2777']} style={styles.actionDockIcon}>
+              <Ionicons name="mic" size={20} color="#fff" />
+            </LinearGradient>
+            <Text style={styles.actionDockLabel}>Voice</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionDockBtn} 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('ExpenseSplit');
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.actionDockIcon}>
+              <Ionicons name="people" size={20} color="#fff" />
+            </LinearGradient>
+            <Text style={styles.actionDockLabel}>Split</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionDockBtn} 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('History');
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearGradient colors={['#06B6D4', '#0891B2']} style={styles.actionDockIcon}>
+              <Ionicons name="receipt" size={19} color="#fff" />
+            </LinearGradient>
+            <Text style={styles.actionDockLabel}>History</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* ── QUICK STATS ── */}
         <View style={styles.miniStatsRow}>
@@ -694,18 +761,26 @@ export default function DashboardScreen({ navigation }) {
 
         {/* ── RECENT EXPENSES ── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Expenses</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('History')} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ color: COLORS.cyan, fontWeight: 'bold', marginRight: 4 }}>See All History</Text>
+          <Text style={styles.sectionTitle}>
+            Recent Expenses {recentExpenses.length > 0 ? `(${recentExpenses.length})` : ''}
+          </Text>
+          <TouchableOpacity 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('History');
+            }} 
+            style={{ flexDirection: 'row', alignItems: 'center' }}
+          >
+            <Text style={{ color: COLORS.cyan, fontWeight: 'bold', marginRight: 4 }}>See All</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.cyan} />
           </TouchableOpacity>
         </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, marginBottom: 10 }}>
-          <TouchableOpacity onPress={() => exportData('pdf')} style={{ marginRight: 15 }}>
-            <Text style={{ color: COLORS.cyan, fontWeight: 'bold' }}>📄 Export PDF</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, marginBottom: 12, gap: 10 }}>
+          <TouchableOpacity onPress={() => exportData('pdf')} style={styles.exportPill}>
+            <Text style={styles.exportPillText}>📄 Export PDF</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => exportData('csv')}>
-            <Text style={{ color: COLORS.cyan, fontWeight: 'bold' }}>📊 Export CSV</Text>
+          <TouchableOpacity onPress={() => exportData('csv')} style={styles.exportPill}>
+            <Text style={styles.exportPillText}>📊 Export CSV</Text>
           </TouchableOpacity>
         </View>
         {recentExpenses.length > 0 ? (
@@ -1314,5 +1389,56 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
     backgroundColor: '#10B981',
     marginRight: 4,
+  },
+
+  // ── Action Dock ──
+  actionDock: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: RADIUS.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginVertical: 12,
+  },
+  actionDockBtn: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  actionDockIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  actionDockLabel: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // ── Export Pills ──
+  exportPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+  },
+  exportPillText: {
+    color: COLORS.cyan,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

@@ -20,6 +20,7 @@ import { GlassCard, SectionHeader } from '../components/SharedComponents';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import * as Updates from 'expo-updates';
 import messaging from '../utils/messaging';
 
 import api from '../api/config';
@@ -478,7 +479,7 @@ export default function ProfileScreen({ navigation }) {
           <MenuItem
             ionIcon="information-circle-outline"
             label="App Version"
-            sub="v1.3.0 — Built with ❤️ by Ajay Vishwakarma"
+            sub={`v1.3.0 • Channel: ${Updates.channel || 'production'} — Built with ❤️ by Ajay`}
           />
         </GlassCard>
 
