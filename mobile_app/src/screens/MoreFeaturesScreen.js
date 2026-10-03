@@ -33,7 +33,7 @@ import * as Updates from 'expo-updates';
 
 import api from '../api/config';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
-import { requestPinAppWidget } from 'react-native-android-widget';
+import { requestPinWidget } from 'react-native-android-widget';
 
 export default function MoreFeaturesScreen({ navigation }) {
   const [profile, setProfile] = useState(null);
@@ -391,9 +391,20 @@ export default function MoreFeaturesScreen({ navigation }) {
               desc="Pin 1-tap quick add button to home screen"
               onPress={async () => {
                 try {
-                  await requestPinAppWidget('AddExpenseWidget');
+                  const pinned = await requestPinWidget({ widgetName: 'AddExpenseWidget' });
+                  if (!pinned) {
+                    Alert.alert(
+                      'Pin Widget Manually',
+                      'Agar automatic pin support nahi hua, toh phone ki Home Screen par 2 second touch & hold karein -> "Widgets" select karein -> "Expense Tracker" widget ko drag karein.',
+                      [{ text: 'Theek hai' }]
+                    );
+                  }
                 } catch (e) {
-                  Alert.alert('Notice', 'Your launcher might not support pinning widgets automatically.');
+                  Alert.alert(
+                    'Pin Widget Manually',
+                    'Home Screen par 2 second touch & hold karein -> "Widgets" select karein -> "Expense Tracker" widget ko drag karein.',
+                    [{ text: 'Theek hai' }]
+                  );
                 }
               }}
             />
