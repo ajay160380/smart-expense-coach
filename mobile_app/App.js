@@ -43,6 +43,7 @@ import AnalyticsScreen from './src/screens/AnalyticsScreen';
 import AddExpenseScreen from './src/screens/AddExpenseScreen';
 import SavingsGoalsScreen from './src/screens/SavingsGoalsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import MoreFeaturesScreen from './src/screens/MoreFeaturesScreen';
 import AdminPanelScreen from './src/screens/AdminPanelScreen';
 
 // ── Stack Screens (accessible from tabs) ──
@@ -59,7 +60,7 @@ const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
 const GoalsStack = createStackNavigator();
-const ProfileStack = createStackNavigator();
+const MoreStack = createStackNavigator();
 
 export const navigationRef = createNavigationContainerRef();
 
@@ -70,6 +71,7 @@ function HomeStackScreen() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#0B0E14' } }}>
       <HomeStack.Screen name="DashboardMain" component={DashboardScreen} />
+      <HomeStack.Screen name="Profile" component={ProfileScreen} />
       <HomeStack.Screen name="AIChat" component={AIChatScreen} />
       <HomeStack.Screen name="VoiceExpense" component={VoiceExpenseScreen} />
       <HomeStack.Screen name="AddExpense" component={AddExpenseScreen} />
@@ -95,21 +97,22 @@ function GoalsStackScreen() {
 }
 
 // ═══════════════════════════════════════════════
-// PROFILE STACK
+// MORE FEATURES STACK (Workspace & Tools)
 // ═══════════════════════════════════════════════
-function ProfileStackScreen() {
+function MoreStackScreen() {
   return (
-    <ProfileStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#0B0E14' } }}>
-      <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
-      <ProfileStack.Screen name="AIChat" component={AIChatScreen} />
-      <ProfileStack.Screen name="Analytics" component={AnalyticsScreen} />
-      <ProfileStack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
-      <ProfileStack.Screen name="ExpenseSplit" component={ExpenseSplitScreen} />
-      <ProfileStack.Screen name="Subscriptions" component={SubscriptionsScreen} />
-      <ProfileStack.Screen name="VoiceExpense" component={VoiceExpenseScreen} />
-      <ProfileStack.Screen name="AdminPanel" component={AdminPanelScreen} />
-      <ProfileStack.Screen name="Notepad" component={NotepadScreen} />
-    </ProfileStack.Navigator>
+    <MoreStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#0B0E14' } }}>
+      <MoreStack.Screen name="MoreMain" component={MoreFeaturesScreen} />
+      <MoreStack.Screen name="Profile" component={ProfileScreen} />
+      <MoreStack.Screen name="AIChat" component={AIChatScreen} />
+      <MoreStack.Screen name="Analytics" component={AnalyticsScreen} />
+      <MoreStack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
+      <MoreStack.Screen name="ExpenseSplit" component={ExpenseSplitScreen} />
+      <MoreStack.Screen name="Subscriptions" component={SubscriptionsScreen} />
+      <MoreStack.Screen name="VoiceExpense" component={VoiceExpenseScreen} />
+      <MoreStack.Screen name="AdminPanel" component={AdminPanelScreen} />
+      <MoreStack.Screen name="Notepad" component={NotepadScreen} />
+    </MoreStack.Navigator>
   );
 }
 
@@ -163,7 +166,7 @@ function MainTabNavigator() {
           else if (route.name === 'Analytics') iconName = focused ? 'analytics' : 'analytics-outline';
           else if (route.name === 'Add') iconName = 'add';
           else if (route.name === 'Goals') iconName = focused ? 'flag' : 'flag-outline';
-          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
+          else if (route.name === 'More') iconName = focused ? 'grid' : 'grid-outline';
           return <Ionicons name={iconName} size={route.name === 'Add' ? 28 : 22} color={color} />;
         },
       })}
@@ -187,7 +190,7 @@ function MainTabNavigator() {
         }}
       />
       <Tab.Screen name="Goals" component={GoalsStackScreen} />
-      <Tab.Screen name="Profile" component={ProfileStackScreen} />
+      <Tab.Screen name="More" component={MoreStackScreen} />
     </Tab.Navigator>
   );
 }

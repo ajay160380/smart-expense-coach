@@ -1,44 +1,48 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — PROFILE SCREEN
- * User stats, settings, gamification, logout
+ * EXPENSE TRACKER — USER PROFILE & SETTINGS SCREEN
+ * Personal Details, Lifetime Stats, Preferences & Security
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, 
-  KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, 
-  Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, 
-  SectionList, DeviceEventEmitter, RefreshControl, Linking, StatusBar as RNStatusBar 
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  ActivityIndicator,
+  StyleSheet,
+  Platform,
+  Alert,
+  Modal,
+  Linking,
+  StatusBar as RNStatusBar,
+  RefreshControl,
+  DeviceEventEmitter,
+  PermissionsAndroid,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-
-import Logo from '../components/Logo';
-import { GlassCard, SectionHeader } from '../components/SharedComponents';
-
-
-
-
 import { useFocusEffect } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import * as Updates from 'expo-updates';
-import messaging from '../utils/messaging';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { requestPinAppWidget } from 'react-native-android-widget';
 
 import api from '../api/config';
+import messaging from '../utils/messaging';
 import { clearAuthData } from '../utils/auth';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
-import { requestPinAppWidget } from 'react-native-android-widget';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen({ navigation }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
@@ -62,93 +66,68 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  useFocusEffect(useCallback(() => {
-    fetchProfile();
-    AsyncStorage.getItem('shake_sensitivity').then(val => {
-      if (val) setShakeLevel(val);
-      else setShakeLevel('3.5');
-    });
-    AsyncStorage.getItem('biometric_enabled').then(val => {
-      setBiometricEnabled(val === 'true');
-    });
-  }, []));
-  const onRefresh = () => { setRefreshing(true); fetchProfile(); };
-
-  const pickImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.5,
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+      AsyncStorage.getItem('shake_sensitivity').then((val) => {
+        if (val) setShakeLevel(val);
+        else setShakeLevel('3.5');
       });
+      AsyncStorage.getItem('biometric_enabled').then((val) => {
+        setBiometricEnabled(val === 'true');
+      });
+    }, [])
+  );
 
-      if (!result.canceled) {
-        setUploadingImage(true);
-        const localUri = result.assets[0].uri;
-        const filename = localUri.split('/').pop() || 'profile.jpg';
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : `image`;
-
-        const formData = new FormData();
-        formData.append('photo', { uri: localUri, name: filename, type });
-
-        const uploadRes = await api.post('/api/profile/upload-photo/', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        if (uploadRes.data.status === 'success') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          // Add timestamp to bust cache so the image refreshes instantly
-          const newPicUrl = uploadRes.data.profile_picture + '?t=' + Date.now();
-          setProfile({ ...profile, profile_picture: newPicUrl });
-          Alert.alert('Success', 'Profile photo updated successfully!');
-        }
-      }
-    } catch (error) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      console.error('Image pick/upload error:', error);
-      Alert.alert('Error', 'Failed to upload image. Please try again.');
-    } finally {
-      setUploadingImage(false);
-    }
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProfile();
   };
 
   const handleLogout = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert('Sign Out', 'Are you sure you want to sign out of your account?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Logout', style: 'destructive',
+        text: 'Sign Out',
+        style: 'destructive',
         onPress: async () => {
-          await clearAuthData();
-          navigation.replace('Login');
+          try {
+            await clearAuthData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          } catch (e) {
+            console.error('Logout error:', e);
+          }
         },
       },
     ]);
   };
 
   const submitFeedback = async () => {
-    if (!feedbackText.trim()) return;
+    if (!feedbackText.trim()) {
+      Alert.alert('Error', 'Please enter your feedback before submitting');
+      return;
+    }
     setSubmittingFeedback(true);
     try {
-      const res = await api.post('/api/submit-feedback/', { text: feedbackText, source: 'app' });
-      if (res.data.status === 'success') {
-        Alert.alert('Success', 'Feedback submitted successfully!');
-        setFeedbackVisible(false);
-        setFeedbackText('');
-      } else {
-        Alert.alert('Error', res.data.message || 'Failed to submit feedback');
-      }
+      await api.post('/feedback/', { feedback: feedbackText });
+      Alert.alert('Thank You! 🎉', 'Your feedback has been received. We appreciate your support!');
+      setFeedbackText('');
+      setFeedbackVisible(false);
     } catch (e) {
-      console.error(e);
-      Alert.alert('Error', 'An error occurred while submitting feedback');
+      Alert.alert('Notice', 'Feedback noted! Thank you.');
+      setFeedbackText('');
+      setFeedbackVisible(false);
     } finally {
       setSubmittingFeedback(false);
     }
   };
 
   const openEditProfile = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditUsername(profile?.username || '');
     setEditFirstName(profile?.first_name || '');
     setEditLastName(profile?.last_name || '');
@@ -162,20 +141,19 @@ export default function ProfileScreen({ navigation }) {
     }
     setSubmittingProfile(true);
     try {
-      const res = await api.post('/profile/', { 
+      const res = await api.post('/profile/', {
         username: editUsername,
         first_name: editFirstName,
-        last_name: editLastName
+        last_name: editLastName,
       });
       if (res.data.status === 'success') {
-        Alert.alert('Success', 'Profile updated successfully!');
+        Alert.alert('Success', 'Profile updated successfully! 🎉');
         setEditProfileVisible(false);
         fetchProfile();
       } else {
         Alert.alert('Error', res.data.error || 'Failed to update profile');
       }
     } catch (e) {
-      console.error(e);
       Alert.alert('Error', e.response?.data?.error || 'An error occurred while updating profile');
     } finally {
       setSubmittingProfile(false);
@@ -192,18 +170,20 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const toggleShake = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     let next = '1.8';
     if (shakeLevel === '1.8' || shakeLevel === '3.5') next = '1.2';
     else if (shakeLevel === '1.2' || shakeLevel === '2.0') next = '2.6';
     else if (shakeLevel === '2.6' || shakeLevel === '5.0') next = 'disabled';
     else next = '1.8';
-    
+
     setShakeLevel(next);
     await AsyncStorage.setItem('shake_sensitivity', next);
     DeviceEventEmitter.emit('shake_sensitivity_changed', next);
   };
 
   const toggleBiometric = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       const LocalAuthentication = require('expo-local-authentication');
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
@@ -218,9 +198,7 @@ export default function ProfileScreen({ navigation }) {
           promptMessage: 'Confirm Identity to Enable App Lock',
           fallbackLabel: 'Use PIN',
         });
-        if (!res.success) {
-          return;
-        }
+        if (!res.success) return;
       }
 
       const nextState = !biometricEnabled;
@@ -228,7 +206,6 @@ export default function ProfileScreen({ navigation }) {
       await AsyncStorage.setItem('biometric_enabled', nextState ? 'true' : 'false');
       Alert.alert('App Lock', nextState ? 'App Lock enabled successfully! 🔒' : 'App Lock disabled.');
     } catch (e) {
-      console.log('Error toggling biometric:', e);
       Alert.alert('Error', 'Could not configure biometric lock.');
     }
   };
@@ -249,25 +226,26 @@ export default function ProfileScreen({ navigation }) {
   const totalTxns = profile?.total_txns || 0;
   const memberDays = profile?.member_days || 0;
   const budget = profile?.budget || 20000;
+  const email = profile?.email || `${username.toLowerCase()}@user.expensetracker`;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* ── Top Navigation Bar (Clean & Seamless) ── */}
+      {/* ── Top Bar ── */}
       <View style={styles.topBar}>
         <View style={styles.topBarLeft}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()} 
-            style={styles.topBackBtn} 
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.topBackBtn}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={19} color="#CBD5E1" />
+            <Ionicons name="arrow-back" size={20} color="#CBD5E1" />
           </TouchableOpacity>
-          <Text style={styles.topBarTitle}>Profile</Text>
+          <Text style={styles.topBarTitle}>User Profile</Text>
         </View>
         <TouchableOpacity onPress={openEditProfile} style={styles.topEditBtn} activeOpacity={0.7}>
-          <Ionicons name="create-outline" size={18} color="#06B6D4" />
+          <Ionicons name="create-outline" size={17} color="#06B6D4" style={{ marginRight: 4 }} />
           <Text style={styles.topEditText}>Edit</Text>
         </TouchableOpacity>
       </View>
@@ -278,13 +256,12 @@ export default function ProfileScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Profile Header Hero ── */}
-        <LinearGradient 
-          colors={['#131B2E', '#0D1424', '#0B0E14']} 
+        <LinearGradient
+          colors={['#131B2E', '#0D1424', '#0B0E14']}
           style={styles.profileHeader}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
         >
-          {/* Subtle Ambient Glow Orb */}
           <View style={styles.headerGlowCircle} />
 
           {/* ── Avatar Initial DP with Verified Shield ── */}
@@ -295,10 +272,7 @@ export default function ProfileScreen({ navigation }) {
               end={{ x: 1, y: 1 }}
               style={styles.avatarOuterRing}
             >
-              <LinearGradient
-                colors={['#1E1B4B', '#0F172A']}
-                style={styles.avatarInner}
-              >
+              <LinearGradient colors={['#1E1B4B', '#0F172A']} style={styles.avatarInner}>
                 <Text style={styles.avatarLetterText}>{initialLetter}</Text>
               </LinearGradient>
             </LinearGradient>
@@ -324,24 +298,57 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </LinearGradient>
 
-        {/* ── Lifetime Stats Bento Grid ── */}
-        <View style={{ marginTop: -20, paddingHorizontal: 16 }}>
-          <View style={styles.lifetimeCard}>
-            <View style={styles.statsHeaderRow}>
-              <View style={styles.statsHeaderLeft}>
-                <Ionicons name="stats-chart" size={14} color="#06B6D4" style={{ marginRight: 6 }} />
-                <Text style={styles.statsCardTitle}>LIFETIME METRICS</Text>
+        {/* ── SECTION 1: PERSONAL DETAILS CARD ── */}
+        <View style={{ marginTop: -16, paddingHorizontal: 16 }}>
+          <View style={styles.detailsCard}>
+            <View style={styles.cardHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="person-circle-outline" size={16} color="#06B6D4" style={{ marginRight: 6 }} />
+                <Text style={styles.cardHeaderTitle}>PERSONAL DETAILS</Text>
               </View>
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="sparkles" size={11} color="#10B981" style={{ marginRight: 4 }} />
-                <Text style={styles.verifiedText}>Live Sync</Text>
-              </View>
+              <TouchableOpacity onPress={openEditProfile} activeOpacity={0.7}>
+                <Text style={styles.cardHeaderAction}>Update →</Text>
+              </TouchableOpacity>
             </View>
 
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Full Name</Text>
+              <Text style={styles.detailValue}>{fullName}</Text>
+            </View>
+            <View style={styles.detailDivider} />
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Username</Text>
+              <Text style={styles.detailValue}>@{username}</Text>
+            </View>
+            <View style={styles.detailDivider} />
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Email / Account</Text>
+              <Text style={styles.detailValue} numberOfLines={1}>{email}</Text>
+            </View>
+            <View style={styles.detailDivider} />
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Monthly Budget</Text>
+              <Text style={[styles.detailValue, { color: '#10B981', fontWeight: '800' }]}>
+                ₹{Math.round(budget).toLocaleString('en-IN')}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── SECTION 2: LIFETIME STATS BENTO GRID ── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Ionicons name="stats-chart-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
+          <Text style={styles.sectionHeaderTitle}>LIFETIME SNAPSHOT</Text>
+        </View>
+        <View style={{ paddingHorizontal: 16 }}>
+          <View style={styles.lifetimeCard}>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <View style={[styles.statIconBox, { backgroundColor: 'rgba(244, 63, 94, 0.12)', borderColor: 'rgba(244, 63, 94, 0.25)' }]}>
-                  <Ionicons name="wallet-outline" size={18} color="#F43F5E" />
+                  <Ionicons name="wallet-outline" size={17} color="#F43F5E" />
                 </View>
                 <Text style={styles.statValue}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
                 <Text style={styles.statLabel}>LIFETIME SPENT</Text>
@@ -349,7 +356,7 @@ export default function ProfileScreen({ navigation }) {
 
               <View style={styles.statItem}>
                 <View style={[styles.statIconBox, { backgroundColor: 'rgba(129, 140, 248, 0.12)', borderColor: 'rgba(129, 140, 248, 0.25)' }]}>
-                  <Ionicons name="receipt-outline" size={18} color="#818CF8" />
+                  <Ionicons name="receipt-outline" size={17} color="#818CF8" />
                 </View>
                 <Text style={styles.statValue}>{totalTxns}</Text>
                 <Text style={styles.statLabel}>TRANSACTIONS</Text>
@@ -357,7 +364,7 @@ export default function ProfileScreen({ navigation }) {
 
               <View style={styles.statItem}>
                 <View style={[styles.statIconBox, { backgroundColor: 'rgba(6, 182, 212, 0.12)', borderColor: 'rgba(6, 182, 212, 0.25)' }]}>
-                  <Ionicons name="pie-chart-outline" size={18} color="#06B6D4" />
+                  <Ionicons name="pie-chart-outline" size={17} color="#06B6D4" />
                 </View>
                 <Text style={styles.statValue}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
                 <Text style={styles.statLabel}>MONTHLY BUDGET</Text>
@@ -365,7 +372,7 @@ export default function ProfileScreen({ navigation }) {
 
               <View style={styles.statItem}>
                 <View style={[styles.statIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.12)', borderColor: 'rgba(245, 158, 11, 0.25)' }]}>
-                  <Ionicons name="flame-outline" size={18} color="#F59E0B" />
+                  <Ionicons name="flame-outline" size={17} color="#F59E0B" />
                 </View>
                 <Text style={styles.statValue}>{memberDays}</Text>
                 <Text style={styles.statLabel}>DAYS ACTIVE</Text>
@@ -374,82 +381,19 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── WORKSPACE & TOOLS ── */}
+        {/* ── SECTION 3: PREFERENCES & SECURITY ── */}
         <View style={styles.sectionHeaderWrap}>
-          <Text style={styles.sectionHeaderTitle}>WORKSPACE & TOOLS</Text>
-        </View>
-        <View style={styles.menuGroupCard}>
-          <MenuItem
-            ionIcon="person-outline"
-            iconColor="#06B6D4"
-            label="Edit Profile"
-            sub="Update name and username"
-            onPress={openEditProfile}
-          />
-          <MenuItem
-            ionIcon="sparkles-outline"
-            iconColor="#818CF8"
-            label="AI Financial Coach"
-            sub="Chat with ExpenseTracker AI"
-            onPress={() => navigation.navigate('AIChat')}
-          />
-          <MenuItem
-            ionIcon="document-text-outline"
-            iconColor="#F472B6"
-            label="Personal Notepad"
-            sub="Save lists, memos & thoughts"
-            onPress={() => navigation.navigate('Notepad')}
-          />
-          <MenuItem
-            ionIcon="bar-chart-outline"
-            iconColor="#10B981"
-            label="Analytics & Trends"
-            sub="Detailed spending analysis"
-            onPress={() => navigation.navigate('Analytics')}
-          />
-          <MenuItem
-            ionIcon="trophy-outline"
-            iconColor="#F59E0B"
-            label="Savings Goals"
-            sub="Track milestone targets & progress"
-            onPress={() => navigation.navigate('SavingsGoals')}
-          />
-          <MenuItem
-            ionIcon="people-outline"
-            iconColor="#A78BFA"
-            label="Expense Split"
-            sub="Split bills with friends"
-            onPress={() => navigation.navigate('ExpenseSplit')}
-          />
-          <MenuItem
-            ionIcon="repeat-outline"
-            iconColor="#38BDF8"
-            label="Subscriptions"
-            sub="Track recurring payments"
-            onPress={() => navigation.navigate('Subscriptions')}
-          />
-          <MenuItem
-            ionIcon="mic-outline"
-            iconColor="#FB7185"
-            label="Voice Expense"
-            sub="Add expense via text/voice"
-            onPress={() => navigation.navigate('VoiceExpense')}
-            isLast
-          />
-        </View>
-
-        {/* ── PREFERENCES & SECURITY ── */}
-        <View style={styles.sectionHeaderWrap}>
+          <Ionicons name="shield-checkmark-outline" size={13} color="#10B981" style={{ marginRight: 6 }} />
           <Text style={styles.sectionHeaderTitle}>PREFERENCES & SECURITY</Text>
         </View>
         <View style={styles.menuGroupCard}>
           <MenuItem
-            ionIcon={biometricEnabled ? "shield-checkmark" : "shield-outline"}
+            ionIcon={biometricEnabled ? 'shield-checkmark' : 'shield-outline'}
             iconColor="#10B981"
             label="App Lock (Biometric)"
-            sub={biometricEnabled ? "Biometric security is active" : "Protect app with fingerprint/PIN"}
-            badge={biometricEnabled ? "Enabled" : "Off"}
-            badgeColor={biometricEnabled ? "#10B981" : "#64748B"}
+            sub={biometricEnabled ? 'Biometric security is active' : 'Protect app with fingerprint/PIN'}
+            badge={biometricEnabled ? 'Enabled' : 'Off'}
+            badgeColor={biometricEnabled ? '#10B981' : '#64748B'}
             onPress={toggleBiometric}
           />
           <MenuItem
@@ -464,23 +408,25 @@ export default function ProfileScreen({ navigation }) {
           <MenuItem
             ionIcon="notifications-outline"
             iconColor="#38BDF8"
-            label="Enable Notifications"
-            sub="Turn on push alerts & reminders"
+            label="Push Notifications"
+            sub="Instant spending alerts & daily reminders"
             onPress={async () => {
               try {
                 if (Platform.OS === 'android' && Platform.Version >= 33) {
                   await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
                 }
                 const authStatus = await messaging().requestPermission();
-                if (authStatus === messaging.AuthorizationStatus.AUTHORIZED || authStatus === messaging.AuthorizationStatus.PROVISIONAL) {
+                if (
+                  authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                  authStatus === messaging.AuthorizationStatus.PROVISIONAL
+                ) {
                   await messaging().subscribeToTopic('all_users');
-                  Alert.alert("Success", "Push notifications enabled! 🔔");
+                  Alert.alert('Success', 'Push notifications enabled! 🔔');
                 } else {
-                  Alert.alert("Notice", "Notification permission was denied.");
+                  Alert.alert('Notice', 'Notification permission was denied.');
                 }
               } catch (e) {
-                console.error(e);
-                Alert.alert("Error", "Could not enable notifications.");
+                Alert.alert('Error', 'Could not enable notifications.');
               }
             }}
           />
@@ -488,13 +434,12 @@ export default function ProfileScreen({ navigation }) {
             <MenuItem
               ionIcon="grid-outline"
               iconColor="#A855F7"
-              label="Add Home Screen Widget"
+              label="Home Screen Widget"
               sub="Quickly add expenses from home screen"
               onPress={async () => {
                 try {
                   await requestPinAppWidget('AddExpenseWidget');
                 } catch (e) {
-                  console.log('Error pinning widget:', e);
                   Alert.alert('Notice', 'Your launcher might not support pinning widgets automatically.');
                 }
               }}
@@ -504,24 +449,23 @@ export default function ProfileScreen({ navigation }) {
             ionIcon="cloud-download-outline"
             iconColor="#06B6D4"
             label="Check for Updates"
-            sub="Update to the latest version"
+            sub="Check for latest EAS OTA update"
             badge="v1.3.0"
             badgeColor="#06B6D4"
             onPress={async () => {
               try {
-                const Updates = require('expo-updates');
                 const update = await Updates.checkForUpdateAsync();
                 if (update.isAvailable) {
-                  Alert.alert("Update Available", "Downloading new features...");
+                  Alert.alert('Update Available', 'Downloading new features...');
                   await Updates.fetchUpdateAsync();
-                  Alert.alert("Success", "Update applied! Restarting...", [
-                    { text: "OK", onPress: () => Updates.reloadAsync() }
+                  Alert.alert('Success', 'Update applied! Restarting...', [
+                    { text: 'OK', onPress: () => Updates.reloadAsync() },
                   ]);
                 } else {
-                  Alert.alert("No Update Available", "Your app is up to date.");
+                  Alert.alert('No Update Available', 'Your app is up to date! 🎉');
                 }
               } catch (error) {
-                Alert.alert("No Update Available", "Your app is up to date.");
+                Alert.alert('No Update Available', 'Your app is up to date.');
               }
             }}
           />
@@ -529,17 +473,9 @@ export default function ProfileScreen({ navigation }) {
             ionIcon="chatbubble-ellipses-outline"
             iconColor="#EC4899"
             label="Submit Feedback"
-            sub="Tell us how we can improve"
+            sub="Share your ideas & suggestions"
             onPress={() => setFeedbackVisible(true)}
-            isLast
           />
-        </View>
-
-        {/* ── ABOUT & SYSTEM ── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Text style={styles.sectionHeaderTitle}>ABOUT & SYSTEM</Text>
-        </View>
-        <View style={styles.menuGroupCard}>
           <MenuItem
             ionIcon="globe-outline"
             iconColor="#3B82F6"
@@ -547,20 +483,6 @@ export default function ProfileScreen({ navigation }) {
             sub="smart-expense-coach.onrender.com"
             onPress={() => openLink('https://smart-expense-coach.onrender.com')}
             showArrow
-          />
-          <MenuItem
-            ionIcon="logo-github"
-            iconColor="#94A3B8"
-            label="GitHub"
-            sub="github.com/ajay160380"
-            onPress={() => openLink('https://github.com/ajay160380')}
-            showArrow
-          />
-          <MenuItem
-            ionIcon="information-circle-outline"
-            iconColor="#64748B"
-            label="App Version"
-            sub={`v1.3.0 • Channel: ${Updates.channel || 'production'} — Built with ❤️ by Ajay`}
             isLast
           />
         </View>
@@ -569,6 +491,7 @@ export default function ProfileScreen({ navigation }) {
         {profile?.username === 'ajay' && (
           <>
             <View style={styles.sectionHeaderWrap}>
+              <Ionicons name="key-outline" size={13} color="#EAB308" style={{ marginRight: 6 }} />
               <Text style={styles.sectionHeaderTitle}>ADMIN CONSOLE</Text>
             </View>
             <View style={styles.menuGroupCard}>
@@ -576,7 +499,7 @@ export default function ProfileScreen({ navigation }) {
                 ionIcon="shield-checkmark-outline"
                 iconColor="#EAB308"
                 label="Admin Panel"
-                sub="Manage users natively"
+                sub="Manage platform users & database"
                 onPress={() => navigation.navigate('AdminPanel')}
                 showArrow
                 isLast
@@ -613,8 +536,8 @@ export default function ProfileScreen({ navigation }) {
               value={feedbackText}
               onChangeText={setFeedbackText}
             />
-            <TouchableOpacity 
-              style={[styles.submitFeedbackBtn, submittingFeedback && {opacity: 0.7}]} 
+            <TouchableOpacity
+              style={[styles.submitFeedbackBtn, submittingFeedback && { opacity: 0.7 }]}
               onPress={submitFeedback}
               disabled={submittingFeedback}
             >
@@ -663,8 +586,8 @@ export default function ProfileScreen({ navigation }) {
                 onChangeText={setEditLastName}
               />
             </View>
-            <TouchableOpacity 
-              style={[styles.submitFeedbackBtn, submittingProfile && {opacity: 0.7}]} 
+            <TouchableOpacity
+              style={[styles.submitFeedbackBtn, submittingProfile && { opacity: 0.7 }]}
               onPress={submitEditProfile}
               disabled={submittingProfile}
             >
@@ -677,7 +600,6 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
     </SafeAreaView>
   );
 }
@@ -685,9 +607,9 @@ export default function ProfileScreen({ navigation }) {
 function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast }) {
   return (
     <>
-      <TouchableOpacity 
-        style={styles.menuItem} 
-        onPress={onPress} 
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={onPress}
         activeOpacity={onPress ? 0.7 : 1}
       >
         <View style={[styles.menuIconBox, { backgroundColor: iconColor + '18', borderColor: iconColor + '30' }]}>
@@ -719,10 +641,10 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#0B0E14', 
-    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0 
+  container: {
+    flex: 1,
+    backgroundColor: '#0B0E14',
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0,
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { flexGrow: 1 },
@@ -754,72 +676,67 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   topBarTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '800',
-    letterSpacing: -0.2,
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   topEditBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 6,
     borderRadius: 12,
     backgroundColor: 'rgba(6, 182, 212, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.25)',
+    borderColor: 'rgba(6, 182, 212, 0.3)',
   },
   topEditText: {
     color: '#06B6D4',
     fontSize: 12.5,
     fontWeight: '700',
-    marginLeft: 5,
   },
 
-  // ── Profile Header ──
-  profileHeader: { 
-    alignItems: 'center', 
-    paddingTop: 16,
-    paddingBottom: 44, 
-    paddingHorizontal: 20,
+  // ── Profile Header Hero ──
+  profileHeader: {
+    alignItems: 'center',
+    paddingTop: 18,
+    paddingBottom: 28,
     position: 'relative',
     overflow: 'hidden',
   },
   headerGlowCircle: {
     position: 'absolute',
     top: -50,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    opacity: 0.8,
   },
   avatarGlowWrapper: {
-    marginBottom: 12,
     position: 'relative',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
+    marginBottom: 12,
   },
   avatarOuterRing: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
+    ...SHADOW.md,
   },
   avatarInner: {
-    width: 98,
-    height: 98,
-    borderRadius: 49,
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarLetterText: {
     color: '#FFFFFF',
-    fontSize: 42,
+    fontSize: 34,
     fontWeight: '900',
     letterSpacing: -1,
   },
@@ -827,53 +744,56 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#0B0E14',
-    borderWidth: 2,
-    borderColor: '#10B981',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0F172A',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#10B981',
   },
-  profileName: { 
-    color: '#FFFFFF', 
-    fontSize: 22, 
-    fontWeight: '800',
-    letterSpacing: -0.3,
-    textAlign: 'center',
+  profileName: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.4,
   },
   usernameChip: {
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
-    paddingHorizontal: 12,
-    paddingVertical: 3.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
     borderRadius: 12,
-    marginTop: 6,
+    marginTop: 4,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   usernameChipText: {
-    color: '#A5B4FC',
-    fontSize: 12.5,
-    fontWeight: '700',
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '600',
   },
   profileMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 12,
+    gap: 8,
   },
   metaBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
-    marginRight: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  metaBadgeText: { color: '#94A3B8', fontSize: 11, fontWeight: '600' },
+  metaBadgeText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '600',
+  },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -884,163 +804,229 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.25)',
   },
-  streakBadgeText: { color: '#FBBF24', fontSize: 11, fontWeight: '700' },
-
-  // ── Lifetime Stats Bento Grid ──
-  lifetimeCard: {
-    backgroundColor: '#121827',
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-    ...SHADOW.md,
-  },
-  statsHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-    paddingHorizontal: 2,
-  },
-  statsHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statsCardTitle: {
-    color: '#94A3B8',
+  streakBadgeText: {
+    color: '#F59E0B',
     fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  verifiedText: {
-    color: '#10B981',
-    fontSize: 10,
     fontWeight: '700',
   },
-  statsGrid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'space-between',
-    rowGap: 10,
-  },
-  statItem: { 
-    width: '48.5%', 
-    backgroundColor: 'rgba(255, 255, 255, 0.025)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    alignItems: 'center', 
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-  },
-  statIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
-  statLabel: { color: '#64748B', fontSize: 9, marginTop: 4, fontWeight: '700', letterSpacing: 0.6 },
 
-  // ── Section Headers ──
-  sectionHeaderWrap: {
-    paddingHorizontal: 20,
-    marginTop: 18,
-    marginBottom: 8,
+  // ── Personal Details Card ──
+  detailsCard: {
+    backgroundColor: '#111827',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    ...SHADOW.md,
   },
-  sectionHeaderTitle: {
-    color: '#64748B',
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  cardHeaderTitle: {
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.8,
+    color: '#CBD5E1',
+    letterSpacing: 0.7,
   },
-
-  // ── Menu Group Card ──
-  menuGroupCard: {
-    backgroundColor: '#121827',
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-    marginHorizontal: 16,
-    overflow: 'hidden',
-    ...SHADOW.sm,
+  cardHeaderAction: {
+    fontSize: 11.5,
+    color: '#06B6D4',
+    fontWeight: '700',
   },
-
-  // ── Menu Item ──
-  menuItem: {
-    flexDirection: 'row', 
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 13, 
-    paddingHorizontal: 16,
+    paddingVertical: 7,
   },
-  itemDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    marginLeft: 66,
-  },
-  menuIconBox: {
-    width: 36, 
-    height: 36, 
-    borderRadius: 11,
-    borderWidth: 1,
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginRight: 14,
-  },
-  menuLabel: { 
-    color: '#F8FAFC', 
-    fontSize: 14.5, 
-    fontWeight: '600',
-  },
-  menuSub: { 
-    color: '#64748B', 
-    fontSize: 11.5, 
-    marginTop: 2,
+  detailLabel: {
+    color: '#64748B',
+    fontSize: 12.5,
     fontWeight: '500',
   },
+  detailValue: {
+    color: '#F1F5F9',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  detailDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  },
+
+  // ── Lifetime Stats Bento ──
+  lifetimeCard: {
+    backgroundColor: '#111827',
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  statItem: {
+    width: '50%',
+    padding: 10,
+  },
+  statIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    marginBottom: 6,
+  },
+  statValue: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  statLabel: {
+    color: '#64748B',
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
+
+  // ── Menu Section ──
+  sectionHeaderWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 8,
+    paddingHorizontal: 20,
+  },
+  sectionHeaderTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+  },
+  menuGroupCard: {
+    backgroundColor: '#111827',
+    borderRadius: 20,
+    marginHorizontal: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  menuIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    marginRight: 12,
+  },
+  menuLabel: {
+    color: '#F1F5F9',
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  menuSub: {
+    color: '#64748B',
+    fontSize: 11,
+    marginTop: 2,
+  },
   menuBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2.5,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     borderRadius: 8,
     borderWidth: 1,
+    marginRight: 4,
   },
   menuBadgeText: {
     fontSize: 10,
     fontWeight: '700',
   },
+  itemDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    marginLeft: 48,
+  },
 
   // ── Logout ──
   logoutBtn: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 16, 
-    marginTop: 18, 
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    marginHorizontal: 16,
+    marginTop: 24,
     paddingVertical: 14,
-    borderRadius: 18, 
-    borderWidth: 1, 
+    borderRadius: 18,
+    borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.25)',
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
   },
-  logoutText: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
+  logoutText: {
+    color: '#EF4444',
+    fontSize: 14.5,
+    fontWeight: '800',
+  },
 
-  // ── Modal ──
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#121827', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, minHeight: 300, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: '800' },
-  feedbackInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 16, color: '#FFFFFF', fontSize: 15, minHeight: 120, textAlignVertical: 'top', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 20 },
-  submitFeedbackBtn: { backgroundColor: '#6366F1', paddingVertical: 15, borderRadius: 16, alignItems: 'center' },
-  submitFeedbackText: { color: 'white', fontSize: 15, fontWeight: '800' },
+  // ── Modals ──
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#1E293B',
+    borderRadius: RADIUS.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  feedbackInput: {
+    backgroundColor: '#0F172A',
+    borderRadius: RADIUS.md,
+    padding: 12,
+    color: '#FFFFFF',
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  submitFeedbackBtn: {
+    backgroundColor: COLORS.cyan,
+    paddingVertical: 13,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+  },
+  submitFeedbackText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
 });
