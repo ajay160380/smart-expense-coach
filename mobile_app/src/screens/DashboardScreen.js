@@ -51,6 +51,23 @@ const AVAILABLE_SHORTCUT_CATEGORIES = [
   { id: 'other', label: 'Other', color: '#64748B' },
 ];
 
+const DEFAULT_ACTION_DOCK_KEYS = ['add', 'voice', 'split', 'history'];
+
+const ALL_ACTION_SHORTCUTS = [
+  { id: 'add', label: 'Add', icon: 'add', colors: ['#6366F1', '#4F46E5'], screen: 'AddExpense', iconSize: 24, desc: 'Quickly log new expense' },
+  { id: 'voice', label: 'Voice', icon: 'mic', colors: ['#F43F5E', '#E11D48'], screen: 'VoiceExpense', iconSize: 20, desc: 'Speak to record spend' },
+  { id: 'split', label: 'Split', icon: 'people', colors: ['#8B5CF6', '#7C3AED'], screen: 'ExpenseSplit', iconSize: 20, desc: 'Split bills with friends' },
+  { id: 'history', label: 'History', icon: 'receipt', colors: ['#06B6D4', '#0891B2'], screen: 'History', iconSize: 19, desc: 'All transactions log' },
+  { id: 'ai', label: 'AI Coach', icon: 'sparkles', colors: ['#818CF8', '#6366F1'], screen: 'AIChat', iconSize: 20, desc: 'Financial intelligence AI' },
+  { id: 'goals', label: 'Goals', icon: 'flag', colors: ['#F59E0B', '#D97706'], screen: 'SavingsGoals', iconSize: 20, desc: 'Savings & milestone targets' },
+  { id: 'subs', label: 'Subs', icon: 'repeat', colors: ['#38BDF8', '#0284C7'], screen: 'Subscriptions', iconSize: 20, desc: 'Monthly subscriptions' },
+  { id: 'notes', label: 'Notepad', icon: 'document-text', colors: ['#EC4899', '#DB2777'], screen: 'Notepad', iconSize: 20, desc: 'Personal finance notes' },
+  { id: 'analytics', label: 'Analytics', icon: 'bar-chart', colors: ['#10B981', '#059669'], screen: 'Analytics', iconSize: 20, desc: 'Spending trend charts' },
+  { id: 'scan', label: 'Scan QR', icon: 'qr-code', colors: ['#A855F7', '#9333EA'], screen: 'UPIPayment', iconSize: 20, desc: 'UPI pay & scan QR' },
+  { id: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', colors: ['#25D366', '#16A34A'], isWhatsApp: true, iconSize: 20, desc: 'Track via WhatsApp bot' },
+  { id: 'budget', label: 'Budget', icon: 'wallet', colors: ['#F97316', '#EA580C'], isBudget: true, iconSize: 20, desc: 'Update monthly limit' },
+];
+
 export default function DashboardScreen({ navigation }) {
   const [stats, setStats] = useState(null);
   const [dailyTip, setDailyTip] = useState(null);
@@ -65,6 +82,62 @@ export default function DashboardScreen({ navigation }) {
   const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
   const [shakeBannerVisible, setShakeBannerVisible] = useState(true);
+
+  // ── Quick Action Dock Customizable State (1-8 items) ──
+  const [actionDockKeys, setActionDockKeys] = useState(DEFAULT_ACTION_DOCK_KEYS);
+  const [actionDockModalVisible, setActionDockModalVisible] = useState(false);
+  const [tempActionDockKeys, setTempActionDockKeys] = useState(DEFAULT_ACTION_DOCK_KEYS);
+
+  const loadCustomActionDock = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('custom_action_dock');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setActionDockKeys(parsed);
+          setTempActionDockKeys(parsed);
+        }
+      }
+    } catch (e) {}
+  };
+
+  const saveActionDock = async (newKeys) => {
+    setActionDockKeys(newKeys);
+    setTempActionDockKeys(newKeys);
+    try {
+      await AsyncStorage.setItem('custom_action_dock', JSON.stringify(newKeys));
+    } catch (e) {}
+  };
+
+  const toggleActionKey = (id) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (tempActionDockKeys.includes(id)) {
+      if (tempActionDockKeys.length <= 1) {
+        Alert.alert('Notice', 'Please keep at least 1 shortcut in the dock.');
+        return;
+      }
+      setTempActionDockKeys(prev => prev.filter(k => k !== id));
+    } else {
+      if (tempActionDockKeys.length >= 8) {
+        Alert.alert('Limit Reached', 'You can select up to 8 shortcuts maximum.');
+        return;
+      }
+      setTempActionDockKeys(prev => [...prev, id]);
+    }
+  };
+
+  const handleActionPress = (action) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (action.isWhatsApp) {
+      openWhatsApp();
+    } else if (action.isBudget) {
+      setNewBudget(budget.toString());
+      setNewBudgetCycleDay(budgetCycleDay.toString());
+      setBudgetModalVisible(true);
+    } else if (action.screen) {
+      navigation.navigate(action.screen);
+    }
+  };
 
   // ── 1-Tap Log Customizable State ──
   const [quickShortcuts, setQuickShortcuts] = useState(DEFAULT_QUICK_SHORTCUTS);
@@ -245,6 +318,7 @@ export default function DashboardScreen({ navigation }) {
       if (name) setUsername(name);
       
       loadCustomShortcuts();
+      loadCustomActionDock();
 
       const shakeDismissed = await AsyncStorage.getItem('shake_banner_dismissed');
       if (shakeDismissed === 'true') {
@@ -401,6 +475,13 @@ export default function DashboardScreen({ navigation }) {
   const daysLeft = stats?.days_left || 0;
   const overspent = stats?.overspent || false;
   const recentExpenses = stats?.recent_expenses || [];
+
+  const activeActions = actionDockKeys
+    .map(key => ALL_ACTION_SHORTCUTS.find(a => a.id === key))
+    .filter(Boolean);
+
+  const row1 = activeActions.slice(0, 4);
+  const row2 = activeActions.length > 4 ? activeActions.slice(4) : [];
 
   const compDiff = comparison?.diff_percent || 0;
   const compMore = comparison?.is_more || false;
@@ -702,63 +783,77 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </LinearGradient>
 
-        {/* ── QUICK ACTION DOCK ── */}
-        <View style={styles.actionDock}>
-          <TouchableOpacity 
-            style={styles.actionDockBtn} 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('AddExpense');
-            }}
-            activeOpacity={0.8}
-          >
-            <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.actionDockIcon}>
-              <Ionicons name="add" size={24} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.actionDockLabel}>Add</Text>
-          </TouchableOpacity>
+        {/* ── QUICK ACTION DOCK (Customizable 1-8 items with auto space fill) ── */}
+        <View style={styles.actionDockSection}>
+          <View style={styles.actionDockHeaderRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="flash-outline" size={12} color="#818CF8" style={{ marginRight: 5 }} />
+              <Text style={styles.actionDockHeaderTitle}>QUICK ACTIONS</Text>
+              <View style={styles.actionDockCountBadge}>
+                <Text style={styles.actionDockCountText}>{activeActions.length}/8</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setTempActionDockKeys([...actionDockKeys]);
+                setActionDockModalVisible(true);
+              }}
+              style={styles.actionDockEditBtn}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="create-outline" size={12} color="#06B6D4" style={{ marginRight: 3 }} />
+              <Text style={styles.actionDockEditText}>Customize</Text>
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity 
-            style={styles.actionDockBtn} 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('VoiceExpense');
-            }}
-            activeOpacity={0.8}
-          >
-            <LinearGradient colors={['#F43F5E', '#E11D48']} style={styles.actionDockIcon}>
-              <Ionicons name="mic" size={20} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.actionDockLabel}>Voice</Text>
-          </TouchableOpacity>
+          <View style={styles.actionDock}>
+            {/* Row 1 (up to 4 items) */}
+            <View style={styles.actionDockRow}>
+              {row1.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.actionDockBtn}
+                  onPress={() => handleActionPress(item)}
+                  onLongPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setTempActionDockKeys([...actionDockKeys]);
+                    setActionDockModalVisible(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient colors={item.colors} style={styles.actionDockIcon}>
+                    <Ionicons name={item.icon} size={item.iconSize || 20} color="#fff" />
+                  </LinearGradient>
+                  <Text style={styles.actionDockLabel} numberOfLines={1}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          <TouchableOpacity 
-            style={styles.actionDockBtn} 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('ExpenseSplit');
-            }}
-            activeOpacity={0.8}
-          >
-            <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.actionDockIcon}>
-              <Ionicons name="people" size={20} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.actionDockLabel}>Split</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.actionDockBtn} 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('History');
-            }}
-            activeOpacity={0.8}
-          >
-            <LinearGradient colors={['#06B6D4', '#0891B2']} style={styles.actionDockIcon}>
-              <Ionicons name="receipt" size={19} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.actionDockLabel}>History</Text>
-          </TouchableOpacity>
+            {/* Row 2 (if > 4 items) */}
+            {row2.length > 0 && (
+              <View style={[styles.actionDockRow, { marginTop: 14 }]}>
+                {row2.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.actionDockBtn}
+                    onPress={() => handleActionPress(item)}
+                    onLongPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setTempActionDockKeys([...actionDockKeys]);
+                      setActionDockModalVisible(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <LinearGradient colors={item.colors} style={styles.actionDockIcon}>
+                      <Ionicons name={item.icon} size={item.iconSize || 20} color="#fff" />
+                    </LinearGradient>
+                    <Text style={styles.actionDockLabel} numberOfLines={1}>{item.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
         </View>
 
         {/* ── 1-TAP QUICK LOG (Dynamic & Customizable) ── */}
@@ -1389,6 +1484,135 @@ export default function DashboardScreen({ navigation }) {
                 </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── CUSTOMIZE QUICK ACTIONS MODAL ── */}
+      <Modal
+        visible={actionDockModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setActionDockModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.sheetOverlay}
+        >
+          <View style={styles.sheetContent}>
+            <View style={styles.sheetHandle} />
+
+            <View style={styles.sheetHeader}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="apps" size={18} color="#818CF8" style={{ marginRight: 6 }} />
+                  <Text style={styles.sheetTitle}>Customize Quick Actions</Text>
+                </View>
+                <Text style={styles.sheetSubtitle}>
+                  Pick up to 8 shortcuts for your home dock
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setActionDockModalVisible(false)}
+                style={styles.sheetCloseBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={20} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Selection counter badge */}
+            <View style={styles.actionModalCountRow}>
+              <Text style={styles.actionModalCountLabel}>SELECTED SHORTCUTS</Text>
+              <View style={[
+                styles.actionModalCountPill,
+                tempActionDockKeys.length === 8 && { backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.4)' }
+              ]}>
+                <Text style={[
+                  styles.actionModalCountPillText,
+                  tempActionDockKeys.length === 8 && { color: '#EF4444' }
+                ]}>
+                  {tempActionDockKeys.length} / 8 MAX
+                </Text>
+              </View>
+            </View>
+
+            <ScrollView 
+              style={{ maxHeight: 380, marginVertical: 6 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.actionModalGrid}>
+                {ALL_ACTION_SHORTCUTS.map((item) => {
+                  const isSelected = tempActionDockKeys.includes(item.id);
+                  const selectedIndex = tempActionDockKeys.indexOf(item.id);
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[
+                        styles.actionModalItemCard,
+                        isSelected && styles.actionModalItemCardSelected
+                      ]}
+                      onPress={() => toggleActionKey(item.id)}
+                      activeOpacity={0.75}
+                    >
+                      <LinearGradient
+                        colors={item.colors}
+                        style={styles.actionModalIconGrad}
+                      >
+                        <Ionicons name={item.icon} size={18} color="#fff" />
+                      </LinearGradient>
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.actionModalItemTitle}>{item.label}</Text>
+                        <Text style={styles.actionModalItemDesc} numberOfLines={1}>{item.desc}</Text>
+                      </View>
+                      <View style={[
+                        styles.actionModalCheckbox,
+                        isSelected && styles.actionModalCheckboxActive
+                      ]}>
+                        {isSelected ? (
+                          <Text style={styles.actionModalCheckIndex}>{selectedIndex + 1}</Text>
+                        ) : (
+                          <Ionicons name="add" size={14} color="#64748B" />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <View style={styles.sheetBottomBar}>
+              <TouchableOpacity
+                style={styles.addNewShortcutBtn}
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  saveActionDock(tempActionDockKeys);
+                  setActionDockModalVisible(false);
+                }}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#6366F1', '#4F46E5']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.addNewShortcutGrad}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.addNewShortcutText}>Save Actions ({tempActionDockKeys.length})</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setTempActionDockKeys(DEFAULT_ACTION_DOCK_KEYS);
+                }}
+                style={styles.resetShortcutsBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.resetShortcutsText}>Restore Default 4 Actions</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -2267,28 +2491,74 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
 
-  // ── Action Dock ──
-  actionDock: {
+  // ── Action Dock Section & Header ──
+  actionDockSection: {
+    marginVertical: 10,
+  },
+  actionDockHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  actionDockHeaderTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#CBD5E1',
+    letterSpacing: 0.8,
+  },
+  actionDockCountBadge: {
+    backgroundColor: 'rgba(129, 140, 248, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 8,
+    marginLeft: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(129, 140, 248, 0.3)',
+  },
+  actionDockCountText: {
+    color: '#818CF8',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  actionDockEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.25)',
+  },
+  actionDockEditText: {
+    color: '#06B6D4',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  actionDock: {
     backgroundColor: '#121827',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 24,
     paddingVertical: 14,
     paddingHorizontal: 8,
-    marginVertical: 12,
     ...SHADOW.md,
+  },
+  actionDockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
   },
   actionDockBtn: {
     alignItems: 'center',
     flex: 1,
   },
   actionDockIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,
@@ -2300,9 +2570,89 @@ const styles = StyleSheet.create({
   },
   actionDockLabel: {
     color: '#CBD5E1',
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
     letterSpacing: 0.2,
+  },
+
+  // ── Action Modal Styles ──
+  actionModalCountRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  actionModalCountLabel: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+  },
+  actionModalCountPill: {
+    backgroundColor: 'rgba(16, 185, 129, 0.14)',
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+  },
+  actionModalCountPillText: {
+    color: '#10B981',
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  actionModalGrid: {
+    gap: 8,
+  },
+  actionModalItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 14,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  actionModalItemCardSelected: {
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderColor: 'rgba(99, 102, 241, 0.4)',
+  },
+  actionModalIconGrad: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionModalItemTitle: {
+    color: '#F8FAFC',
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  actionModalItemDesc: {
+    color: '#64748B',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  actionModalCheckbox: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  actionModalCheckboxActive: {
+    backgroundColor: '#6366F1',
+    borderColor: '#818CF8',
+  },
+  actionModalCheckIndex: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
   },
 
   // ── Export Pills ──
