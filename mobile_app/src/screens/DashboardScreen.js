@@ -56,6 +56,7 @@ export default function DashboardScreen({ navigation }) {
   const [dailyTip, setDailyTip] = useState(null);
   const [comparison, setComparison] = useState(null);
   const [anomalies, setAnomalies] = useState([]);
+  const [dismissedAnomalies, setDismissedAnomalies] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [username, setUsername] = useState('User');
@@ -497,49 +498,64 @@ export default function DashboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── GREETING & STATUS PILL ── */}
+        {/* ── GREETING & STATUS PILL (Compact & Clean) ── */}
         <View style={styles.greetingSection}>
           <View style={styles.greetingHeaderRow}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.greetText}>
-                {getGreeting()}, <Text style={{ color: '#A5B4FC' }}>{username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Friend'}</Text> 👋
+            <View style={{ flex: 1, paddingRight: 6 }}>
+              <Text style={styles.greetText} numberOfLines={1}>
+                {getGreeting()}, <Text style={{ color: '#A5B4FC' }}>{username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Friend'}</Text>
               </Text>
-              <Text style={styles.greetSubtext}>Your monthly financial overview</Text>
+              <Text style={styles.greetSubtext}>Monthly overview</Text>
             </View>
             <View style={styles.unifiedPill}>
-              <Ionicons name="calendar-outline" size={11} color="#94A3B8" style={{ marginRight: 4 }} />
-              <Text style={styles.unifiedPillMonth}>{stats?.month || 'This Month'}</Text>
+              <Ionicons name="calendar-outline" size={10} color="#94A3B8" style={{ marginRight: 3 }} />
+              <Text style={styles.unifiedPillMonth}>{formatShortMonth(stats?.month)}</Text>
               <View style={styles.pillDot} />
-              <Ionicons name="hourglass-outline" size={11} color="#06B6D4" style={{ marginRight: 3 }} />
+              <Ionicons name="hourglass-outline" size={10} color="#06B6D4" style={{ marginRight: 2 }} />
               <Text style={styles.unifiedPillDays}>{daysLeft}d left</Text>
             </View>
           </View>
         </View>
 
-        {/* ── ANOMALY SPENDING INSIGHT ── */}
-        {anomalies.length > 0 && (
+        {/* ── ANOMALY SPENDING INSIGHT (Compact Sleek Strip) ── */}
+        {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
           <View style={styles.alertBanner}>
-            {anomalies.map((alert, idx) => (
-              <LinearGradient
-                key={idx}
-                colors={['rgba(245, 158, 11, 0.14)', 'rgba(217, 119, 6, 0.05)']}
-                style={styles.alertItem}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.alertIconBadge}>
-                  <Ionicons name="bulb-outline" size={18} color="#F59E0B" />
-                </View>
-                <View style={{ flex: 1, paddingRight: 4 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                    <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
-                    <View style={styles.alertBadgeDot} />
-                    <Text style={styles.alertBadgeSub}>Smart Advice</Text>
+            {anomalies.map((alert, idx) => {
+              if (dismissedAnomalies[idx]) return null;
+              return (
+                <LinearGradient
+                  key={idx}
+                  colors={['rgba(245, 158, 11, 0.12)', 'rgba(17, 24, 39, 0.7)']}
+                  style={styles.alertItem}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.alertIconBadge}>
+                    <Ionicons name="bulb" size={13} color="#F59E0B" />
                   </View>
-                  <Text style={styles.alertText}>{alert.message}</Text>
-                </View>
-              </LinearGradient>
-            ))}
+                  <View style={{ flex: 1, paddingHorizontal: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 1 }}>
+                      <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
+                      <View style={styles.alertBadgeDot} />
+                      <Text style={styles.alertBadgeSub}>Smart Advice</Text>
+                    </View>
+                    <Text style={styles.alertText} numberOfLines={2}>
+                      {alert.message}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setDismissedAnomalies(prev => ({ ...prev, [idx]: true }));
+                    }}
+                    style={styles.alertDismissBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="close" size={13} color="#94A3B8" />
+                  </TouchableOpacity>
+                </LinearGradient>
+              );
+            })}
           </View>
         )}
 
@@ -1362,6 +1378,17 @@ function getGreeting() {
   return '🌙 Good Night';
 }
 
+function formatShortMonth(monthStr) {
+  if (!monthStr) return 'This Month';
+  const parts = monthStr.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    const shortMonth = parts[0].slice(0, 3);
+    const shortYear = parts[1].slice(-2);
+    return `${shortMonth} '${shortYear}`;
+  }
+  return monthStr.slice(0, 8);
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -1439,9 +1466,9 @@ const styles = StyleSheet.create({
 
   scrollContent: { padding: 16, flexGrow: 1 },
 
-  // ── Greeting & Date Pill ──
+  // ── Greeting & Date Pill (Compact & Elegant) ──
   greetingSection: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   greetingHeaderRow: {
     flexDirection: 'row',
@@ -1450,29 +1477,29 @@ const styles = StyleSheet.create({
   },
   greetText: {
     color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: -0.4,
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   greetSubtext: {
     color: '#64748B',
-    fontSize: 11.5,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
     fontWeight: '500',
   },
   unifiedPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   unifiedPillMonth: {
     color: '#94A3B8',
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '600',
   },
   pillDot: {
@@ -1480,59 +1507,68 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 1.5,
     backgroundColor: '#64748B',
-    marginHorizontal: 6,
+    marginHorizontal: 5,
   },
   unifiedPillDays: {
     color: '#06B6D4',
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700',
   },
 
-  // ── Smart Alert Banner ──
+  // ── Smart Alert Banner (Compact Sleek Strip) ──
   alertBanner: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   alertItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 13,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    marginBottom: 6,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
+    borderColor: 'rgba(245, 158, 11, 0.28)',
   },
   alertIconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 7,
     backgroundColor: 'rgba(245, 158, 11, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
   },
   alertCategoryTitle: {
     color: '#F59E0B',
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
   alertBadgeDot: {
     width: 3,
     height: 3,
     borderRadius: 1.5,
     backgroundColor: '#D97706',
-    marginHorizontal: 5,
+    marginHorizontal: 4,
   },
   alertBadgeSub: {
     color: '#D97706',
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '600',
   },
   alertText: {
-    color: '#F1F5F9',
-    fontSize: 12,
-    lineHeight: 17,
+    color: '#E2E8F0',
+    fontSize: 11,
+    lineHeight: 15,
     fontWeight: '500',
+  },
+  alertDismissBtn: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
   },
 
   // ── WhatsApp ──
