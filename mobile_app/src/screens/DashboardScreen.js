@@ -463,12 +463,26 @@ export default function DashboardScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* ── TOP NAVBAR ── */}
+      {/* ── TOP NAVBAR (Luxury Glass & Cohesive Branding) ── */}
       <View style={styles.navbar}>
         <View style={styles.logoContainer}>
-          <Image source={require('../../assets/icon.png')} style={{ width: 44, height: 44, borderRadius: 12, marginRight: 8 }} />
-          <Text style={styles.logoText}>ExpenseTracker</Text>
+          <View style={styles.logoIconWrapper}>
+            <Image
+              source={require('../../assets/icon.png')}
+              style={styles.logoIconImage}
+            />
+          </View>
+          <View style={{ marginLeft: 9 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.logoTextMain}>Expense</Text>
+              <Text style={styles.logoTextAccent}>Tracker</Text>
+              <View style={styles.logoProBadge}>
+                <Text style={styles.logoProBadgeText}>AI</Text>
+              </View>
+            </View>
+          </View>
         </View>
+
         <View style={styles.navRight}>
           <TouchableOpacity
             onPress={() => {
@@ -476,18 +490,32 @@ export default function DashboardScreen({ navigation }) {
               navigation.navigate('Notifications');
             }}
             style={styles.navIconBtn}
+            activeOpacity={0.7}
           >
-            <Ionicons name="notifications-outline" size={22} color={COLORS.textSecondary} />
+            <Ionicons name="notifications-outline" size={19} color="#CBD5E1" />
             {anomalies.length > 0 && <View style={styles.notifDot} />}
           </TouchableOpacity>
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               navigation.navigate('Profile');
-            }} 
-            style={styles.avatar}
+            }}
+            style={styles.avatarBtn}
+            activeOpacity={0.8}
           >
-            <Text style={styles.avatarText}>{username.charAt(0).toUpperCase()}</Text>
+            <LinearGradient
+              colors={['#6366F1', '#EC4899', '#06B6D4']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatarGradientRing}
+            >
+              <View style={styles.avatarInnerCircle}>
+                <Text style={styles.avatarText}>
+                  {username ? username.charAt(0).toUpperCase() : 'U'}
+                </Text>
+              </View>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
@@ -1437,32 +1465,123 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // ── Navbar ──
+  // ── Luxury Top Navbar ──
   navbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#0B0E14',
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
-  logoContainer: { flexDirection: 'row', alignItems: 'center' },
-  logoIcon: { fontSize: 20, marginRight: 8 },
-  logoText: { color: '#fff', fontSize: 20, fontWeight: 'bold', letterSpacing: -0.5 },
-  navRight: { flexDirection: 'row', alignItems: 'center' },
-  navIconBtn: { padding: 8, marginRight: 8, position: 'relative' },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#1E293B',
+    shadowColor: '#06B6D4',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  logoIconImage: {
+    width: '100%',
+    height: '100%',
+  },
+  logoTextMain: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+  },
+  logoTextAccent: {
+    color: '#06B6D4',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+  },
+  logoProBadge: {
+    backgroundColor: 'rgba(6, 182, 212, 0.14)',
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+    marginLeft: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+  },
+  logoProBadgeText: {
+    color: '#06B6D4',
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  navRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  navIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
   notifDot: {
-    position: 'absolute', top: 6, right: 6,
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: COLORS.red,
+    position: 'absolute',
+    top: 7,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#0B0E14',
   },
-  avatar: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#1E293B', borderWidth: 1, borderColor: COLORS.cyan,
-    justifyContent: 'center', alignItems: 'center',
+  avatarBtn: {
+    borderRadius: 19,
   },
-  avatarText: { color: COLORS.cyan, fontWeight: 'bold', fontSize: 16 },
+  avatarGradientRing: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    padding: 1.8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  avatarInnerCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    fontSize: 14.5,
+    letterSpacing: -0.2,
+  },
 
   scrollContent: { padding: 16, flexGrow: 1 },
 
