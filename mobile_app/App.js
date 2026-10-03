@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Logo from './src/components/Logo';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import CustomAlertModal, { installGlobalAlert, showCustomAlert } from './src/components/CustomAlertModal';
 import * as Updates from 'expo-updates';
 
@@ -136,6 +137,14 @@ function AddButton({ onPress }) {
 // MAIN TAB NAVIGATOR
 // ═══════════════════════════════════════════════
 function MainTabNavigator() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = insets?.bottom || 0;
+  const isAndroid = Platform.OS === 'android';
+  const bottomPadding = Platform.OS === 'ios'
+    ? (bottomInset > 0 ? bottomInset : 24)
+    : Math.max(bottomInset, 14);
+  const tabHeight = (isAndroid ? 58 : 54) + bottomPadding;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -144,8 +153,8 @@ function MainTabNavigator() {
           backgroundColor: '#0f1520',
           borderTopWidth: 1,
           borderTopColor: 'rgba(255,255,255,0.05)',
-          height: Platform.OS === 'ios' ? 88 : 65,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          height: tabHeight,
+          paddingBottom: bottomPadding,
           paddingTop: 8,
           elevation: 20,
           shadowColor: '#000',
@@ -531,31 +540,33 @@ export default function App() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <NavigationContainer ref={navigationRef} linking={linking}>
-        <StatusBar style="light" />
-        <Stack.Navigator
-          initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
-          screenOptions={{
-            headerShown: false,
-            cardStyle: { backgroundColor: '#0B0E14' },
-          }}
-        >
-          {/* Auth Flow */}
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+    <SafeAreaProvider>
+      <View style={{ flex: 1 }}>
+        <NavigationContainer ref={navigationRef} linking={linking}>
+          <StatusBar style="light" />
+          <Stack.Navigator
+            initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
+            screenOptions={{
+              headerShown: false,
+              cardStyle: { backgroundColor: '#0B0E14' },
+            }}
+          >
+            {/* Auth Flow */}
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
 
-          {/* Main App */}
-          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            {/* Main App */}
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
 
-          {/* Global Modals (accessible from anywhere) */}
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-      <CustomAlertModal />
-    </View>
+            {/* Global Modals (accessible from anywhere) */}
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+        <CustomAlertModal />
+      </View>
+    </SafeAreaProvider>
   );
 }
 
@@ -607,7 +618,7 @@ const styles = StyleSheet.create({
   // ── Add Button ──
   addBtnContainer: {
     position: 'relative',
-    top: -16,
+    top: Platform.OS === 'ios' ? -16 : -18,
     alignItems: 'center',
     justifyContent: 'center',
   },

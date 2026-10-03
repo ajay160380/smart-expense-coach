@@ -549,27 +549,29 @@ export default function DashboardScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* ── TOP NAVBAR (Premium Fintech Branding) ── */}
-      <View style={styles.navbar}>
+      {/* ── TOP NAVBAR (Ultra-Premium Fintech Header) ── */}
+      <LinearGradient
+        colors={['#0D1321', '#0B0E14']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.navbar}
+      >
         <View style={styles.logoContainer}>
           <View style={styles.logoIconWrapper}>
             <Image
               source={require('../../assets/icon.png')}
               style={styles.logoIconImage}
+              resizeMode="cover"
             />
           </View>
           <View style={{ marginLeft: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.logoTextMain}>Paisa</Text>
-              <Text style={styles.logoTextAccent}>Mitra</Text>
-              <LinearGradient
-                colors={['#06B6D4', '#3B82F6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.logoProBadge}
-              >
-                <Text style={styles.logoProBadgeText}>AI</Text>
-              </LinearGradient>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+              <Text style={styles.logoTextMain}>Expense</Text>
+              <Text style={styles.logoTextAccent}>Tracker</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1.5 }}>
+              <View style={styles.logoStatusDot} />
+              <Text style={styles.logoSubText}>Smart Finance • AI</Text>
             </View>
           </View>
         </View>
@@ -609,7 +611,7 @@ export default function DashboardScreen({ navigation }) {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={{ flex: 1 }}
@@ -1715,18 +1717,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoIconWrapper: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     backgroundColor: '#1E293B',
-    shadowColor: '#06B6D4',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   logoIconImage: {
     width: '100%',
@@ -1744,18 +1746,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.3,
   },
-  logoProBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginLeft: 6,
-    overflow: 'hidden',
+  logoStatusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#10B981',
+    marginRight: 4,
   },
-  logoProBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.8,
+  logoSubText: {
+    color: '#64748B',
+    fontSize: 9.5,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   navRight: {
     flexDirection: 'row',
