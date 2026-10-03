@@ -561,29 +561,20 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* ── QUICK STATS ── */}
-        <View style={styles.miniStatsRow}>
-          <StatCard label="AVG / DAY" value={`₹${Math.round(avgDay).toLocaleString('en-IN')}`} />
-          <StatCard label="SAVINGS RATE" value={`${Math.round(savingsRate)}%`} color={savingsRate > 50 ? COLORS.green : COLORS.red} />
-          <StatCard label="DAYS LEFT" value={`${daysLeft}`} color={COLORS.cyan} />
-        </View>
-
-        {/* ── 1-TAP QUICK LOG SHORTCUTS ── */}
+        {/* ── 1-TAP QUICK LOG (Sleek Horizontal Chips) ── */}
         <View style={styles.quickSection}>
           <View style={styles.quickHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.quickSectionTitle}>⚡ 1-TAP QUICK LOG</Text>
-              <View style={styles.fastPill}>
-                <Text style={styles.fastPillText}>INSTANT</Text>
-              </View>
+              <Ionicons name="flash" size={13} color="#F59E0B" style={{ marginRight: 5 }} />
+              <Text style={styles.quickSectionTitle}>1-TAP LOG</Text>
             </View>
             <Text style={styles.quickSectionSub}>Frequent Daily Expenses</Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8, paddingVertical: 4 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8, paddingVertical: 2 }}>
             {QUICK_SHORTCUTS.map((item, i) => (
               <TouchableOpacity
                 key={i}
-                style={[styles.quickTile, { borderColor: item.color + '45' }]}
+                style={[styles.quickChip, { borderColor: item.color + '40' }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   navigation.navigate('AddExpense', {
@@ -592,49 +583,67 @@ export default function DashboardScreen({ navigation }) {
                     prefillDescription: item.label,
                   });
                 }}
-                activeOpacity={0.7}
+                activeOpacity={0.75}
               >
-                <LinearGradient
-                  colors={[item.color + '22', item.color + '0A']}
-                  style={styles.quickTileGrad}
-                >
-                  <Text style={{ fontSize: 22, marginBottom: 4 }}>{item.icon}</Text>
-                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800' }}>₹{item.amount}</Text>
-                  <Text style={{ color: COLORS.textMuted, fontSize: 10, marginTop: 2 }} numberOfLines={1}>{item.label}</Text>
-                </LinearGradient>
+                <Text style={{ fontSize: 16, marginRight: 6 }}>{item.icon}</Text>
+                <Text style={styles.quickChipAmount}>₹{item.amount}</Text>
+                <Text style={styles.quickChipLabel}>{item.label.split('/')[0].trim()}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* ── DAILY SAFE SPEND & HEALTH SCORE ── */}
+        {/* ── FINANCIAL PULSE (CONSOLIDATED HEALTH & SAFE SPEND CARD) ── */}
         <LinearGradient
-          colors={['#141E33', '#0C1322']}
-          style={styles.dailyBudgetCard}
+          colors={['#131B2E', '#0D1424']}
+          style={styles.financialPulseCard}
         >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Top Half: Safe Limit & Fin-Score */}
+          <View style={styles.pulseTopRow}>
             <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 11, color: '#94A3B8', fontWeight: '700', letterSpacing: 0.6 }}>🎯 TODAY'S SAFE LIMIT</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                 <View style={[styles.statusDot, { backgroundColor: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} />
+                <Text style={styles.pulseCardLabel}>TODAY'S SAFE LIMIT</Text>
               </View>
-              <Text style={{ fontSize: 24, fontWeight: '900', color: safeDailySpend > 0 ? '#10B981' : '#EF4444', marginTop: 3 }}>
-                ₹{safeDailySpend.toLocaleString('en-IN')}<Text style={{ fontSize: 13, color: '#94A3B8', fontWeight: '500' }}> / day</Text>
+              <Text style={[styles.pulseSafeAmount, { color: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]}>
+                ₹{safeDailySpend.toLocaleString('en-IN')}<Text style={styles.pulsePerDay}> / day</Text>
               </Text>
-              <Text style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
-                {spentToday > 0 ? `Spent today: ₹${spentToday.toLocaleString('en-IN')}` : 'No expenses logged today (Safe!)'}
+              <Text style={styles.pulseSubtext}>
+                {spentToday > 0 ? `Spent today: ₹${spentToday.toLocaleString('en-IN')}` : 'No expenses logged today • Safe!'}
               </Text>
             </View>
 
-            <View style={[styles.healthBadge, { borderColor: healthColor + '70' }]}>
-              <Text style={{ color: healthColor, fontSize: 18, fontWeight: '900' }}>{healthScore}</Text>
-              <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 }}>FIN-SCORE</Text>
-              <Text style={{ color: healthColor, fontSize: 9.5, fontWeight: '700', marginTop: 1 }} numberOfLines={1}>{healthLabel}</Text>
+            <View style={[styles.pulseHealthBadge, { borderColor: healthColor + '60' }]}>
+              <Text style={[styles.pulseHealthScore, { color: healthColor }]}>{healthScore}</Text>
+              <Text style={styles.pulseHealthSub}>FIN-SCORE</Text>
+              <Text style={[styles.pulseHealthTier, { color: healthColor }]} numberOfLines={1}>{healthLabel}</Text>
+            </View>
+          </View>
+
+          {/* Bottom Half: 3 Micro-Glance Metrics Strip */}
+          <View style={styles.pulseMetricsStrip}>
+            <View style={styles.pulseMetricItem}>
+              <Text style={styles.pulseMetricLabel}>DAILY AVG</Text>
+              <Text style={styles.pulseMetricVal}>₹{Math.round(avgDay).toLocaleString('en-IN')}</Text>
+            </View>
+            <View style={styles.pulseMetricDivider} />
+            <View style={styles.pulseMetricItem}>
+              <Text style={styles.pulseMetricLabel}>SAVINGS RATE</Text>
+              <Text style={[styles.pulseMetricVal, { color: savingsRate > 50 ? '#10B981' : '#EF4444' }]}>
+                {Math.round(savingsRate)}%
+              </Text>
+            </View>
+            <View style={styles.pulseMetricDivider} />
+            <View style={styles.pulseMetricItem}>
+              <Text style={styles.pulseMetricLabel}>VS LAST MO</Text>
+              <Text style={[styles.pulseMetricVal, { color: compMore ? '#EF4444' : '#10B981' }]}>
+                {compMore ? '↑' : '↓'} {Math.abs(Math.round(compDiff))}%
+              </Text>
             </View>
           </View>
         </LinearGradient>
 
-        {/* ── MAGIC SHAKE INTERACTIVE CARD ── */}
+        {/* ── MAGIC SHAKE INTERACTIVE CARD (if active) ── */}
         {shakeBannerVisible && (
           <TouchableOpacity
             onPress={() => {
@@ -642,23 +651,24 @@ export default function DashboardScreen({ navigation }) {
               navigation.navigate('AddExpense');
             }}
             activeOpacity={0.8}
+            style={{ marginVertical: 6 }}
           >
             <LinearGradient
               colors={['rgba(139, 92, 246, 0.22)', 'rgba(79, 70, 229, 0.08)']}
               style={styles.shakeBanner}
             >
               <View style={styles.shakeIconBox}>
-                <Text style={{ fontSize: 22 }}>📱</Text>
+                <Text style={{ fontSize: 20 }}>📱</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Magic Shake Feature</Text>
+                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Magic Shake</Text>
                   <View style={styles.livePill}>
                     <View style={styles.liveDot} />
                     <Text style={{ color: '#10B981', fontSize: 9, fontWeight: '800' }}>ACTIVE</Text>
                   </View>
                 </View>
-                <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }}>Shake your phone or tap here to add expense!</Text>
+                <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 1 }}>Shake phone to quick-log an expense!</Text>
               </View>
               <TouchableOpacity 
                 onPress={async (e) => {
@@ -669,48 +679,18 @@ export default function DashboardScreen({ navigation }) {
                 style={{ padding: 5 }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="close" size={20} color="#A78BFA" />
+                <Ionicons name="close" size={18} color="#A78BFA" />
               </TouchableOpacity>
             </LinearGradient>
           </TouchableOpacity>
         )}
 
-        {/* ── MONTHLY COMPARISON ── */}
-        {comparison && comparison.has_prev_data && (
-          <GlassCard style={styles.comparisonCard}>
-            <View style={styles.compRow}>
-              <View>
-                <Text style={styles.compLabel}>vs {comparison.prev_month_name}</Text>
-                <Text style={[styles.compValue, { color: compMore ? COLORS.red : COLORS.green }]}>
-                  {compMore ? '↑' : '↓'} {Math.abs(Math.round(compDiff))}% {compMore ? 'more' : 'less'}
-                </Text>
-              </View>
-              <View style={styles.compBars}>
-                <View style={styles.compBarItem}>
-                  <Text style={styles.compBarLabel}>Last</Text>
-                  <View style={[styles.compBar, { width: 60, backgroundColor: COLORS.textMuted }]} />
-                  <Text style={styles.compBarAmount}>₹{Math.round(comparison.prev_total || 0).toLocaleString('en-IN')}</Text>
-                </View>
-                <View style={styles.compBarItem}>
-                  <Text style={styles.compBarLabel}>This</Text>
-                  <View style={[styles.compBar, {
-                    width: Math.min(60 * (1 + compDiff / 100), 100),
-                    backgroundColor: compMore ? COLORS.red : COLORS.green,
-                  }]} />
-                  <Text style={styles.compBarAmount}>₹{Math.round(comparison.current_total || 0).toLocaleString('en-IN')}</Text>
-                </View>
-              </View>
-            </View>
-            <Text style={styles.compVerdict}>{comparison.verdict_msg}</Text>
-          </GlassCard>
-        )}
-
         {/* ── CATEGORY BREAKDOWN ── */}
         {recentExpenses.length > 0 && (
-          <>
+          <View style={{ marginTop: 10 }}>
             <SectionHeader title="Category Breakdown" actionText="Details →" onAction={() => navigation.navigate('Analytics')} />
-            <GlassCard>
-              {getCategoryBreakdown(recentExpenses).map((cat, idx) => (
+            <GlassCard style={{ paddingVertical: 4 }}>
+              {getCategoryBreakdown(recentExpenses).slice(0, 4).map((cat, idx) => (
                 <TouchableOpacity
                   key={idx}
                   style={styles.catRow}
@@ -730,92 +710,84 @@ export default function DashboardScreen({ navigation }) {
                 </TouchableOpacity>
               ))}
             </GlassCard>
-          </>
+          </View>
         )}
 
-        {/* ── TODAY'S MONEY TIP ── */}
-        {dailyTip && (
-          <LinearGradient
-            colors={['rgba(16, 185, 129, 0.14)', 'rgba(6, 78, 59, 0.18)']}
-            style={styles.tipCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.tipHeader}>
-              <View style={styles.tipBadge}>
-                <Ionicons name="bulb" size={13} color="#10B981" style={{ marginRight: 5 }} />
-                <Text style={styles.tipBadgeText}>TODAY'S MONEY TIP</Text>
-              </View>
-              <Text style={{ fontSize: 16 }}>🌱</Text>
-            </View>
-            <Text style={styles.tipBodyText}>{cleanTipText(dailyTip)}</Text>
-          </LinearGradient>
-        )}
-
-        {/* ── AI FINANCIAL COACH ── */}
+        {/* ── AI FINANCIAL COACH & DAILY MONEY TIP (CONSOLIDATED) ── */}
         <TouchableOpacity 
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             navigation.navigate('AIChat');
           }} 
           activeOpacity={0.85}
+          style={{ marginTop: 12 }}
         >
           <LinearGradient
             colors={['rgba(99, 102, 241, 0.18)', 'rgba(6, 182, 212, 0.08)']}
-            style={styles.aiCoachCard}
+            style={styles.aiUnifiedCard}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <View style={styles.aiCoachIconBox}>
-              <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.aiCoachIconGrad}>
-                <MaterialCommunityIcons name="robot" size={22} color="#fff" />
-              </LinearGradient>
-            </View>
-            <View style={styles.aiCoachContent}>
-              <View style={styles.aiCoachTagRow}>
-                <Text style={styles.aiCoachTag}>✨ AI COACH INSIGHT</Text>
-                <View style={styles.aiCoachActionPill}>
-                  <Text style={styles.aiCoachActionText}>Chat</Text>
-                  <Ionicons name="arrow-forward" size={11} color={COLORS.cyan} />
-                </View>
+            <View style={styles.aiUnifiedHeader}>
+              <View style={styles.aiUnifiedBadge}>
+                <Ionicons name="sparkles" size={12} color="#818CF8" style={{ marginRight: 5 }} />
+                <Text style={styles.aiUnifiedBadgeText}>AI COACH & DAILY TIP</Text>
               </View>
-              <Text style={styles.aiCoachMessage}>
-                {overspent
-                  ? `Budget exceeded! You've spent ₹${spent.toLocaleString('en-IN')} against ₹${budget.toLocaleString('en-IN')}. Tap to get AI advice 🚨`
-                  : `Great job! You used ${Math.round(usedPercent)}% of your budget — ₹${remaining.toLocaleString('en-IN')} remaining. Tap to chat! 🌟`}
-              </Text>
+              <View style={styles.aiUnifiedChatBtn}>
+                <Text style={styles.aiUnifiedChatText}>Chat with AI</Text>
+                <Ionicons name="arrow-forward" size={11} color={COLORS.cyan} />
+              </View>
             </View>
+            <Text style={styles.aiUnifiedBody}>
+              {cleanTipText(dailyTip) || (overspent
+                ? `Budget exceeded! You've spent ₹${spent.toLocaleString('en-IN')}. Tap to get advice.`
+                : `Great job! You used ${Math.round(usedPercent)}% of your budget. Tap to chat!`)}
+            </Text>
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* ── NOTEPAD CARD ── */}
-        <TouchableOpacity 
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('Notepad');
-          }} 
-          activeOpacity={0.85}
-        >
-          <LinearGradient
-            colors={['rgba(236, 72, 153, 0.12)', 'rgba(139, 92, 246, 0.08)']}
-            style={styles.notepadCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+        {/* ── QUICK TOOLS ROW (2-Column Bento: Notepad & Analytics) ── */}
+        <View style={styles.toolsBentoRow}>
+          <TouchableOpacity 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('Notepad');
+            }}
+            activeOpacity={0.8}
+            style={styles.toolBentoCard}
           >
-            <View style={styles.notepadIconBox}>
-              <MaterialCommunityIcons name="notebook-outline" size={22} color="#F472B6" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                <Text style={styles.notepadTitle}>PERSONAL NOTEPAD</Text>
-                <View style={styles.notepadPill}>
-                  <Text style={styles.notepadPillText}>Open Notes 📝</Text>
-                </View>
+            <LinearGradient
+              colors={['rgba(236, 72, 153, 0.12)', 'rgba(236, 72, 153, 0.04)']}
+              style={styles.toolBentoInner}
+            >
+              <View style={styles.toolBentoIconBoxPink}>
+                <MaterialCommunityIcons name="notebook-outline" size={20} color="#F472B6" />
               </View>
-              <Text style={styles.notepadSub}>Save grocery lists, quick memos & budgeting thoughts.</Text>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
+              <Text style={styles.toolBentoTitle}>Personal Notepad</Text>
+              <Text style={styles.toolBentoSub}>Lists, memos & thoughts</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('Analytics');
+            }}
+            activeOpacity={0.8}
+            style={styles.toolBentoCard}
+          >
+            <LinearGradient
+              colors={['rgba(6, 182, 212, 0.12)', 'rgba(6, 182, 212, 0.04)']}
+              style={styles.toolBentoInner}
+            >
+              <View style={styles.toolBentoIconBoxCyan}>
+                <Ionicons name="pie-chart-outline" size={20} color="#06B6D4" />
+              </View>
+              <Text style={styles.toolBentoTitle}>Analytics & Trends</Text>
+              <Text style={styles.toolBentoSub}>Monthly reports & graphs</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
         {/* ── RECENT EXPENSES ── */}
         <View style={styles.sectionHeader}>
@@ -1320,20 +1292,97 @@ const styles = StyleSheet.create({
   },
   statBoxValue: { color: '#fff', fontSize: 15, fontWeight: '800' },
 
-  // ── Mini Stats ──
-  miniStatsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-
-  // ── Comparison Card ──
-  comparisonCard: { marginBottom: 8 },
-  compRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  compLabel: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' },
-  compValue: { fontSize: 18, fontWeight: 'bold', marginTop: 4 },
-  compBars: { alignItems: 'flex-end' },
-  compBarItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  compBarLabel: { color: COLORS.textMuted, fontSize: 10, width: 30, marginRight: 6 },
-  compBar: { height: 8, borderRadius: 4 },
-  compBarAmount: { color: COLORS.textSecondary, fontSize: 10, marginLeft: 6 },
-  compVerdict: { color: COLORS.textSecondary, fontSize: 12, marginTop: 10, lineHeight: 18 },
+  // ── Financial Pulse Card ──
+  financialPulseCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 16,
+    marginVertical: 10,
+    ...SHADOW.md,
+  },
+  pulseTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 14,
+  },
+  pulseCardLabel: {
+    fontSize: 10.5,
+    color: '#94A3B8',
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    marginLeft: 6,
+  },
+  pulseSafeAmount: {
+    fontSize: 26,
+    fontWeight: '900',
+    marginTop: 2,
+    letterSpacing: -0.5,
+  },
+  pulsePerDay: {
+    fontSize: 13,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  pulseSubtext: {
+    fontSize: 11.5,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  pulseHealthBadge: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+  },
+  pulseHealthScore: {
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  pulseHealthSub: {
+    color: '#94A3B8',
+    fontSize: 8.5,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    marginTop: 1,
+  },
+  pulseHealthTier: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  pulseMetricsStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  pulseMetricItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  pulseMetricDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  pulseMetricLabel: {
+    color: '#64748B',
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  pulseMetricVal: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
 
   // ── Category Breakdown ──
   catRow: {
@@ -1353,140 +1402,99 @@ const styles = StyleSheet.create({
   catBarFill: { height: '100%', borderRadius: 2 },
   catAmount: { color: COLORS.textPrimary, fontSize: 14, fontWeight: 'bold' },
 
-  // ── AI Card ──
-  // ── Today's Money Tip ──
-  tipCard: {
-    padding: 16,
-    borderRadius: RADIUS.lg,
+  // ── AI Unified Card ──
+  aiUnifiedCard: {
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-    marginBottom: 12,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    padding: 16,
+    ...SHADOW.md,
   },
-  tipHeader: {
+  aiUnifiedHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  tipBadge: {
+  aiUnifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
   },
-  tipBadgeText: {
-    color: '#10B981',
+  aiUnifiedBadgeText: {
+    color: '#A5B4FC',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  tipBodyText: {
+  aiUnifiedChatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  aiUnifiedChatText: {
+    color: COLORS.cyan,
+    fontSize: 11,
+    fontWeight: '700',
+    marginRight: 4,
+  },
+  aiUnifiedBody: {
     color: '#E2E8F0',
     fontSize: 13,
-    fontWeight: '500',
     lineHeight: 19,
-  },
-
-  // ── AI Coach Card ──
-  aiCoachCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.35)',
-    marginBottom: 12,
-  },
-  aiCoachIconBox: {
-    marginRight: 12,
-  },
-  aiCoachIconGrad: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  aiCoachContent: {
-    flex: 1,
-  },
-  aiCoachTagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  aiCoachTag: {
-    color: '#818CF8',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  aiCoachActionPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-    gap: 2,
-  },
-  aiCoachActionText: {
-    color: COLORS.cyan,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  aiCoachMessage: {
-    color: '#F8FAFC',
-    fontSize: 12.5,
     fontWeight: '500',
-    lineHeight: 18,
   },
 
-  // ── Notepad Card ──
-  notepadCard: {
+  // ── Bento Tools Row ──
+  toolsBentoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(236, 72, 153, 0.25)',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginTop: 12,
   },
-  notepadIconBox: {
-    width: 40,
-    height: 40,
+  toolBentoCard: {
+    flex: 1,
+    marginHorizontal: 3,
+  },
+  toolBentoInner: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 14,
+  },
+  toolBentoIconBoxPink: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(236, 72, 153, 0.15)',
+    backgroundColor: 'rgba(236, 72, 153, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginBottom: 8,
   },
-  notepadTitle: {
-    color: '#F472B6',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.6,
+  toolBentoIconBoxCyan: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(6, 182, 212, 0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  notepadPill: {
-    backgroundColor: 'rgba(236, 72, 153, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  notepadPillText: {
-    color: '#F472B6',
-    fontSize: 10,
+  toolBentoTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: '700',
+    marginBottom: 2,
   },
-  notepadSub: {
-    color: '#94A3B8',
-    fontSize: 11.5,
-    marginTop: 2,
+  toolBentoSub: {
+    color: '#64748B',
+    fontSize: 10.5,
+    fontWeight: '500',
   },
 
   // ── Expense Item ──
@@ -1538,51 +1546,32 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontWeight: '500',
   },
-  quickTile: {
-    width: 104,
-    height: 82,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginRight: 10,
-    overflow: 'hidden',
-    backgroundColor: '#0F172A',
-  },
-  quickTileGrad: {
-    flex: 1,
-    padding: 10,
+  quickChip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // ── Daily Safe Limit Card ──
-  dailyBudgetCard: {
-    padding: 16,
-    borderRadius: RADIUS.lg,
-    marginTop: 10,
-    marginBottom: 6,
+    backgroundColor: '#131A2A',
+    borderRadius: 20,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    marginRight: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+  },
+  quickChipAmount: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    marginRight: 5,
+  },
+  quickChipLabel: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '600',
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     marginLeft: 6,
-  },
-  healthBadge: {
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 84,
   },
 
   // ── Magic Shake Card ──
