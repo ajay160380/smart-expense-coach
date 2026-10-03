@@ -1,8 +1,8 @@
 #!/bin/bash
 cd /Users/ajayvishwakarma/Desktop/expense_project/mobile_app
 
-echo "Starting EAS Build..."
-BUILD_JSON=$(npx eas-cli build -p android --profile preview --non-interactive --json)
+echo "Starting EAS Build (Production APK)..."
+BUILD_JSON=$(npx eas-cli build -p android --profile production --non-interactive --json)
 echo "Build complete. Output:"
 echo "$BUILD_JSON"
 
