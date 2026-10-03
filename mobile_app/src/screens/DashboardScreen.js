@@ -124,10 +124,13 @@ export default function DashboardScreen({ navigation }) {
         setRefreshing(true);
       }
 
+      const localHour = new Date().getHours();
+      const localType = (localHour >= 18 || localHour < 5) ? 'night' : 'morning';
+
       // ── 2. FETCH FRESH DATA IN BACKGROUND ──
       const [statsRes, tipRes, compRes, anomRes] = await Promise.allSettled([
         api.get('/summary-stats/'),
-        api.get('/daily-tip/'),
+        api.get(`/daily-tip/?type=${localType}&hour=${localHour}`),
         api.get('/monthly-comparison/'),
         api.get('/anomalies/'),
       ]);
@@ -298,7 +301,27 @@ export default function DashboardScreen({ navigation }) {
 
   const cleanTipText = (text) => {
     if (!text) return '';
-    return text.replace(/\*([^*]+)\*/g, '$1').replace(/\*/g, '').trim();
+    let cleaned = text.replace(/\*([^*]+)\*/g, '$1').replace(/\*/g, '').trim();
+
+    // Dynamically align greeting with device's current local hour (handles cached tips)
+    const hour = new Date().getHours();
+    const isNight = hour >= 21 || hour < 5;
+    const isEvening = hour >= 17 && hour < 21;
+    const isAfternoon = hour >= 12 && hour < 17;
+    const isMorning = hour >= 5 && hour < 12;
+
+    const currentGreeting = isMorning ? 'Good Morning' : isAfternoon ? 'Good Afternoon' : isEvening ? 'Good Evening' : 'Good Night';
+    const greetingEmoji = isNight ? '🌙' : isEvening ? '🌆' : isAfternoon ? '☀️' : '🌅';
+
+    cleaned = cleaned.replace(
+      /Good\s+(Morning|Afternoon|Evening|Night)(,\s*[^!.]+)?!?(?:\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{FE0F}]+)?/iu,
+      (match, p1, p2) => {
+        const namePart = p2 || '';
+        return `${currentGreeting}${namePart}! ${greetingEmoji}`;
+      }
+    );
+
+    return cleaned.trim();
   };
 
   return (

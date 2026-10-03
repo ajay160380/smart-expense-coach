@@ -3448,8 +3448,21 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
 @api_login_required
 def api_daily_tip(request: HttpRequest) -> JsonResponse:
     """Get today's personalized money tip (morning or night based on time)."""
-    now = timezone.localtime(timezone.now())
-    tip_type = "night" if now.hour >= 18 else "morning"
+    client_type = request.GET.get('type')
+    client_hour = request.GET.get('hour')
+    
+    if client_type in ['morning', 'night']:
+        tip_type = client_type
+    elif client_hour is not None:
+        try:
+            h = int(client_hour)
+            tip_type = "night" if (h >= 18 or h < 5) else "morning"
+        except ValueError:
+            now = timezone.localtime(timezone.now())
+            tip_type = "night" if (now.hour >= 18 or now.hour < 5) else "morning"
+    else:
+        now = timezone.localtime(timezone.now())
+        tip_type = "night" if (now.hour >= 18 or now.hour < 5) else "morning"
 
     ck = f"daily_tip_{tip_type}_{request.user.id}_{date.today().isoformat()}"
     cached = cache.get(ck)
