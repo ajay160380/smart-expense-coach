@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  ScrollView,
   Alert as RNAlert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';

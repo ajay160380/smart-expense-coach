@@ -549,7 +549,7 @@ export default function DashboardScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* ── TOP NAVBAR (Luxury Glass & Cohesive Branding) ── */}
+      {/* ── TOP NAVBAR (Premium Fintech Branding) ── */}
       <View style={styles.navbar}>
         <View style={styles.logoContainer}>
           <View style={styles.logoIconWrapper}>
@@ -558,13 +558,18 @@ export default function DashboardScreen({ navigation }) {
               style={styles.logoIconImage}
             />
           </View>
-          <View style={{ marginLeft: 9 }}>
+          <View style={{ marginLeft: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.logoTextMain}>Expense</Text>
-              <Text style={styles.logoTextAccent}>Tracker</Text>
-              <View style={styles.logoProBadge}>
+              <Text style={styles.logoTextMain}>Paisa</Text>
+              <Text style={styles.logoTextAccent}>Mitra</Text>
+              <LinearGradient
+                colors={['#06B6D4', '#3B82F6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.logoProBadge}
+              >
                 <Text style={styles.logoProBadgeText}>AI</Text>
-              </View>
+              </LinearGradient>
             </View>
           </View>
         </View>
@@ -578,7 +583,7 @@ export default function DashboardScreen({ navigation }) {
             style={styles.navIconBtn}
             activeOpacity={0.7}
           >
-            <Ionicons name="notifications-outline" size={19} color="#CBD5E1" />
+            <Ionicons name="notifications-outline" size={18} color="#CBD5E1" />
             {anomalies.length > 0 && <View style={styles.notifDot} />}
           </TouchableOpacity>
 
@@ -1700,26 +1705,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     backgroundColor: '#0B0E14',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   logoIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
     backgroundColor: '#1E293B',
     shadowColor: '#06B6D4',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 4,
   },
@@ -1729,30 +1734,28 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 17.5,
     fontWeight: '800',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   logoTextAccent: {
     color: '#06B6D4',
-    fontSize: 18,
+    fontSize: 17.5,
     fontWeight: '800',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   logoProBadge: {
-    backgroundColor: 'rgba(6, 182, 212, 0.14)',
-    paddingHorizontal: 5,
-    paddingVertical: 1.5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 6,
-    marginLeft: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.3)',
+    marginLeft: 6,
+    overflow: 'hidden',
   },
   logoProBadgeText: {
-    color: '#06B6D4',
-    fontSize: 9.5,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
   navRight: {
     flexDirection: 'row',
@@ -1760,12 +1763,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   navIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -1785,9 +1788,9 @@ const styles = StyleSheet.create({
     borderRadius: 19,
   },
   avatarGradientRing: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     padding: 1.8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1812,7 +1815,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  scrollContent: { padding: 16, flexGrow: 1 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 16, flexGrow: 1 },
 
   // ── Greeting & Date Pill (Compact & Elegant) ──
   greetingSection: {

@@ -201,6 +201,13 @@ async function startBot(sessionName = null) {
 
         console.log(`📩 Received message from ${phone} (${pushName}): ${text}`);
 
+        // ── Send Blue Tick (Read Receipt) ──
+        try {
+            await sock.readMessages([msg.key]);
+        } catch (e) {
+            console.warn('⚠️ Could not send read receipt:', e.message);
+        }
+
         const lowerBody = text.toLowerCase();
 
         const isAllowedAdmin = allowedAdmins.some(admin => remoteJid.startsWith(admin.split('@')[0]));
