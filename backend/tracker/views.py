@@ -2121,7 +2121,30 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 total_logged += amount
 
             if not created_expenses:
-                return JsonResponse({"status": "error", "message": "Could not understand the amounts."})
+                # Try fallback: look for any digit in spoken_text or normalized_text
+                digits = re.findall(r'\b\d+(?:\.\d+)?\b', normalized_text or spoken_text)
+                if digits:
+                    try:
+                        fallback_amt = Decimal(digits[0])
+                        if fallback_amt > 0:
+                            cat = _keyword_category_fallback(spoken_text)
+                            exp = Expense.objects.create(
+                                user=target_user,
+                                amount=fallback_amt,
+                                category=cat,
+                                date=today,
+                                description=spoken_text[:100],
+                            )
+                            created_expenses.append(exp)
+                            total_logged += fallback_amt
+                    except Exception:
+                        pass
+
+            if not created_expenses:
+                return JsonResponse({
+                    "status": "error", 
+                    "message": "Amount samajh nahi aaya! Kripya amount ke saath bolein (Jaise: '500 petrol' ya '200 chai'). 🎙️"
+                })
 
             new_spent = float(spent) + float(total_logged)
             new_rem = max(0, budget - new_spent)

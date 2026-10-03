@@ -1,20 +1,16 @@
 
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, UIManager } from 'react-native';
+import { 
+  View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, 
+  KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, 
+  Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, 
+  SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, 
+  UIManager, StatusBar as RNStatusBar 
+} from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-
-
-
-
-
-
-
-
-
-
 
 import { COLORS, RADIUS } from '../utils/theme';
 import { getNotifications, clearNotifications } from '../utils/notifications';
@@ -56,11 +52,11 @@ export default function NotificationsScreen({ navigation }) {
       <StatusBar style="light" />
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity onPress={handleClear} style={styles.clearBtn}>
+        <TouchableOpacity onPress={handleClear} style={styles.clearBtn} activeOpacity={0.7}>
           <Text style={styles.clearText}>Clear</Text>
         </TouchableOpacity>
       </View>
@@ -92,21 +88,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderLight,
   },
   backBtn: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.07)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -114,6 +111,19 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  clearBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(168, 136, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(168, 136, 255, 0.25)',
+  },
+  clearText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,

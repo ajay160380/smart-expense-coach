@@ -11,7 +11,7 @@ import {
   KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, 
   Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, 
   SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, 
-  UIManager, PanResponder 
+  UIManager, PanResponder, StatusBar as RNStatusBar 
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -107,7 +107,7 @@ export default function VoiceExpenseScreen({ navigation }) {
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);
       } else {
-        Alert.alert('Error', data.error || data.message || 'Failed to categorize expense.');
+        Alert.alert('Notice', data.error || data.message || 'Please speak your expense with the amount (e.g. 500 petrol).');
       }
     } catch (error) {
       console.error('Upload Error:', error);
@@ -181,7 +181,11 @@ export default function VoiceExpenseScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg, paddingTop: Platform.OS === 'android' ? 30 : 0 },
+  container: { 
+    flex: 1, 
+    backgroundColor: COLORS.bg, 
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0 
+  },
 
   header: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12,
