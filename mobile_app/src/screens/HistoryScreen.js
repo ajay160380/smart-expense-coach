@@ -26,8 +26,23 @@ import { COLORS, CAT_COLORS, CAT_ICONS, getFallbackIcon } from '../utils/theme';
 
 export default function HistoryScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const categories = [
+    { key: 'all', label: 'All' },
+    { key: 'food', label: 'Food' },
+    { key: 'transport', label: 'Transport' },
+    { key: 'shopping', label: 'Shopping' },
+    { key: 'health', label: 'Health' },
+    { key: 'entertainment', label: 'Entertainment' },
+    { key: 'education', label: 'Education' },
+    { key: 'utilities', label: 'Utilities' },
+    { key: 'other', label: 'Other' },
+  ];
 
   const fetchHistory = useCallback(async () => {
     const month = currentDate.getMonth() + 1;
@@ -61,6 +76,12 @@ export default function HistoryScreen({ navigation }) {
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchHistory();
+    setRefreshing(false);
+  };
 
   const changeMonth = (offset) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -110,6 +131,24 @@ export default function HistoryScreen({ navigation }) {
     }
   };
 
+  const filteredTransactions = useMemo(() => {
+    if (!data?.transactions) return [];
+    return data.transactions.filter(exp => {
+      const matchesCategory = selectedCategory === 'all' || (exp.category || '').toLowerCase() === selectedCategory.toLowerCase();
+      const query = searchQuery.trim().toLowerCase();
+      const matchesSearch = !query || 
+        (exp.description && exp.description.toLowerCase().includes(query)) ||
+        (exp.category && exp.category.toLowerCase().includes(query));
+      return matchesCategory && matchesSearch;
+    });
+  }, [data?.transactions, selectedCategory, searchQuery]);
+
+  const filteredTotal = useMemo(() => {
+    return filteredTransactions.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
+  }, [filteredTransactions]);
+
+  const isFiltering = selectedCategory !== 'all' || searchQuery.trim().length > 0;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -150,18 +189,82 @@ export default function HistoryScreen({ navigation }) {
         </View>
       )}
 
+      {/* Search Bar */}
+      <View style={styles.searchWrapper}>
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={18} color={COLORS.textSecondary} style={{ marginRight: 8 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search notes, merchants, categories..."
+            placeholderTextColor={COLORS.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Category Filter Chips */}
+      <View style={styles.filterRowWrapper}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+          {categories.map((c) => {
+            const isSelected = selectedCategory === c.key;
+            return (
+              <TouchableOpacity
+                key={c.key}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSelectedCategory(c.key);
+                }}
+                style={[
+                  styles.filterChip,
+                  isSelected && styles.filterChipActive
+                ]}
+              >
+                <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                  {c.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Filter Stats Bar */}
+      {isFiltering && (
+        <View style={styles.filterStatsBar}>
+          <Text style={styles.filterStatsText}>
+            Showing {filteredTransactions.length} transaction{filteredTransactions.length === 1 ? '' : 's'}
+          </Text>
+          <Text style={styles.filterStatsTotal}>
+            Total: ₹{Math.round(filteredTotal).toLocaleString('en-IN')}
+          </Text>
+        </View>
+      )}
+
       {/* Transactions List */}
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} colors={[COLORS.cyan]} />
+        }
+      >
         {loading ? (
           <ActivityIndicator color={COLORS.cyan} size="large" style={{ marginTop: 50 }} />
         ) : (
           <>
-            {data?.transactions?.length > 0 ? (
+            {filteredTransactions.length > 0 ? (
               <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
-                {data.transactions.map((exp, idx) => (
+                {filteredTransactions.map((exp, idx) => (
                   <TouchableOpacity 
                     key={exp.id || idx} 
-                    style={[styles.expenseItem, idx < data.transactions.length - 1 && styles.expenseBorder]}
+                    style={[styles.expenseItem, idx < filteredTransactions.length - 1 && styles.expenseBorder]}
                     onPress={() => navigation.navigate('AddExpense', { expense: exp })}
                   >
                     <View style={[styles.expIcon, { backgroundColor: (CAT_COLORS[exp.category] || '#888') + '22' }]}>
@@ -179,6 +282,12 @@ export default function HistoryScreen({ navigation }) {
                   </TouchableOpacity>
                 ))}
               </GlassCard>
+            ) : isFiltering ? (
+              <EmptyState
+                icon="🔍"
+                title="No matching transactions"
+                message="Try adjusting your search query or selecting a different category filter."
+              />
             ) : (
               <EmptyState
                 icon="📅"
@@ -243,6 +352,75 @@ const styles = StyleSheet.create({
   },
   summaryAmount: {
     color: COLORS.red, fontSize: 24, fontWeight: 'bold',
+  },
+  searchWrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 42,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  filterRowWrapper: {
+    paddingVertical: 8,
+  },
+  filterScroll: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  filterChipActive: {
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    borderColor: COLORS.cyan,
+  },
+  filterChipText: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: COLORS.cyan,
+    fontWeight: '700',
+  },
+  filterStatsBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(6, 182, 212, 0.05)',
+    marginHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  filterStatsText: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+  },
+  filterStatsTotal: {
+    color: COLORS.cyan,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   scrollContent: {
     padding: 16,
