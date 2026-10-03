@@ -18,7 +18,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Logo from './src/components/Logo';
+import CustomAlertModal, { installGlobalAlert } from './src/components/CustomAlertModal';
 import * as Updates from 'expo-updates';
+
+installGlobalAlert();
 import { Accelerometer } from 'expo-sensors';
 import { setUnauthorizedHandler, BASE_URL } from './src/api/config';
 import { getToken } from './src/utils/auth';
@@ -525,28 +528,31 @@ export default function App() {
   };
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
-      <StatusBar style="light" />
-      <Stack.Navigator
-        initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
-        screenOptions={{
-          headerShown: false,
-          cardStyle: { backgroundColor: '#0B0E14' },
-        }}
-      >
-        {/* Auth Flow */}
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+    <View style={{ flex: 1 }}>
+      <NavigationContainer ref={navigationRef} linking={linking}>
+        <StatusBar style="light" />
+        <Stack.Navigator
+          initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
+          screenOptions={{
+            headerShown: false,
+            cardStyle: { backgroundColor: '#0B0E14' },
+          }}
+        >
+          {/* Auth Flow */}
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
 
-        {/* Main App */}
-        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+          {/* Main App */}
+          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
 
-        {/* Global Modals (accessible from anywhere) */}
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+          {/* Global Modals (accessible from anywhere) */}
+          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <CustomAlertModal />
+    </View>
   );
 }
 
