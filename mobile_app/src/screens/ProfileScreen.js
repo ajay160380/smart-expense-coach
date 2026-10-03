@@ -254,14 +254,21 @@ export default function ProfileScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* ── Top Navigation Bar ── */}
+      {/* ── Top Navigation Bar (Clean & Seamless) ── */}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBackBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Profile</Text>
+        <View style={styles.topBarLeft}>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()} 
+            style={styles.topBackBtn} 
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={19} color="#CBD5E1" />
+          </TouchableOpacity>
+          <Text style={styles.topBarTitle}>Profile</Text>
+        </View>
         <TouchableOpacity onPress={openEditProfile} style={styles.topEditBtn} activeOpacity={0.7}>
-          <Ionicons name="create-outline" size={19} color={COLORS.primary} />
+          <Ionicons name="create-outline" size={18} color="#06B6D4" />
+          <Text style={styles.topEditText}>Edit</Text>
         </TouchableOpacity>
       </View>
 
@@ -270,15 +277,20 @@ export default function ProfileScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Profile Header ── */}
-        <LinearGradient colors={['#2E0854', '#1A0E38', '#0B0E14']} style={styles.profileHeader}>
+        {/* ── Profile Header Hero ── */}
+        <LinearGradient 
+          colors={['#131B2E', '#0D1424', '#0B0E14']} 
+          style={styles.profileHeader}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
           {/* Subtle Ambient Glow Orb */}
           <View style={styles.headerGlowCircle} />
 
-          {/* ── Avatar Initial DP (First Letter DP, No Photo Picker) ── */}
+          {/* ── Avatar Initial DP with Verified Shield ── */}
           <View style={styles.avatarGlowWrapper}>
             <LinearGradient
-              colors={['#A888FF', '#EC4899', '#06B6D4']}
+              colors={['#6366F1', '#EC4899', '#06B6D4']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.avatarOuterRing}
@@ -290,6 +302,9 @@ export default function ProfileScreen({ navigation }) {
                 <Text style={styles.avatarLetterText}>{initialLetter}</Text>
               </LinearGradient>
             </LinearGradient>
+            <View style={styles.avatarBadge}>
+              <Ionicons name="shield-checkmark" size={13} color="#10B981" />
+            </View>
           </View>
 
           <Text style={styles.profileName}>{fullName}</Text>
@@ -299,140 +314,199 @@ export default function ProfileScreen({ navigation }) {
 
           <View style={styles.profileMetaRow}>
             <View style={styles.metaBadge}>
-              <Ionicons name="calendar-outline" size={13} color="#94A3B8" style={{ marginRight: 5 }} />
+              <Ionicons name="calendar-outline" size={12} color="#94A3B8" style={{ marginRight: 5 }} />
               <Text style={styles.metaBadgeText}>Since {joined || '2026'}</Text>
             </View>
             <View style={styles.streakBadge}>
-              <Text style={styles.streakBadgeText}>🌟 {memberDays} Days Active</Text>
+              <Ionicons name="flame" size={13} color="#F59E0B" style={{ marginRight: 4 }} />
+              <Text style={styles.streakBadgeText}>{memberDays} Days Active</Text>
             </View>
           </View>
         </LinearGradient>
 
-        {/* ── Lifetime Stats ── */}
-        <View style={{ marginTop: -25, paddingHorizontal: 16 }}>
-          <GlassCard style={styles.lifetimeCard}>
+        {/* ── Lifetime Stats Bento Grid ── */}
+        <View style={{ marginTop: -20, paddingHorizontal: 16 }}>
+          <View style={styles.lifetimeCard}>
             <View style={styles.statsHeaderRow}>
               <View style={styles.statsHeaderLeft}>
-                <Ionicons name="stats-chart" size={15} color="#06B6D4" style={{ marginRight: 6 }} />
+                <Ionicons name="stats-chart" size={14} color="#06B6D4" style={{ marginRight: 6 }} />
                 <Text style={styles.statsCardTitle}>LIFETIME METRICS</Text>
               </View>
               <View style={styles.verifiedBadge}>
-                <Ionicons name="shield-checkmark" size={12} color="#10B981" style={{ marginRight: 4 }} />
-                <Text style={styles.verifiedText}>Verified</Text>
+                <Ionicons name="sparkles" size={11} color="#10B981" style={{ marginRight: 4 }} />
+                <Text style={styles.verifiedText}>Live Sync</Text>
               </View>
             </View>
 
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
-                <LinearGradient colors={['rgba(239, 68, 68, 0.18)', 'rgba(239, 68, 68, 0.05)']} style={styles.statIconBox}>
-                  <Text style={styles.statEmoji}>💸</Text>
-                </LinearGradient>
+                <View style={[styles.statIconBox, { backgroundColor: 'rgba(244, 63, 94, 0.12)', borderColor: 'rgba(244, 63, 94, 0.25)' }]}>
+                  <Ionicons name="wallet-outline" size={18} color="#F43F5E" />
+                </View>
                 <Text style={styles.statValue}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
-                <Text style={styles.statLabel}>TOTAL SPENT</Text>
+                <Text style={styles.statLabel}>LIFETIME SPENT</Text>
               </View>
 
               <View style={styles.statItem}>
-                <LinearGradient colors={['rgba(99, 102, 241, 0.18)', 'rgba(99, 102, 241, 0.05)']} style={styles.statIconBox}>
-                  <Text style={styles.statEmoji}>📝</Text>
-                </LinearGradient>
+                <View style={[styles.statIconBox, { backgroundColor: 'rgba(129, 140, 248, 0.12)', borderColor: 'rgba(129, 140, 248, 0.25)' }]}>
+                  <Ionicons name="receipt-outline" size={18} color="#818CF8" />
+                </View>
                 <Text style={styles.statValue}>{totalTxns}</Text>
                 <Text style={styles.statLabel}>TRANSACTIONS</Text>
               </View>
 
               <View style={styles.statItem}>
-                <LinearGradient colors={['rgba(245, 158, 11, 0.18)', 'rgba(245, 158, 11, 0.05)']} style={styles.statIconBox}>
-                  <Text style={styles.statEmoji}>💰</Text>
-                </LinearGradient>
+                <View style={[styles.statIconBox, { backgroundColor: 'rgba(6, 182, 212, 0.12)', borderColor: 'rgba(6, 182, 212, 0.25)' }]}>
+                  <Ionicons name="pie-chart-outline" size={18} color="#06B6D4" />
+                </View>
                 <Text style={styles.statValue}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
                 <Text style={styles.statLabel}>MONTHLY BUDGET</Text>
               </View>
 
               <View style={styles.statItem}>
-                <LinearGradient colors={['rgba(16, 185, 129, 0.18)', 'rgba(16, 185, 129, 0.05)']} style={styles.statIconBox}>
-                  <Text style={styles.statEmoji}>📅</Text>
-                </LinearGradient>
+                <View style={[styles.statIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.12)', borderColor: 'rgba(245, 158, 11, 0.25)' }]}>
+                  <Ionicons name="flame-outline" size={18} color="#F59E0B" />
+                </View>
                 <Text style={styles.statValue}>{memberDays}</Text>
                 <Text style={styles.statLabel}>DAYS ACTIVE</Text>
               </View>
             </View>
-          </GlassCard>
+          </View>
         </View>
 
-        {/* ── Menu Section ── */}
-        <SectionHeader title="⚡ Quick Actions (Auto-Updated!)" />
-        <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+        {/* ── WORKSPACE & TOOLS ── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Text style={styles.sectionHeaderTitle}>WORKSPACE & TOOLS</Text>
+        </View>
+        <View style={styles.menuGroupCard}>
           <MenuItem
-            icon="✏️"
             ionIcon="person-outline"
+            iconColor="#06B6D4"
             label="Edit Profile"
-            sub="Change your name and username"
+            sub="Update name and username"
             onPress={openEditProfile}
           />
           <MenuItem
-            icon="📱"
-            ionIcon="chatbubble-ellipses-outline"
+            ionIcon="sparkles-outline"
+            iconColor="#818CF8"
             label="AI Financial Coach"
             sub="Chat with ExpenseTracker AI"
             onPress={() => navigation.navigate('AIChat')}
           />
           <MenuItem
-            icon="📝"
             ionIcon="document-text-outline"
-            label="Notepad"
-            sub="Save lists & notes easily"
+            iconColor="#F472B6"
+            label="Personal Notepad"
+            sub="Save lists, memos & thoughts"
             onPress={() => navigation.navigate('Notepad')}
           />
           <MenuItem
-            icon="📊"
-            ionIcon="analytics-outline"
-            label="Analytics"
+            ionIcon="bar-chart-outline"
+            iconColor="#10B981"
+            label="Analytics & Trends"
             sub="Detailed spending analysis"
             onPress={() => navigation.navigate('Analytics')}
           />
           <MenuItem
-            icon="🎯"
-            ionIcon="flag-outline"
+            ionIcon="trophy-outline"
+            iconColor="#F59E0B"
             label="Savings Goals"
-            sub="Track your financial goals"
+            sub="Track milestone targets & progress"
             onPress={() => navigation.navigate('SavingsGoals')}
           />
           <MenuItem
-            icon="📱"
             ionIcon="people-outline"
+            iconColor="#A78BFA"
             label="Expense Split"
             sub="Split bills with friends"
             onPress={() => navigation.navigate('ExpenseSplit')}
           />
           <MenuItem
-            icon="📅"
-            ionIcon="calendar-outline"
+            ionIcon="repeat-outline"
+            iconColor="#38BDF8"
             label="Subscriptions"
             sub="Track recurring payments"
             onPress={() => navigation.navigate('Subscriptions')}
           />
           <MenuItem
-            icon="🎤"
             ionIcon="mic-outline"
+            iconColor="#FB7185"
             label="Voice Expense"
             sub="Add expense via text/voice"
             onPress={() => navigation.navigate('VoiceExpense')}
+            isLast
           />
-        </GlassCard>
+        </View>
 
-        <SectionHeader title="💬 Support" />
-        <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+        {/* ── PREFERENCES & SECURITY ── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Text style={styles.sectionHeaderTitle}>PREFERENCES & SECURITY</Text>
+        </View>
+        <View style={styles.menuGroupCard}>
           <MenuItem
-            icon="📝"
-            ionIcon="chatbox-ellipses-outline"
-            label="Submit Feedback"
-            sub="Tell us how we can improve"
-            onPress={() => setFeedbackVisible(true)}
+            ionIcon={biometricEnabled ? "shield-checkmark" : "shield-outline"}
+            iconColor="#10B981"
+            label="App Lock (Biometric)"
+            sub={biometricEnabled ? "Biometric security is active" : "Protect app with fingerprint/PIN"}
+            badge={biometricEnabled ? "Enabled" : "Off"}
+            badgeColor={biometricEnabled ? "#10B981" : "#64748B"}
+            onPress={toggleBiometric}
           />
           <MenuItem
-            icon="🔄"
-            ionIcon="sync-outline"
+            ionIcon="phone-portrait-outline"
+            iconColor="#F59E0B"
+            label="Shake Sensitivity"
+            sub={`Magic Shake: ${getShakeText(shakeLevel)}`}
+            badge={getShakeText(shakeLevel).split(' ')[0]}
+            badgeColor="#F59E0B"
+            onPress={toggleShake}
+          />
+          <MenuItem
+            ionIcon="notifications-outline"
+            iconColor="#38BDF8"
+            label="Enable Notifications"
+            sub="Turn on push alerts & reminders"
+            onPress={async () => {
+              try {
+                if (Platform.OS === 'android' && Platform.Version >= 33) {
+                  await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+                }
+                const authStatus = await messaging().requestPermission();
+                if (authStatus === messaging.AuthorizationStatus.AUTHORIZED || authStatus === messaging.AuthorizationStatus.PROVISIONAL) {
+                  await messaging().subscribeToTopic('all_users');
+                  Alert.alert("Success", "Push notifications enabled! 🔔");
+                } else {
+                  Alert.alert("Notice", "Notification permission was denied.");
+                }
+              } catch (e) {
+                console.error(e);
+                Alert.alert("Error", "Could not enable notifications.");
+              }
+            }}
+          />
+          {Platform.OS === 'android' && (
+            <MenuItem
+              ionIcon="grid-outline"
+              iconColor="#A855F7"
+              label="Add Home Screen Widget"
+              sub="Quickly add expenses from home screen"
+              onPress={async () => {
+                try {
+                  await requestPinAppWidget('AddExpenseWidget');
+                } catch (e) {
+                  console.log('Error pinning widget:', e);
+                  Alert.alert('Notice', 'Your launcher might not support pinning widgets automatically.');
+                }
+              }}
+            />
+          )}
+          <MenuItem
+            ionIcon="cloud-download-outline"
+            iconColor="#06B6D4"
             label="Check for Updates"
             sub="Update to the latest version"
+            badge="v1.3.0"
+            badgeColor="#06B6D4"
             onPress={async () => {
               try {
                 const Updates = require('expo-updates');
@@ -447,71 +521,28 @@ export default function ProfileScreen({ navigation }) {
                   Alert.alert("No Update Available", "Your app is up to date.");
                 }
               } catch (error) {
-                // Fallback for local builds that don't support manual OTA checks
                 Alert.alert("No Update Available", "Your app is up to date.");
               }
             }}
           />
           <MenuItem
-            icon="🔔"
-            ionIcon="notifications-outline"
-            label="Enable Notifications"
-            sub="Turn on push notifications"
-            onPress={async () => {
-              try {
-                if (Platform.OS === 'android' && Platform.Version >= 33) {
-                  await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-                }
-                const authStatus = await messaging().requestPermission();
-                if (authStatus === messaging.AuthorizationStatus.AUTHORIZED || authStatus === messaging.AuthorizationStatus.PROVISIONAL) {
-                  await messaging().subscribeToTopic('all_users');
-                  Alert.alert("Success", "Push notifications enabled!");
-                } else {
-                  Alert.alert("Notice", "Notification permission was denied.");
-                }
-              } catch (e) {
-                console.error(e);
-                Alert.alert("Error", "Could not enable notifications.");
-              }
-            }}
+            ionIcon="chatbubble-ellipses-outline"
+            iconColor="#EC4899"
+            label="Submit Feedback"
+            sub="Tell us how we can improve"
+            onPress={() => setFeedbackVisible(true)}
+            isLast
           />
-          {Platform.OS === 'android' && (
-            <MenuItem
-              icon="📱"
-              ionIcon="apps-outline"
-              label="Add Home Screen Widget"
-              sub="Quickly add expenses from home screen"
-              onPress={async () => {
-                try {
-                  await requestPinAppWidget('AddExpenseWidget');
-                } catch (e) {
-                  console.log('Error pinning widget:', e);
-                  Alert.alert('Notice', 'Your launcher might not support pinning widgets automatically.');
-                }
-              }}
-            />
-          )}
-          <MenuItem
-            icon="📳"
-            ionIcon="options-outline"
-            label="Shake Sensitivity"
-            sub={`Current: ${getShakeText(shakeLevel)}`}
-            onPress={toggleShake}
-          />
-          <MenuItem
-            icon="🔒"
-            ionIcon={biometricEnabled ? "lock-closed" : "lock-open-outline"}
-            label="App Lock (Biometric)"
-            sub={biometricEnabled ? "Enabled" : "Disabled"}
-            onPress={toggleBiometric}
-          />
-        </GlassCard>
+        </View>
 
-        {/* ── App Info ── */}
-        <SectionHeader title="ℹ️ About" />
-        <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+        {/* ── ABOUT & SYSTEM ── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Text style={styles.sectionHeaderTitle}>ABOUT & SYSTEM</Text>
+        </View>
+        <View style={styles.menuGroupCard}>
           <MenuItem
             ionIcon="globe-outline"
+            iconColor="#3B82F6"
             label="Web Dashboard"
             sub="smart-expense-coach.onrender.com"
             onPress={() => openLink('https://smart-expense-coach.onrender.com')}
@@ -519,6 +550,7 @@ export default function ProfileScreen({ navigation }) {
           />
           <MenuItem
             ionIcon="logo-github"
+            iconColor="#94A3B8"
             label="GitHub"
             sub="github.com/ajay160380"
             onPress={() => openLink('https://github.com/ajay160380')}
@@ -526,35 +558,40 @@ export default function ProfileScreen({ navigation }) {
           />
           <MenuItem
             ionIcon="information-circle-outline"
+            iconColor="#64748B"
             label="App Version"
             sub={`v1.3.0 • Channel: ${Updates.channel || 'production'} — Built with ❤️ by Ajay`}
+            isLast
           />
-        </GlassCard>
+        </View>
 
-        {/* ── Admin Panel ── */}
+        {/* ── ADMIN PANEL ── */}
         {profile?.username === 'ajay' && (
           <>
-            <SectionHeader title="👑 Admin" />
-            <GlassCard style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
+            <View style={styles.sectionHeaderWrap}>
+              <Text style={styles.sectionHeaderTitle}>ADMIN CONSOLE</Text>
+            </View>
+            <View style={styles.menuGroupCard}>
               <MenuItem
-                icon="🛡️"
                 ionIcon="shield-checkmark-outline"
+                iconColor="#EAB308"
                 label="Admin Panel"
                 sub="Manage users natively"
                 onPress={() => navigation.navigate('AdminPanel')}
                 showArrow
+                isLast
               />
-            </GlassCard>
+            </View>
           </>
         )}
 
-        {/* ── Logout ── */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color={COLORS.red} />
-          <Text style={styles.logoutText}>Logout</Text>
+        {/* ── Logout Button ── */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
+          <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 110 }} />
       </ScrollView>
 
       {/* ── Feedback Modal ── */}
@@ -645,31 +682,46 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-function MenuItem({ icon, ionIcon, label, sub, onPress, showArrow }) {
+function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast }) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
-      <View style={styles.menuIconBox}>
-        {ionIcon ? (
-          <Ionicons name={ionIcon} size={20} color={COLORS.primary} />
-        ) : (
-          <Text style={{ fontSize: 18 }}>{icon}</Text>
+    <>
+      <TouchableOpacity 
+        style={styles.menuItem} 
+        onPress={onPress} 
+        activeOpacity={onPress ? 0.7 : 1}
+      >
+        <View style={[styles.menuIconBox, { backgroundColor: iconColor + '18', borderColor: iconColor + '30' }]}>
+          {ionIcon ? (
+            <Ionicons name={ionIcon} size={19} color={iconColor} />
+          ) : (
+            <Text style={{ fontSize: 18 }}>{icon}</Text>
+          )}
+        </View>
+
+        <View style={{ flex: 1, paddingRight: 8 }}>
+          <Text style={styles.menuLabel}>{label}</Text>
+          {Boolean(sub) && <Text style={styles.menuSub} numberOfLines={1}>{sub}</Text>}
+        </View>
+
+        {Boolean(badge) && (
+          <View style={[styles.menuBadge, { backgroundColor: badgeColor + '18', borderColor: badgeColor + '35' }]}>
+            <Text style={[styles.menuBadgeText, { color: badgeColor }]}>{badge}</Text>
+          </View>
         )}
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.menuLabel}>{label}</Text>
-        {sub && <Text style={styles.menuSub}>{sub}</Text>}
-      </View>
-      {(onPress || showArrow) && (
-        <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-      )}
-    </TouchableOpacity>
+
+        {(onPress || showArrow) && (
+          <Ionicons name="chevron-forward" size={16} color="#475569" style={{ marginLeft: 6 }} />
+        )}
+      </TouchableOpacity>
+      {!isLast && <View style={styles.itemDivider} />}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: COLORS.bg, 
+    backgroundColor: '#0B0E14', 
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0 
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -681,98 +733,128 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#2E0854',
+    paddingVertical: 12,
+    backgroundColor: '#0B0E14',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   topBackBtn: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   topBarTitle: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '800',
+    letterSpacing: -0.2,
   },
   topEditBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(168, 136, 255, 0.12)',
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 12,
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(168, 136, 255, 0.25)',
+    borderColor: 'rgba(6, 182, 212, 0.25)',
+  },
+  topEditText: {
+    color: '#06B6D4',
+    fontSize: 12.5,
+    fontWeight: '700',
+    marginLeft: 5,
   },
 
   // ── Profile Header ──
   profileHeader: { 
     alignItems: 'center', 
-    paddingTop: 10,
-    paddingBottom: 48, 
+    paddingTop: 16,
+    paddingBottom: 44, 
     paddingHorizontal: 20,
     position: 'relative',
     overflow: 'hidden',
   },
   headerGlowCircle: {
     position: 'absolute',
-    top: -40,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(168, 136, 255, 0.12)',
+    top: -50,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(99, 102, 241, 0.08)',
   },
   avatarGlowWrapper: {
-    marginBottom: 14,
-    shadowColor: '#8B5CF6',
+    marginBottom: 12,
+    position: 'relative',
+    shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 10,
   },
   avatarOuterRing: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarInner: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
+    width: 98,
+    height: 98,
+    borderRadius: 49,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarLetterText: {
     color: '#FFFFFF',
-    fontSize: 44,
+    fontSize: 42,
     fontWeight: '900',
     letterSpacing: -1,
   },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#0B0E14',
+    borderWidth: 2,
+    borderColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   profileName: { 
     color: '#FFFFFF', 
-    fontSize: 23, 
+    fontSize: 22, 
     fontWeight: '800',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
     textAlign: 'center',
   },
   usernameChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 3.5,
     borderRadius: 12,
     marginTop: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(99, 102, 241, 0.25)',
   },
   usernameChipText: {
-    color: '#A888FF',
-    fontSize: 13,
+    color: '#A5B4FC',
+    fontSize: 12.5,
     fontWeight: '700',
   },
   profileMetaRow: {
@@ -783,34 +865,42 @@ const styles = StyleSheet.create({
   metaBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
   },
   metaBadgeText: { color: '#94A3B8', fontSize: 11, fontWeight: '600' },
   streakBadge: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
+    borderColor: 'rgba(245, 158, 11, 0.25)',
   },
   streakBadgeText: { color: '#FBBF24', fontSize: 11, fontWeight: '700' },
 
-  // ── Lifetime Stats ──
+  // ── Lifetime Stats Bento Grid ──
   lifetimeCard: {
+    backgroundColor: '#121827',
+    borderRadius: 22,
     padding: 16,
-    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+    ...SHADOW.md,
   },
   statsHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 14,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
   statsHeaderLeft: {
     flexDirection: 'row',
@@ -838,60 +928,119 @@ const styles = StyleSheet.create({
   statsGrid: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    justifyContent: 'space-between' 
+    justifyContent: 'space-between',
+    rowGap: 10,
   },
   statItem: { 
-    width: '48%', 
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    width: '48.5%', 
+    backgroundColor: 'rgba(255, 255, 255, 0.025)',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center', 
     paddingVertical: 14,
     paddingHorizontal: 8,
-    marginBottom: 10,
   },
   statIconBox: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: 12,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
-  statEmoji: { fontSize: 20 },
-  statValue: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
-  statLabel: { color: '#94A3B8', fontSize: 9.5, marginTop: 4, fontWeight: '700', letterSpacing: 0.6 },
+  statValue: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
+  statLabel: { color: '#64748B', fontSize: 9, marginTop: 4, fontWeight: '700', letterSpacing: 0.6 },
+
+  // ── Section Headers ──
+  sectionHeaderWrap: {
+    paddingHorizontal: 20,
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  sectionHeaderTitle: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+
+  // ── Menu Group Card ──
+  menuGroupCard: {
+    backgroundColor: '#121827',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+    marginHorizontal: 16,
+    overflow: 'hidden',
+    ...SHADOW.sm,
+  },
 
   // ── Menu Item ──
   menuItem: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 15, paddingHorizontal: 16,
-    borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    flexDirection: 'row', 
+    alignItems: 'center',
+    paddingVertical: 13, 
+    paddingHorizontal: 16,
+  },
+  itemDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    marginLeft: 66,
   },
   menuIconBox: {
-    width: 38, height: 38, borderRadius: 10,
-    backgroundColor: 'rgba(168,136,255,0.1)',
-    justifyContent: 'center', alignItems: 'center', marginRight: 14,
+    width: 36, 
+    height: 36, 
+    borderRadius: 11,
+    borderWidth: 1,
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 14,
   },
-  menuLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '600' },
-  menuSub: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
+  menuLabel: { 
+    color: '#F8FAFC', 
+    fontSize: 14.5, 
+    fontWeight: '600',
+  },
+  menuSub: { 
+    color: '#64748B', 
+    fontSize: 11.5, 
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  menuBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  menuBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
 
   // ── Logout ──
   logoutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    marginHorizontal: 16, marginTop: 24, paddingVertical: 14,
-    borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.red + '33',
-    backgroundColor: 'rgba(239,68,68,0.08)',
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    marginHorizontal: 16, 
+    marginTop: 18, 
+    paddingVertical: 14,
+    borderRadius: 18, 
+    borderWidth: 1, 
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
   },
-  logoutText: { color: COLORS.red, fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
+  logoutText: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
 
   // ── Modal ──
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.bg, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, padding: 24, minHeight: 300 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#121827', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, minHeight: 300, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' },
-  feedbackInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: RADIUS.md, padding: 16, color: COLORS.textPrimary, fontSize: 16, minHeight: 120, textAlignVertical: 'top', borderWidth: 1, borderColor: COLORS.borderLight, marginBottom: 20 },
-  submitFeedbackBtn: { backgroundColor: COLORS.primary, paddingVertical: 16, borderRadius: RADIUS.md, alignItems: 'center' },
-  submitFeedbackText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  modalTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: '800' },
+  feedbackInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 16, color: '#FFFFFF', fontSize: 15, minHeight: 120, textAlignVertical: 'top', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 20 },
+  submitFeedbackBtn: { backgroundColor: '#6366F1', paddingVertical: 15, borderRadius: 16, alignItems: 'center' },
+  submitFeedbackText: { color: 'white', fontSize: 15, fontWeight: '800' },
 });
