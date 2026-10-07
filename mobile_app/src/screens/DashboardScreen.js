@@ -1193,21 +1193,56 @@ export default function DashboardScreen({ navigation }) {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* ── STICKY QUICK ADD EXPENSE FAB ── */}
-      <View style={{ position: 'absolute', bottom: 16, left: 24, right: 24, zIndex: 100 }}>
+      {/* ── DUAL FLOATING ACTIONS (VOICE & ADD EXPENSE) ── */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 24,
+          alignSelf: 'center',
+          flexDirection: 'row',
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          borderRadius: 30,
+          padding: 8,
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.4,
+          shadowRadius: 10,
+          elevation: 10,
+          zIndex: 100,
+        }}
+      >
         <TouchableOpacity
           style={{
-            backgroundColor: '#8B5CF6',
-            borderRadius: 16,
-            paddingVertical: 14,
+            backgroundColor: '#F97316',
+            borderRadius: 24,
+            paddingVertical: 12,
+            paddingHorizontal: 20,
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#8B5CF6',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.5,
-            shadowRadius: 10,
-            elevation: 8,
+            marginRight: 8,
+          }}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('VoiceExpense');
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="mic" size={18} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Voice</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#06B6D4',
+            borderRadius: 24,
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            flexDirection: 'row',
+            alignItems: 'center',
           }}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1215,8 +1250,8 @@ export default function DashboardScreen({ navigation }) {
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="add-circle" size={24} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Quick Add Expense</Text>
+          <Ionicons name="add" size={20} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Add expense</Text>
         </TouchableOpacity>
       </View>
 

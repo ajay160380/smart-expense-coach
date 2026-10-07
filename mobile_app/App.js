@@ -127,7 +127,7 @@ function AddButton({ onPress }) {
         colors={['#8B5CF6', '#6D28D9']}
         style={styles.addBtnGradient}
       >
-        <Ionicons name="add" size={32} color="#fff" />
+        <Ionicons name="qr-code-outline" size={24} color="#fff" />
       </LinearGradient>
     </View>
   );
@@ -192,7 +192,7 @@ function MainTabNavigator() {
       <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       <Tab.Screen
         name="Add"
-        component={AddExpenseScreen}
+        component={UPIPaymentScreen}
         options={{
           tabBarLabel: '',
           tabBarIcon: () => <AddButton />,
