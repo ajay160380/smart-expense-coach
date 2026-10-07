@@ -9,11 +9,15 @@ import { widgetTaskHandler } from './src/widgets/WidgetTaskHandler';
 registerWidgetTaskHandler(widgetTaskHandler);
 
 
-// Register background handler
-messaging().setBackgroundMessageHandler(async remoteMessage => {
-  console.log('Message handled in the background!', remoteMessage);
-  await saveNotification(remoteMessage);
-});
+// Register background handler safely
+try {
+  messaging().setBackgroundMessageHandler(async remoteMessage => {
+    console.log('Message handled in the background!', remoteMessage);
+    await saveNotification(remoteMessage);
+  });
+} catch (error) {
+  console.log('Error registering background message handler:', error);
+}
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,

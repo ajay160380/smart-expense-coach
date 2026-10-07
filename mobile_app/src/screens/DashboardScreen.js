@@ -1190,8 +1190,35 @@ export default function DashboardScreen({ navigation }) {
           />
         )}
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ── STICKY QUICK ADD EXPENSE FAB ── */}
+      <View style={{ position: 'absolute', bottom: 16, left: 24, right: 24, zIndex: 100 }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#8B5CF6',
+            borderRadius: 16,
+            paddingVertical: 14,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.5,
+            shadowRadius: 10,
+            elevation: 8,
+          }}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('AddExpense');
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add-circle" size={24} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Quick Add Expense</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Update Budget Modal */}
       <Modal

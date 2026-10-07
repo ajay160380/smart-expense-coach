@@ -127,7 +127,7 @@ function AddButton({ onPress }) {
         colors={['#8B5CF6', '#6D28D9']}
         style={styles.addBtnGradient}
       >
-        <Ionicons name="qr-code-outline" size={24} color="#fff" />
+        <Ionicons name="add" size={32} color="#fff" />
       </LinearGradient>
     </View>
   );
@@ -192,7 +192,7 @@ function MainTabNavigator() {
       <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       <Tab.Screen
         name="Add"
-        component={UPIPaymentScreen}
+        component={AddExpenseScreen}
         options={{
           tabBarLabel: '',
           tabBarIcon: () => <AddButton />,
@@ -412,39 +412,43 @@ export default function App() {
       }
     };
 
-    const unsubscribe = messaging().onMessage(async remoteMessage => {
-      await saveNotification(remoteMessage);
-      Alert.alert(
-        remoteMessage.notification?.title || 'New Notification', 
-        remoteMessage.notification?.body || JSON.stringify(remoteMessage)
-      );
-    });
+    try {
+      const unsubscribe = messaging().onMessage(async remoteMessage => {
+        await saveNotification(remoteMessage);
+        Alert.alert(
+          remoteMessage.notification?.title || 'New Notification', 
+          remoteMessage.notification?.body || JSON.stringify(remoteMessage)
+        );
+      });
 
-    // Handle background notification tap
-    messaging().onNotificationOpenedApp(remoteMessage => {
-      console.log('Notification caused app to open from background state:', remoteMessage.notification);
-      if (remoteMessage.data?.screen) {
-        setTimeout(() => {
-          if (navigationRef.isReady()) {
-            navigationRef.navigate(remoteMessage.data.screen);
-          }
-        }, 500);
-      }
-    });
-
-    // Handle initial notification (app was closed)
-    messaging().getInitialNotification().then(remoteMessage => {
-      if (remoteMessage) {
-        console.log('Notification caused app to open from quit state:', remoteMessage.notification);
+      // Handle background notification tap
+      messaging().onNotificationOpenedApp(remoteMessage => {
+        console.log('Notification caused app to open from background state:', remoteMessage.notification);
         if (remoteMessage.data?.screen) {
           setTimeout(() => {
             if (navigationRef.isReady()) {
               navigationRef.navigate(remoteMessage.data.screen);
             }
-          }, 1000); // Wait longer on cold start
+          }, 500);
         }
-      }
-    });
+      });
+
+      // Handle initial notification (app was closed)
+      messaging().getInitialNotification().then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('Notification caused app to open from quit state:', remoteMessage.notification);
+          if (remoteMessage.data?.screen) {
+            setTimeout(() => {
+              if (navigationRef.isReady()) {
+                navigationRef.navigate(remoteMessage.data.screen);
+              }
+            }, 1000); // Wait longer on cold start
+          }
+        }
+      }).catch(err => console.log('getInitialNotification error:', err));
+    } catch (msgErr) {
+      console.log('FCM messaging listener error:', msgErr);
+    }
 
     const checkAuth = async () => {
       try {

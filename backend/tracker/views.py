@@ -5078,3 +5078,16 @@ def api_send_admin_push(request):
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)})
     return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+
+def download_apk(request):
+    import os
+    from django.conf import settings
+    from django.http import FileResponse, Http404
+    apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
+    if os.path.exists(apk_path):
+        response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
+        response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
+        return response
+    else:
+        raise Http404('APK not found')
+
