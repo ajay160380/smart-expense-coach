@@ -56,8 +56,9 @@ export default function LoginScreen({ navigation }) {
         username: cleanUsername,
         password: cleanPassword,
       });
-      const { token, user_id } = response.data;
-      await saveAuthData(token, user_id, cleanUsername);
+      const { token, user_id, username: apiUsername } = response.data;
+      // Use the API's returned username if available, otherwise fallback to the inputted one
+      await saveAuthData(token, user_id, apiUsername || cleanUsername);
       navigation.replace('MainTabs');
     } catch (error) {
       console.error(error);

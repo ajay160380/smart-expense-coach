@@ -535,9 +535,9 @@ export default function DashboardScreen({ navigation }) {
     const greetingEmoji = isNight ? '🌙' : isEvening ? '🌆' : isAfternoon ? '☀️' : '🌅';
 
     cleaned = cleaned.replace(
-      /Good\s+(Morning|Afternoon|Evening|Night)(,\s*[^!.]+)?!?(?:\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{FE0F}]+)?/iu,
+      /Good\s+(Morning|Afternoon|Evening|Night)(?:[,\s]+([^!.]+))?!?(?:\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{FE0F}]+)?/iu,
       (match, p1, p2) => {
-        const namePart = p2 || '';
+        const namePart = p2 ? `, ${p2.trim()}` : '';
         return `${currentGreeting}${namePart}! ${greetingEmoji}`;
       }
     );
