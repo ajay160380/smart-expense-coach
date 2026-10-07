@@ -2272,14 +2272,14 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         elif action == "ask_clarification":
             chat_response = ai_data.get("chat_response", "Should I add this to your expenses or save it to Notepad?")
             return JsonResponse({
-                "status": "success",
+                "status": "error",
                 "message": f"🤔 *Wait a second...*\n\n{chat_response}"
             })
             
         else:
-            chat_response = ai_data.get("chat_response", "Mujhe samajh nahi aaya, bhai.")
+            chat_response = ai_data.get("chat_response", "Mujhe samajh nahi aaya, bhai. Kripya apna kharcha phir se bataein.")
             return JsonResponse({
-                "status": "success",
+                "status": "error",
                 "message": f"{chat_response}"
             })
 

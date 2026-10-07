@@ -376,7 +376,7 @@ export default function CustomAlertModal() {
                   return (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.cancelBtn, !shouldStack && { flex: 1 }]}
+                      style={[styles.cancelBtn, (!shouldStack && numButtons > 1) && { flex: 1 }]}
                       onPress={() => handleClose(btn.onPress)}
                       activeOpacity={0.7}
                     >
@@ -394,7 +394,7 @@ export default function CustomAlertModal() {
                     return (
                       <TouchableOpacity
                         key={index}
-                        style={[styles.primaryBtnTouch, !shouldStack && { flex: 1 }]}
+                        style={[styles.primaryBtnTouch, (!shouldStack && numButtons > 1) && { flex: 1 }]}
                         onPress={() => handleClose(btn.onPress)}
                         activeOpacity={0.8}
                       >
@@ -414,7 +414,7 @@ export default function CustomAlertModal() {
                     return (
                       <TouchableOpacity
                         key={index}
-                        style={[styles.destructiveBtn, !shouldStack && { flex: 1 }]}
+                        style={[styles.destructiveBtn, (!shouldStack && numButtons > 1) && { flex: 1 }]}
                         onPress={() => handleClose(btn.onPress)}
                         activeOpacity={0.7}
                       >
@@ -433,7 +433,7 @@ export default function CustomAlertModal() {
                   return (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.primaryBtnTouch, !shouldStack && { flex: 1 }]}
+                      style={[styles.primaryBtnTouch, (!shouldStack && numButtons > 1) && { flex: 1 }]}
                       onPress={() => handleClose(btn.onPress)}
                       activeOpacity={0.8}
                     >
@@ -453,7 +453,7 @@ export default function CustomAlertModal() {
                   return (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.secondaryBtn, !shouldStack && { flex: 1 }]}
+                      style={[styles.secondaryBtn, (!shouldStack && numButtons > 1) && { flex: 1 }]}
                       onPress={() => handleClose(btn.onPress)}
                       activeOpacity={0.75}
                     >
