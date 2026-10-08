@@ -4646,7 +4646,9 @@ def api_send_otp(request):
             requests.post('http://127.0.0.1:3001/api/send-message', json={
                 'phone_number': phone,
                 'message': msg
-            }, timeout=10)
+            }, timeout=1)
+        except requests.exceptions.ReadTimeout:
+            pass # Fire and forget, don't care about response
         except Exception as e:
             print(f"⚠️ Could not send WhatsApp OTP to {phone}:", str(e), flush=True)
 
