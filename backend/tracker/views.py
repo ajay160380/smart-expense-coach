@@ -4651,7 +4651,9 @@ def api_send_otp(request):
             print(f"⚠️ Could not send WhatsApp OTP to {phone}:", str(e), flush=True)
 
     wa_message = f"🔒 *Paisa Mitra Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
-    threading.Thread(target=send_otp_thread, args=(identifier, wa_message)).start()
+    t = threading.Thread(target=send_otp_thread, args=(identifier, wa_message))
+    t.daemon = True
+    t.start()
     
     return Response({'message': 'OTP sent successfully. Check your WhatsApp.'})
 
