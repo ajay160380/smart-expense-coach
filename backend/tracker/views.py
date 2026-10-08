@@ -4636,18 +4636,22 @@ def api_send_otp(request):
         otp_code=otp_code
     )
     
-    # Send OTP via local WhatsApp Bot
+    # Send OTP via local WhatsApp Bot in background thread to avoid timeout
     print(f"========== 📱 OTP for {identifier}: {otp_code} ==========", flush=True)
+    import threading
     import requests
-    try:
-        wa_message = f"🔒 *Paisa Mitra Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
-        # Call the internal bot API on port 3001
-        requests.post('http://127.0.0.1:3001/api/send-message', json={
-            'phone_number': identifier,
-            'message': wa_message
-        }, timeout=10)
-    except Exception as e:
-        print(f"⚠️ Could not send WhatsApp OTP to {identifier}:", str(e), flush=True)
+    
+    def send_otp_thread(phone, msg):
+        try:
+            requests.post('http://127.0.0.1:3001/api/send-message', json={
+                'phone_number': phone,
+                'message': msg
+            }, timeout=10)
+        except Exception as e:
+            print(f"⚠️ Could not send WhatsApp OTP to {phone}:", str(e), flush=True)
+
+    wa_message = f"🔒 *Paisa Mitra Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
+    threading.Thread(target=send_otp_thread, args=(identifier, wa_message)).start()
     
     return Response({'message': 'OTP sent successfully. Check your WhatsApp.'})
 

@@ -15,7 +15,7 @@ console.log('🔴🔴🔴 CURRENT API URL IS:', BASE_URL);
 // ── Axios Instance ──
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
