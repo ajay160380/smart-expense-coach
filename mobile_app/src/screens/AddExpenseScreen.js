@@ -220,14 +220,14 @@ export default function AddExpenseScreen({ route, navigation }) {
               {[50, 100, 200, 500, 1000].map((val) => (
                 <TouchableOpacity
                   key={val}
-                  style={styles.presetChip}
+                  style={[styles.presetChip, { borderColor: selectedCat.color + '60', backgroundColor: selectedCat.color + '15' }]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     const current = parseFloat(amount) || 0;
                     setAmount(String(current + val));
                   }}
                 >
-                  <Text style={styles.presetText}>+₹{val}</Text>
+                  <Text style={[styles.presetText, { color: selectedCat.color }]}>+₹{val}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -246,7 +246,7 @@ export default function AddExpenseScreen({ route, navigation }) {
               </TouchableOpacity>
             </View>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: selectedCat.color + '40' }]}
               placeholder="What was this for?"
               placeholderTextColor={COLORS.textMuted}
               value={description}
@@ -265,9 +265,9 @@ export default function AddExpenseScreen({ route, navigation }) {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setExpDate(TODAY);
                   }}
-                  style={[styles.dateChip, expDate === TODAY && styles.dateChipActive]}
+                  style={[styles.dateChip, expDate === TODAY && { backgroundColor: selectedCat.color + '33', borderColor: selectedCat.color }]}
                 >
-                  <Text style={[styles.dateChipText, expDate === TODAY && styles.dateChipTextActive]}>Today</Text>
+                  <Text style={[styles.dateChipText, expDate === TODAY && { color: selectedCat.color, fontWeight: '700' }]}>Today</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => {
@@ -276,14 +276,14 @@ export default function AddExpenseScreen({ route, navigation }) {
                     y.setDate(y.getDate() - 1);
                     setExpDate(y.toISOString().split('T')[0]);
                   }}
-                  style={[styles.dateChip, expDate !== TODAY && styles.dateChipActive]}
+                  style={[styles.dateChip, expDate !== TODAY && { backgroundColor: selectedCat.color + '33', borderColor: selectedCat.color }]}
                 >
-                  <Text style={[styles.dateChipText, expDate !== TODAY && styles.dateChipTextActive]}>Yesterday</Text>
+                  <Text style={[styles.dateChipText, expDate !== TODAY && { color: selectedCat.color, fontWeight: '700' }]}>Yesterday</Text>
                 </TouchableOpacity>
               </View>
             </View>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: selectedCat.color + '40' }]}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={COLORS.textMuted}
               value={expDate}
