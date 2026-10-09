@@ -1,160 +1,12 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — ADD EXPENSE SCREEN (ENHANCED)
- * Category icons with colors, date picker, premium animations
- * ═══════════════════════════════════════════════════════════════
- */
+import re
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, UIManager } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-import { GradientButton } from '../components/SharedComponents';
-import { useFocusEffect } from '@react-navigation/native';
+with open('src/screens/AddExpenseScreen.js', 'r') as f:
+    content = f.read()
 
+# Find the start of the return statement
+start_index = content.find('  return (\n    <SafeAreaView style={styles.container}>')
 
-
-
-
-
-
-
-
-
-
-
-
-import * as Location from 'expo-location';
-import * as Haptics from 'expo-haptics';
-import api from '../api/config';
-import { sanitizeInput, sanitizeAmount } from '../utils/auth';
-import { COLORS, RADIUS } from '../utils/theme';
-
-const CATEGORIES = [
-  { key: 'food', label: 'Food', icon: '🍜', color: '#6c5ce7' },
-  { key: 'transport', label: 'Transport', icon: '🚗', color: '#00cec9' },
-  { key: 'shopping', label: 'Shopping', icon: '🛍️', color: '#fd79a8' },
-  { key: 'health', label: 'Health', icon: '💊', color: '#00b894' },
-  { key: 'entertainment', label: 'Fun', icon: '🎬', color: '#fdcb6e' },
-  { key: 'education', label: 'Education', icon: '📚', color: '#74b9ff' },
-  { key: 'utilities', label: 'Utilities', icon: '⚡', color: '#a29bfe' },
-  { key: 'other', label: 'Other', icon: '📦', color: '#dfe6e9' },
-];
-
-const TODAY = new Date().toISOString().split('T')[0];
-
-export default function AddExpenseScreen({ route, navigation }) {
-  const isEdit = route?.params?.expense ? true : false;
-  const expense = route?.params?.expense || {};
-
-  const [amount, setAmount] = useState(
-    expense.amount 
-      ? expense.amount.toString() 
-      : (route?.params?.prefillAmount ? route.params.prefillAmount.toString() : '')
-  );
-  const [category, setCategory] = useState(
-    expense.category || route?.params?.prefillCategory || 'food'
-  );
-  const [description, setDescription] = useState(
-    expense.description || route?.params?.prefillDescription || ''
-  );
-  const [expDate, setExpDate] = useState(expense.date ? expense.date.split('T')[0] : TODAY);
-  const [loading, setLoading] = useState(false);
-
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-
-  useFocusEffect(
-    useCallback(() => {
-      fadeAnim.setValue(0);
-      slideAnim.setValue(100);
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.spring(slideAnim, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true })
-      ]).start();
-    }, [])
-  );
-  const [locationLoading, setLocationLoading] = useState(false);
-
-  const handleTagLocation = async () => {
-    setLocationLoading(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission to access location was denied');
-        setLocationLoading(false);
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const geocode = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      if (geocode.length > 0) {
-        const place = geocode[0];
-        const locName = place.name || place.street || place.city || place.region;
-        if (locName) {
-          setDescription((prev) => prev ? `${prev} (at ${locName})` : `Expense at ${locName}`);
-        }
-      }
-    } catch (error) {
-      console.log(error);
-      Alert.alert('Error', 'Could not fetch location');
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
-  const handleAddExpense = async () => {
-    const cleanAmount = sanitizeAmount(amount);
-    if (!cleanAmount || isNaN(cleanAmount) || parseFloat(cleanAmount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      let res;
-      if (isEdit) {
-        res = await api.post(`/edit-expense/${expense.id}/`, {
-          amount: parseFloat(cleanAmount),
-          category: category,
-          description: sanitizeInput(description),
-          date: expDate || TODAY,
-        });
-      } else {
-        res = await api.post('/quick-add/', {
-          amount: parseFloat(cleanAmount),
-          category: category,
-          description: sanitizeInput(description),
-          date: expDate || TODAY,
-        });
-      }
-
-      Alert.alert(
-        isEdit ? '✅ Expense Updated!' : '✅ Expense Saved!',
-        res.data?.message || `₹${parseFloat(cleanAmount).toLocaleString('en-IN')} for ${category}`,
-        [{ 
-          text: 'OK', 
-          onPress: () => {
-            navigation.navigate('DashboardMain');
-          } 
-        }]
-      );
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', error.response?.data?.error || 'Failed to add expense');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const selectedCat = CATEGORIES.find((c) => c.key === category) || CATEGORIES[7];
-
-  return (
+new_render = """  return (
     <View style={styles.container}>
       <StatusBar style="light" />
 
@@ -472,3 +324,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.05)',
   }
 });
+"""
+
+with open('src/screens/AddExpenseScreen.js', 'w') as f:
+    f.write(content[:start_index] + new_render)
