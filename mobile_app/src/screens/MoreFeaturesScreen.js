@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,9 +54,18 @@ export default function MoreFeaturesScreen({ navigation }) {
     }
   };
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
   useFocusEffect(
     useCallback(() => {
       fetchProfile();
+      fadeAnim.setValue(0);
+      slideAnim.setValue(100);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true })
+      ]).start();
     }, [])
   );
 
@@ -144,6 +154,7 @@ export default function MoreFeaturesScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -490,6 +501,7 @@ export default function MoreFeaturesScreen({ navigation }) {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+      </Animated.View>
 
       {/* ── Feedback Modal ── */}
       <Modal

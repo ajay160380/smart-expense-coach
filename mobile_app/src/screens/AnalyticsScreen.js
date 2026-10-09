@@ -11,6 +11,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { GlassCard, EmptyState, SectionHeader } from '../components/SharedComponents';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 
@@ -48,6 +49,20 @@ export default function AnalyticsScreen({ navigation }) {
 
   const onRefresh = () => { setRefreshing(true); fetchAnalytics(); };
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      fadeAnim.setValue(0);
+      slideAnim.setValue(100);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true })
+      ]).start();
+    }, [])
+  );
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -77,6 +92,7 @@ export default function AnalyticsScreen({ navigation }) {
         <Text style={styles.headerTitle}>📊 Analytics</Text>
       </View>
 
+      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
@@ -235,6 +251,7 @@ export default function AnalyticsScreen({ navigation }) {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 }

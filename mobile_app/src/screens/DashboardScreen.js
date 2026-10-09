@@ -83,6 +83,63 @@ export default function DashboardScreen({ navigation }) {
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
   const [shakeBannerVisible, setShakeBannerVisible] = useState(true);
 
+  // ── 1000000x CRAZY ATTRACTIVE ANIMATIONS ──
+  const animGreetingX = useRef(new Animated.Value(-150)).current; // Slide from left
+  const animGreetingOpacity = useRef(new Animated.Value(0)).current;
+
+  const animCardScale = useRef(new Animated.Value(0.4)).current; // Massive zoom
+  const animCardY = useRef(new Animated.Value(150)).current; // Deep rise
+  const animCardRotate = useRef(new Animated.Value(0)).current; // Slight tilt
+  const animCardOpacity = useRef(new Animated.Value(0)).current;
+
+  const animDockX = useRef(new Animated.Value(150)).current; // Slide from right
+  const animDockOpacity = useRef(new Animated.Value(0)).current;
+
+  const animListsY = useRef(new Animated.Value(200)).current; // Huge rise
+  const animListsOpacity = useRef(new Animated.Value(0)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      // Reset values first
+      animGreetingX.setValue(-150);
+      animGreetingOpacity.setValue(0);
+      animCardScale.setValue(0.4);
+      animCardY.setValue(150);
+      animCardRotate.setValue(0);
+      animCardOpacity.setValue(0);
+      animDockX.setValue(150);
+      animDockOpacity.setValue(0);
+      animListsY.setValue(200);
+      animListsOpacity.setValue(0);
+
+      Animated.stagger(150, [
+        Animated.parallel([
+          Animated.timing(animGreetingOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.spring(animGreetingX, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.timing(animCardOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+          Animated.spring(animCardY, { toValue: 0, friction: 5, tension: 60, useNativeDriver: true }),
+          Animated.spring(animCardScale, { toValue: 1, friction: 5, tension: 60, useNativeDriver: true }),
+          Animated.spring(animCardRotate, { toValue: 1, friction: 5, tension: 60, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.timing(animDockOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.spring(animDockX, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.timing(animListsOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+          Animated.spring(animListsY, { toValue: 0, friction: 7, tension: 40, useNativeDriver: true }),
+        ])
+      ]).start();
+    }, [])
+  );
+
+  const cardRotate = animCardRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['12deg', '0deg']
+  });
+
   // ── Quick Action Dock Customizable State (1-8 items) ──
   const [actionDockKeys, setActionDockKeys] = useState(DEFAULT_ACTION_DOCK_KEYS);
   const [actionDockModalVisible, setActionDockModalVisible] = useState(false);
@@ -549,69 +606,6 @@ export default function DashboardScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* ── TOP NAVBAR (Ultra-Premium Fintech Header) ── */}
-      <LinearGradient
-        colors={['#0D1321', '#0B0E14']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.navbar}
-      >
-        <View style={styles.logoContainer}>
-          <View style={styles.logoIconWrapper}>
-            <Image
-              source={require('../../assets/icon.png')}
-              style={styles.logoIconImage}
-              resizeMode="cover"
-            />
-          </View>
-          <View style={{ marginLeft: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-              <Text style={styles.logoTextMain}>Expense</Text>
-              <Text style={styles.logoTextAccent}>Tracker</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1.5 }}>
-              <View style={styles.logoStatusDot} />
-              <Text style={styles.logoSubText}>Smart Finance • AI</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.navRight}>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('Notifications');
-            }}
-            style={styles.navIconBtn}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="notifications-outline" size={18} color="#CBD5E1" />
-            {anomalies.length > 0 && <View style={styles.notifDot} />}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('Profile');
-            }}
-            style={styles.avatarBtn}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#6366F1', '#EC4899', '#06B6D4']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.avatarGradientRing}
-            >
-              <View style={styles.avatarInnerCircle}>
-                <Text style={styles.avatarText}>
-                  {username ? username.charAt(0).toUpperCase() : 'U'}
-                </Text>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
 
       <ScrollView
         style={{ flex: 1 }}
@@ -619,24 +613,19 @@ export default function DashboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── GREETING & STATUS PILL (Compact & Clean) ── */}
-        <View style={styles.greetingSection}>
-          <View style={styles.greetingHeaderRow}>
-            <View style={{ flex: 1, paddingRight: 6 }}>
-              <Text style={styles.greetText} numberOfLines={1}>
-                {getGreeting()}, <Text style={{ color: '#A5B4FC' }}>{username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Friend'}</Text>
-              </Text>
-              <Text style={styles.greetSubtext}>Monthly overview</Text>
-            </View>
-            <View style={styles.unifiedPill}>
-              <Ionicons name="calendar-outline" size={10} color="#94A3B8" style={{ marginRight: 3 }} />
-              <Text style={styles.unifiedPillMonth}>{formatShortMonth(stats?.month)}</Text>
-              <View style={styles.pillDot} />
-              <Ionicons name="hourglass-outline" size={10} color="#06B6D4" style={{ marginRight: 2 }} />
-              <Text style={styles.unifiedPillDays}>{daysLeft}d left</Text>
-            </View>
+        {/* ── GREETING & STATUS PILL (Centered & Elegant) ── */}
+        <Animated.View style={[styles.greetingSection, { alignItems: 'center', paddingVertical: 20, opacity: animGreetingOpacity, transform: [{ translateX: animGreetingX }] }]}>
+          <Text style={[styles.greetText, { fontSize: 28, textAlign: 'center' }]} numberOfLines={1}>
+            {getGreeting()}, <Text style={{ color: '#A5B4FC' }}>{username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Friend'}</Text>
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+            <Ionicons name="calendar-outline" size={14} color="#94A3B8" style={{ marginRight: 4 }} />
+            <Text style={{ color: '#94A3B8', fontSize: 14, fontWeight: '500' }}>{formatShortMonth(stats?.month)}</Text>
+            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#475569', marginHorizontal: 8 }} />
+            <Ionicons name="hourglass-outline" size={14} color="#06B6D4" style={{ marginRight: 4 }} />
+            <Text style={{ color: '#06B6D4', fontSize: 14, fontWeight: '600' }}>{daysLeft} days remaining</Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* ── ANOMALY SPENDING INSIGHT (Compact Sleek Strip) ── */}
         {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
@@ -705,9 +694,10 @@ export default function DashboardScreen({ navigation }) {
         )}
 
         {/* ── LUXURY MAIN BUDGET CARD ── */}
-        <LinearGradient
-          colors={overspent ? ['#3D0C14', '#1E1226', '#0B0F19'] : ['#18213D', '#11172A', '#0A0E1A']}
-          style={styles.mainCard}
+        <Animated.View style={{ opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }, { rotate: cardRotate }] }}>
+          <LinearGradient
+            colors={overspent ? ['#3D0C14', '#1E1226', '#0B0F19'] : ['#18213D', '#11172A', '#0A0E1A']}
+            style={styles.mainCard}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -794,9 +784,10 @@ export default function DashboardScreen({ navigation }) {
             </View>
           </View>
         </LinearGradient>
+        </Animated.View>
 
         {/* ── QUICK ACTION DOCK (Customizable 1-8 items with auto space fill) ── */}
-        <View style={styles.actionDockSection}>
+        <Animated.View style={[styles.actionDockSection, { opacity: animDockOpacity, transform: [{ translateX: animDockX }] }]}>
           <View style={styles.actionDockHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="flash-outline" size={12} color="#818CF8" style={{ marginRight: 5 }} />
@@ -866,10 +857,10 @@ export default function DashboardScreen({ navigation }) {
               </View>
             )}
           </View>
-        </View>
+        </Animated.View>
 
         {/* ── 1-TAP QUICK LOG (Dynamic & Customizable) ── */}
-        <View style={styles.quickSection}>
+        <Animated.View style={[styles.quickSection, { opacity: animListsOpacity, transform: [{ translateY: animListsY }] }]}>
           <View style={styles.quickHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="flash" size={13} color="#F59E0B" style={{ marginRight: 5 }} />
@@ -918,9 +909,11 @@ export default function DashboardScreen({ navigation }) {
               <Text style={styles.quickAddChipText}>New</Text>
             </TouchableOpacity>
           </ScrollView>
-        </View>
+        </Animated.View>
 
         {/* ── FINANCIAL PULSE (CONSOLIDATED HEALTH & SAFE SPEND CARD) ── */}
+        <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }] }}>
+
         <LinearGradient
           colors={['#131B2E', '#0D1424']}
           style={styles.financialPulseCard}
@@ -1190,70 +1183,12 @@ export default function DashboardScreen({ navigation }) {
           />
         )}
 
+        </Animated.View>
+
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* ── DUAL FLOATING ACTIONS (VOICE & ADD EXPENSE) ── */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          alignSelf: 'center',
-          flexDirection: 'row',
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          borderRadius: 30,
-          padding: 8,
-          borderWidth: 1,
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.4,
-          shadowRadius: 10,
-          elevation: 10,
-          zIndex: 100,
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#F97316',
-            borderRadius: 24,
-            paddingVertical: 12,
-            paddingHorizontal: 20,
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginRight: 8,
-          }}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('VoiceExpense');
-          }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="mic" size={18} color="#fff" style={{ marginRight: 6 }} />
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Voice</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#06B6D4',
-            borderRadius: 24,
-            paddingVertical: 12,
-            paddingHorizontal: 20,
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('AddExpense');
-          }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={20} color="#fff" style={{ marginRight: 6 }} />
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Add expense</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Update Budget Modal */}
       <Modal

@@ -11,6 +11,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { GradientButton } from '../components/SharedComponents';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 
@@ -60,6 +61,20 @@ export default function AddExpenseScreen({ route, navigation }) {
   );
   const [expDate, setExpDate] = useState(expense.date ? expense.date.split('T')[0] : TODAY);
   const [loading, setLoading] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      fadeAnim.setValue(0);
+      slideAnim.setValue(100);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true })
+      ]).start();
+    }, [])
+  );
   const [locationLoading, setLocationLoading] = useState(false);
 
   const handleTagLocation = async () => {
@@ -146,6 +161,7 @@ export default function AddExpenseScreen({ route, navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -170,7 +186,10 @@ export default function AddExpenseScreen({ route, navigation }) {
           </View>
 
           {/* ── Amount Input ── */}
-          <View style={styles.amountSection}>
+          <LinearGradient 
+            colors={[selectedCat.color + '22', selectedCat.color + '08']}
+            style={[styles.amountSection, { borderColor: selectedCat.color + '44' }]}
+          >
             <Text style={styles.amountLabel}>HOW MUCH?</Text>
             <View style={styles.amountRow}>
               <Text style={styles.rupee}>₹</Text>
@@ -212,7 +231,7 @@ export default function AddExpenseScreen({ route, navigation }) {
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
+          </LinearGradient>
 
           {/* ── Description ── */}
           <View style={styles.fieldGroup}>
@@ -284,6 +303,11 @@ export default function AddExpenseScreen({ route, navigation }) {
                     category === cat.key && {
                       borderColor: cat.color,
                       backgroundColor: cat.color + '18',
+                      shadowColor: cat.color,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.5,
+                      shadowRadius: 10,
+                      elevation: 8,
                     },
                   ]}
                   onPress={() => setCategory(cat.key)}
@@ -313,6 +337,7 @@ export default function AddExpenseScreen({ route, navigation }) {
             style={{ marginTop: 24, marginBottom: 40 }}
           />
         </ScrollView>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

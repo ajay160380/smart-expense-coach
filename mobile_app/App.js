@@ -55,7 +55,7 @@ import VoiceExpenseScreen from './src/screens/VoiceExpenseScreen';
 import NotepadScreen from './src/screens/NotepadScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
-import UPIPaymentScreen from './src/screens/UPIPaymentScreen';
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -81,7 +81,6 @@ function HomeStackScreen() {
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="Notepad" component={NotepadScreen} />
       <HomeStack.Screen name="History" component={HistoryScreen} />
-      <HomeStack.Screen name="UPIPayment" component={UPIPaymentScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -127,7 +126,7 @@ function AddButton({ onPress }) {
         colors={['#8B5CF6', '#6D28D9']}
         style={styles.addBtnGradient}
       >
-        <Ionicons name="qr-code-outline" size={24} color="#fff" />
+        <Ionicons name="add" size={32} color="#fff" />
       </LinearGradient>
     </View>
   );
@@ -192,7 +191,7 @@ function MainTabNavigator() {
       <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       <Tab.Screen
         name="Add"
-        component={UPIPaymentScreen}
+        component={AddExpenseScreen}
         options={{
           tabBarLabel: '',
           tabBarIcon: () => <AddButton />,

@@ -50,7 +50,20 @@ export default function SavingsGoalsScreen({ navigation }) {
     }
   };
 
-  useFocusEffect(useCallback(() => { fetchGoals(); }, []));
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchGoals();
+      fadeAnim.setValue(0);
+      slideAnim.setValue(100);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true })
+      ]).start();
+    }, [])
+  );
 
   const onRefresh = () => { setRefreshing(true); fetchGoals(); };
 
@@ -155,6 +168,7 @@ export default function SavingsGoalsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
@@ -261,6 +275,7 @@ export default function SavingsGoalsScreen({ navigation }) {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+      </Animated.View>
 
       {/* ── Add Goal Modal ── */}
       <Modal visible={showAddModal} animationType="slide" transparent>
