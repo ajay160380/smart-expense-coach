@@ -42,12 +42,14 @@ const CATEGORIES = [
   { key: 'other', label: 'Other', icon: '📦', color: '#dfe6e9' },
 ];
 
-const getLocalDate = () => {
+const getLocalDate = (daysOffset = 0) => {
   const date = new Date();
+  date.setDate(date.getDate() + daysOffset);
   const offset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() - offset).toISOString().split('T')[0];
 };
-const TODAY = getLocalDate();
+const TODAY = getLocalDate(0);
+const YESTERDAY = getLocalDate(-1);
 
 export default function AddExpenseScreen({ route, navigation }) {
   const isEdit = route?.params?.expense ? true : false;
@@ -290,11 +292,11 @@ export default function AddExpenseScreen({ route, navigation }) {
                   <TouchableOpacity 
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      const y = new Date(); y.setDate(y.getDate() - 1); setExpDate(y.toISOString().split('T')[0]);
+                      setExpDate(YESTERDAY);
                     }}
-                    style={[styles.dateChip, expDate !== TODAY && { backgroundColor: selectedCat.color + '33', borderColor: selectedCat.color }]}
+                    style={[styles.dateChip, expDate === YESTERDAY && { backgroundColor: selectedCat.color + '33', borderColor: selectedCat.color }]}
                   >
-                    <Text style={[styles.dateChipText, expDate !== TODAY && { color: selectedCat.color, fontWeight: '700' }]}>Yesterday</Text>
+                    <Text style={[styles.dateChipText, expDate === YESTERDAY && { color: selectedCat.color, fontWeight: '700' }]}>Yesterday</Text>
                   </TouchableOpacity>
                 </View>
               </View>
