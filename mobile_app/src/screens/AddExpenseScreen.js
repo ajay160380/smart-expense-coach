@@ -42,7 +42,12 @@ const CATEGORIES = [
   { key: 'other', label: 'Other', icon: '📦', color: '#dfe6e9' },
 ];
 
-const TODAY = new Date().toISOString().split('T')[0];
+const getLocalDate = () => {
+  const date = new Date();
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().split('T')[0];
+};
+const TODAY = getLocalDate();
 
 export default function AddExpenseScreen({ route, navigation }) {
   const isEdit = route?.params?.expense ? true : false;
@@ -229,23 +234,23 @@ export default function AddExpenseScreen({ route, navigation }) {
             {/* ── Category Horizontal Scroll ── */}
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>CATEGORY</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+              <View style={styles.categoryGrid}>
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity
                     key={cat.key}
                     style={[
-                      styles.categoryPill,
-                      category === cat.key && { backgroundColor: cat.color + '20', borderColor: cat.color, borderWidth: 1.5 }
+                      styles.categoryCard,
+                      category === cat.key && { backgroundColor: cat.color + '20', borderColor: cat.color, borderWidth: 1.5, shadowColor: cat.color, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }
                     ]}
                     onPress={() => setCategory(cat.key)}
                   >
                     <Text style={styles.catEmoji}>{cat.icon}</Text>
-                    <Text style={[styles.catLabel, category === cat.key && { color: cat.color, fontWeight: 'bold' }]}>
+                    <Text style={[styles.catLabel, category === cat.key && { color: cat.color, fontWeight: '700' }]} numberOfLines={1} adjustsFontSizeToFit>
                       {cat.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </View>
 
             {/* ── Description ── */}
@@ -415,23 +420,26 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 12,
   },
-  categoryScroll: {
-    paddingRight: 24,
-    gap: 12,
-  },
-  categoryPill: {
+  categoryGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  categoryCard: {
+    width: '22%',
+    aspectRatio: 1,
     backgroundColor: COLORS.bgCard,
     borderWidth: 1,
     borderColor: COLORS.borderLight,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
   },
   catEmoji: {
-    fontSize: 20,
-    marginRight: 8,
+    fontSize: 24,
+    marginBottom: 4,
   },
   catLabel: {
     fontSize: 14,
