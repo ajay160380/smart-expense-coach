@@ -157,6 +157,22 @@ export default function AddExpenseScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
+
+      {/* ── MASSIVE DYNAMIC GLOWING ORB BACKGROUND ── */}
+      <View style={[StyleSheet.absoluteFillObject, { overflow: 'hidden' }]}>
+        <Animated.View style={{
+          position: 'absolute',
+          top: -150,
+          left: -100,
+          right: -100,
+          height: 400,
+          backgroundColor: selectedCat.color,
+          opacity: 0.15,
+          borderRadius: 400,
+          transform: [{ scaleX: 1.5 }],
+        }} />
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -187,12 +203,12 @@ export default function AddExpenseScreen({ route, navigation }) {
 
           {/* ── Amount Input ── */}
           <LinearGradient 
-            colors={[selectedCat.color + '22', selectedCat.color + '08']}
+            colors={[selectedCat.color + '22', selectedCat.color + '05']}
             style={[styles.amountSection, { borderColor: selectedCat.color + '44' }]}
           >
-            <Text style={styles.amountLabel}>HOW MUCH?</Text>
+            <Text style={[styles.amountLabel, { color: selectedCat.color }]}>HOW MUCH?</Text>
             <View style={styles.amountRow}>
-              <Text style={styles.rupee}>₹</Text>
+              <Text style={[styles.rupee, { color: selectedCat.color }]}>₹</Text>
               <TextInput
                 style={styles.amountInput}
                 placeholder="0"
@@ -246,7 +262,7 @@ export default function AddExpenseScreen({ route, navigation }) {
               </TouchableOpacity>
             </View>
             <TextInput
-              style={[styles.input, { borderColor: selectedCat.color + '40' }]}
+              style={[styles.input, { borderColor: selectedCat.color + '40', backgroundColor: selectedCat.color + '05' }]}
               placeholder="What was this for?"
               placeholderTextColor={COLORS.textMuted}
               value={description}
@@ -283,7 +299,7 @@ export default function AddExpenseScreen({ route, navigation }) {
               </View>
             </View>
             <TextInput
-              style={[styles.input, { borderColor: selectedCat.color + '40' }]}
+              style={[styles.input, { borderColor: selectedCat.color + '40', backgroundColor: selectedCat.color + '05' }]}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={COLORS.textMuted}
               value={expDate}
@@ -366,13 +382,18 @@ const styles = StyleSheet.create({
 
   // ── Amount ──
   amountSection: {
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
     borderRadius: RADIUS.xl,
-    padding: 24,
-    marginBottom: 20,
-    borderWidth: 1,
+    padding: 32,
+    marginBottom: 32,
+    borderWidth: 1.5,
     borderColor: COLORS.borderLight,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
   },
   amountLabel: {
     color: COLORS.textSecondary,
@@ -390,15 +411,15 @@ const styles = StyleSheet.create({
   },
   rupee: {
     color: COLORS.primary,
-    fontSize: 36,
+    fontSize: 48,
     fontWeight: '600',
-    marginRight: 4,
+    marginRight: 6,
   },
   amountInput: {
     color: COLORS.textPrimary,
-    fontSize: 48,
-    fontWeight: 'bold',
-    minWidth: 100,
+    fontSize: 64,
+    fontWeight: '800',
+    minWidth: 120,
     textAlign: 'center',
   },
   clearAmountBtn: {
