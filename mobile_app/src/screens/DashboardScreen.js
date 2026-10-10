@@ -1697,6 +1697,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  sectionTitle: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
 
   // ── Luxury Top Navbar ──
   navbar: {
