@@ -17,7 +17,6 @@ import { useFocusEffect } from '@react-navigation/native';
 
 
 
-import Svg, { Circle, G } from 'react-native-svg';
 import api from '../api/config';
 import { COLORS, CAT_COLORS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
 
