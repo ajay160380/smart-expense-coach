@@ -72,7 +72,7 @@ const ALL_ACTION_SHORTCUTS = [
 const DonutChart = ({ data, totalAmount }) => {
   const size = 110;
   const strokeWidth = 14;
-  const mainColor = data && data.length > 0 ? data[0].color : '#A78BFA';
+  const mainColor = (data && data.length > 0 && data[0].color) ? data[0].color : '#A78BFA';
   
   return (
     <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center', borderRadius: size / 2, borderWidth: strokeWidth, borderColor: mainColor + '40' }}>
