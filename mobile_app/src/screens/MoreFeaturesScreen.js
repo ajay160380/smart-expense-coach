@@ -680,16 +680,16 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   topBarTitle: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -0.5,
   },
   topBarSub: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 14,
+    color: '#94A3B8',
     marginTop: 2,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   topProfileBtn: {
     borderRadius: 20,
@@ -737,12 +737,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(6, 182, 212, 0.4)',
   },
   bannerAvatarLetter: {
-    fontSize: 19,
+    fontSize: 22,
     fontWeight: '900',
     color: '#06B6D4',
   },
   bannerName: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: '800',
     color: '#F8FAFC',
   },
@@ -768,10 +768,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#94A3B8',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
   },
 
   // ── Grid Bento ──
@@ -820,14 +820,15 @@ const styles = StyleSheet.create({
   },
   gridItemTitle: {
     color: '#F8FAFC',
-    fontSize: 13.5,
-    fontWeight: '700',
-    marginBottom: 3,
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 4,
   },
   gridItemDesc: {
-    color: '#64748B',
-    fontSize: 11,
-    lineHeight: 14,
+    color: '#94A3B8',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
   },
 
   // ── WhatsApp Smart Card ──
