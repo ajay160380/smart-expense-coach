@@ -229,7 +229,7 @@ export default function AnalyticsScreen({ navigation }) {
 
             <GlassCard style={{ flexDirection: 'row', padding: 20, alignItems: 'center', marginBottom: 16 }}>
               {/* Left Donut */}
-              <DonutChart data={categories} totalAmount={Math.round(totalSpent).toLocaleString('en-IN')} />
+              <DonutChart data={categories} totalAmount={Math.round(stats?.total_spent || 0).toLocaleString('en-IN')} />
 
               {/* Right List */}
               <View style={{ flex: 1, marginLeft: 20 }}>
