@@ -69,21 +69,6 @@ const ALL_ACTION_SHORTCUTS = [
 ];
 
 
-const DonutChart = ({ data, totalAmount }) => {
-  const size = 110;
-  const strokeWidth = 14;
-  const mainColor = (data && data.length > 0 && data[0].color) ? data[0].color : '#A78BFA';
-  
-  return (
-    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center', borderRadius: size / 2, borderWidth: strokeWidth, borderColor: mainColor + '40' }}>
-      <View style={{ width: size - strokeWidth*2, height: size - strokeWidth*2, borderRadius: size, borderWidth: 2, borderColor: mainColor, justifyContent: 'center', alignItems: 'center', borderStyle: 'dashed' }}>
-        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>₹{totalAmount}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, marginTop: 2, fontWeight: '600' }}>Total Spent</Text>
-      </View>
-    </View>
-  );
-};
-
 export default function DashboardScreen({ navigation }) {
   const [stats, setStats] = useState(null);
   const [dailyTip, setDailyTip] = useState(null);
@@ -1021,57 +1006,48 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         )}
 
-        {/* ── CATEGORY BREAKDOWN (Donut Style) ── */}
+                {/* ── CATEGORY BREAKDOWN (Progress Bar Style) ── */}
         {recentExpenses.length > 0 && (
           <View style={{ marginTop: 10 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 8, paddingHorizontal: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(139, 92, 246, 0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
-                  <Ionicons name="pie-chart" size={16} color="#A78BFA" />
-                </View>
-                <Text style={{ color: '#F8FAFC', fontSize: 18, fontWeight: '800', letterSpacing: 0.5 }}>Category Breakdown</Text>
-              </View>
+              <Text style={{ color: '#F8FAFC', fontSize: 18, fontWeight: '700', letterSpacing: 0.5 }}>Category Breakdown</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Analytics')} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ color: '#38BDF8', fontSize: 13, fontWeight: '700', marginRight: 4 }}>Details</Text>
+                <Text style={{ color: '#38BDF8', fontSize: 13, fontWeight: '600', marginRight: 4 }}>Details</Text>
                 <Ionicons name="arrow-forward" size={14} color="#38BDF8" />
               </TouchableOpacity>
             </View>
 
-            <GlassCard style={{ flexDirection: 'row', padding: 20, alignItems: 'center', marginBottom: 16 }}>
-              {/* Left Donut */}
-              <DonutChart data={getCategoryBreakdown(recentExpenses)} totalAmount={Math.round(recentExpenses.reduce((sum, item) => sum + Number(item.amount), 0)).toLocaleString('en-IN')} />
-
-              {/* Right List */}
-              <View style={{ flex: 1, marginLeft: 20 }}>
-                {getCategoryBreakdown(recentExpenses).slice(0, 3).map((cat, idx) => (
-                  <View key={idx} style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingVertical: 10,
-                    borderBottomWidth: idx < Math.min(getCategoryBreakdown(recentExpenses).length - 1, 2) ? 1 : 0,
-                    borderBottomColor: 'rgba(255,255,255,0.06)'
-                  }}>
-                    {/* Dot */}
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: cat.color || '#888', marginRight: 8 }} />
-                    {/* Icon */}
-                    <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
-                      <Text style={{ fontSize: 12 }}>{cat.icon || getFallbackIcon(cat.category)}</Text>
-                    </View>
-                    {/* Name */}
-                    <Text style={{ flex: 1, color: '#E2E8F0', fontSize: 13, fontWeight: '600' }} numberOfLines={1}>{cat.title || cat.name}</Text>
-                    {/* Amount & Percent */}
-                    <View style={{ alignItems: 'flex-end', marginLeft: 6 }}>
-                      <Text style={{ color: '#F8FAFC', fontSize: 13, fontWeight: '700' }}>₹{Math.round(cat.total).toLocaleString('en-IN')}</Text>
-                      <Text style={{ color: '#64748B', fontSize: 10, fontWeight: '600', marginTop: 2 }}>{Math.round(cat.percent)}%</Text>
+            <GlassCard style={{ padding: 16 }}>
+              {getCategoryBreakdown(recentExpenses).slice(0, 3).map((cat, idx) => (
+                <View key={idx} style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 12,
+                  borderBottomWidth: idx < Math.min(getCategoryBreakdown(recentExpenses).length - 1, 2) ? 1 : 0,
+                  borderBottomColor: 'rgba(255,255,255,0.05)'
+                }}>
+                  {/* Icon */}
+                  <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginRight: 14 }}>
+                    <Text style={{ fontSize: 22 }}>{cat.icon || getFallbackIcon(cat.category)}</Text>
+                  </View>
+                  
+                  {/* Name & Progress Bar */}
+                  <View style={{ flex: 1, marginRight: 16 }}>
+                    <Text style={{ color: '#E2E8F0', fontSize: 15, fontWeight: '600', marginBottom: 8 }} numberOfLines={1}>{cat.title || cat.name}</Text>
+                    <View style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                      <View style={{ width: `${Math.min(cat.percent || 0, 100)}%`, height: '100%', backgroundColor: cat.color || '#A78BFA', borderRadius: 2 }} />
                     </View>
                   </View>
-                ))}
-              </View>
+                  
+                  {/* Amount */}
+                  <Text style={{ color: '#F8FAFC', fontSize: 15, fontWeight: '700' }}>₹{Math.round(cat.total).toLocaleString('en-IN')}</Text>
+                </View>
+              ))}
             </GlassCard>
           </View>
         )}
-
-        {/* ── AI FINANCIAL COACH & DAILY MONEY TIP (CONSOLIDATED) ── */}
+        
+{/* ── AI FINANCIAL COACH & DAILY MONEY TIP (CONSOLIDATED) ── */}
         <TouchableOpacity 
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
