@@ -614,16 +614,16 @@ export default function DashboardScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* ── GREETING & STATUS PILL (Centered & Elegant) ── */}
-        <Animated.View style={[styles.greetingSection, { alignItems: 'center', paddingVertical: 20, opacity: animGreetingOpacity, transform: [{ translateX: animGreetingX }] }]}>
-          <Text style={[styles.greetText, { fontSize: 28, textAlign: 'center' }]} numberOfLines={1}>
+        <Animated.View style={[styles.greetingSection, { alignItems: 'center', paddingVertical: 24, opacity: animGreetingOpacity, transform: [{ translateX: animGreetingX }] }]}>
+          <Text style={[styles.greetText, { fontSize: 30, textAlign: 'center', fontWeight: '800' }]} numberOfLines={1}>
             {getGreeting()}, <Text style={{ color: '#A5B4FC' }}>{username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Friend'}</Text>
           </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-            <Ionicons name="calendar-outline" size={14} color="#94A3B8" style={{ marginRight: 4 }} />
-            <Text style={{ color: '#94A3B8', fontSize: 14, fontWeight: '500' }}>{formatShortMonth(stats?.month)}</Text>
-            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#475569', marginHorizontal: 8 }} />
-            <Ionicons name="hourglass-outline" size={14} color="#06B6D4" style={{ marginRight: 4 }} />
-            <Text style={{ color: '#06B6D4', fontSize: 14, fontWeight: '600' }}>{daysLeft} days remaining</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+            <Ionicons name="calendar-outline" size={13} color="#94A3B8" style={{ marginRight: 5 }} />
+            <Text style={{ color: '#94A3B8', fontSize: 13, fontWeight: '600' }}>{formatShortMonth(stats?.month)}</Text>
+            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#475569', marginHorizontal: 10 }} />
+            <Ionicons name="hourglass-outline" size={13} color="#06B6D4" style={{ marginRight: 5 }} />
+            <Text style={{ color: '#06B6D4', fontSize: 13, fontWeight: '700' }}>{daysLeft}d left</Text>
           </View>
         </Animated.View>
 
@@ -1955,23 +1955,27 @@ const styles = StyleSheet.create({
 
   // ── Luxury Main Budget Card ──
   mainCard: { 
-    borderRadius: 26, 
-    padding: 20, 
-    marginBottom: 12, 
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.09)',
+    borderRadius: 28, 
+    padding: 24, 
+    marginBottom: 16, 
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     position: 'relative',
     overflow: 'hidden',
-    ...SHADOW.lg,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
   },
   cardGlowCircle: {
     position: 'absolute',
-    top: -40,
-    right: -40,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    top: -60,
+    right: -60,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(99, 102, 241, 0.18)',
   },
   mainCardHeader: {
     flexDirection: 'row', 
@@ -2015,15 +2019,15 @@ const styles = StyleSheet.create({
   },
   currencySymbol: { 
     color: '#818CF8', 
-    fontSize: 26, 
+    fontSize: 32, 
     fontWeight: '700', 
-    marginRight: 4,
+    marginRight: 6,
   },
   balanceAmount: { 
     color: '#FFFFFF', 
-    fontSize: 40, 
+    fontSize: 48, 
     fontWeight: '900', 
-    letterSpacing: -1.2,
+    letterSpacing: -1.5,
   },
   budgetEditRow: {
     flexDirection: 'row',
@@ -2146,12 +2150,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    paddingVertical: 12,
-    paddingHorizontal: 6,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
   },
   metricColumn: {
     flex: 1,
@@ -2159,19 +2163,19 @@ const styles = StyleSheet.create({
   },
   metricDivider: {
     width: 1,
-    height: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    height: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   metricLabel: {
-    color: '#64748B',
-    fontSize: 9,
-    fontWeight: '800',
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '700',
     letterSpacing: 0.8,
-    marginBottom: 3,
+    marginBottom: 4,
   },
   metricVal: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    color: '#F1F5F9',
+    fontSize: 16,
     fontWeight: '800',
   },
 
