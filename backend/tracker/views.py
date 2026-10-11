@@ -483,11 +483,17 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
        - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
     4. If the user is ASKING a question, requesting a summary, complaining, or chatting:
        - action = "chat"
-       - chat_response = your natural, conversational, polite English reply.
+       - chat_response = your natural, conversational, polite Hinglish reply.
          - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
+         - If the user talks about a TRIP, VACATION, or GROUP EXPENSE SPLIT:
+           • Warmly acknowledge the trip and explain how to create a Live Trip Split Link:
+             👉 *Link banane ke liye:* "[Trip Name] with [Friends]" (jaise `Hazratganj trip with Aman`)
+             👉 *Kharcha split ke liye:* "[Trip Name]: [Kisne kitna diya]" (jaise `Hazratganj trip: Mai paid 160, Aman paid 0`)
+           • NEVER suggest putting trip/group expenses in Notepad!
+           • NEVER hallucinate or bring up old trips from past chats unless the user explicitly asks about them.
 
     Response MUST be strict JSON ONLY. No markdown, no extra text. Do NOT use <think> tags.
     /no_think
@@ -1778,24 +1784,67 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "message": f"✈️ *Your Trip & Split History*\n\nAap is link par click karke apni saari trips manage, delete, ya dekh sakte hain:\n🔗 {splits_url}\n\n_(Kripya login karein jo number apne use kiya hai)_"
             })
 
+        # ── Intercept Trip Format Guide / General Trip Inquiry ──
+        trip_guide_triggers = [
+            "trip guide", "split guide", "trip format", "split format", "trip help", "split help",
+            "trip kaise", "split kaise", "trip ka hisab kaise", "trip ka hisaab kaise",
+            "how to use trip", "how to split", "trip hisaab format", "trip hisab format",
+            "group hisab", "group hisaab", "trip kaise banaye", "split kaise kare"
+        ]
+        is_direct_guide_query = any(trg in lower_text for trg in trip_guide_triggers) or lower_text.strip() in ["trip", "split", "/trip", "/split"]
+        is_casual_trip_mention = (
+            ("trip" in lower_text or "travel" in lower_text) and
+            not any(char.isdigit() for char in lower_text) and
+            not any(w in lower_text for w in [":", "with", "paid", "diya", "de diya", "rs", "₹", "aur", "and", "mein", "history", "hisab", "hisaab", "settle", "naya", "new"])
+        )
+        if is_direct_guide_query or is_casual_trip_mention:
+            return JsonResponse({
+                "status": "success",
+                "message": get_trip_format_guide_message()
+            })
+
         # ── Intercept Group Split (Hybrid: WhatsApp Forwardable Card + 1-Click Web Split) ──
         split_triggers = [
-            "split:", "/split", "trip:", "trip :", "trip -", "hisaab:", "hisab:", "hisaab :", "hisab :", "group split", "bill split"
+            "split:", "/split", "trip:", "trip :", "trip -", "trip—", "hisaab:", "hisab:", "hisaab :", "hisab :", "group split", "bill split"
         ]
         has_multiple_amounts = len(re.findall(r'\b\d+\b', lower_text)) > 1
-        is_split_intent = any(kw in lower_text for kw in split_triggers) or (
-            ("reopen" in lower_text or "new " in lower_text or "naya " in lower_text) and 
-            ("trip" in lower_text or "split" in lower_text or "hisaab" in lower_text)
-        ) or (
-            ("split" in lower_text or "trip" in lower_text or "room" in lower_text or "dinner" in lower_text or "lunch" in lower_text or "goa" in lower_text) and 
-            (any(w in lower_text for w in ["paid", "diya", "dost", "cab", "hotel", "rent", "snacks", "petrol", "food", "mai ", "aur ", "or ", "mera", "maine"]) or has_multiple_amounts) and
-            any(char.isdigit() for char in lower_text)
+        has_friend_payment = bool(
+            re.search(r'\b[a-zA-Z]+\s+(?:paid|diya|de\s*diya)\b', lower_text) or
+            re.search(r'\b(?:paid|diya)\s+\d+\b', lower_text) or
+            ("paid" in lower_text and any(w in lower_text for w in [" or ", " aur ", " and "]))
+        )
+        has_recent_trip_context = False
+        chat_history = session.context if isinstance(session.context, list) else []
+        if chat_history:
+            recent_texts = " ".join([str(m.get("content", "")).lower() for m in chat_history[-4:] if isinstance(m, dict)])
+            if any(w in recent_texts for w in ["trip", "split", "hisaab", "hisab"]):
+                has_recent_trip_context = True
+
+        is_split_intent = (
+            any(kw in lower_text for kw in split_triggers) or
+            ("trip with " in lower_text or "split with " in lower_text) or
+            (("reopen" in lower_text or "new " in lower_text or "naya " in lower_text) and 
+             ("trip" in lower_text or "split" in lower_text or "hisaab" in lower_text)) or
+            (("split" in lower_text or "trip" in lower_text or "room" in lower_text or "flat" in lower_text or "dinner" in lower_text or "lunch" in lower_text or "goa" in lower_text or "manali" in lower_text) and 
+             (any(w in lower_text for w in ["paid", "diya", "dost", "cab", "hotel", "rent", "snacks", "petrol", "food", "mai ", "aur ", "or ", "mera", "maine", "with "]) or has_multiple_amounts)) or
+            (has_friend_payment and (has_multiple_amounts or has_recent_trip_context or any(w in lower_text for w in ["trip", "split", "or ", "aur "])))
         )
         if is_split_intent:
             host_domain = request.build_absolute_uri('/')[:-1]
             if "localhost" in host_domain or "127.0.0.1" in host_domain:
                 host_domain = "https://smart-expense-coach.onrender.com"
             res = parse_and_handle_split_message(target_user, spoken_text, host_domain, session)
+
+            # Persist session context so subsequent AI turns know about this trip/split!
+            chat_history = session.context if isinstance(session.context, list) else []
+            chat_history.append({"role": "user", "content": normalized_text})
+            summary_msg = res.get("message", "")
+            if len(summary_msg) > 300:
+                summary_msg = summary_msg[:300] + "..."
+            chat_history.append({"role": "assistant", "content": summary_msg})
+            session.context = chat_history[-6:]
+            session.save()
+
             return JsonResponse(res)
 
         # ── Intercept Budget ──
@@ -4035,6 +4084,14 @@ def compute_group_settlement(group, host_domain=None):
     settle_lines = []
     if group.is_settled:
         settle_lines = ["🎉 *This group is fully settled and closed!* All debts cleared."]
+    elif total == 0 and not recorded_settlements:
+        member_names_str = ", ".join(members) if members else "Members added"
+        settle_lines = [
+            "✨ *Group created successfully!*",
+            f"👥 *Members:* {member_names_str}",
+            "Abhi koi kharcha add nahi hua hai (Total ₹0).",
+            "👉 _WhatsApp par kharcha likhein ya niche diye link se add karein!_"
+        ]
     else:
         for s in settlements:
             settle_lines.append(f"• *{s['from']}* ➡️ *{s['to']}*: ₹{s['amount']:,.0f}")
@@ -4110,6 +4167,30 @@ def compute_group_settlement(group, host_domain=None):
     }
 
 
+def get_trip_format_guide_message() -> str:
+    return (
+        "✈️ *Trip & Group Split Hisaab Guide*\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Paisa Mitra me aap doston ke saath trip ya group hisaab bina kisi login ke live link ke saath manage kar sakte hain!\n\n"
+        "📌 *Message kaise bhejein (Examples):*\n\n"
+        "1️⃣ *Naya Trip Link banana (Bina kharche ke bhi ban jayega):*\n"
+        "👉 `Hazratganj trip with Aman, Rahul`\n"
+        "👉 `Goa trip: Ajay, Aman`\n\n"
+        "2️⃣ *Kharcha add karna (Single ya Sabka):*\n"
+        "👉 `Hazratganj trip: Maine 160 diya, Aman ne 0`\n"
+        "👉 `Hazratganj trip: aman paid 0 or mai paid 160`\n"
+        "👉 `Goa trip: Rahul paid 1200 dinner, maine 400 cab`\n"
+        "👉 `Manali trip: 1500 petrol paid by Aman`\n\n"
+        "3️⃣ *Live Hisaab / Summary dekhna:*\n"
+        "👉 `Hazratganj trip ka hisaab`\n"
+        "👉 `Trip history` (apni saari trips dekhne ke liye)\n\n"
+        "4️⃣ *Payment Settle karna:*\n"
+        "👉 `Aman paid 80 to Ajay in Hazratganj trip`\n"
+        "👉 `Hazratganj trip settle kar do`\n\n"
+        "💡 *Tip:* Agar kisi dost ne abhi paise nahi diye, tab bhi uska naam likh dijiye — hisaab barabar split hoga aur Live Web Link mil jayega! 🚀"
+    )
+
+
 def parse_and_handle_split_message(target_user, text: str, host_domain: str = None, session=None) -> dict:
     """
     Parses natural language split expense commands via Groq AI,
@@ -4122,32 +4203,38 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
         f"You are an expert AI parser for Indian group expense splits (Splitwise style).\n"
         f"Target User Name: {user_name}\n\n"
         f"Instructions:\n"
-        f"1. Extract the group/trip name (e.g. 'Goa Trip', 'Room Rent', 'Flatmates', 'Dinner'). If none mentioned, default to 'Group Split'.\n"
-        f"2. Extract who paid what. If the user refers to themselves ('maine', 'mera', 'me', 'i paid', 'self'), set 'paid_by' to '{user_name}'.\n"
-        f"3. For each expense item, extract: 'paid_by' (Capitalized person name), 'amount' (number), and 'description' (e.g. 'cab', 'dinner', 'snacks').\n"
-        f"4. If the message wants to settle/close/finish the group completely (e.g. 'Goa trip settle kar do', 'Goa trip khatam ho gaya', 'close goa trip', 'settle goa trip'), set 'is_settle_all': true.\n"
-        f"5. If one member paid another directly to settle (e.g. 'Rahul paid Ajay 133 in Goa trip', 'Rahul ne Aman ko 733 de diye'), set 'settlement_payment': {{\"debtor\": \"Rahul\", \"creditor\": \"Ajay\", \"amount\": 133}}.\n"
-        f"6. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'show split goa'), set 'is_query_only': true.\n"
-        f"7. If the user is asking to 'reopen' a trip, extract the expenses from their previous messages in the chat history.\n\n"
+        f"1. Extract the group/trip name (e.g. 'Hazratganj Trip', 'Goa Trip', 'Dinner', 'Flatmates'). Look at the incoming message and recent chat history. If not mentioned, default to 'Trip Split'.\n"
+        f"2. Extract ALL group members into 'members' array (capitalized strings). ALWAYS include '{user_name}' and ANY friends mentioned in the message or context (e.g. 'Aman', 'Rahul', 'Rohit'), EVEN IF they paid 0 or did not pay anything!\n"
+        f"3. Extract who paid what into 'expenses' array. If user refers to themselves ('maine', 'mera', 'me', 'i paid', 'mai', 'mai paid', 'self'), set 'paid_by' to '{user_name}'.\n"
+        f"4. For each expense item, extract: 'paid_by' (Capitalized person name), 'amount' (number >= 0), and 'description' (e.g. 'cab', 'dinner', 'snacks', 'trip').\n"
+        f"   - If someone paid 0 (e.g. 'aman paid 0', 'aman ne 0 diya'), you MUST include their name in 'members' and you can include {{\"paid_by\": \"Aman\", \"amount\": 0, \"description\": \"trip\"}} in expenses.\n"
+        f"   - If user only creates a group/trip with friends (e.g. 'Hazratganj trip with Aman' or 'Goa trip: Ajay, Aman, Rahul'), put all of them in 'members': [\"{user_name}\", \"Aman\"], and 'expenses': [].\n"
+        f"5. If the message wants to settle/close/finish the group completely (e.g. 'Goa trip settle kar do', 'close goa trip'), set 'is_settle_all': true.\n"
+        f"6. If one member paid another directly to settle (e.g. 'Rahul paid Ajay 133 in Goa trip', 'Aman paid Ajay 80'), set 'settlement_payment': {{\"debtor\": \"Aman\", \"creditor\": \"Ajay\", \"amount\": 80}}.\n"
+        f"7. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'Hazratganj trip hisaab'), set 'is_query_only': true.\n"
+        f"8. If the user is asking how to use/format trip messages (e.g. 'trip format', 'trip help', 'trip kaise kare'), set 'is_help_query': true.\n"
+        f"9. If the user is continuing a previous trip conversation from chat history (e.g. previous message was about 'Hazratganj trip' and now user says 'Aman paid 1 or mai 1' or 'Aman paid 1 rs'), use that group name from history!\n\n"
         f"Output format: Strictly output a JSON object with this exact structure, with NO markdown code fences or conversational text:\n"
         f"{{\n"
+        f"  \"is_help_query\": false,\n"
         f"  \"is_query_only\": false,\n"
         f"  \"is_settle_all\": false,\n"
         f"  \"settlement_payment\": null,\n"
-        f"  \"group_name\": \"Goa Trip\",\n"
+        f"  \"group_name\": \"Hazratganj Trip\",\n"
+        f"  \"members\": [\"{user_name}\", \"Aman\"],\n"
         f"  \"expenses\": [\n"
-        f"    {{\"paid_by\": \"Rahul\", \"amount\": 400, \"description\": \"cab\"}},\n"
-        f"    {{\"paid_by\": \"Aman\", \"amount\": 1200, \"description\": \"dinner\"}},\n"
-        f"    {{\"paid_by\": \"{user_name}\", \"amount\": 300, \"description\": \"snacks\"}}\n"
+        f"    {{\"paid_by\": \"{user_name}\", \"amount\": 160, \"description\": \"trip\"}},\n"
+        f"    {{\"paid_by\": \"Aman\", \"amount\": 0, \"description\": \"trip\"}}\n"
         f"  ]\n"
         f"}}"
     )
 
     messages = [{"role": "system", "content": system_prompt}]
     
-    if session and session.context and "reopen" in text.lower():
+    # Always include recent conversation context so AI knows which trip is being discussed!
+    if session and session.context:
         if isinstance(session.context, list):
-            for m in session.context[-4:]:
+            for m in session.context[-6:]:
                 if isinstance(m, dict) and 'role' in m and 'content' in m:
                     messages.append({"role": m['role'], "content": m['content']})
                     
@@ -4173,14 +4260,25 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
             "message": "⚠️ Could not understand group split details. Please write like:\n*Goa Trip: Rahul paid 400 cab, Aman paid 1200 dinner, maine 300 snacks*"
         }
 
-    group_name = data.get("group_name", "Group Split").strip()
+    if data.get("is_help_query"):
+        return {
+            "status": "success",
+            "message": get_trip_format_guide_message()
+        }
+
+    group_name = data.get("group_name", "Trip Split").strip()
     is_query_only = data.get("is_query_only", False)
     is_settle_all = data.get("is_settle_all", False)
     settle_payment = data.get("settlement_payment")
 
-    group = SplitGroup.objects.filter(creator=target_user, name__iexact=group_name).order_by('-id').first()
-    if not group:
-        group = SplitGroup.objects.filter(creator=target_user, name__icontains=group_name).order_by('-id').first()
+    is_force_new = "new " in text.lower() or "naya " in text.lower()
+    group = None
+    if not is_force_new:
+        group = SplitGroup.objects.filter(creator=target_user, name__iexact=group_name).order_by('-id').first()
+        if not group:
+            group = SplitGroup.objects.filter(creator=target_user, name__icontains=group_name).order_by('-id').first()
+        if not group and group_name in ["Group Split", "Trip Split", "Trip"]:
+            group = SplitGroup.objects.filter(creator=target_user, is_settled=False).order_by('-id').first()
 
     if is_settle_all:
         if not group:
@@ -4202,33 +4300,42 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
             "data": settlement
         }
 
-    if settle_payment and isinstance(settle_payment, dict) and group:
-        d = str(settle_payment.get("debtor", "")).strip().title()
-        c = str(settle_payment.get("creditor", "")).strip().title()
-        amt_raw = settle_payment.get("amount", 0)
-        try:
-            amt = Decimal(str(amt_raw))
-            if d and c and amt > 0:
-                SplitSettlement.objects.create(
-                    group=group,
-                    debtor=d,
-                    creditor=c,
-                    amount=amt,
-                    date=date.today()
-                )
-                settlement = compute_group_settlement(group, host_domain)
-                return {
-                    "status": "success",
-                    "message": (
-                        f"✅ *Payment Recorded for {group.name}!*\n"
-                        f"━━━━━━━━━━━━━━━━━━\n"
-                        f"💸 *{d}* paid *₹{amt:,.0f}* to *{c}*\n\n"
-                        f"{settlement['whatsapp_message']}"
-                    ),
-                    "data": settlement
-                }
-        except Exception as e:
-            logger.error("Error saving settlement payment: %s", e)
+    if settle_payment and isinstance(settle_payment, dict):
+        if not group:
+            group = SplitGroup.objects.filter(creator=target_user, is_settled=False).order_by('-id').first()
+        if group:
+            d = str(settle_payment.get("debtor", "")).strip().title()
+            c = str(settle_payment.get("creditor", "")).strip().title()
+            if d.lower() in ["self", "me", "maine", "mai", "user"]:
+                d = user_name
+            if c.lower() in ["self", "me", "maine", "mai", "user"]:
+                c = user_name
+            amt_raw = settle_payment.get("amount", 0)
+            try:
+                amt = Decimal(str(amt_raw))
+                if d and c and amt > 0:
+                    SplitMember.objects.get_or_create(group=group, name=d)
+                    SplitMember.objects.get_or_create(group=group, name=c)
+                    SplitSettlement.objects.create(
+                        group=group,
+                        debtor=d,
+                        creditor=c,
+                        amount=amt,
+                        date=date.today()
+                    )
+                    settlement = compute_group_settlement(group, host_domain)
+                    return {
+                        "status": "success",
+                        "message": (
+                            f"✅ *Payment Recorded for {group.name}!*\n"
+                            f"━━━━━━━━━━━━━━━━━━\n"
+                            f"💸 *{d}* paid *₹{amt:,.0f}* to *{c}*\n\n"
+                            f"{settlement['whatsapp_message']}"
+                        ),
+                        "data": settlement
+                    }
+            except Exception as e:
+                logger.error("Error saving settlement payment: %s", e)
 
     if is_query_only:
         if not group:
@@ -4261,34 +4368,58 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
                 "message": f"🛑 Your *'{group.name}'* is already settled!\n\nDo you want to add this to the old one or create a new one?\n\n👉 Reply with: *Reopen {group.name}* (or just add 'reopen' in your message)\nOR\n👉 Reply with: *New {group.name} : [your expenses]*"
             }
 
+    members_data = data.get("members", [])
     expenses_data = data.get("expenses", [])
-    if not expenses_data:
-        return {
-            "status": "error",
-            "message": "⚠️ No expense items detected. Please specify amounts and who paid!"
-        }
 
     if not group:
         group = SplitGroup.objects.create(creator=target_user, name=group_name)
 
+    # 1. Always ensure creator is registered as a member
     creator_member, _ = SplitMember.objects.get_or_create(group=group, name=user_name)
     if hasattr(target_user, 'profile') and target_user.profile.phone_number and not creator_member.phone:
         creator_member.phone = target_user.profile.phone_number
         creator_member.save(update_fields=["phone"])
 
+    # 2. Register all explicitly identified members (even if they paid 0 or nothing)
+    for m in members_data:
+        m_name = str(m).strip().title()
+        if m_name and m_name.lower() not in ["none", "null", "self", "user", "me", "maine", "mai", "i"]:
+            SplitMember.objects.get_or_create(group=group, name=m_name)
+
+    # 3. Add all expense payers as members, and record expenses where amount > 0
+    valid_expenses_count = 0
     for item in expenses_data:
         p_name = str(item.get("paid_by", "")).strip().title()
-        amt = Decimal(str(item.get("amount", 0)))
-        desc = str(item.get("description", "Expense")).strip()
-        if p_name and amt > 0:
+        if p_name.lower() in ["self", "user", "me", "maine", "mai", "i"]:
+            p_name = user_name
+
+        try:
+            amt = Decimal(str(item.get("amount", 0)))
+        except Exception:
+            amt = Decimal(0)
+        desc = str(item.get("description", "Expense")).strip() or "Expense"
+
+        if p_name and p_name.lower() not in ["none", "null", ""]:
+            # Register member even if amount is 0!
             SplitMember.objects.get_or_create(group=group, name=p_name)
-            SplitExpense.objects.create(
-                group=group,
-                paid_by=p_name,
-                description=desc,
-                amount=amt,
-                date=date.today()
-            )
+            if amt > 0:
+                SplitExpense.objects.create(
+                    group=group,
+                    paid_by=p_name,
+                    description=desc,
+                    amount=amt,
+                    date=date.today()
+                )
+                valid_expenses_count += 1
+
+    # 4. If only creator exists (no friends identified) and 0 expenses were added, guide the user
+    if group.members.count() <= 1 and valid_expenses_count == 0 and not is_query_only:
+        if group.expenses.count() == 0:
+            group.delete()
+        return {
+            "status": "success",
+            "message": get_trip_format_guide_message()
+        }
 
     settlement = compute_group_settlement(group, host_domain)
     return {
