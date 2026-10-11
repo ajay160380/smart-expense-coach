@@ -4169,25 +4169,14 @@ def compute_group_settlement(group, host_domain=None):
 
 def get_trip_format_guide_message() -> str:
     return (
-        "✈️ *Trip & Group Split Hisaab Guide*\n"
+        "✈️ *Trip & Group Split Format:*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "Paisa Mitra me aap doston ke saath trip ya group hisaab bina kisi login ke live link ke saath manage kar sakte hain!\n\n"
-        "📌 *Message kaise bhejein (Examples):*\n\n"
-        "1️⃣ *Naya Trip Link banana (Bina kharche ke bhi ban jayega):*\n"
-        "👉 `Hazratganj trip with Aman, Rahul`\n"
-        "👉 `Goa trip: Ajay, Aman`\n\n"
-        "2️⃣ *Kharcha add karna (Single ya Sabka):*\n"
-        "👉 `Hazratganj trip: Maine 160 diya, Aman ne 0`\n"
-        "👉 `Hazratganj trip: aman paid 0 or mai paid 160`\n"
-        "👉 `Goa trip: Rahul paid 1200 dinner, maine 400 cab`\n"
-        "👉 `Manali trip: 1500 petrol paid by Aman`\n\n"
-        "3️⃣ *Live Hisaab / Summary dekhna:*\n"
-        "👉 `Hazratganj trip ka hisaab`\n"
-        "👉 `Trip history` (apni saari trips dekhne ke liye)\n\n"
-        "4️⃣ *Payment Settle karna:*\n"
-        "👉 `Aman paid 80 to Ajay in Hazratganj trip`\n"
-        "👉 `Hazratganj trip settle kar do`\n\n"
-        "💡 *Tip:* Agar kisi dost ne abhi paise nahi diye, tab bhi uska naam likh dijiye — hisaab barabar split hoga aur Live Web Link mil jayega! 🚀"
+        "👉 *Trip Link banana:* `Hazratganj trip with Aman`\n"
+        "👉 *Kharcha split karna:* `Hazratganj trip: Mai paid 160, Aman 0`\n"
+        "👉 *Hisaab dekhna:* `Hazratganj trip ka hisaab`\n"
+        "👉 *Settle karna:* `Aman paid 80 to Ajay`\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💡 *Tip:* Kisi ne kuch pay nahi kiya tab bhi uska naam likhein — turant Live Link ban jayega! 🚀"
     )
 
 
