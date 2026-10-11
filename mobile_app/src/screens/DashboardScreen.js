@@ -84,62 +84,89 @@ export default function DashboardScreen({ navigation }) {
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
   const [shakeBannerVisible, setShakeBannerVisible] = useState(true);
 
-  // ── 1000000x CRAZY ATTRACTIVE ANIMATIONS ──
-  const animGreetingX = useRef(new Animated.Value(-150)).current; // Slide from left
+  // ── LUXURY ULTRA-CLEAN ENTRANCE ANIMATIONS (NO CROOKED ROTATION) ──
+  const animGreetingX = useRef(new Animated.Value(-20)).current;
   const animGreetingOpacity = useRef(new Animated.Value(0)).current;
 
-  const animCardScale = useRef(new Animated.Value(0.4)).current; // Massive zoom
-  const animCardY = useRef(new Animated.Value(150)).current; // Deep rise
-  const animCardRotate = useRef(new Animated.Value(0)).current; // Slight tilt
+  const animCardScale = useRef(new Animated.Value(0.93)).current;
+  const animCardY = useRef(new Animated.Value(20)).current;
   const animCardOpacity = useRef(new Animated.Value(0)).current;
 
-  const animDockX = useRef(new Animated.Value(150)).current; // Slide from right
+  const animDockX = useRef(new Animated.Value(20)).current;
   const animDockOpacity = useRef(new Animated.Value(0)).current;
 
-  const animListsY = useRef(new Animated.Value(200)).current; // Huge rise
+  const animListsY = useRef(new Animated.Value(25)).current;
   const animListsOpacity = useRef(new Animated.Value(0)).current;
+
+  const hasRevealedRef = useRef(false);
+
+  const runEntranceAnimation = useCallback(() => {
+    // Reset values first
+    animGreetingX.setValue(-20);
+    animGreetingOpacity.setValue(0);
+    animCardScale.setValue(0.93);
+    animCardY.setValue(20);
+    animCardOpacity.setValue(0);
+    animDockX.setValue(20);
+    animDockOpacity.setValue(0);
+    animListsY.setValue(25);
+    animListsOpacity.setValue(0);
+
+    Animated.stagger(100, [
+      Animated.parallel([
+        Animated.timing(animGreetingOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(animGreetingX, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(animCardOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
+        Animated.spring(animCardY, { toValue: 0, friction: 6, tension: 60, useNativeDriver: true }),
+        Animated.spring(animCardScale, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(animDockOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(animDockX, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(animListsOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
+        Animated.spring(animListsY, { toValue: 0, friction: 7, tension: 45, useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, []);
+
+  useEffect(() => {
+    // Listen for splash reveal event from MoneySplashScreen
+    const sub = DeviceEventEmitter.addListener('splash_reveal', () => {
+      hasRevealedRef.current = true;
+      runEntranceAnimation();
+    });
+
+    // Fallback: if splash didn't run or finished earlier
+    const fallbackTimer = setTimeout(() => {
+      if (!hasRevealedRef.current) {
+        hasRevealedRef.current = true;
+        runEntranceAnimation();
+      }
+    }, 1800);
+
+    return () => {
+      sub.remove();
+      clearTimeout(fallbackTimer);
+    };
+  }, [runEntranceAnimation]);
 
   useFocusEffect(
     useCallback(() => {
-      // Reset values first
-      animGreetingX.setValue(-150);
-      animGreetingOpacity.setValue(0);
-      animCardScale.setValue(0.4);
-      animCardY.setValue(150);
-      animCardRotate.setValue(0);
-      animCardOpacity.setValue(0);
-      animDockX.setValue(150);
-      animDockOpacity.setValue(0);
-      animListsY.setValue(200);
-      animListsOpacity.setValue(0);
-
-      Animated.stagger(150, [
-        Animated.parallel([
-          Animated.timing(animGreetingOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.spring(animGreetingX, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(animCardOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
-          Animated.spring(animCardY, { toValue: 0, friction: 5, tension: 60, useNativeDriver: true }),
-          Animated.spring(animCardScale, { toValue: 1, friction: 5, tension: 60, useNativeDriver: true }),
-          Animated.spring(animCardRotate, { toValue: 1, friction: 5, tension: 60, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(animDockOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.spring(animDockX, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(animListsOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
-          Animated.spring(animListsY, { toValue: 0, friction: 7, tension: 40, useNativeDriver: true }),
-        ])
-      ]).start();
-    }, [])
+      if (hasRevealedRef.current) {
+        runEntranceAnimation();
+      } else {
+        // Keep hidden while splash is running
+        animGreetingOpacity.setValue(0);
+        animCardOpacity.setValue(0);
+        animDockOpacity.setValue(0);
+        animListsOpacity.setValue(0);
+      }
+    }, [runEntranceAnimation])
   );
-
-  const cardRotate = animCardRotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['12deg', '0deg']
-  });
 
   // ── Quick Action Dock Customizable State (1-8 items) ──
   const [actionDockKeys, setActionDockKeys] = useState(DEFAULT_ACTION_DOCK_KEYS);
@@ -630,7 +657,7 @@ export default function DashboardScreen({ navigation }) {
 
         {/* ── ANOMALY SPENDING INSIGHT (Compact Sleek Strip) ── */}
         {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
-          <View style={styles.alertBanner}>
+          <Animated.View style={[styles.alertBanner, { opacity: animGreetingOpacity }]}>
             {anomalies.map((alert, idx) => {
               if (dismissedAnomalies[idx]) return null;
               return (
@@ -667,35 +694,37 @@ export default function DashboardScreen({ navigation }) {
                 </LinearGradient>
               );
             })}
-          </View>
+          </Animated.View>
         )}
 
         {/* ── WHATSAPP BANNER ── */}
         {!stats?.whatsapp_linked && (
-          <TouchableOpacity 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              openWhatsApp();
-            }} 
-            activeOpacity={0.85}
-          >
-            <View style={styles.waBanner}>
-              <View style={styles.waIconContainer}>
-                <FontAwesome name="whatsapp" size={24} color="#fff" />
+          <Animated.View style={{ opacity: animGreetingOpacity }}>
+            <TouchableOpacity 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                openWhatsApp();
+              }} 
+              activeOpacity={0.85}
+            >
+              <View style={styles.waBanner}>
+                <View style={styles.waIconContainer}>
+                  <FontAwesome name="whatsapp" size={24} color="#fff" />
+                </View>
+                <View style={styles.waTextContainer}>
+                  <Text style={styles.waTitle}>Track via WhatsApp</Text>
+                  <Text style={styles.waSubtitle}>Text "500 petrol" to +91 7379053923</Text>
+                </View>
+                <View style={styles.waButton}>
+                  <Text style={styles.waButtonText}>Open →</Text>
+                </View>
               </View>
-              <View style={styles.waTextContainer}>
-                <Text style={styles.waTitle}>Track via WhatsApp</Text>
-                <Text style={styles.waSubtitle}>Text "500 petrol" to +91 7379053923</Text>
-              </View>
-              <View style={styles.waButton}>
-                <Text style={styles.waButtonText}>Open →</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </Animated.View>
         )}
 
         {/* ── LUXURY MAIN BUDGET CARD ── */}
-        <Animated.View style={{ opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }, { rotate: cardRotate }] }}>
+        <Animated.View style={{ opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }] }}>
           <LinearGradient
             colors={overspent ? ['#3D0C14', '#1E1226', '#0B0F19'] : ['#18213D', '#11172A', '#0A0E1A']}
             style={styles.mainCard}

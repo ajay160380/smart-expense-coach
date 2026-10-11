@@ -13,11 +13,12 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Logo from './src/components/Logo';
+import MoneySplashScreen from './src/components/MoneySplashScreen';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import CustomAlertModal, { installGlobalAlert, showCustomAlert } from './src/components/CustomAlertModal';
 import * as Updates from 'expo-updates';
@@ -212,6 +213,7 @@ export default function App() {
   const [shakeSensitivity, setShakeSensitivity] = useState(1.8);
   const [isBiometricUnlocked, setIsBiometricUnlocked] = useState(false);
   const [appLocked, setAppLocked] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   const triggerBiometricUnlock = async () => {
     try {
@@ -568,6 +570,23 @@ export default function App() {
           </Stack.Navigator>
         </NavigationContainer>
         <CustomAlertModal />
+
+        {/* 💸 Money Burst Splash — Full-Screen Translucent Native Modal */}
+        {isAuthenticated && (
+          <Modal
+            visible={showSplash}
+            transparent={true}
+            animationType="none"
+            statusBarTranslucent={true}
+            onRequestClose={() => setShowSplash(false)}
+          >
+            <View style={{ flex: 1, backgroundColor: '#0B0E14', justifyContent: 'center', alignItems: 'center' }}>
+              <MoneySplashScreen
+                onFinish={() => setShowSplash(false)}
+              />
+            </View>
+          </Modal>
+        )}
       </View>
     </SafeAreaProvider>
   );
