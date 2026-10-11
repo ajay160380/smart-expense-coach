@@ -4089,8 +4089,8 @@ def compute_group_settlement(group, host_domain=None):
         settle_lines = [
             "✨ *Group created successfully!*",
             f"👥 *Members:* {member_names_str}",
-            "Abhi koi kharcha add nahi hua hai (Total ₹0).",
-            "👉 _WhatsApp par kharcha likhein ya niche diye link se add karein!_"
+            "No expenses logged yet (Total ₹0).",
+            "👉 _Add expenses via WhatsApp or tap the link below!_"
         ]
     else:
         for s in settlements:
@@ -4169,14 +4169,14 @@ def compute_group_settlement(group, host_domain=None):
 
 def get_trip_format_guide_message() -> str:
     return (
-        "✈️ *Trip & Group Split Format:*\n"
+        "✈️ *Trip & Group Split Guide*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "👉 *Trip Link banana:* `Manali trip with Sumit`\n"
-        "👉 *Kharcha split karna:* `Manali trip: Ajay paid 1600, Sumit 0`\n"
-        "👉 *Hisaab dekhna:* `Manali trip ka hisaab`\n"
-        "👉 *Settle karna:* `Sumit paid 800 to Ajay`\n"
+        "👉 *Create Trip Link:* `Manali trip with Sumit`\n"
+        "👉 *Split Expenses:* `Manali trip: Ajay paid 1600, Sumit 0`\n"
+        "👉 *View Balances:* `Manali trip summary`\n"
+        "👉 *Settle Payment:* `Sumit paid 800 to Ajay`\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "💡 *Tip:* Kisi ne kuch pay nahi kiya tab bhi uska naam likhein — turant Live Link ban jayega! 🚀"
+        "💡 *Tip:* Even if someone paid ₹0, include their name to auto-split and get a Live Web Link! 🚀"
     )
 
 
