@@ -490,8 +490,8 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
          - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
          - If the user talks about a TRIP, VACATION, or GROUP EXPENSE SPLIT:
            • Warmly acknowledge the trip and explain how to create a Live Trip Split Link:
-             👉 *Link banane ke liye:* "[Trip Name] with [Friends]" (jaise `Hazratganj trip with Aman`)
-             👉 *Kharcha split ke liye:* "[Trip Name]: [Kisne kitna diya]" (jaise `Hazratganj trip: Mai paid 160, Aman paid 0`)
+             👉 *Link banane ke liye:* "[Trip Name] with [Friends]" (jaise `Manali trip with Sumit`)
+             👉 *Kharcha split ke liye:* "[Trip Name]: [Kisne kitna diya]" (jaise `Manali trip: Ajay paid 1600, Sumit paid 0`)
            • NEVER suggest putting trip/group expenses in Notepad!
            • NEVER hallucinate or bring up old trips from past chats unless the user explicitly asks about them.
 
@@ -4171,10 +4171,10 @@ def get_trip_format_guide_message() -> str:
     return (
         "✈️ *Trip & Group Split Format:*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "👉 *Trip Link banana:* `Hazratganj trip with Aman`\n"
-        "👉 *Kharcha split karna:* `Hazratganj trip: Mai paid 160, Aman 0`\n"
-        "👉 *Hisaab dekhna:* `Hazratganj trip ka hisaab`\n"
-        "👉 *Settle karna:* `Aman paid 80 to Ajay`\n"
+        "👉 *Trip Link banana:* `Manali trip with Sumit`\n"
+        "👉 *Kharcha split karna:* `Manali trip: Ajay paid 1600, Sumit 0`\n"
+        "👉 *Hisaab dekhna:* `Manali trip ka hisaab`\n"
+        "👉 *Settle karna:* `Sumit paid 800 to Ajay`\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "💡 *Tip:* Kisi ne kuch pay nahi kiya tab bhi uska naam likhein — turant Live Link ban jayega! 🚀"
     )
@@ -4192,28 +4192,28 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
         f"You are an expert AI parser for Indian group expense splits (Splitwise style).\n"
         f"Target User Name: {user_name}\n\n"
         f"Instructions:\n"
-        f"1. Extract the group/trip name (e.g. 'Hazratganj Trip', 'Goa Trip', 'Dinner', 'Flatmates'). Look at the incoming message and recent chat history. If not mentioned, default to 'Trip Split'.\n"
-        f"2. Extract ALL group members into 'members' array (capitalized strings). ALWAYS include '{user_name}' and ANY friends mentioned in the message or context (e.g. 'Aman', 'Rahul', 'Rohit'), EVEN IF they paid 0 or did not pay anything!\n"
+        f"1. Extract the group/trip name (e.g. 'Manali Trip', 'Goa Trip', 'Dinner', 'Flatmates'). Look at the incoming message and recent chat history. If not mentioned, default to 'Trip Split'.\n"
+        f"2. Extract ALL group members into 'members' array (capitalized strings). ALWAYS include '{user_name}' and ANY friends mentioned in the message or context (e.g. 'Sumit', 'Rahul', 'Rohit'), EVEN IF they paid 0 or did not pay anything!\n"
         f"3. Extract who paid what into 'expenses' array. If user refers to themselves ('maine', 'mera', 'me', 'i paid', 'mai', 'mai paid', 'self'), set 'paid_by' to '{user_name}'.\n"
         f"4. For each expense item, extract: 'paid_by' (Capitalized person name), 'amount' (number >= 0), and 'description' (e.g. 'cab', 'dinner', 'snacks', 'trip').\n"
-        f"   - If someone paid 0 (e.g. 'aman paid 0', 'aman ne 0 diya'), you MUST include their name in 'members' and you can include {{\"paid_by\": \"Aman\", \"amount\": 0, \"description\": \"trip\"}} in expenses.\n"
-        f"   - If user only creates a group/trip with friends (e.g. 'Hazratganj trip with Aman' or 'Goa trip: Ajay, Aman, Rahul'), put all of them in 'members': [\"{user_name}\", \"Aman\"], and 'expenses': [].\n"
+        f"   - If someone paid 0 (e.g. 'sumit paid 0', 'sumit ne 0 diya'), you MUST include their name in 'members' and you can include {{\"paid_by\": \"Sumit\", \"amount\": 0, \"description\": \"trip\"}} in expenses.\n"
+        f"   - If user only creates a group/trip with friends (e.g. 'Manali trip with Sumit' or 'Goa trip: Ajay, Sumit, Rahul'), put all of them in 'members': [\"{user_name}\", \"Sumit\"], and 'expenses': [].\n"
         f"5. If the message wants to settle/close/finish the group completely (e.g. 'Goa trip settle kar do', 'close goa trip'), set 'is_settle_all': true.\n"
-        f"6. If one member paid another directly to settle (e.g. 'Rahul paid Ajay 133 in Goa trip', 'Aman paid Ajay 80'), set 'settlement_payment': {{\"debtor\": \"Aman\", \"creditor\": \"Ajay\", \"amount\": 80}}.\n"
-        f"7. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'Hazratganj trip hisaab'), set 'is_query_only': true.\n"
+        f"6. If one member paid another directly to settle (e.g. 'Rahul paid Ajay 133 in Goa trip', 'Sumit paid Ajay 80'), set 'settlement_payment': {{\"debtor\": \"Sumit\", \"creditor\": \"Ajay\", \"amount\": 80}}.\n"
+        f"7. If the message is only asking for summary/status of an existing group (e.g. 'Goa trip ka hisaab', 'Manali trip hisaab'), set 'is_query_only': true.\n"
         f"8. If the user is asking how to use/format trip messages (e.g. 'trip format', 'trip help', 'trip kaise kare'), set 'is_help_query': true.\n"
-        f"9. If the user is continuing a previous trip conversation from chat history (e.g. previous message was about 'Hazratganj trip' and now user says 'Aman paid 1 or mai 1' or 'Aman paid 1 rs'), use that group name from history!\n\n"
+        f"9. If the user is continuing a previous trip conversation from chat history (e.g. previous message was about 'Manali trip' and now user says 'Sumit paid 1 or mai 1' or 'Sumit paid 1 rs'), use that group name from history!\n\n"
         f"Output format: Strictly output a JSON object with this exact structure, with NO markdown code fences or conversational text:\n"
         f"{{\n"
         f"  \"is_help_query\": false,\n"
         f"  \"is_query_only\": false,\n"
         f"  \"is_settle_all\": false,\n"
         f"  \"settlement_payment\": null,\n"
-        f"  \"group_name\": \"Hazratganj Trip\",\n"
-        f"  \"members\": [\"{user_name}\", \"Aman\"],\n"
+        f"  \"group_name\": \"Manali Trip\",\n"
+        f"  \"members\": [\"{user_name}\", \"Sumit\"],\n"
         f"  \"expenses\": [\n"
-        f"    {{\"paid_by\": \"{user_name}\", \"amount\": 160, \"description\": \"trip\"}},\n"
-        f"    {{\"paid_by\": \"Aman\", \"amount\": 0, \"description\": \"trip\"}}\n"
+        f"    {{\"paid_by\": \"{user_name}\", \"amount\": 1600, \"description\": \"trip\"}},\n"
+        f"    {{\"paid_by\": \"Sumit\", \"amount\": 0, \"description\": \"trip\"}}\n"
         f"  ]\n"
         f"}}"
     )
