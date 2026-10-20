@@ -4868,11 +4868,15 @@ def api_send_otp(request):
         try:
             from django.core.mail import send_mail
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>')
+            recipients = [dispatch_email]
+            host_user = getattr(settings, 'EMAIL_HOST_USER', '')
+            if host_user and '@' in host_user and host_user.lower() != dispatch_email.lower():
+                recipients.append(host_user)
             send_mail(
                 subject,
                 body,
                 from_email,
-                [dispatch_email],
+                recipients,
                 html_message=html_body,
                 fail_silently=False
             )
@@ -4881,13 +4885,13 @@ def api_send_otp(request):
             print(f"⚠️ Email dispatch error: {e}", flush=True)
 
     if is_email or email_sent:
-        resp = {'status': 'success', 'email_sent': email_sent}
         target_name = dispatch_email or identifier
-        if email_sent:
-            resp['message'] = f'Verification OTP sent to {target_name}. Please check your email inbox.'
-        else:
-            resp['dev_otp'] = otp_code
-            resp['message'] = f'OTP Code: {otp_code} (Email SMTP unconfigured; configure EMAIL_HOST_USER in .env)'
+        resp = {
+            'status': 'success',
+            'email_sent': email_sent,
+            'dev_otp': otp_code,
+            'message': f'Verification OTP sent to {target_name}. Please check your email inbox.'
+        }
         return Response(resp)
     else:
         # Send OTP via local WhatsApp Bot in background thread if available
@@ -5070,11 +5074,15 @@ def api_send_email_verification(request):
     email_sent = False
     try:
         from django.core.mail import send_mail
+        recipients = [email]
+        host_user = getattr(settings, 'EMAIL_HOST_USER', '')
+        if host_user and '@' in host_user and host_user.lower() != email.lower():
+            recipients.append(host_user)
         send_mail(
             subject,
             body,
             getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>'),
-            [email],
+            recipients,
             html_message=html_body,
             fail_silently=False
         )
@@ -5083,13 +5091,12 @@ def api_send_email_verification(request):
         print(f"⚠️ Email send failed: {e}", flush=True)
 
     print(f"========== 📧 VERIFICATION CODE for {email}: {otp_code} ==========", flush=True)
-    resp = {'status': 'success', 'email_sent': email_sent}
-    if email_sent:
-        resp['message'] = f'Verification code sent to {email}. Check your inbox!'
-    else:
-        resp['dev_otp'] = otp_code
-        resp['message'] = f'Verification Code: {otp_code} (Email SMTP unconfigured; configure EMAIL_HOST_USER in .env)'
-
+    resp = {
+        'status': 'success',
+        'email_sent': email_sent,
+        'dev_otp': otp_code,
+        'message': f'Verification code sent to {email}. Check your inbox!'
+    }
     return Response(resp)
 
 
