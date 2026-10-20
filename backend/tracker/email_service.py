@@ -22,6 +22,7 @@ def send_transactional_email(to_email, subject, body, html_body=None):
     """
     resend_key = (getattr(settings, 'RESEND_API_KEY', '') or os.getenv('RESEND_API_KEY', '')).strip()
     recipients = [to_email] if isinstance(to_email, str) else list(to_email)
+    last_error = None
 
     # 1. Try Resend HTTP API (Port 443 HTTPS - 100% allowed on Render Free Tier)
     if resend_key:
@@ -56,8 +57,12 @@ def send_transactional_email(to_email, subject, body, html_body=None):
                 except Exception:
                     pass
                 print(f"⚠️ Resend HTTP API error ({resp.status_code}): {error_detail}", flush=True)
+                last_error = f"Resend ({resp.status_code}): {error_detail}"
         except Exception as e:
             print(f"⚠️ Resend API request exception: {e}", flush=True)
+            last_error = f"Resend exception: {e}"
+    else:
+        last_error = "RESEND_API_KEY not configured"
 
     # 2. Fallback to Django SMTP (works locally, but will hit port 587 firewall on Render free tier)
     try:
@@ -79,4 +84,4 @@ def send_transactional_email(to_email, subject, body, html_body=None):
         return True, {'provider': 'smtp'}
     except Exception as e:
         print(f"⚠️ SMTP send failed: {e}", flush=True)
-        return False, {'error': str(e)}
+        return False, {'error': str(e), 'resend_error': last_error}
