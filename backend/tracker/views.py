@@ -5023,9 +5023,9 @@ def api_send_email_verification(request):
         profile.email_verified = False
         profile.save()
 
-    # Rate limiting
+    # Rate limiting (10 attempts per 5 mins so user is never blocked while testing)
     recent = OTPVerification.objects.filter(identifier=email, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
-    if recent >= 3:
+    if recent >= 10:
         return Response({'error': 'Too many verification attempts. Please wait 5 minutes.'}, status=429)
 
     otp_code = str(random.randint(100000, 999999))
