@@ -133,6 +133,7 @@ urlpatterns = [
     path('api/auth/reset-password/', views.api_reset_password, name='api_reset_password'),
     path('api/auth/send-email-verification/', views.api_send_email_verification, name='api_send_email_verification'),
     path('api/auth/verify-email/', views.api_verify_email_otp, name='api_verify_email_otp'),
+    path('api/auth/debug-email/', views.api_debug_email, name='api_debug_email'),
 
     # ─── Analytics & Error Tracking ───
     path('api/analytics/track/', views.api_track_analytics, name='api_track_analytics'),

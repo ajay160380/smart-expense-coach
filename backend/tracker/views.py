@@ -5129,8 +5129,10 @@ def api_send_email_verification(request):
             fail_silently=False
         )
         email_sent = True
+        print(f"✅ Email verification OTP sent successfully to {email}", flush=True)
     except Exception as e:
         print(f"⚠️ Email send failed: {e}", flush=True)
+        return Response({'error': f'Failed to send email verification: {str(e)}'}, status=500)
 
     print(f"========== 📧 VERIFICATION CODE for {email}: {otp_code} ==========", flush=True)
     resp = {
@@ -5139,6 +5141,34 @@ def api_send_email_verification(request):
         'message': f'Verification code sent to {email}. Check your inbox!'
     }
     return Response(resp)
+
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def api_debug_email(request):
+    to_email = request.GET.get('to', 'ajaykumar160380@gmail.com')
+    from django.core.mail import send_mail
+    from django.conf import settings
+    info = {
+        'backend': str(settings.EMAIL_BACKEND),
+        'host': str(settings.EMAIL_HOST),
+        'port': str(settings.EMAIL_PORT),
+        'user': str(settings.EMAIL_HOST_USER),
+        'tls': str(settings.EMAIL_USE_TLS),
+    }
+    try:
+        count = send_mail(
+            "Expense Tracker Live SMTP Diagnostic",
+            f"This is a live diagnostic email to {to_email} from Expense Tracker.",
+            getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>'),
+            [to_email],
+            fail_silently=False
+        )
+        return Response({'status': 'success', 'sent_count': count, 'settings': info})
+    except Exception as e:
+        import traceback
+        return Response({'status': 'failed', 'error': str(e), 'traceback': traceback.format_exc(), 'settings': info}, status=500)
 
 
 @api_view(['POST'])
