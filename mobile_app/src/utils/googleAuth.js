@@ -21,12 +21,11 @@ WebBrowser.maybeCompleteAuthSession();
 // Project Number: 600331588079 (expense-tracker-67220)
 // Replace with your Web Client ID from Google Cloud Console / Firebase Console
 export const GOOGLE_CONFIG = {
-  // Web Client ID (Google Cloud Console -> APIs & Services -> Credentials -> Web Client ID)
-  webClientId: '600331588079-placeholder.apps.googleusercontent.com',
-  // Android Client ID (optional if Web Client ID is used)
-  androidClientId: '600331588079-placeholder.apps.googleusercontent.com',
-  // iOS Client ID (optional)
-  iosClientId: '600331588079-placeholder.apps.googleusercontent.com',
+  // Web Client ID from Firebase / Google Cloud Console
+  webClientId: '600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com',
+  // Android & iOS OAuth endpoints use Web Client ID with Expo AuthSession
+  androidClientId: '600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com',
+  iosClientId: '600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com',
 };
 
 export const isGoogleAuthConfigured = () => {
