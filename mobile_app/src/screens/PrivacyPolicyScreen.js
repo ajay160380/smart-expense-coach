@@ -39,7 +39,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.sectionHeading}>1. Information We Collect</Text>
           <Text style={styles.bodyText}>
-            When you register and use Paisa Mitra, we collect:
+            When you register and use Expense Tracker, we collect:
             {'\n'}• Account identifiers: username, phone number, and optional email address.
             {'\n'}• Transaction logs: amounts, categories, timestamps, notes, and optional location tags.
             {'\n'}• Savings goals, budget targets, and recurring subscription reminders.

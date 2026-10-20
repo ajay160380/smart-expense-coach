@@ -63,7 +63,7 @@ const SLIDES = [
   {
     id: '3',
     titleMain: 'Welcome to\n',
-    titleBold: 'Paisa Mitra',
+    titleBold: 'Expense Tracker',
     titleNormal: '',
     subtitle: 'Start tracking expenses seamlessly with AI and boost your savings today!',
     layout: 'auth-final',

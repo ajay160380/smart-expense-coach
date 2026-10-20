@@ -439,7 +439,7 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are "Paisa Mitra", a smart, friendly, and highly polite financial AI assistant. 
+    You are "Expense Tracker", a smart, friendly, and highly polite financial AI assistant. 
     You have NO RESTRICTIONS on what you can talk about. The user can chat with you about anything! 
     CRITICAL LANGUAGE RULES:
     1. NEVER use words like "Tu", "Tera", "Tujhe", "tutu". ALWAYS use respectful words like "Aap", "Aapka", "Bhai", "Dost".
@@ -955,7 +955,7 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
         ).days
 
         prompt = (
-            f"You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.\n"
+            f"You are Expense Tracker AI, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.\n"
             f"Budget: ₹{budget:,.0f} | Spent: ₹{total_spent:,.0f} | "
             f"Remaining: ₹{remaining:,.0f} | Days left this month: {days_left}\n"
             f"Recent expenses: {summary}\n\n"
@@ -991,7 +991,7 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
     try:
         prompt = (
-            f"You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.\n"
+            f"You are Expense Tracker AI, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.\n"
             f"User spent ₹{cat_total:,.0f} on {category} this {period}.\n"
             f"That's {share_pct:.1f}% of their total budget.\n"
             f"Average per transaction: ₹{avg_txn:,.0f}.\n\n"
@@ -2388,7 +2388,7 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
     ).days
 
-    system = f"""You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.
+    system = f"""You are Expense Tracker AI, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.
 
 ══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
 Budget:         ₹{budget:,.0f}
@@ -3116,7 +3116,7 @@ def habit_warnings(request):
     data_str = "\n".join([f"{e.date.strftime('%A')} ({e.category}): ₹{e.amount}" for e in expenses])
 
     prompt = f"""
-    You are Paisa Mitra, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.
+    You are Expense Tracker AI, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.
     Here is the user's daily spending data for the last 14 days:
     {data_str}
 
@@ -4773,19 +4773,74 @@ def api_send_otp(request):
     
     print(f"========== 📱/📧 OTP for {identifier}: {otp_code} ==========", flush=True)
 
+def generate_expense_tracker_email_html(otp_code, title="Security Verification Code", subtitle="Use this one-time code to securely verify your account on Expense Tracker:"):
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #0A0D14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0A0D14; padding: 35px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 480px; background: linear-gradient(145deg, #161B26, #0F131D); border: 1px solid #232B3E; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);">
+          <tr>
+            <td height="4" style="background: linear-gradient(90deg, #6366F1, #8B5CF6, #06B6D4); font-size: 0; line-height: 0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding: 32px 28px 16px 28px; text-align: center;">
+              <div style="display: inline-block; width: 54px; height: 54px; line-height: 54px; border-radius: 16px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25)); border: 1px solid rgba(139, 92, 246, 0.4); font-size: 26px; text-align: center; margin-bottom: 14px;">
+                💳
+              </div>
+              <h1 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Expense Tracker</h1>
+              <p style="margin: 0; font-size: 13px; font-weight: 600; color: #818CF8; text-transform: uppercase; letter-spacing: 1px;">{title}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 28px 28px 28px; text-align: center;">
+              <p style="margin: 0 0 22px 0; font-size: 14px; line-height: 1.6; color: #CBD5E1;">
+                {subtitle}
+              </p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 auto 18px auto;">
+                <tr>
+                  <td align="center">
+                    <div style="background: #1A2234; border: 1px solid #3B82F6; border-radius: 14px; padding: 18px 28px; display: inline-block; box-shadow: 0 0 25px rgba(59, 130, 246, 0.25);">
+                      <span style="font-family: 'SF Mono', Consolas, Menlo, monospace; font-size: 36px; font-weight: 800; letter-spacing: 10px; color: #60A5FA; display: block; text-shadow: 0 0 12px rgba(96, 165, 250, 0.5);">
+                        {otp_code}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <div style="display: inline-block; padding: 6px 14px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; font-size: 12px; color: #FBBF24; font-weight: 600;">
+                ⏱️ Valid for 5 minutes only
+              </div>
+              <div style="height: 1px; background: #232B3E; margin: 24px 0 18px 0;"></div>
+              <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748B; text-align: left;">
+                🔒 <strong>Security Notice:</strong> Never share this code with anyone. Expense Tracker team will never ask for your code or password.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 28px; background: #0B0E14; border-top: 1px solid #1E2638; text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #64748B;">
+                © 2026 Expense Tracker. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
     if is_email:
-        subject = "Your Paisa Mitra Verification Code"
-        body = f"Your Paisa Mitra verification OTP is: {otp_code}\n\nValid for 5 minutes. Do not share this code."
-        html_body = f"""
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0B0E14; color: #FFFFFF; border-radius: 16px;">
-          <h2 style="color: #8B5CF6; margin-top: 0; font-size: 22px;">Paisa Mitra Verification</h2>
-          <p style="color: #94A3B8; font-size: 14px; line-height: 1.5;">Use the one-time code below to complete your verification:</p>
-          <div style="background: rgba(139, 92, 246, 0.15); border: 1px solid #8B5CF6; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
-            <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #A888FF;">{otp_code}</span>
-          </div>
-          <p style="color: #64748B; font-size: 12px; line-height: 1.4;">This code is valid for 5 minutes. If you did not request this, you can safely ignore this email.</p>
-        </div>
-        """
+        subject = f"Expense Tracker OTP: {otp_code}"
+        body = f"Your Expense Tracker verification OTP is: {otp_code}\n\nValid for 5 minutes. Do not share this code."
+        html_body = generate_expense_tracker_email_html(
+            otp_code,
+            title="Account Verification",
+            subtitle="Please use the one-time code below to verify your account on Expense Tracker:"
+        )
         email_sent = False
         try:
             from django.core.mail import send_mail
@@ -4825,7 +4880,7 @@ def api_send_otp(request):
             except Exception as e:
                 print(f"⚠️ Could not send WhatsApp OTP to {phone}:", str(e), flush=True)
 
-        wa_message = f"🔒 *Paisa Mitra Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
+        wa_message = f"🔒 *Expense Tracker Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
         t = threading.Thread(target=send_otp_thread, args=(identifier, wa_message))
         t.daemon = True
         t.start()
@@ -4976,18 +5031,13 @@ def api_send_email_verification(request):
     otp_code = str(random.randint(100000, 999999))
     OTPVerification.objects.create(identifier=email, otp_code=otp_code)
     
-    subject = "Verify your email - Paisa Mitra"
-    body = f"Hi {user.username},\n\nYour Paisa Mitra email verification code is: {otp_code}\n\nValid for 5 minutes."
-    html_body = f"""
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0B0E14; color: #FFFFFF; border-radius: 16px;">
-      <h2 style="color: #10B981; margin-top: 0;">Verify Your Email</h2>
-      <p style="color: #94A3B8; font-size: 14px;">Hi {user.username}, use this 6-digit code to confirm your email:</p>
-      <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
-        <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #34D399;">{otp_code}</span>
-      </div>
-      <p style="color: #64748B; font-size: 12px;">Valid for 5 minutes. Never share this code.</p>
-    </div>
-    """
+    subject = f"Expense Tracker - Email Verification: {otp_code}"
+    body = f"Hi {user.username},\n\nYour Expense Tracker email verification code is: {otp_code}\n\nValid for 5 minutes."
+    html_body = generate_expense_tracker_email_html(
+        otp_code,
+        title="Email Verification",
+        subtitle=f"Hi {user.username}, use this one-time code to confirm your email address on Expense Tracker:"
+    )
     email_sent = False
     try:
         from django.core.mail import send_mail
