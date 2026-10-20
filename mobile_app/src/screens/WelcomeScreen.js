@@ -63,9 +63,9 @@ const SLIDES = [
   {
     id: '3',
     titleMain: 'Welcome to\n',
-    titleBold: '',
+    titleBold: 'Paisa Mitra',
     titleNormal: '',
-    subtitle: 'Start tracking your expenses seamlessly with AI and boost your savings today!',
+    subtitle: 'Start tracking expenses seamlessly with AI and boost your savings today!',
     layout: 'auth-final',
     artType: 'auth',
   }
@@ -263,6 +263,7 @@ export default function WelcomeScreen({ navigation }) {
           <View style={{ alignItems: 'center', marginBottom: 40 }}>
             <Text style={[styles.titleText, { textAlign: 'center', fontSize: 32, lineHeight: 40 }]}>
               {item.titleMain}
+              <Text style={{ color: THEME.primary, fontWeight: '800' }}>{item.titleBold}</Text>
             </Text>
             
             <Text style={[styles.subtitleText, { textAlign: 'center', marginTop: 12, paddingHorizontal: 10 }]}>

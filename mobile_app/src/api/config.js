@@ -78,20 +78,25 @@ api.interceptors.response.use(
         }
       }
 
-      // ── 429: Rate Limited ──
+      // ── 429: Rate Limited (Item 8) ──
       if (status === 429) {
-        console.warn('Rate limited by server');
+        const msg = error.response?.data?.error || error.response?.data?.detail || 'Too many requests. Please wait a moment before trying again.';
+        console.warn('Rate limited by server:', msg);
+        try {
+          const { Alert } = require('react-native');
+          Alert.alert('Rate Limit Exceeded', msg);
+        } catch (e) {}
       }
     }
 
     // ── Network Error ──
     if (!error.response && error.message === 'Network Error') {
-      console.error('🔴 Network error — no connection. URL WAS:', error.config ? error.config.url : 'UNKNOWN');
+      console.warn('🔴 Network error — no connection. URL WAS:', error.config ? error.config.url : 'UNKNOWN');
     }
 
     // ── Timeout ──
     if (error.code === 'ECONNABORTED') {
-      console.error('Request timed out');
+      console.warn('Request timed out');
     }
 
     return Promise.reject(error);

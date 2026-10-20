@@ -29,6 +29,9 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
+import { validateAmount } from '../utils/validation';
+import { formatApiError } from '../utils/errors';
+import analytics from '../utils/analytics';
 import { COLORS, RADIUS } from '../utils/theme';
 
 const CATEGORIES = [
@@ -117,8 +120,9 @@ export default function AddExpenseScreen({ route, navigation }) {
 
   const handleAddExpense = async () => {
     const cleanAmount = sanitizeAmount(amount);
-    if (!cleanAmount || isNaN(cleanAmount) || parseFloat(cleanAmount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+    const amountVal = validateAmount(cleanAmount);
+    if (!amountVal.isValid) {
+      Alert.alert('Validation Error', amountVal.error);
       return;
     }
 
@@ -141,6 +145,12 @@ export default function AddExpenseScreen({ route, navigation }) {
         });
       }
 
+      analytics.track(isEdit ? 'expense_updated' : 'expense_created', {
+        amount: parseFloat(cleanAmount),
+        category,
+        has_description: !!description,
+      });
+
       Alert.alert(
         isEdit ? '✅ Expense Updated!' : '✅ Expense Saved!',
         res.data?.message || `₹${parseFloat(cleanAmount).toLocaleString('en-IN')} for ${category}`,
@@ -153,7 +163,7 @@ export default function AddExpenseScreen({ route, navigation }) {
       );
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', error.response?.data?.error || 'Failed to add expense');
+      Alert.alert('Save Failed', formatApiError(error));
     } finally {
       setLoading(false);
     }

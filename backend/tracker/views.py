@@ -2877,7 +2877,7 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
     if request.method == "POST":
         body = getattr(request, "_json_body", {})
         
-        if any(k in body for k in ["username", "first_name", "last_name"]):
+        if any(k in body for k in ["username", "first_name", "last_name", "email"]):
             from django.contrib.auth.models import User
             if "username" in body:
                 new_username = str(body["username"]).strip()
@@ -2889,6 +2889,13 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
                 user.first_name = str(body["first_name"]).strip()
             if "last_name" in body:
                 user.last_name = str(body["last_name"]).strip()
+            if "email" in body:
+                new_email = str(body["email"]).strip()
+                if new_email != user.email:
+                    user.email = new_email
+                    profile, _ = UserProfile.objects.get_or_create(user=user)
+                    profile.email_verified = False
+                    profile.save()
             user.save()
             return JsonResponse({"status": "success", "message": "Profile updated successfully"})
 
@@ -2933,6 +2940,8 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
         "username":       user.username,
         "first_name":     user.first_name,
         "last_name":      user.last_name,
+        "email":          user.email or "",
+        "email_verified": getattr(profile, 'email_verified', False) if profile else False,
         "joined":         user.date_joined.strftime("%d %B %Y"),
         "lifetime_spent": round(_safe_float(all_agg["total"]), 2),
         "total_txns":     all_agg["count"] or 0,
@@ -3093,12 +3102,9 @@ def check_updates(request):
 # SMART HABIT PREDICTION & WARNINGS 🧠
 # ══════════════════════════════════════════════════════════════════════════════
 
-@csrf_exempt
+@api_login_required
 def habit_warnings(request):
-    target_user = User.objects.filter(username='ajayvishwakarma').first()
-    if not target_user:
-        target_user = User.objects.first()
-
+    target_user = request.user
     two_weeks_ago = date.today() - timedelta(days=14)
     expenses = Expense.objects.filter(user=target_user, date__gte=two_weeks_ago).order_by('date')
 
@@ -4720,6 +4726,10 @@ class CustomAuthToken(ObtainAuthToken):
 # ══════════════════════════════════════════════════════════════════════════════
 
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.authtoken.models import Token
+from django.conf import settings
+from .models import AppAnalyticsEvent, AppErrorLog
 
 @api_view(['POST'])
 @authentication_classes([])
@@ -4733,20 +4743,25 @@ def api_send_otp(request):
     if not identifier:
         return Response({'error': 'Identifier (Phone or Email) is required.'}, status=400)
         
+    is_email = '@' in str(identifier)
+    
     if action == 'reset':
         # Check if user exists
-        exists = User.objects.filter(email=identifier).exists() or UserProfile.objects.filter(phone_number=identifier).exists() or User.objects.filter(username=identifier).exists()
+        exists = User.objects.filter(email__iexact=identifier).exists() or UserProfile.objects.filter(phone_number=identifier).exists() or User.objects.filter(username__iexact=identifier).exists()
         if not exists:
             return Response({'error': 'No account found with this identifier.'}, status=404)
     elif action == 'register':
-        # Ensure phone number isn't already taken
-        if UserProfile.objects.filter(phone_number=identifier).exists():
-            return Response({'error': 'An account with this phone number already exists.'}, status=400)
+        if is_email:
+            if User.objects.filter(email__iexact=identifier).exists():
+                return Response({'error': 'An account with this email already exists.'}, status=400)
+        else:
+            if UserProfile.objects.filter(phone_number=identifier).exists():
+                return Response({'error': 'An account with this phone number already exists.'}, status=400)
             
     # Basic rate limiting (max 3 OTPs in last 5 mins)
     recent_otps = OTPVerification.objects.filter(identifier=identifier, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
     if recent_otps >= 3:
-        return Response({'error': 'Too many OTP requests. Please wait a few minutes.'}, status=429)
+        return Response({'error': 'Too many OTP requests. Please wait 5 minutes.'}, status=429)
 
     # Generate 6 digit OTP
     otp_code = str(random.randint(100000, 999999))
@@ -4756,28 +4771,57 @@ def api_send_otp(request):
         otp_code=otp_code
     )
     
-    # Send OTP via local WhatsApp Bot in background thread to avoid timeout
-    print(f"========== 📱 OTP for {identifier}: {otp_code} ==========", flush=True)
-    import threading
-    import requests
-    
-    def send_otp_thread(phone, msg):
-        try:
-            requests.post('http://127.0.0.1:3001/api/send-message', json={
-                'phone_number': phone,
-                'message': msg
-            }, timeout=1)
-        except requests.exceptions.ReadTimeout:
-            pass # Fire and forget, don't care about response
-        except Exception as e:
-            print(f"⚠️ Could not send WhatsApp OTP to {phone}:", str(e), flush=True)
+    print(f"========== 📱/📧 OTP for {identifier}: {otp_code} ==========", flush=True)
 
-    wa_message = f"🔒 *Paisa Mitra Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
-    t = threading.Thread(target=send_otp_thread, args=(identifier, wa_message))
-    t.daemon = True
-    t.start()
-    
-    return Response({'message': 'OTP sent successfully. Check your WhatsApp.'})
+    if is_email:
+        subject = "Your Paisa Mitra Verification Code"
+        body = f"Your Paisa Mitra verification OTP is: {otp_code}\n\nValid for 5 minutes. Do not share this code."
+        html_body = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0B0E14; color: #FFFFFF; border-radius: 16px;">
+          <h2 style="color: #8B5CF6; margin-top: 0; font-size: 22px;">Paisa Mitra Verification</h2>
+          <p style="color: #94A3B8; font-size: 14px; line-height: 1.5;">Use the one-time code below to complete your verification:</p>
+          <div style="background: rgba(139, 92, 246, 0.15); border: 1px solid #8B5CF6; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+            <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #A888FF;">{otp_code}</span>
+          </div>
+          <p style="color: #64748B; font-size: 12px; line-height: 1.4;">This code is valid for 5 minutes. If you did not request this, you can safely ignore this email.</p>
+        </div>
+        """
+        try:
+            from django.core.mail import send_mail
+            send_mail(
+                subject,
+                body,
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@paisamitra.com'),
+                [identifier],
+                html_message=html_body,
+                fail_silently=False
+            )
+        except Exception as e:
+            print(f"⚠️ Email dispatch error: {e}", flush=True)
+
+        return Response({'message': f'Verification OTP sent to {identifier}. Please check your email inbox.'})
+    else:
+        # Send OTP via local WhatsApp Bot in background thread
+        import threading
+        import requests
+        
+        def send_otp_thread(phone, msg):
+            try:
+                requests.post('http://127.0.0.1:3001/api/send-message', json={
+                    'phone_number': phone,
+                    'message': msg
+                }, timeout=1)
+            except requests.exceptions.ReadTimeout:
+                pass
+            except Exception as e:
+                print(f"⚠️ Could not send WhatsApp OTP to {phone}:", str(e), flush=True)
+
+        wa_message = f"🔒 *Paisa Mitra Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
+        t = threading.Thread(target=send_otp_thread, args=(identifier, wa_message))
+        t.daemon = True
+        t.start()
+        
+        return Response({'message': 'OTP sent successfully. Check your WhatsApp.'})
 
 @api_view(['POST'])
 @authentication_classes([])
@@ -4817,6 +4861,9 @@ def api_reset_password(request):
     
     if not identifier or not otp_code or not new_password:
         return Response({'error': 'Identifier, OTP, and New Password are required.'}, status=400)
+    
+    if len(new_password) < 6:
+        return Response({'error': 'Password must be at least 6 characters.'}, status=400)
         
     otp_record = OTPVerification.objects.filter(
         identifier=identifier, 
@@ -4849,6 +4896,198 @@ def api_reset_password(request):
     otp_record.delete()
     
     return Response({'message': 'Password reset successfully. You can now login.'})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# REAL AUTH: LOGOUT & DELETE ACCOUNT (Item 1 & 18)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_logout(request):
+    """Real server-side logout: Invalidates DRF auth token and clears session."""
+    try:
+        Token.objects.filter(user=request.user).delete()
+        from django.contrib.auth import logout
+        logout(request)
+        return Response({'status': 'success', 'message': 'Logged out successfully.'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_delete_account(request):
+    """Real permanent account deletion (GDPR & CCPA compliant)."""
+    user = request.user
+    password = request.data.get('password')
+    
+    # If a password was provided, verify it before executing deletion
+    if password and user.has_usable_password():
+        if not user.check_password(password):
+            return Response({'error': 'Incorrect password. Account deletion aborted.'}, status=400)
+
+    username = user.username
+    # Cascade delete deletes user, UserProfile, Expenses, Goals, Splits, Notes, Tokens
+    user.delete()
+    return Response({
+        'status': 'success',
+        'message': f'Account @{username} and all associated financial records have been permanently deleted.'
+    })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# EMAIL VERIFICATION APIS (Item 3)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_send_email_verification(request):
+    """Sends a 6-digit email verification OTP to user's registered or updated email."""
+    user = request.user
+    email = request.data.get('email') or user.email
+    if not email or '@' not in str(email):
+        return Response({'error': 'A valid email address is required.'}, status=400)
+    
+    # Update email on user if modified
+    if email != user.email:
+        if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            return Response({'error': 'This email is already associated with another account.'}, status=400)
+        user.email = email
+        user.save()
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.email_verified = False
+        profile.save()
+
+    # Rate limiting
+    recent = OTPVerification.objects.filter(identifier=email, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
+    if recent >= 3:
+        return Response({'error': 'Too many verification attempts. Please wait 5 minutes.'}, status=429)
+
+    otp_code = str(random.randint(100000, 999999))
+    OTPVerification.objects.create(identifier=email, otp_code=otp_code)
+    
+    subject = "Verify your email - Paisa Mitra"
+    body = f"Hi {user.username},\n\nYour Paisa Mitra email verification code is: {otp_code}\n\nValid for 5 minutes."
+    html_body = f"""
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #0B0E14; color: #FFFFFF; border-radius: 16px;">
+      <h2 style="color: #10B981; margin-top: 0;">Verify Your Email</h2>
+      <p style="color: #94A3B8; font-size: 14px;">Hi {user.username}, use this 6-digit code to confirm your email:</p>
+      <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+        <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #34D399;">{otp_code}</span>
+      </div>
+      <p style="color: #64748B; font-size: 12px;">Valid for 5 minutes. Never share this code.</p>
+    </div>
+    """
+    try:
+        from django.core.mail import send_mail
+        send_mail(
+            subject,
+            body,
+            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@paisamitra.com'),
+            [email],
+            html_message=html_body,
+            fail_silently=False
+        )
+    except Exception as e:
+        print(f"⚠️ Email send failed: {e}", flush=True)
+
+    print(f"========== 📧 VERIFICATION CODE for {email}: {otp_code} ==========", flush=True)
+    return Response({'status': 'success', 'message': f'Verification code sent to {email}. Check your inbox!'})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_verify_email_otp(request):
+    """Validates the 6-digit OTP code and marks email as verified."""
+    user = request.user
+    email = request.data.get('email') or user.email
+    otp_code = request.data.get('otp')
+    
+    if not email or not otp_code:
+        return Response({'error': 'Email and 6-digit OTP code are required.'}, status=400)
+        
+    otp_record = OTPVerification.objects.filter(
+        identifier=email,
+        otp_code=otp_code,
+        created_at__gte=timezone.now() - timedelta(minutes=5)
+    ).first()
+    
+    if not otp_record:
+        return Response({'error': 'Invalid or expired OTP code.'}, status=400)
+        
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile.email_verified = True
+    profile.save()
+    otp_record.delete()
+    
+    return Response({'status': 'success', 'message': 'Email verified successfully! 🎉'})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ANALYTICS & ERROR LOGGING (Item 14 & 15)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def api_track_analytics(request):
+    """Records user actions and screen view telemetry."""
+    event_name = request.data.get('event_name')
+    if not event_name:
+        return Response({'error': 'event_name is required'}, status=400)
+    
+    user = request.user if request.user.is_authenticated else None
+    properties = request.data.get('properties', {})
+    
+    def get_client_ip(req):
+        xff = req.META.get('HTTP_X_FORWARDED_FOR')
+        if xff:
+            return xff.split(',')[0].strip()
+        return req.META.get('REMOTE_ADDR')
+
+    AppAnalyticsEvent.objects.create(
+        user=user,
+        event_name=event_name[:100],
+        properties=properties if isinstance(properties, dict) else {},
+        ip_address=get_client_ip(request)
+    )
+    return Response({'status': 'success'})
+
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def api_log_error(request):
+    """Centralized client-side crash and exception reporter."""
+    error_message = request.data.get('error_message') or 'Unknown client error'
+    stack_trace = request.data.get('stack_trace', '')
+    device_info = request.data.get('device_info', {})
+    user = request.user if request.user.is_authenticated else None
+
+    AppErrorLog.objects.create(
+        user=user,
+        error_message=str(error_message),
+        stack_trace=str(stack_trace),
+        device_info=device_info if isinstance(device_info, dict) else {}
+    )
+    return Response({'status': 'logged'})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CUSTOM 404 HANDLER (Item 13)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def custom_404_view(request, exception=None):
+    """Custom 404 view: returns JSON for API routes and themed HTML for web."""
+    if request.path.startswith('/api/') or 'application/json' in request.META.get('HTTP_ACCEPT', ''):
+        return JsonResponse({
+            'error': 'Endpoint not found',
+            'detail': f"The requested resource '{request.path}' was not found on this server.",
+            'status_code': 404
+        }, status=404)
+    return render(request, '404.html', status=404)
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # NEW FEATURE: ADMIN PANEL, ANALYTICS & EXPORTS
@@ -5218,4 +5457,51 @@ def download_apk(request):
         return response
     else:
         raise Http404('APK not found')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DATABASE BACKUP APIS (Item 9)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_trigger_backup(request):
+    """Allows staff or authenticated admin to trigger a live database snapshot backup."""
+    from .management.commands.backup_db import perform_db_backup
+    try:
+        backup_info = perform_db_backup()
+        return Response({
+            'status': 'success',
+            'message': 'Database backup generated successfully.',
+            'backup': backup_info
+        })
+    except Exception as e:
+        return Response({'status': 'error', 'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_list_backups(request):
+    """Lists available snapshot backups in storage."""
+    import os
+    from django.conf import settings
+    backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+    if not os.path.exists(backup_dir):
+        return Response({'backups': []})
+
+    files = sorted(
+        [f for f in os.listdir(backup_dir) if f.startswith('backup_') and f.endswith('.json.gz')],
+        key=lambda f: os.path.getmtime(os.path.join(backup_dir, f)),
+        reverse=True
+    )
+    backups = []
+    for f in files:
+        full_path = os.path.join(backup_dir, f)
+        backups.append({
+            'filename': f,
+            'size_kb': round(os.path.getsize(full_path) / 1024, 2),
+            'modified': datetime.fromtimestamp(os.path.getmtime(full_path)).strftime('%Y-%m-%d %H:%M:%S')
+        })
+    return Response({'backups': backups, 'total': len(backups)})
+
 

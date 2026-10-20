@@ -19,6 +19,8 @@ import Logo from '../components/Logo';
 
 
 import api from '../api/config';
+import { formatApiError } from '../utils/errors';
+import { validatePassword } from '../utils/validation';
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [step, setStep] = useState(1); // 1=Identifier, 2=OTP, 3=New Password
@@ -28,10 +30,19 @@ export default function ForgotPasswordScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const handleSendOTP = async () => {
     if (!identifier.trim()) {
-      Alert.alert('Error', 'Please enter your phone number or email');
+      Alert.alert('Required Field', 'Please enter your registered phone number or email address.');
       return;
     }
     setLoading(true);
@@ -40,57 +51,54 @@ export default function ForgotPasswordScreen({ navigation }) {
         identifier: identifier.trim(),
         action: 'reset'
       });
-      Alert.alert('OTP Sent', res.data.message);
+      Alert.alert('Code Sent! 📬', res.data?.message || 'Verification code sent.');
       setStep(2);
+      setResendCooldown(60);
     } catch (error) {
-      const errMsg = error.response?.data?.error || 'Failed to send OTP';
-      Alert.alert('Error', errMsg);
+      Alert.alert('Request Failed', formatApiError(error));
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+    if (!otp || otp.trim().length !== 6) {
+      Alert.alert('Invalid Code', 'Please enter the 6-digit OTP code sent to your phone or email.');
       return;
     }
     setLoading(true);
     try {
       await api.post('/api/auth/verify-otp/', {
         identifier: identifier.trim(),
-        otp: otp
+        otp: otp.trim()
       });
       setStep(3);
     } catch (error) {
-      const errMsg = error.response?.data?.error || 'Invalid OTP';
-      Alert.alert('Error', errMsg);
+      Alert.alert('Verification Failed', formatApiError(error));
     } finally {
       setLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+    const passCheck = validatePassword(newPassword, confirmPassword);
+    if (!passCheck.isValid) {
+      Alert.alert('Password Error', passCheck.error);
       return;
     }
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
+
     setLoading(true);
     try {
       const res = await api.post('/api/auth/reset-password/', {
         identifier: identifier.trim(),
-        otp: otp,
+        otp: otp.trim(),
         new_password: newPassword
       });
-      Alert.alert('Success', res.data.message);
-      navigation.replace('Login');
+      Alert.alert('Password Reset Success! 🔒', res.data?.message || 'Your password was updated. You can now login.', [
+        { text: 'Go to Login', onPress: () => navigation.replace('Login') }
+      ]);
     } catch (error) {
-      const errMsg = error.response?.data?.error || 'Failed to reset password';
-      Alert.alert('Error', errMsg);
+      Alert.alert('Reset Failed', formatApiError(error));
     } finally {
       setLoading(false);
     }

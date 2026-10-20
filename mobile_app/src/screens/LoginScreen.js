@@ -27,9 +27,11 @@ import Logo from '../components/Logo';
 
 import api from '../api/config';
 import {
-  saveAuthData, sanitizeInput,
+  saveAuthData, sanitizeInput, checkLoginThrottle, recordLoginAttempt
 } from '../utils/auth';
 import { COLORS } from '../utils/theme';
+import { formatApiError } from '../utils/errors';
+import analytics from '../utils/analytics';
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -37,18 +39,28 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-
-
   const handleLogin = async () => {
     const cleanUsername = sanitizeInput(username).trim();
     const cleanPassword = password.trim();
 
-    if (!cleanUsername || !cleanPassword) {
-      Alert.alert('Error', 'Please enter username and password');
+    if (!cleanUsername) {
+      Alert.alert('Required Field', 'Please enter your username, email, or phone number.');
+      return;
+    }
+    if (!cleanPassword) {
+      Alert.alert('Required Field', 'Please enter your password.');
       return;
     }
 
-
+    // Check client lockout throttle (Item 7 & 8)
+    const throttle = await checkLoginThrottle();
+    if (!throttle.allowed) {
+      Alert.alert(
+        'Too Many Attempts',
+        `Account login is temporarily locked for security. Please try again in ${throttle.secsLeft || 60} seconds.`
+      );
+      return;
+    }
 
     setLoading(true);
     try {
@@ -57,12 +69,14 @@ export default function LoginScreen({ navigation }) {
         password: cleanPassword,
       });
       const { token, user_id, username: apiUsername } = response.data;
-      // Use the API's returned username if available, otherwise fallback to the inputted one
+      await recordLoginAttempt(true);
       await saveAuthData(token, user_id, apiUsername || cleanUsername);
+      analytics.track('login_success', { user_id });
       navigation.replace('MainTabs');
     } catch (error) {
-      console.error(error);
-      Alert.alert('Login Failed', 'Invalid username or password.');
+      await recordLoginAttempt(false);
+      console.warn('Login error:', error);
+      Alert.alert('Login Failed', formatApiError(error, 'Invalid identifier or password.'));
     } finally {
       setLoading(false);
     }

@@ -26,12 +26,16 @@ import Logo from '../components/Logo';
 
 
 import api from '../api/config';
-import { sanitizeInput, isValidPhone, checkPasswordStrength, saveAuthData } from '../utils/auth';
+import { sanitizeInput, checkPasswordStrength, saveAuthData } from '../utils/auth';
 import { COLORS } from '../utils/theme';
+import { validateUsername, validateEmail, validatePhone, validatePassword } from '../utils/validation';
+import { formatApiError } from '../utils/errors';
+import analytics from '../utils/analytics';
 
 export default function RegisterScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -46,65 +50,66 @@ export default function RegisterScreen({ navigation }) {
   const passwordsMismatch = confirmPassword && password !== confirmPassword;
 
   const handleSendOTP = async () => {
-    const cleanUsername = sanitizeInput(username).trim();
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const userCheck = validateUsername(username);
+    if (!userCheck.isValid) { Alert.alert('Invalid Username', userCheck.error); return; }
 
-    if (!cleanUsername) { Alert.alert('Error', 'Username is required'); return; }
-    if (cleanUsername.length < 3) { Alert.alert('Error', 'Username must be at least 3 characters'); return; }
-    if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) { Alert.alert('Error', 'Username cannot contain spaces or special characters. Use letters, numbers, and _ only.'); return; }
-    if (!cleanPhone || !isValidPhone(cleanPhone)) { Alert.alert('Error', 'Enter a valid phone number (10-15 digits)'); return; }
-    if (!password) { Alert.alert('Error', 'Password is required'); return; }
-    if (password.length < 6) { Alert.alert('Error', 'Password must be at least 6 characters'); return; }
-    if (password !== confirmPassword) { Alert.alert('Error', 'Passwords do not match'); return; }
+    const phoneCheck = validatePhone(phone);
+    if (!phoneCheck.isValid) { Alert.alert('Invalid Phone', phoneCheck.error); return; }
+
+    if (email.trim()) {
+      const emailCheck = validateEmail(email.trim());
+      if (!emailCheck.isValid) { Alert.alert('Invalid Email', emailCheck.error); return; }
+    }
+
+    const passCheck = validatePassword(password, confirmPassword);
+    if (!passCheck.isValid) { Alert.alert('Password Error', passCheck.error); return; }
 
     setLoading(true);
     try {
       const res = await api.post('/api/auth/send-otp/', {
-        identifier: cleanPhone,
+        identifier: phoneCheck.value,
         action: 'register'
       });
-      Alert.alert('OTP Sent', res.data.message);
+      Alert.alert('OTP Sent 📬', res.data?.message || 'Verification code sent to your number.');
       setStep(2);
     } catch (error) {
-      const errData = error.response?.data;
-      const errMsg = errData?.error || 'Failed to send OTP';
-      Alert.alert('Error', errMsg);
+      Alert.alert('Error', formatApiError(error));
     } finally {
       setLoading(false);
     }
   };
 
   const handleRegister = async () => {
-    if (!otp || otp.length !== 6) {
-      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+    if (!otp || otp.trim().length !== 6) {
+      Alert.alert('Invalid OTP', 'Please enter a valid 6-digit verification code.');
       return;
     }
     
-    const cleanUsername = sanitizeInput(username).trim();
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const userCheck = validateUsername(username);
+    const phoneCheck = validatePhone(phone);
+    const cleanEmail = email.trim();
 
     setLoading(true);
     try {
       await api.post('/api/register/', {
-        username: cleanUsername,
-        phone_number: cleanPhone,
+        username: userCheck.value,
+        phone_number: phoneCheck.value,
+        email: cleanEmail,
         password: password,
-        otp: otp
+        otp: otp.trim()
       });
+
       const loginRes = await api.post('/api/login/', {
-        username: cleanUsername,
+        username: userCheck.value,
         password: password,
       });
+
       const { token, user_id } = loginRes.data;
-      await saveAuthData(token, user_id, cleanUsername);
+      await saveAuthData(token, user_id, userCheck.value);
+      analytics.track('register_success', { user_id, has_email: !!cleanEmail });
       navigation.replace('MainTabs');
     } catch (error) {
-      const errData = error.response?.data;
-      let errMsg = 'Registration failed';
-      if (errData) {
-        errMsg = errData.error || (typeof errData === 'object' ? Object.values(errData).flat().join('\\n') : String(errData));
-      }
-      Alert.alert('Error', errMsg);
+      Alert.alert('Registration Failed', formatApiError(error));
     } finally {
       setLoading(false);
     }
@@ -163,6 +168,18 @@ export default function RegisterScreen({ navigation }) {
                   maxLength={15}
                 />
 
+                <Text style={styles.label}>EMAIL ADDRESS (OPTIONAL)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="name@example.com (for verification)"
+                  placeholderTextColor="#9CA3AF"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+
                 <Text style={styles.label}>PASSWORD</Text>
                 <View style={styles.passwordRow}>
                   <TextInput
@@ -211,6 +228,18 @@ export default function RegisterScreen({ navigation }) {
                   )}
                 </View>
                 {passwordsMismatch && <Text style={styles.mismatchText}>Passwords don't match</Text>}
+
+                {/* Legal notice */}
+                <View style={{ marginTop: 2, marginBottom: 4, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 11, color: '#9CA3AF' }}>By continuing, you agree to our </Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
+                    <Text style={{ fontSize: 11, color: '#1A73E8', fontWeight: '600' }}>Terms</Text>
+                  </TouchableOpacity>
+                  <Text style={{ fontSize: 11, color: '#9CA3AF' }}> & </Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
+                    <Text style={{ fontSize: 11, color: '#1A73E8', fontWeight: '600' }}>Privacy Policy</Text>
+                  </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading}>
                   <LinearGradient

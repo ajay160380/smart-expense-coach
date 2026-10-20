@@ -11,3 +11,5 @@ urlpatterns = [
     path('', include('tracker.urls')),
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
+
+handler404 = 'tracker.views.custom_404_view'

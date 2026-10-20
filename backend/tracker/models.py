@@ -32,6 +32,9 @@ class UserProfile(models.Model):
     monthly_budget = models.DecimalField(max_digits=10, decimal_places=2, default=20000)
     budget_cycle_start_day = models.IntegerField(default=1)
 
+    # --- Verification ---
+    email_verified = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.user.username} - {self.phone_number}"
 
@@ -210,3 +213,33 @@ class SplitSettlement(models.Model):
 
     def __str__(self):
         return f"{self.debtor} paid ₹{self.amount} to {self.creditor} ({self.group.name})"
+
+
+# ─── REAL PRODUCTION ADDITIONS: Analytics & Error Logging ───
+class AppAnalyticsEvent(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='analytics_events')
+    event_name = models.CharField(max_length=100, db_index=True)
+    properties = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        username = self.user.username if self.user else "Anonymous"
+        return f"[{self.event_name}] by {username} at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class AppErrorLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='error_logs')
+    error_message = models.TextField()
+    stack_trace = models.TextField(blank=True, null=True)
+    device_info = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Error at {self.created_at.strftime('%Y-%m-%d %H:%M')}: {self.error_message[:50]}"

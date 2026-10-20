@@ -293,6 +293,8 @@ export default function HistoryScreen({ navigation }) {
                 icon="📅"
                 title="No transactions"
                 message={`You didn't record any expenses in ${data?.month || 'this month'}.`}
+                actionText="Add Expense"
+                onAction={() => navigation.navigate('AddExpense')}
               />
             )}
           </>

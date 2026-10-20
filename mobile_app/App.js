@@ -56,6 +56,11 @@ import VoiceExpenseScreen from './src/screens/VoiceExpenseScreen';
 import NotepadScreen from './src/screens/NotepadScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
+import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
+import TermsScreen from './src/screens/TermsScreen';
+import NotFoundScreen from './src/screens/NotFoundScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
+import analytics from './src/utils/analytics';
 
 
 const Stack = createStackNavigator();
@@ -82,6 +87,9 @@ function HomeStackScreen() {
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="Notepad" component={NotepadScreen} />
       <HomeStack.Screen name="History" component={HistoryScreen} />
+      <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <HomeStack.Screen name="Terms" component={TermsScreen} />
+      <HomeStack.Screen name="NotFound" component={NotFoundScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -113,6 +121,9 @@ function MoreStackScreen() {
       <MoreStack.Screen name="VoiceExpense" component={VoiceExpenseScreen} />
       <MoreStack.Screen name="AdminPanel" component={AdminPanelScreen} />
       <MoreStack.Screen name="Notepad" component={NotepadScreen} />
+      <MoreStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <MoreStack.Screen name="Terms" component={TermsScreen} />
+      <MoreStack.Screen name="NotFound" component={NotFoundScreen} />
     </MoreStack.Navigator>
   );
 }
@@ -545,50 +556,66 @@ export default function App() {
   };
 
   return (
-    <SafeAreaProvider>
-      <View style={{ flex: 1 }}>
-        <NavigationContainer ref={navigationRef} linking={linking}>
-          <StatusBar style="light" />
-          <Stack.Navigator
-            initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
-            screenOptions={{
-              headerShown: false,
-              cardStyle: { backgroundColor: '#0B0E14' },
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <View style={{ flex: 1 }}>
+          <NavigationContainer
+            ref={navigationRef}
+            linking={linking}
+            onStateChange={() => {
+              const currentRouteName = navigationRef.getCurrentRoute()?.name;
+              if (currentRouteName) {
+                analytics.trackScreen(currentRouteName);
+              }
             }}
           >
-            {/* Auth Flow */}
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <StatusBar style="light" />
+            <Stack.Navigator
+              initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
+              screenOptions={{
+                headerShown: false,
+                cardStyle: { backgroundColor: '#0B0E14' },
+              }}
+            >
+              {/* Auth Flow */}
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
 
-            {/* Main App */}
-            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+              {/* Main App */}
+              <Stack.Screen name="MainTabs" component={MainTabNavigator} />
 
-            {/* Global Modals (accessible from anywhere) */}
-            <Stack.Screen name="Dashboard" component={DashboardScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-        <CustomAlertModal />
+              {/* Legal & System Screens */}
+              <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+              <Stack.Screen name="Terms" component={TermsScreen} />
+              <Stack.Screen name="NotFound" component={NotFoundScreen} />
 
-        {/* 💸 Money Burst Splash — Full-Screen Translucent Native Modal */}
-        {isAuthenticated && (
-          <Modal
-            visible={showSplash}
-            transparent={true}
-            animationType="none"
-            statusBarTranslucent={true}
-            onRequestClose={() => setShowSplash(false)}
-          >
-            <View style={{ flex: 1, backgroundColor: '#0B0E14', justifyContent: 'center', alignItems: 'center' }}>
-              <MoneySplashScreen
-                onFinish={() => setShowSplash(false)}
-              />
-            </View>
-          </Modal>
-        )}
-      </View>
-    </SafeAreaProvider>
+              {/* Global Modals (accessible from anywhere) */}
+              <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+          <CustomAlertModal />
+
+          {/* 💸 Money Burst Splash — Full-Screen Translucent Native Modal */}
+          {isAuthenticated && (
+            <Modal
+              visible={showSplash}
+              transparent={true}
+              animationType="none"
+              statusBarTranslucent={true}
+              onRequestClose={() => setShowSplash(false)}
+            >
+              <View style={{ flex: 1, backgroundColor: '#0B0E14', justifyContent: 'center', alignItems: 'center' }}>
+                <MoneySplashScreen
+                  onFinish={() => setShowSplash(false)}
+                />
+              </View>
+            </Modal>
+          )}
+        </View>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
 

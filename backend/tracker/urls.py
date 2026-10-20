@@ -124,11 +124,24 @@ urlpatterns = [
     path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
     path('api/register/', RegisterAPIView.as_view(), name='api_register'),
     path('api/login/', views.CustomAuthToken.as_view(), name='api_login'),
+    path('api/logout/', views.api_logout, name='api_logout'),
+    path('api/auth/delete-account/', views.api_delete_account, name='api_delete_account'),
     
-    # ─── NAYA: OTP & Password Recovery ───
+    # ─── OTP, Password Recovery & Email Verification ───
     path('api/auth/send-otp/', views.api_send_otp, name='api_send_otp'),
     path('api/auth/verify-otp/', views.api_verify_otp, name='api_verify_otp'),
     path('api/auth/reset-password/', views.api_reset_password, name='api_reset_password'),
+    path('api/auth/send-email-verification/', views.api_send_email_verification, name='api_send_email_verification'),
+    path('api/auth/verify-email/', views.api_verify_email_otp, name='api_verify_email_otp'),
+
+    # ─── Analytics & Error Tracking ───
+    path('api/analytics/track/', views.api_track_analytics, name='api_track_analytics'),
+    path('api/analytics/log-error/', views.api_log_error, name='api_log_error'),
+
+    # ─── Database Backups ───
+    path('api/admin/trigger-backup/', views.api_trigger_backup, name='api_trigger_backup'),
+    path('api/admin/backups/', views.api_list_backups, name='api_list_backups'),
+
     path('api/whatsapp-summary/', views.whatsapp_summary, name='whatsapp_summary'),
     path('api/latest-update-time/', views.get_latest_update_time, name='get_latest_update_time'),
     path('api/wa-link-status/', views.wa_link_status, name='wa_link_status'),

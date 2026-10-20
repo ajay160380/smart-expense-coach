@@ -1,149 +1,182 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Page Not Found | ExpenseTracker</title>
+    <title>404 — Page Not Found | Paisa Mitra</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #007AFF;
-            --secondary: #A855F7;
-            --bg-base: #F8FAFC;
-            --bg-glass: rgba(255, 255, 255, 0.7);
-            --text-main: #0F172A;
-            --text-muted: #64748B;
-            --border-glass: rgba(255, 255, 255, 0.6);
-            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08);
-            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
-            --radius-lg: 32px;
-            --radius-md: 20px;
+            --bg: #0B0E14;
+            --surface: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #8B5CF6;
+            --primary-glow: rgba(139, 92, 246, 0.3);
+            --text-main: #FFFFFF;
+            --text-sub: #94A3B8;
         }
 
-        [data-theme="dark"] {
-            --primary: #3395FF;
-            --bg-base: #020617;
-            --bg-glass: rgba(15, 23, 42, 0.6);
-            --text-main: #F8FAFC;
-            --text-muted: #94A3B8;
-            --border-glass: rgba(255, 255, 255, 0.05);
-            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.5);
-            --shadow-glow: 0 0 20px rgba(129, 140, 248, 0.15);
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-base);
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background-color: var(--bg);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
             overflow-x: hidden;
-            transition: background-color 0.4s ease, color 0.4s ease;
+            position: relative;
         }
 
-        .bg-mesh {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;
-            background: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
-            filter: blur(80px); opacity: 0.8;
-        }
-        [data-theme="dark"] .bg-mesh { opacity: 0.5; }
-
-        .navbar-wrapper { padding: 15px 20px 0; }
-        .navbar {
-            max-width: 1200px; margin: 0 auto;
-            background: var(--bg-glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-glass); border-radius: var(--radius-lg);
-            padding: 14px 24px; display: flex; justify-content: space-between; align-items: center;
-            box-shadow: var(--shadow-soft);
+        /* Ambient Glow Blobs */
+        .glow-1 {
+            position: absolute;
+            width: 380px;
+            height: 380px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, transparent 70%);
+            top: 10%;
+            left: 15%;
+            filter: blur(60px);
+            pointer-events: none;
         }
 
-        .navbar-brand {
-            font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800;
-            color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 10px;
+        .glow-2 {
+            position: absolute;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+            bottom: 15%;
+            right: 15%;
+            filter: blur(60px);
+            pointer-events: none;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 28px;
+            padding: 48px 36px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+            position: relative;
+            z-index: 10;
+        }
+
+        .badge-404 {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #A888FF;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .error-code {
+            font-size: 88px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -3px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #A888FF 50%, #06B6D4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #F1F5F9;
+        }
+
+        .description {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white !important; padding: 10px 24px; border-radius: var(--radius-md);
-            font-weight: 600; font-family: 'Outfit', sans-serif; text-decoration: none; border: none; cursor: pointer;
-            box-shadow: var(--shadow-glow); display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 122, 255, 0.4); }
-
-        .btn-glass {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
-            backdrop-filter: blur(10px); border: 1px solid var(--border-glass); box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            color: var(--text-main); padding: 10px 20px; border-radius: var(--radius-md); font-weight: 600; font-family: 'Outfit', sans-serif;
-            text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;
-        }
-        .btn-glass:hover { transform: translateY(-2px); background: rgba(255,255,255,0.2); }
-
-        .theme-toggle {
-            background: var(--bg-glass); border: 1px solid var(--border-glass); width: 44px; height: 44px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-            color: var(--text-main); transition: all 0.3s;
-        }
-        .theme-toggle:hover { transform: scale(1.1) rotate(15deg); color: var(--primary); }
-
-        .main-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .error-card {
-            background: var(--bg-glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-glass); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center;
-            max-width: 600px; width: 100%; box-shadow: var(--shadow-soft);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 13px 26px;
+            background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+            color: #FFFFFF;
+            text-decoration: none;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 24px var(--primary-glow);
         }
 
-        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(5deg); } }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px var(--primary-glow);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 13px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: #CBD5E1;
+            text-decoration: none;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+        }
     </style>
 </head>
 <body>
-    <div class="bg-mesh"></div>
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
 
-    <div class="navbar-wrapper">
-        <nav class="navbar">
-            <a href="/" class="navbar-brand">
-                <img src="https://smart-expense-coach.onrender.com/static/tracker/images/icon.png" alt="Logo" style="width:36px; height:36px; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                ExpenseTracker
-            </a>
-            <div>
-                <button class="theme-toggle" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark')">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-            </div>
-        </nav>
-    </div>
-
-    <main class="main-container">
-        <div class="error-card">
-            <div style="position: relative; display: inline-block; margin-bottom: 20px;">
-                <i class="fa-solid fa-ghost" style="position: absolute; top: -10px; left: -30px; font-size: 35px; color: var(--secondary); opacity: 0.8; animation: float 4s ease-in-out infinite;"></i>
-                <h1 style="font-family: 'Outfit', sans-serif; font-size: clamp(60px, 10vw, 100px); font-weight: 800; line-height: 1; margin: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: var(--shadow-glow);">404</h1>
-                <i class="fa-solid fa-rocket" style="position: absolute; bottom: 0; right: -25px; font-size: 28px; color: var(--primary); animation: float 3s ease-in-out infinite 1s;"></i>
-            </div>
-            
-            <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 700; color: var(--text-main); margin-bottom: 15px;">Page Not Found</h2>
-            
-            <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
-                It looks like you've wandered off the budget roadmap. The page you're looking for doesn't exist or has been moved.
-            </p>
-            
-            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <a href="/dashboard/" class="btn-primary">
-                    <i class="fa-solid fa-house"></i> Back to Dashboard
-                </a>
-                <a href="javascript:history.back()" class="btn-glass">
-                    <i class="fa-solid fa-arrow-left"></i> Go Back
-                </a>
-            </div>
+    <div class="card">
+        <span class="badge-404">Page Missing</span>
+        <div class="error-code">404</div>
+        <h1 class="title">Lost in the Ledgers?</h1>
+        <p class="description">
+            The page or transaction route you are looking for does not exist or has been relocated to another pocket.
+        </p>
+        <div class="actions">
+            <a href="/" class="btn-primary">Return to Home</a>
+            <a href="/dashboard/" class="btn-secondary">Go to Dashboard</a>
         </div>
-    </main>
+    </div>
 </body>
 </html>

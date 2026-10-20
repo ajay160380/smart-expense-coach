@@ -38,6 +38,8 @@ import api from '../api/config';
 import messaging from '../utils/messaging';
 import { clearAuthData } from '../utils/auth';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
+import { formatApiError } from '../utils/errors';
+import { validateEmail } from '../utils/validation';
 
 export default function ProfileScreen({ navigation }) {
   const [profile, setProfile] = useState(null);
@@ -50,9 +52,17 @@ export default function ProfileScreen({ navigation }) {
   const [editUsername, setEditUsername] = useState('');
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
   const [shakeLevel, setShakeLevel] = useState('3.5');
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  // Email verification modal states
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false);
+  const [verifyOtp, setVerifyOtp] = useState('');
+  const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -93,17 +103,87 @@ export default function ProfileScreen({ navigation }) {
         style: 'destructive',
         onPress: async () => {
           try {
-            await clearAuthData();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          } catch (e) {
-            console.error('Logout error:', e);
-          }
+            await api.post('/api/logout/').catch(() => {});
+          } catch (e) {}
+          await clearAuthData();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
         },
       },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    Alert.alert(
+      '⚠️ Delete Account Forever?',
+      'This will permanently delete your account, expenses, budgets, savings goals, subscriptions, and all personal records. This action is irreversible.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Permanently',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingAccount(true);
+            try {
+              const res = await api.post('/api/auth/delete-account/');
+              await clearAuthData();
+              Alert.alert('Account Deleted', res.data?.message || 'Your account has been deleted.');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Welcome' }],
+              });
+            } catch (error) {
+              Alert.alert('Deletion Failed', formatApiError(error));
+            } finally {
+              setDeletingAccount(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSendEmailVerification = async () => {
+    const emailToVerify = profile?.email;
+    if (!emailToVerify) {
+      Alert.alert('Missing Email', 'Please edit your profile and add an email address first.');
+      return;
+    }
+    setSendingEmailOtp(true);
+    try {
+      const res = await api.post('/api/auth/send-email-verification/', { email: emailToVerify });
+      Alert.alert('Code Sent! 📬', res.data?.message || 'A 6-digit verification code was sent to your email.');
+      setVerifyModalVisible(true);
+    } catch (error) {
+      Alert.alert('Error', formatApiError(error));
+    } finally {
+      setSendingEmailOtp(false);
+    }
+  };
+
+  const handleConfirmEmailOtp = async () => {
+    if (!verifyOtp || verifyOtp.trim().length !== 6) {
+      Alert.alert('Error', 'Please enter the 6-digit code received in your email.');
+      return;
+    }
+    setVerifyingEmail(true);
+    try {
+      const res = await api.post('/api/auth/verify-email/', {
+        email: profile?.email,
+        otp: verifyOtp.trim(),
+      });
+      Alert.alert('Verified! 🎉', res.data?.message || 'Your email has been verified.');
+      setVerifyModalVisible(false);
+      setVerifyOtp('');
+      fetchProfile();
+    } catch (error) {
+      Alert.alert('Verification Failed', formatApiError(error));
+    } finally {
+      setVerifyingEmail(false);
+    }
   };
 
   const submitFeedback = async () => {
@@ -131,6 +211,7 @@ export default function ProfileScreen({ navigation }) {
     setEditUsername(profile?.username || '');
     setEditFirstName(profile?.first_name || '');
     setEditLastName(profile?.last_name || '');
+    setEditEmail(profile?.email || '');
     setEditProfileVisible(true);
   };
 
@@ -139,12 +220,20 @@ export default function ProfileScreen({ navigation }) {
       Alert.alert('Error', 'Username cannot be empty');
       return;
     }
+    if (editEmail.trim()) {
+      const emailCheck = validateEmail(editEmail.trim());
+      if (!emailCheck.isValid) {
+        Alert.alert('Invalid Email', emailCheck.error);
+        return;
+      }
+    }
     setSubmittingProfile(true);
     try {
       const res = await api.post('/profile/', {
-        username: editUsername,
-        first_name: editFirstName,
-        last_name: editLastName,
+        username: editUsername.trim(),
+        first_name: editFirstName.trim(),
+        last_name: editLastName.trim(),
+        email: editEmail.trim(),
       });
       if (res.data.status === 'success') {
         Alert.alert('Success', 'Profile updated successfully! 🎉');
@@ -154,7 +243,7 @@ export default function ProfileScreen({ navigation }) {
         Alert.alert('Error', res.data.error || 'Failed to update profile');
       }
     } catch (e) {
-      Alert.alert('Error', e.response?.data?.error || 'An error occurred while updating profile');
+      Alert.alert('Error', formatApiError(e, 'An error occurred while updating profile'));
     } finally {
       setSubmittingProfile(false);
     }
@@ -396,6 +485,27 @@ export default function ProfileScreen({ navigation }) {
         </View>
         <View style={styles.menuGroupCard}>
           <MenuItem
+            ionIcon={profile?.email_verified ? 'shield-checkmark' : 'mail-outline'}
+            iconColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#94A3B8')}
+            label="Email Verification"
+            sub={
+              profile?.email
+                ? (profile?.email_verified ? `${profile.email} • Verified` : `${profile.email} • Tap to verify`)
+                : 'Add an email to protect your account'
+            }
+            badge={profile?.email_verified ? 'Verified' : (profile?.email ? 'Verify' : 'Add')}
+            badgeColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#64748B')}
+            onPress={() => {
+              if (!profile?.email) {
+                openEditProfile();
+              } else if (!profile?.email_verified) {
+                handleSendEmailVerification();
+              } else {
+                Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
+              }
+            }}
+          />
+          <MenuItem
             ionIcon={biometricEnabled ? 'shield-checkmark' : 'shield-outline'}
             iconColor="#10B981"
             label="App Lock (Biometric)"
@@ -635,7 +745,57 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── Logout Button ── */}
+        {/* ── SECTION 5: LEGAL & RESOURCES (Items 16, 17, 19) ── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Ionicons name="document-text-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
+          <Text style={styles.sectionHeaderTitle}>LEGAL & POLICIES</Text>
+        </View>
+        <View style={styles.menuGroupCard}>
+          <MenuItem
+            ionIcon="shield-checkmark-outline"
+            iconColor="#10B981"
+            label="Privacy Policy"
+            sub="Encryption, data protection & GDPR rights"
+            onPress={() => navigation.navigate('PrivacyPolicy')}
+            showArrow
+          />
+          <MenuItem
+            ionIcon="newspaper-outline"
+            iconColor="#38BDF8"
+            label="Terms of Service"
+            sub="Terms of use & financial disclaimer"
+            onPress={() => navigation.navigate('Terms')}
+            showArrow
+          />
+          <MenuItem
+            ionIcon="sparkles-outline"
+            iconColor="#F59E0B"
+            label="App Tour & Onboarding"
+            sub="Explore features & interactive onboarding"
+            onPress={() => navigation.navigate('Welcome')}
+            showArrow
+            isLast
+          />
+        </View>
+
+        {/* ── SECTION 6: DANGER ZONE (Item 18) ── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Ionicons name="warning-outline" size={13} color="#EF4444" style={{ marginRight: 6 }} />
+          <Text style={[styles.sectionHeaderTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
+        </View>
+        <View style={[styles.menuGroupCard, { borderColor: 'rgba(239, 68, 68, 0.25)', backgroundColor: 'rgba(239, 68, 68, 0.04)' }]}>
+          <MenuItem
+            ionIcon="trash-bin-outline"
+            iconColor="#EF4444"
+            label={deletingAccount ? "Deleting Account..." : "Delete Account"}
+            sub="Permanently delete all expenses, goals & personal data"
+            onPress={handleDeleteAccount}
+            showArrow
+            isLast
+          />
+        </View>
+
+        {/* ── Logout Button (Item 1) ── */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
           <Text style={styles.logoutText}>Sign Out</Text>
@@ -698,6 +858,18 @@ export default function ProfileScreen({ navigation }) {
               />
             </View>
             <View style={{ marginBottom: 15 }}>
+              <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>Email Address</Text>
+              <TextInput
+                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
+                value={editEmail}
+                onChangeText={setEditEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder="name@example.com"
+                placeholderTextColor={COLORS.textMuted}
+              />
+            </View>
+            <View style={{ marginBottom: 15 }}>
               <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>First Name</Text>
               <TextInput
                 style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
@@ -722,6 +894,43 @@ export default function ProfileScreen({ navigation }) {
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.submitFeedbackText}>Save Changes</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Email Verification OTP Modal (Item 3) ── */}
+      <Modal visible={verifyModalVisible} transparent animationType="slide" onRequestClose={() => setVerifyModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Verify Email Code</Text>
+              <TouchableOpacity onPress={() => setVerifyModalVisible(false)}>
+                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={{ color: COLORS.textMuted, fontSize: 13, marginBottom: 16 }}>
+              We sent a 6-digit confirmation code to {profile?.email}. Enter it below:
+            </Text>
+            <TextInput
+              style={[styles.feedbackInput, { minHeight: 54, fontSize: 22, letterSpacing: 6, textAlign: 'center', fontWeight: '800' }]}
+              value={verifyOtp}
+              onChangeText={setVerifyOtp}
+              keyboardType="number-pad"
+              maxLength={6}
+              placeholder="••••••"
+              placeholderTextColor={COLORS.textMuted}
+            />
+            <TouchableOpacity
+              style={[styles.submitFeedbackBtn, { backgroundColor: '#10B981', marginTop: 16 }, verifyingEmail && { opacity: 0.7 }]}
+              onPress={handleConfirmEmailOtp}
+              disabled={verifyingEmail}
+            >
+              {verifyingEmail ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.submitFeedbackText}>Verify & Confirm Email</Text>
               )}
             </TouchableOpacity>
           </View>
