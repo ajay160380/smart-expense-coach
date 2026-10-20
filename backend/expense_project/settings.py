@@ -174,6 +174,10 @@ EMAIL_HOST_PASSWORD = _raw_pass
 DEFAULT_FROM_EMAIL = (os.getenv('DEFAULT_FROM_EMAIL') or f'Expense Tracker <{_raw_user or "gagankumar160380@gmail.com"}>').strip()
 EMAIL_TIMEOUT = 15
 
+# Resend HTTP Email API (Port 443 HTTPS - Works on Render Free Tier)
+RESEND_API_KEY = (os.getenv('RESEND_API_KEY') or '').strip()
+RESEND_FROM_EMAIL = (os.getenv('RESEND_FROM_EMAIL') or 'Expense Tracker <onboarding@resend.dev>').strip()
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 REST_FRAMEWORK = {

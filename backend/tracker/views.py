@@ -5024,35 +5024,23 @@ def api_send_otp(request):
     # 4. Dispatch Email OTP
     email_dispatched = False
     if email_target:
-        try:
-            from django.core.mail import send_mail
-            subject = f"Expense Tracker OTP: {otp_code}"
-            body = (
-                f"Your Expense Tracker verification OTP is: {otp_code}\n\n"
-                f"Valid for 5 minutes. Do not share this code."
-            )
-            html_body = generate_expense_tracker_email_html(
-                otp_code,
-                title="Account Verification",
-                subtitle="Please use the one-time code below to verify your account on Expense Tracker:"
-            )
-            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>')
-            recipients = [email_target]
-            host_user = getattr(settings, 'EMAIL_HOST_USER', '')
-            if host_user and '@' in host_user and host_user.lower() != email_target.lower():
-                recipients.append(host_user)
-            send_mail(
-                subject,
-                body,
-                from_email,
-                recipients,
-                html_message=html_body,
-                fail_silently=False
-            )
-            email_dispatched = True
-            print(f"✅ Email OTP sent successfully to {email_target}", flush=True)
-        except Exception as e:
-            print(f"⚠️ Email dispatch error: {e}", flush=True)
+        from .email_service import send_transactional_email
+        subject = f"Expense Tracker OTP: {otp_code}"
+        body = (
+            f"Your Expense Tracker verification OTP is: {otp_code}\n\n"
+            f"Valid for 5 minutes. Do not share this code."
+        )
+        html_body = generate_expense_tracker_email_html(
+            otp_code,
+            title="Account Verification",
+            subtitle="Please use the one-time code below to verify your account on Expense Tracker:"
+        )
+        success, info = send_transactional_email(email_target, subject, body, html_body=html_body)
+        email_dispatched = success
+        if success:
+            print(f"✅ Email OTP sent successfully to {email_target} via {info.get('provider')}", flush=True)
+        else:
+            print(f"⚠️ Email dispatch error: {info.get('error')}", flush=True)
 
     # Human-readable destinations description
     channels = []
@@ -5222,31 +5210,17 @@ def api_send_email_verification(request):
         title="Email Verification",
         subtitle=f"Hi {user.username}, use this one-time code to confirm your email address on Expense Tracker:"
     )
-    email_sent = False
-    try:
-        from django.core.mail import send_mail
-        recipients = [email]
-        host_user = getattr(settings, 'EMAIL_HOST_USER', '')
-        if host_user and '@' in host_user and host_user.lower() != email.lower():
-            recipients.append(host_user)
-        send_mail(
-            subject,
-            body,
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>'),
-            recipients,
-            html_message=html_body,
-            fail_silently=False
-        )
-        email_sent = True
-        print(f"✅ Email verification OTP sent successfully to {email}", flush=True)
-    except Exception as e:
-        print(f"⚠️ Email send failed: {e}", flush=True)
-        return Response({'error': f'Failed to send email verification: {str(e)}'}, status=500)
+    from .email_service import send_transactional_email
+    email_sent, info = send_transactional_email(email, subject, body, html_body=html_body)
+    if not email_sent:
+        print(f"⚠️ Email verification send failed: {info.get('error')}", flush=True)
+        return Response({'error': f"Failed to send email verification: {info.get('error')}"}, status=500)
 
-    print(f"========== 📧 VERIFICATION CODE for {email}: {otp_code} ==========", flush=True)
+    print(f"========== 📧 VERIFICATION CODE for {email}: {otp_code} (via {info.get('provider')}) ==========", flush=True)
     resp = {
         'status': 'success',
         'email_sent': email_sent,
+        'provider': info.get('provider'),
         'message': f'Verification code sent to {email}. Check your inbox!'
     }
     return Response(resp)
@@ -5257,27 +5231,27 @@ def api_send_email_verification(request):
 @permission_classes([AllowAny])
 def api_debug_email(request):
     to_email = request.GET.get('to', 'ajaykumar160380@gmail.com')
-    from django.core.mail import send_mail
     from django.conf import settings
+    from .email_service import send_transactional_email
     info = {
+        'resend_configured': bool(getattr(settings, 'RESEND_API_KEY', '')),
+        'resend_from': str(getattr(settings, 'RESEND_FROM_EMAIL', '')),
         'backend': str(settings.EMAIL_BACKEND),
         'host': str(settings.EMAIL_HOST),
         'port': str(settings.EMAIL_PORT),
         'user': str(settings.EMAIL_HOST_USER),
         'tls': str(settings.EMAIL_USE_TLS),
     }
-    try:
-        count = send_mail(
-            "Expense Tracker Live SMTP Diagnostic",
-            f"This is a live diagnostic email to {to_email} from Expense Tracker.",
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>'),
-            [to_email],
-            fail_silently=False
-        )
-        return Response({'status': 'success', 'sent_count': count, 'settings': info})
-    except Exception as e:
-        import traceback
-        return Response({'status': 'failed', 'error': str(e), 'traceback': traceback.format_exc(), 'settings': info}, status=500)
+    success, res = send_transactional_email(
+        to_email,
+        "Expense Tracker Live Diagnostic Email",
+        f"This is a live diagnostic email to {to_email} from Expense Tracker.",
+        html_body=generate_expense_tracker_email_html("DIAG12", title="Diagnostic Test", subtitle="Your email delivery is working successfully!")
+    )
+    if success:
+        return Response({'status': 'success', 'details': res, 'settings': info})
+    else:
+        return Response({'status': 'failed', 'details': res, 'settings': info}, status=500)
 
 
 @api_view(['POST'])
