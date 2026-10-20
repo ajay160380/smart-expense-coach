@@ -19,6 +19,24 @@ import { COLORS, RADIUS } from '../utils/theme';
 
 const GOAL_ICONS = ['🎯', '📱', '🏖️', '🚗', '🏠', '💻', '👗', '✈️', '🎓', '💰', '🎮', '💍'];
 
+// ── Design Direction Theme: Deep Purple / Violet Aesthetics ──
+const THEME = {
+  bg: '#251D4A',
+  topBg: '#4A3E99',
+  sheetBg: '#1B1438',
+  cardBg: 'rgba(255, 255, 255, 0.08)',
+  cardBorder: 'rgba(255, 255, 255, 0.14)',
+  primary: '#8B5CF6',
+  accentNeon: '#B794F6',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#E9D5FF',
+  textMuted: '#A79BBF',
+  green: '#34D399',
+  gradPurple: ['#8B5CF6', '#6D28D9', '#4C1D95'],
+  gradNeon: ['#C4B5FD', '#8B5CF6', '#6D28D9'],
+  gradGreen: ['#34D399', '#059669'],
+};
+
 export default function SavingsGoalsScreen({ navigation }) {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -142,7 +160,7 @@ export default function SavingsGoalsScreen({ navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
-          <ActivityIndicator color={COLORS.cyan} size="large" />
+          <ActivityIndicator color={THEME.accentNeon} size="large" />
         </View>
       </SafeAreaView>
     );
@@ -166,8 +184,8 @@ export default function SavingsGoalsScreen({ navigation }) {
           left: -80,
           right: -80,
           height: 350,
-          backgroundColor: COLORS.primary,
-          opacity: 0.12,
+          backgroundColor: THEME.accentNeon,
+          opacity: 0.18,
           borderRadius: 300,
           transform: [{ scaleX: 1.6 }],
         }} />
@@ -196,7 +214,7 @@ export default function SavingsGoalsScreen({ navigation }) {
               <View style={styles.ringContainer}>
                 <View style={styles.ringOuter}>
                   <LinearGradient
-                    colors={COLORS.gradPurple}
+                    colors={THEME.gradNeon}
                     style={[styles.ringFill, { transform: [{ rotate: `${(overallPercent / 100) * 360}deg` }] }]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -215,11 +233,11 @@ export default function SavingsGoalsScreen({ navigation }) {
                 <Text style={styles.statLabel}>Active</Text>
               </View>
               <View style={styles.statPill}>
-                <Text style={[styles.statNumber, { color: COLORS.green }]}>{completedGoals.length}</Text>
+                <Text style={[styles.statNumber, { color: THEME.green }]}>{completedGoals.length}</Text>
                 <Text style={styles.statLabel}>Done</Text>
               </View>
               <View style={styles.statPill}>
-                <Text style={[styles.statNumber, { color: '#fdcb6e' }]}>{goals.length}</Text>
+                <Text style={[styles.statNumber, { color: THEME.accentNeon }]}>{goals.length}</Text>
                 <Text style={styles.statLabel}>Total</Text>
               </View>
             </View>
@@ -231,7 +249,7 @@ export default function SavingsGoalsScreen({ navigation }) {
       <Animated.View style={[styles.bottomSheet, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={THEME.accentNeon} />}
           showsVerticalScrollIndicator={false}
         >
           {/* ── Active Goals ── */}
@@ -259,7 +277,7 @@ export default function SavingsGoalsScreen({ navigation }) {
                     {/* Progress Bar */}
                     <View style={styles.progressBarBg}>
                       <LinearGradient
-                        colors={pct >= 100 ? COLORS.gradGreen : COLORS.gradPurple}
+                        colors={pct >= 100 ? THEME.gradGreen : THEME.gradNeon}
                         style={[styles.progressBarFill, { width: `${pct}%` }]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
@@ -273,7 +291,7 @@ export default function SavingsGoalsScreen({ navigation }) {
 
                     {goal.deadline && (
                       <View style={styles.deadlinePill}>
-                        <Ionicons name="time-outline" size={12} color={COLORS.textMuted} />
+                        <Ionicons name="time-outline" size={12} color={THEME.textMuted} />
                         <Text style={styles.deadlineText}>
                           {new Date(goal.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </Text>
@@ -290,7 +308,7 @@ export default function SavingsGoalsScreen({ navigation }) {
                         style={styles.addMoneyBtn}
                         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowAddMoney(goal.id); setAddMoneyAmount(''); }}
                       >
-                        <LinearGradient colors={COLORS.gradGreen} style={styles.addMoneyGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                        <LinearGradient colors={THEME.gradPurple} style={styles.addMoneyGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                           <Ionicons name="wallet-outline" size={16} color="#fff" />
                           <Text style={styles.addMoneyText}>Add Money</Text>
                         </LinearGradient>
@@ -309,7 +327,7 @@ export default function SavingsGoalsScreen({ navigation }) {
                         <TextInput
                           style={styles.moneyInput}
                           placeholder="₹ Enter amount"
-                          placeholderTextColor={COLORS.textMuted}
+                          placeholderTextColor={THEME.textMuted}
                           keyboardType="numeric"
                           value={addMoneyAmount}
                           onChangeText={(v) => setAddMoneyAmount(sanitizeAmount(v))}
@@ -319,7 +337,7 @@ export default function SavingsGoalsScreen({ navigation }) {
                           <Ionicons name="checkmark" size={20} color="#fff" />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.moneyCancel} onPress={() => setShowAddMoney(null)}>
-                          <Ionicons name="close" size={20} color={COLORS.textMuted} />
+                          <Ionicons name="close" size={20} color={THEME.textMuted} />
                         </TouchableOpacity>
                       </View>
                     )}
@@ -344,18 +362,18 @@ export default function SavingsGoalsScreen({ navigation }) {
               {completedGoals.map((goal) => (
                 <View key={goal.id} style={[styles.goalCard, styles.completedCard]}>
                   <View style={styles.goalHeader}>
-                    <View style={[styles.goalIconWrap, { backgroundColor: COLORS.green + '20' }]}>
+                    <View style={[styles.goalIconWrap, { backgroundColor: 'rgba(52, 211, 153, 0.16)', borderColor: 'rgba(52, 211, 153, 0.35)' }]}>
                       <Text style={styles.goalIconLarge}>{goal.icon}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.goalName}>{goal.name}</Text>
-                      <Text style={[styles.goalRemaining, { color: COLORS.green }]}>🎉 Goal reached!</Text>
+                      <Text style={[styles.goalRemaining, { color: THEME.green }]}>🎉 Goal reached!</Text>
                     </View>
                     <Text style={styles.completedAmount}>₹{Math.round(goal.target_amount).toLocaleString('en-IN')}</Text>
                   </View>
                   <View style={styles.progressBarBg}>
                     <LinearGradient
-                      colors={COLORS.gradGreen}
+                      colors={THEME.gradGreen}
                       style={[styles.progressBarFill, { width: '100%' }]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
@@ -386,7 +404,7 @@ export default function SavingsGoalsScreen({ navigation }) {
                 style={styles.modalCloseBtn}
                 onPress={() => { setShowAddModal(false); resetForm(); }}
               >
-                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+                <Ionicons name="close" size={20} color={THEME.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -394,7 +412,7 @@ export default function SavingsGoalsScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="e.g., iPhone 16 Pro"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={THEME.textMuted}
               value={goalName}
               onChangeText={setGoalName}
               maxLength={100}
@@ -404,7 +422,7 @@ export default function SavingsGoalsScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="e.g., 50000"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={THEME.textMuted}
               keyboardType="numeric"
               value={goalTarget}
               onChangeText={(v) => setGoalTarget(sanitizeAmount(v))}
@@ -427,7 +445,7 @@ export default function SavingsGoalsScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={THEME.textMuted}
               value={goalDeadline}
               onChangeText={setGoalDeadline}
             />
@@ -436,7 +454,7 @@ export default function SavingsGoalsScreen({ navigation }) {
               title="Create Goal"
               onPress={handleAddGoal}
               loading={submitting}
-              colors={COLORS.gradGreen}
+              colors={THEME.gradNeon}
               icon="🎯"
               style={{ marginTop: 24 }}
             />
@@ -450,41 +468,52 @@ export default function SavingsGoalsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: THEME.bg,
   },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: THEME.bg,
+  },
 
-  // ── Top Section ──
+  // ── Top Section (Deep Purple panel with wave glow) ──
   topSection: {
+    backgroundColor: THEME.topBg,
     paddingTop: Platform.OS === 'android' ? 30 : 0,
-    paddingBottom: 50,
+    paddingBottom: 48,
     position: 'relative',
     overflow: 'hidden',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   headerTitle: {
-    color: COLORS.textPrimary,
+    color: THEME.textPrimary,
     fontSize: 26,
     fontWeight: '800',
+    letterSpacing: 0.3,
   },
   addBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.primary,
+    backgroundColor: THEME.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.primary,
+    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
 
   // ── Summary ──
@@ -492,62 +521,67 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     marginBottom: 20,
   },
-  summaryLeft: {},
+  summaryLeft: {
+    flex: 1,
+  },
   summaryLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.textMuted,
-    letterSpacing: 1,
+    color: THEME.textSecondary,
+    letterSpacing: 1.2,
     marginBottom: 4,
   },
   summaryAmount: {
-    fontSize: 36,
+    fontSize: 34,
     fontWeight: '800',
-    color: COLORS.textPrimary,
+    color: THEME.textPrimary,
+    letterSpacing: 0.5,
   },
   summarySubtext: {
     fontSize: 13,
-    color: COLORS.textMuted,
+    color: THEME.textSecondary,
     marginTop: 2,
+    fontWeight: '500',
   },
 
   // ── Ring ──
   ringContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 12,
   },
   ringOuter: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(168,136,255,0.15)',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: COLORS.primary + '40',
+    borderColor: 'rgba(196, 181, 253, 0.4)',
   },
   ringFill: {
     position: 'absolute',
     width: '100%',
     height: '100%',
-    borderRadius: 36,
-    opacity: 0.3,
+    borderRadius: 38,
+    opacity: 0.35,
   },
   ringInner: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.bg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: THEME.topBg,
     justifyContent: 'center',
     alignItems: 'center',
   },
   ringPercent: {
     fontSize: 16,
     fontWeight: '800',
-    color: COLORS.primary,
+    color: THEME.textPrimary,
   },
 
   // ── Stats Row ──
@@ -560,62 +594,70 @@ const styles = StyleSheet.create({
   statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     gap: 6,
   },
   statNumber: {
     fontSize: 16,
     fontWeight: '800',
-    color: COLORS.primary,
+    color: THEME.textPrimary,
   },
   statLabel: {
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: THEME.textSecondary,
     fontWeight: '600',
   },
 
   // ── Bottom Sheet ──
   bottomSheet: {
     flex: 1,
-    backgroundColor: COLORS.bgCard,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    marginTop: -30,
+    backgroundColor: THEME.sheetBg,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
     elevation: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
   scrollContent: {
     padding: 20,
-    paddingTop: 28,
+    paddingTop: 26,
   },
 
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: THEME.textPrimary,
     marginBottom: 16,
+    letterSpacing: 0.3,
   },
 
   // ── Goal Card ──
   goalCard: {
-    backgroundColor: COLORS.bg,
-    borderRadius: 20,
+    backgroundColor: THEME.cardBg,
+    borderRadius: 22,
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: THEME.cardBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   completedCard: {
-    opacity: 0.75,
-    borderColor: COLORS.green + '30',
+    backgroundColor: 'rgba(52, 211, 153, 0.06)',
+    borderColor: 'rgba(52, 211, 153, 0.3)',
   },
   goalHeader: {
     flexDirection: 'row',
@@ -625,31 +667,37 @@ const styles = StyleSheet.create({
   goalIconWrap: {
     width: 48,
     height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(168,136,255,0.12)',
+    borderRadius: 18,
+    backgroundColor: 'rgba(183, 148, 246, 0.16)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(183, 148, 246, 0.25)',
   },
   goalIconLarge: { fontSize: 26 },
   goalName: {
-    color: COLORS.textPrimary,
+    color: THEME.textPrimary,
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
   goalRemaining: {
-    color: COLORS.textMuted,
+    color: THEME.textSecondary,
     fontSize: 12,
     marginTop: 2,
+    fontWeight: '500',
   },
   goalPercentBadge: {
-    backgroundColor: COLORS.primary + '20',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: 'rgba(183, 148, 246, 0.18)',
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(183, 148, 246, 0.35)',
   },
   goalPercentText: {
-    color: COLORS.primary,
+    color: THEME.accentNeon,
     fontSize: 13,
     fontWeight: '800',
   },
@@ -657,7 +705,7 @@ const styles = StyleSheet.create({
   // ── Progress ──
   progressBarBg: {
     height: 8,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 10,
@@ -672,12 +720,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   savedText: {
-    color: COLORS.green,
+    color: THEME.green,
     fontSize: 13,
     fontWeight: '700',
   },
   targetText: {
-    color: COLORS.textSecondary,
+    color: THEME.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -685,20 +733,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   deadlineText: {
-    color: COLORS.textMuted,
+    color: THEME.textMuted,
     fontSize: 11,
     fontWeight: '600',
   },
   etaText: {
-    color: COLORS.textMuted,
+    color: THEME.textMuted,
     fontSize: 11,
     marginBottom: 10,
   },
@@ -718,8 +768,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 11,
-    borderRadius: 14,
+    borderRadius: 18,
     gap: 6,
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
   },
   addMoneyText: {
     color: '#fff',
@@ -729,12 +784,12 @@ const styles = StyleSheet.create({
   deleteBtn: {
     width: 42,
     height: 42,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,107,107,0.1)',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,107,107,0.2)',
+    borderColor: 'rgba(255, 107, 107, 0.25)',
   },
   addMoneyInput: {
     flexDirection: 'row',
@@ -743,34 +798,41 @@ const styles = StyleSheet.create({
   },
   moneyInput: {
     flex: 1,
-    backgroundColor: COLORS.bgCard,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 16,
     padding: 13,
-    color: COLORS.textPrimary,
+    color: THEME.textPrimary,
     fontSize: 16,
     borderWidth: 1.5,
-    borderColor: COLORS.green + '40',
+    borderColor: THEME.accentNeon + '60',
   },
   moneyConfirm: {
-    backgroundColor: COLORS.green,
+    backgroundColor: THEME.primary,
     width: 42,
     height: 42,
-    borderRadius: 12,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 3,
   },
   moneyCancel: {
     width: 42,
     height: 42,
-    borderRadius: 12,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   completedAmount: {
-    color: COLORS.green,
+    color: THEME.green,
     fontSize: 16,
     fontWeight: '800',
   },
@@ -778,21 +840,28 @@ const styles = StyleSheet.create({
   // ── Modal ──
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(15, 10, 30, 0.75)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: THEME.sheetBg,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 24,
     maxHeight: '85%',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 25,
   },
   modalHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignSelf: 'center',
     marginBottom: 20,
   },
@@ -803,7 +872,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalTitle: {
-    color: COLORS.textPrimary,
+    color: THEME.textPrimary,
     fontSize: 22,
     fontWeight: '800',
   },
@@ -811,27 +880,29 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   label: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.textSecondary,
+    color: THEME.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     marginBottom: 8,
     marginTop: 16,
   },
   input: {
-    backgroundColor: COLORS.bg,
-    borderRadius: RADIUS.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 18,
     padding: 15,
-    color: COLORS.textPrimary,
+    color: THEME.textPrimary,
     fontSize: 16,
     borderWidth: 1.5,
-    borderColor: COLORS.borderLight,
+    borderColor: THEME.cardBorder,
     fontWeight: '500',
   },
   iconGrid: {
@@ -843,18 +914,18 @@ const styles = StyleSheet.create({
   iconOption: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1.5,
-    borderColor: COLORS.borderLight,
+    borderColor: THEME.cardBorder,
   },
   iconOptionSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '15',
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.3,
+    borderColor: THEME.accentNeon,
+    backgroundColor: 'rgba(183, 148, 246, 0.22)',
+    shadowColor: THEME.primary,
+    shadowOpacity: 0.35,
     shadowRadius: 6,
     elevation: 3,
   },
