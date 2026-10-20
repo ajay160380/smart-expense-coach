@@ -8,7 +8,7 @@
     "userInterfaceStyle": "dark",
     "scheme": "paisamitra",
     "updates": {
-      "fallbackToCacheTimeout": 0,
+      "fallbackToCacheTimeout": 3000,
       "url": "https://u.expo.dev/4159228e-c70e-46d2-a231-eda454c6eb0d"
     },
     "ios": {
