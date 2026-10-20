@@ -124,6 +124,7 @@ urlpatterns = [
     path('api/habit-warnings/', views.habit_warnings, name='habit_warnings'),
     path('api/register/', RegisterAPIView.as_view(), name='api_register'),
     path('api/login/', views.CustomAuthToken.as_view(), name='api_login'),
+    path('api/auth/google/', views.api_google_login, name='api_google_login'),
     path('api/logout/', views.api_logout, name='api_logout'),
     path('api/auth/delete-account/', views.api_delete_account, name='api_delete_account'),
     

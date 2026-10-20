@@ -12,18 +12,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 
 import Logo from '../components/Logo';
-
-
-
-
-
-
-
-
-
-
-
-
+import GoogleSignInButton from '../components/GoogleSignInButton';
+import { useGoogleAuth } from '../utils/googleAuth';
 
 import api from '../api/config';
 import {
@@ -38,6 +28,15 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const { signInWithGoogle, loading: googleLoading } = useGoogleAuth({
+    onSuccess: () => {
+      navigation.replace('MainTabs');
+    },
+    onError: (err) => {
+      console.warn('Google sign-in error:', err);
+    },
+  });
 
   const handleLogin = async () => {
     const cleanUsername = sanitizeInput(username).trim();
@@ -143,7 +142,7 @@ export default function LoginScreen({ navigation }) {
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleLogin}
-              disabled={loading}
+              disabled={loading || googleLoading}
             >
               <LinearGradient
                 colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
@@ -156,6 +155,21 @@ export default function LoginScreen({ navigation }) {
                 )}
               </LinearGradient>
             </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Sign-In */}
+            <GoogleSignInButton
+              onPress={signInWithGoogle}
+              loading={googleLoading}
+              disabled={loading}
+              title="Continue with Google"
+            />
           </View>
 
           {/* Footer */}
@@ -218,6 +232,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 10, elevation: 8,
   },
   buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+  },
 
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
   footerText: { color: '#6B7280', fontSize: 14 },

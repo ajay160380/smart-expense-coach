@@ -12,18 +12,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 
 import Logo from '../components/Logo';
-
-
-
-
-
-
-
-
-
-
-
-
+import GoogleSignInButton from '../components/GoogleSignInButton';
+import { useGoogleAuth } from '../utils/googleAuth';
 
 import api from '../api/config';
 import { sanitizeInput, checkPasswordStrength, saveAuthData } from '../utils/auth';
@@ -43,6 +33,15 @@ export default function RegisterScreen({ navigation }) {
   // OTP States
   const [step, setStep] = useState(1); // 1 = Details, 2 = OTP
   const [otp, setOtp] = useState('');
+
+  const { signInWithGoogle, loading: googleLoading } = useGoogleAuth({
+    onSuccess: () => {
+      navigation.replace('MainTabs');
+    },
+    onError: (err) => {
+      console.warn('Google sign-up error:', err);
+    },
+  });
   const [loading, setLoading] = useState(false);
 
   const pwStrength = checkPasswordStrength(password);
@@ -247,7 +246,7 @@ export default function RegisterScreen({ navigation }) {
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading}>
+                <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading || googleLoading}>
                   <LinearGradient
                     colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
                     style={styles.button}
@@ -255,6 +254,21 @@ export default function RegisterScreen({ navigation }) {
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
                   </LinearGradient>
                 </TouchableOpacity>
+
+                {/* Divider */}
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>OR</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {/* Google Sign-In */}
+                <GoogleSignInButton
+                  onPress={signInWithGoogle}
+                  loading={googleLoading}
+                  disabled={loading}
+                  title="Sign up with Google"
+                />
               </>
             ) : (
               <>
@@ -351,6 +365,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 10, elevation: 8,
   },
   buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+  },
 
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 22 },
   footerText: { color: '#6B7280', fontSize: 14 },

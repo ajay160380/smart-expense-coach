@@ -4730,6 +4730,115 @@ class CustomAuthToken(ObtainAuthToken):
             'phone_number': authenticated_user.profile.phone_number if hasattr(authenticated_user, 'profile') else None
         })
 
+
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def api_google_login(request):
+    """
+    Authenticate or register user via Google OAuth (AuthSession / WebBrowser token).
+    Accepts:
+      - access_token (Google OAuth2 access token)
+      - id_token (Google OpenID Connect JWT token)
+    """
+    import re
+    import uuid
+    import requests as req_lib
+    
+    access_token = request.data.get('access_token')
+    id_token = request.data.get('id_token')
+    
+    if not access_token and not id_token:
+        return Response({'error': 'Google token (access_token or id_token) is required.'}, status=400)
+        
+    google_data = None
+    
+    # 1. Try id_token first if provided
+    if id_token:
+        try:
+            resp = req_lib.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}", timeout=10)
+            if resp.status_code == 200:
+                google_data = resp.json()
+        except Exception as e:
+            logger.warning(f"Failed verifying Google id_token: {e}")
+            
+    # 2. If id_token didn't yield user info or access_token was provided, try access_token
+    if not google_data or not google_data.get('email'):
+        if access_token:
+            try:
+                resp = req_lib.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={'Authorization': f'Bearer {access_token}'},
+                    timeout=10
+                )
+                if resp.status_code == 200:
+                    google_data = resp.json()
+            except Exception as e:
+                logger.warning(f"Failed fetching Google userinfo with access_token: {e}")
+            
+    if not google_data or not google_data.get('email'):
+        return Response({'error': 'Unable to verify Google credentials. Please try signing in again.'}, status=400)
+        
+    email = str(google_data.get('email', '')).strip().lower()
+    name = str(google_data.get('name', '')).strip()
+    given_name = str(google_data.get('given_name', '')).strip()
+    family_name = str(google_data.get('family_name', '')).strip()
+    
+    user = User.objects.filter(email__iexact=email).first()
+    is_new = False
+    
+    if not user:
+        is_new = True
+        base_username = email.split('@')[0]
+        base_username = re.sub(r'[^a-zA-Z0-9_]', '', base_username) or "user"
+        username = base_username[:25]
+        counter = 1
+        while User.objects.filter(username__iexact=username).exists():
+            username = f"{base_username[:20]}_{counter}"
+            counter += 1
+            
+        first_name = given_name or (name.split()[0] if name else '')
+        last_name = family_name or (' '.join(name.split()[1:]) if len(name.split()) > 1 else '')
+        
+        user = User.objects.create(
+            username=username,
+            email=email,
+            first_name=first_name[:30],
+            last_name=last_name[:30],
+        )
+        user.set_unusable_password()
+        user.save()
+        
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    if not profile.phone_number:
+        profile.phone_number = f"g_{uuid.uuid4().hex[:12]}"
+    profile.email_verified = True
+    profile.save()
+    
+    token, _ = Token.objects.get_or_create(user=user)
+    
+    # Track login activity
+    try:
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+        UserLoginActivity.objects.create(user=user, ip_address=ip)
+    except Exception:
+        pass
+        
+    return Response({
+        'status': 'success',
+        'token': token.key,
+        'user_id': user.pk,
+        'username': user.username,
+        'email': user.email,
+        'phone_number': profile.phone_number if not str(profile.phone_number).startswith('g_') else None,
+        'is_new': is_new,
+        'message': 'Account created successfully with Google!' if is_new else 'Google login successful!'
+    })
+
 # ══════════════════════════════════════════════════════════════════════════════
 # OTP & PASSWORD RECOVERY APIS
 # ══════════════════════════════════════════════════════════════════════════════
