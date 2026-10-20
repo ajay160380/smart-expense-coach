@@ -155,10 +155,8 @@ export default function ProfileScreen({ navigation }) {
     setSendingEmailOtp(true);
     try {
       const res = await api.post('/api/auth/send-email-verification/', { email: emailToVerify });
-      Alert.alert('Code Sent! 📬', res.data?.message || 'A 6-digit verification code was sent to your email.');
-      if (res.data?.dev_otp) {
-        setVerifyOtp(res.data.dev_otp);
-      }
+      Alert.alert('Code Sent! 📬', res.data?.message || 'A 6-digit verification code was sent to your email. Please enter the OTP.');
+      setVerifyOtp('');
       setVerifyModalVisible(true);
     } catch (error) {
       Alert.alert('Error', formatApiError(error));

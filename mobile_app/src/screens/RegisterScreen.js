@@ -67,18 +67,16 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       const cleanEmail = email.trim();
-      const targetIdentifier = cleanEmail || phoneCheck.value;
+      const phoneVal = phoneCheck.value;
       const res = await api.post('/api/auth/send-otp/', {
-        identifier: targetIdentifier,
+        identifier: phoneVal,
+        phone_number: phoneVal,
         email: cleanEmail,
-        phone_number: phoneCheck.value,
         action: 'register'
       });
-      const destText = cleanEmail ? `your email (${cleanEmail})` : 'your phone number';
-      Alert.alert('OTP Sent 📬', res.data?.message || `Verification code sent to ${destText}.`);
-      if (res.data?.dev_otp) {
-        setOtp(res.data.dev_otp);
-      }
+      const destText = cleanEmail ? `WhatsApp (${phoneVal}) & Email (${cleanEmail})` : `WhatsApp (${phoneVal})`;
+      Alert.alert('OTP Sent 📬', res.data?.message || `Verification code sent to ${destText}. Please enter the OTP.`);
+      setOtp('');
       setStep(2);
     } catch (error) {
       Alert.alert('Error', formatApiError(error));

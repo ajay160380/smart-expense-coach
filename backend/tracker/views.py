@@ -4804,73 +4804,133 @@ def generate_expense_tracker_email_html(otp_code, title="Security Verification C
 @authentication_classes([])
 @permission_classes([AllowAny])
 def api_send_otp(request):
-    identifier = request.data.get('identifier') or request.data.get('email') or request.data.get('phone_number')
+    raw_identifier = request.data.get('identifier') or request.data.get('phone_number') or request.data.get('email')
     action = request.data.get('action') # 'register' or 'reset'
     email_param = request.data.get('email')
-    
-    if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
-        identifier = f"91{identifier}"
-        
-    if not identifier:
-        return Response({'error': 'Identifier (Phone or Email) is required.'}, status=400)
-        
-    is_email = '@' in str(identifier)
-    
-    if action == 'reset':
-        exists = User.objects.filter(email__iexact=identifier).exists() or UserProfile.objects.filter(phone_number=identifier).exists() or User.objects.filter(username__iexact=identifier).exists()
-        if not exists:
-            return Response({'error': 'No account found with this identifier.'}, status=404)
-    elif action == 'register':
-        if is_email:
-            if User.objects.filter(email__iexact=identifier).exists():
-                return Response({'error': 'An account with this email already exists.'}, status=400)
-        else:
-            if UserProfile.objects.filter(phone_number=identifier).exists():
+    phone_param = request.data.get('phone_number')
+
+    if not raw_identifier and not phone_param and not email_param:
+        return Response({'error': 'Phone number or email is required.'}, status=400)
+
+    # 1. Identify Phone Target
+    phone_target = None
+    candidates = [phone_param, raw_identifier]
+    for c in candidates:
+        if c and '@' not in str(c):
+            digits = ''.join(ch for ch in str(c) if ch.isdigit())
+            if len(digits) == 10:
+                phone_target = f"91{digits}"
+                break
+            elif len(digits) >= 11:
+                phone_target = digits
+                break
+
+    # 2. Identify Email Target
+    email_target = None
+    candidates_email = [email_param, raw_identifier]
+    for e in candidates_email:
+        if e and '@' in str(e):
+            email_target = str(e).strip().lower()
+            break
+
+    if not phone_target and not email_target:
+        return Response({'error': 'A valid phone number or email is required.'}, status=400)
+
+    # Validation based on action
+    if action == 'register':
+        if phone_target:
+            p_alt = phone_target[2:] if phone_target.startswith('91') and len(phone_target) == 12 else phone_target
+            if UserProfile.objects.filter(phone_number__in=[phone_target, p_alt]).exists():
                 return Response({'error': 'An account with this phone number already exists.'}, status=400)
-            if email_param and '@' in str(email_param):
-                if User.objects.filter(email__iexact=email_param).exists():
-                    return Response({'error': 'An account with this email already exists.'}, status=400)
-            
-    # Basic rate limiting (max 10 OTPs in last 5 mins so testing is never blocked)
-    recent_otps = OTPVerification.objects.filter(identifier=identifier, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
+        if email_target:
+            if User.objects.filter(email__iexact=email_target).exists():
+                return Response({'error': 'An account with this email already exists.'}, status=400)
+    elif action == 'reset':
+        user_found = False
+        if email_target and User.objects.filter(email__iexact=email_target).exists():
+            user_found = True
+        if not user_found and phone_target:
+            p_alt = phone_target[2:] if phone_target.startswith('91') and len(phone_target) == 12 else phone_target
+            profile = UserProfile.objects.filter(phone_number__in=[phone_target, p_alt]).first()
+            if profile:
+                user_found = True
+                if not email_target and profile.user.email:
+                    email_target = profile.user.email.strip().lower()
+            elif User.objects.filter(username__iexact=phone_target).exists():
+                user_found = True
+        if not user_found:
+            return Response({'error': 'No account found with this phone number or email.'}, status=404)
+
+    # Basic rate limiting (max 10 OTPs in last 5 mins)
+    recent_check = phone_target or email_target
+    recent_otps = OTPVerification.objects.filter(identifier=recent_check, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
     if recent_otps >= 10:
         return Response({'error': 'Too many OTP requests. Please wait a moment.'}, status=429)
 
-    # Generate 6 digit OTP
+    # Generate 6-digit OTP
     otp_code = str(random.randint(100000, 999999))
-    
-    OTPVerification.objects.create(
-        identifier=identifier,
-        otp_code=otp_code
-    )
-    
-    # Also register OTP for email if provided alongside phone
-    if email_param and '@' in str(email_param) and str(email_param).strip() != str(identifier).strip():
-        OTPVerification.objects.create(
-            identifier=str(email_param).strip(),
-            otp_code=otp_code
-        )
-    
-    print(f"========== 📱/📧 OTP for {identifier}: {otp_code} ==========", flush=True)
 
-    # Determine where to dispatch email
-    dispatch_email = identifier if is_email else (str(email_param).strip() if (email_param and '@' in str(email_param)) else None)
-    email_sent = False
+    # Save OTP for all valid identifiers
+    identifiers_to_store = []
+    if phone_target:
+        identifiers_to_store.append(phone_target)
+        if phone_target.startswith('91') and len(phone_target) == 12:
+            identifiers_to_store.append(phone_target[2:])
+    if email_target:
+        identifiers_to_store.append(email_target)
 
-    if dispatch_email:
-        subject = f"Expense Tracker OTP: {otp_code}"
-        body = f"Your Expense Tracker verification OTP is: {otp_code}\n\nValid for 5 minutes. Do not share this code."
-        html_body = generate_expense_tracker_email_html(
-            otp_code,
-            title="Account Verification",
-            subtitle="Please use the one-time code below to verify your account on Expense Tracker:"
-        )
+    for ident in set(identifiers_to_store):
+        OTPVerification.objects.create(identifier=ident, otp_code=otp_code)
+
+    print(f"========== 📱/📧 OTP for {phone_target or email_target}: {otp_code} ==========", flush=True)
+
+    # 3. Dispatch WhatsApp OTP in background thread
+    wa_dispatched = False
+    if phone_target:
+        import threading
+        import requests
+
+        def send_otp_thread(target_phone, code):
+            try:
+                wa_msg = (
+                    f"🔒 *Expense Tracker Verification*\n\n"
+                    f"Your OTP code is: *{code}*\n\n"
+                    f"Please enter this code in the app to continue. "
+                    f"Valid for 5 minutes. Do not share this code with anyone."
+                )
+                res = requests.post(
+                    'http://127.0.0.1:3001/api/send-message',
+                    json={'phone_number': target_phone, 'message': wa_msg},
+                    timeout=10
+                )
+                print(f"WhatsApp OTP dispatch for {target_phone}: status {res.status_code}, response: {res.text}", flush=True)
+            except Exception as e:
+                print(f"⚠️ Could not dispatch WhatsApp OTP to {target_phone}: {e}", flush=True)
+
+        t = threading.Thread(target=send_otp_thread, args=(phone_target, otp_code))
+        t.daemon = True
+        t.start()
+        wa_dispatched = True
+
+    # 4. Dispatch Email OTP
+    email_dispatched = False
+    if email_target:
         try:
             from django.core.mail import send_mail
+            subject = f"Expense Tracker OTP: {otp_code}"
+            body = (
+                f"Your Expense Tracker verification OTP is: {otp_code}\n\n"
+                f"Valid for 5 minutes. Do not share this code."
+            )
+            html_body = generate_expense_tracker_email_html(
+                otp_code,
+                title="Account Verification",
+                subtitle="Please use the one-time code below to verify your account on Expense Tracker:"
+            )
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>')
-            recipients = [dispatch_email]
+            recipients = [email_target]
             host_user = getattr(settings, 'EMAIL_HOST_USER', '')
-            if host_user and '@' in host_user and host_user.lower() != dispatch_email.lower():
+            if host_user and '@' in host_user and host_user.lower() != email_target.lower():
                 recipients.append(host_user)
             send_mail(
                 subject,
@@ -4880,45 +4940,27 @@ def api_send_otp(request):
                 html_message=html_body,
                 fail_silently=False
             )
-            email_sent = True
+            email_dispatched = True
+            print(f"✅ Email OTP sent successfully to {email_target}", flush=True)
         except Exception as e:
             print(f"⚠️ Email dispatch error: {e}", flush=True)
 
-    if is_email or email_sent:
-        target_name = dispatch_email or identifier
-        resp = {
-            'status': 'success',
-            'email_sent': email_sent,
-            'dev_otp': otp_code,
-            'message': f'Verification OTP sent to {target_name}. Please check your email inbox.'
-        }
-        return Response(resp)
-    else:
-        # Send OTP via local WhatsApp Bot in background thread if available
-        import threading
-        import requests
-        
-        def send_otp_thread(phone, msg):
-            try:
-                requests.post('http://127.0.0.1:3001/api/send-message', json={
-                    'phone_number': phone,
-                    'message': msg
-                }, timeout=1)
-            except requests.exceptions.ReadTimeout:
-                pass
-            except Exception as e:
-                print(f"⚠️ Could not send WhatsApp OTP to {phone}:", str(e), flush=True)
+    # Human-readable destinations description
+    channels = []
+    if wa_dispatched and phone_target:
+        channels.append(f"WhatsApp ({phone_target})")
+    if email_dispatched and email_target:
+        channels.append(f"Email ({email_target})")
 
-        wa_message = f"🔒 *Expense Tracker Verification*\n\nYour OTP is: *{otp_code}*\n\nDo not share this code with anyone. It is valid for 5 minutes."
-        t = threading.Thread(target=send_otp_thread, args=(identifier, wa_message))
-        t.daemon = True
-        t.start()
-        
-        return Response({
-            'status': 'success',
-            'message': f'Verification OTP sent to {identifier}.',
-            'dev_otp': otp_code
-        })
+    destination_desc = " & ".join(channels) if channels else (phone_target or email_target)
+
+    # Clean response: NO dev_otp returned so user manually types OTP!
+    return Response({
+        'status': 'success',
+        'message': f'Verification OTP sent to {destination_desc}. Please enter the code.',
+        'whatsapp_sent': wa_dispatched,
+        'email_sent': email_dispatched
+    })
 
 @api_view(['POST'])
 @authentication_classes([])
@@ -5094,7 +5136,6 @@ def api_send_email_verification(request):
     resp = {
         'status': 'success',
         'email_sent': email_sent,
-        'dev_otp': otp_code,
         'message': f'Verification code sent to {email}. Check your inbox!'
     }
     return Response(resp)
