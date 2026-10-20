@@ -775,7 +775,7 @@ export default function ProfileScreen({ navigation }) {
             iconColor="#F59E0B"
             label="App Tour & Onboarding"
             sub="Explore features & interactive onboarding"
-            onPress={() => navigation.navigate('Welcome')}
+            onPress={() => navigation.navigate('Welcome', { fromProfile: true })}
             showArrow
             isLast
           />

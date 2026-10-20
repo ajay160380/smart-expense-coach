@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 
 import Logo from '../components/Logo';
+import { getToken } from '../utils/auth';
 
 
 
@@ -236,9 +237,31 @@ const ElegantArt = ({ type }) => {
   return null;
 };
 
-export default function WelcomeScreen({ navigation }) {
+export default function WelcomeScreen({ navigation, route }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const slidesRef = useRef(null);
+  const fromProfile = route?.params?.fromProfile;
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(fromProfile));
+
+  useEffect(() => {
+    let isMounted = true;
+    getToken().then(token => {
+      if (token && isMounted) {
+        setIsLoggedIn(true);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
+  const isTourMode = Boolean(fromProfile || isLoggedIn);
+
+  const exitTour = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs');
+    }
+  };
   
   const viewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems[0]) {
@@ -256,37 +279,72 @@ export default function WelcomeScreen({ navigation }) {
     if (item.layout === 'auth-final') {
       return (
         <View style={[styles.slide, { paddingHorizontal: 32, justifyContent: 'center', alignItems: 'center' }]}>
-          <View style={{ marginBottom: 40 }}>
+          <View style={{ marginBottom: 32 }}>
             <ElegantArt type={item.artType} />
           </View>
 
-          <View style={{ alignItems: 'center', marginBottom: 40 }}>
+          <View style={{ alignItems: 'center', marginBottom: 36 }}>
             <Text style={[styles.titleText, { textAlign: 'center', fontSize: 32, lineHeight: 40 }]}>
-              {item.titleMain}
+              {isTourMode ? "You're All Set!\n" : item.titleMain}
               <Text style={{ color: THEME.primary, fontWeight: '800' }}>{item.titleBold}</Text>
             </Text>
             
             <Text style={[styles.subtitleText, { textAlign: 'center', marginTop: 12, paddingHorizontal: 10 }]}>
-              {item.subtitle}
+              {isTourMode
+                ? "You are logged in and ready to track your expenses effortlessly with AI voice and WhatsApp logging."
+                : item.subtitle}
             </Text>
           </View>
 
           <View style={{ width: '100%' }}>
-            {/* Massive Wide Gradient Button */}
-            <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('Register')} style={{ shadowColor: '#1A73E8', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 15, marginBottom: 30 }}>
-              <View style={{ backgroundColor: '#1A73E8', height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-                <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700', marginRight: 8 }}>Register</Text>
-                <Ionicons name="arrow-forward" size={20} color="#FFF" />
-              </View>
-            </TouchableOpacity>
+            {isTourMode ? (
+              <>
+                {/* Back to App Primary Button */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={exitTour}
+                  style={styles.tourBackBtnShadow}
+                >
+                  <LinearGradient
+                    colors={['#8B5CF6', '#6D28D9']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryBtnGradient}
+                  >
+                    <Text style={styles.primaryBtnText}>Back to App</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                  </LinearGradient>
+                </TouchableOpacity>
 
-            {/* Login Link */}
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: THEME.textSub, fontSize: 15, marginBottom: 8 }}>Already have account?</Text>
-              <TouchableOpacity activeOpacity={0.6} onPress={() => navigation.navigate('Login')}>
-                <Text style={{ color: '#1A73E8', fontSize: 17, fontWeight: '700' }}>Login</Text>
-              </TouchableOpacity>
-            </View>
+                {/* Dashboard Direct Link */}
+                <View style={{ alignItems: 'center', marginTop: 16 }}>
+                  <TouchableOpacity
+                    activeOpacity={0.6}
+                    onPress={() => navigation.navigate('MainTabs', { screen: 'Home', params: { screen: 'DashboardMain' } })}
+                  >
+                    <Text style={{ color: THEME.primary, fontSize: 16, fontWeight: '700' }}>Go to Dashboard</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                {/* Massive Wide Gradient Button */}
+                <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('Register')} style={{ shadowColor: '#1A73E8', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 15, marginBottom: 30 }}>
+                  <View style={{ backgroundColor: '#1A73E8', height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+                    <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700', marginRight: 8 }}>Register</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Login Link */}
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ color: THEME.textSub, fontSize: 15, marginBottom: 8 }}>Already have account?</Text>
+                  <TouchableOpacity activeOpacity={0.6} onPress={() => navigation.navigate('Login')}>
+                    <Text style={{ color: '#1A73E8', fontSize: 17, fontWeight: '700' }}>Login</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </View>
       );
@@ -328,6 +386,26 @@ export default function WelcomeScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safeArea}>
+
+        {/* ── Top Bar with Close Tour option ── */}
+        <View style={styles.topNavRow}>
+          {isTourMode ? (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={exitTour}
+              style={styles.closeTourBtn}
+            >
+              <Ionicons name="close" size={20} color={THEME.textMain} />
+              <Text style={styles.closeTourText}>Close Tour</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
+
+          <View style={styles.slideCounterBadge}>
+            <Text style={styles.slideCounterText}>{currentIndex + 1} / {SLIDES.length}</Text>
+          </View>
+        </View>
         
         <FlatList
           data={SLIDES}
@@ -345,8 +423,17 @@ export default function WelcomeScreen({ navigation }) {
         {/* ── Absolute Footer ── */}
         {currentIndex < SLIDES.length - 1 && (
           <View style={styles.footerAbsolute}>
-            <TouchableOpacity onPress={() => slidesRef.current.scrollToIndex({ index: SLIDES.length - 1 })} style={styles.skipWrapper}>
-              <Text style={styles.skipText}>Skip</Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (isTourMode) {
+                  exitTour();
+                } else {
+                  slidesRef.current?.scrollToIndex({ index: SLIDES.length - 1 });
+                }
+              }}
+              style={styles.skipWrapper}
+            >
+              <Text style={styles.skipText}>{isTourMode ? 'Skip Tour' : 'Skip'}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity activeOpacity={0.8} onPress={scrollToNext} style={styles.nextBtnRing}>
@@ -417,4 +504,70 @@ const styles = StyleSheet.create({
   skipText: { fontSize: 16, fontWeight: '700', color: THEME.textMain },
   nextBtnRing: { width: 70, height: 70, borderRadius: 35, borderWidth: 1.5, borderColor: 'rgba(139, 92, 246, 0.4)', justifyContent: 'center', alignItems: 'center' },
   nextBtnFill: { width: 54, height: 54, borderRadius: 27, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', shadowColor: THEME.primary, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.4, shadowRadius: 10 },
+  
+  // Tour Mode Additions
+  topNavRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'android' ? 14 : 6,
+    paddingBottom: 6,
+    zIndex: 50,
+  },
+  closeTourBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  closeTourText: {
+    marginLeft: 4,
+    fontSize: 13,
+    fontWeight: '700',
+    color: THEME.textMain,
+  },
+  slideCounterBadge: {
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  slideCounterText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: THEME.primary,
+  },
+  tourBackBtnShadow: {
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 15,
+  },
+  primaryBtnGradient: {
+    height: 58,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  primaryBtnText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  dashboardLinkBtn: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  dashboardLinkText: {
+    color: THEME.primary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
+

@@ -80,7 +80,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.sectionHeading}>5. Contact Our Privacy Team</Text>
           <Text style={styles.bodyText}>
-            If you have questions, data inquiries, or security disclosures, please reach out via the in-app Feedback tool or email privacy@paisamitra.com.
+            If you have questions, data inquiries, or security disclosures, please reach out via the in-app Feedback tool or email privacy@expensetracker.app.
           </Text>
         </View>
 

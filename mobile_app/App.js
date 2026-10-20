@@ -539,7 +539,7 @@ export default function App() {
   }
 
   const linking = {
-    prefixes: ['paisamitra://'],
+    prefixes: ['expensetracker://', 'paisamitra://'],
     config: {
       screens: {
         MainTabs: {

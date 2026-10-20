@@ -343,7 +343,7 @@ const MoneySplashScreen = memo(({ onFinish }) => {
           </View>
         </LinearGradient>
 
-        <Text style={styles.brandTitle}>PAISAMITRA</Text>
+        <Text style={styles.brandTitle}>EXPENSE TRACKER</Text>
         <View style={styles.tagRow}>
           <View style={styles.dot} />
           <Text style={styles.tagline}>SMART EXPENSE COACH</Text>
