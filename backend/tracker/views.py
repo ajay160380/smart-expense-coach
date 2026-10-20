@@ -4786,6 +4786,7 @@ def api_send_otp(request):
           <p style="color: #64748B; font-size: 12px; line-height: 1.4;">This code is valid for 5 minutes. If you did not request this, you can safely ignore this email.</p>
         </div>
         """
+        email_sent = False
         try:
             from django.core.mail import send_mail
             send_mail(
@@ -4796,10 +4797,18 @@ def api_send_otp(request):
                 html_message=html_body,
                 fail_silently=False
             )
+            email_sent = True
         except Exception as e:
             print(f"⚠️ Email dispatch error: {e}", flush=True)
 
-        return Response({'message': f'Verification OTP sent to {identifier}. Please check your email inbox.'})
+        resp = {'status': 'success', 'email_sent': email_sent}
+        if email_sent:
+            resp['message'] = f'Verification OTP sent to {identifier}. Please check your email inbox.'
+        else:
+            resp['dev_otp'] = otp_code
+            resp['message'] = f'OTP Code: {otp_code} (Email SMTP unconfigured; configure EMAIL_HOST_USER in .env)'
+
+        return Response(resp)
     else:
         # Send OTP via local WhatsApp Bot in background thread
         import threading
@@ -4979,6 +4988,7 @@ def api_send_email_verification(request):
       <p style="color: #64748B; font-size: 12px;">Valid for 5 minutes. Never share this code.</p>
     </div>
     """
+    email_sent = False
     try:
         from django.core.mail import send_mail
         send_mail(
@@ -4989,11 +4999,19 @@ def api_send_email_verification(request):
             html_message=html_body,
             fail_silently=False
         )
+        email_sent = True
     except Exception as e:
         print(f"⚠️ Email send failed: {e}", flush=True)
 
     print(f"========== 📧 VERIFICATION CODE for {email}: {otp_code} ==========", flush=True)
-    return Response({'status': 'success', 'message': f'Verification code sent to {email}. Check your inbox!'})
+    resp = {'status': 'success', 'email_sent': email_sent}
+    if email_sent:
+        resp['message'] = f'Verification code sent to {email}. Check your inbox!'
+    else:
+        resp['dev_otp'] = otp_code
+        resp['message'] = f'Verification Code: {otp_code} (Email SMTP unconfigured; configure EMAIL_HOST_USER in .env)'
+
+    return Response(resp)
 
 
 @api_view(['POST'])

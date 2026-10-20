@@ -52,6 +52,9 @@ export default function ForgotPasswordScreen({ navigation }) {
         action: 'reset'
       });
       Alert.alert('Code Sent! 📬', res.data?.message || 'Verification code sent.');
+      if (res.data?.dev_otp) {
+        setOtp(res.data.dev_otp);
+      }
       setStep(2);
       setResendCooldown(60);
     } catch (error) {

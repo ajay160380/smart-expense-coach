@@ -156,6 +156,9 @@ export default function ProfileScreen({ navigation }) {
     try {
       const res = await api.post('/api/auth/send-email-verification/', { email: emailToVerify });
       Alert.alert('Code Sent! 📬', res.data?.message || 'A 6-digit verification code was sent to your email.');
+      if (res.data?.dev_otp) {
+        setVerifyOtp(res.data.dev_otp);
+      }
       setVerifyModalVisible(true);
     } catch (error) {
       Alert.alert('Error', formatApiError(error));
