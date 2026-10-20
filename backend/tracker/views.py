@@ -4731,48 +4731,6 @@ from rest_framework.authtoken.models import Token
 from django.conf import settings
 from .models import AppAnalyticsEvent, AppErrorLog
 
-@api_view(['POST'])
-@authentication_classes([])
-@permission_classes([AllowAny])
-def api_send_otp(request):
-    identifier = request.data.get('identifier')
-    if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
-        identifier = f"91{identifier}"
-    action = request.data.get('action') # 'register' or 'reset'
-    
-    if not identifier:
-        return Response({'error': 'Identifier (Phone or Email) is required.'}, status=400)
-        
-    is_email = '@' in str(identifier)
-    
-    if action == 'reset':
-        # Check if user exists
-        exists = User.objects.filter(email__iexact=identifier).exists() or UserProfile.objects.filter(phone_number=identifier).exists() or User.objects.filter(username__iexact=identifier).exists()
-        if not exists:
-            return Response({'error': 'No account found with this identifier.'}, status=404)
-    elif action == 'register':
-        if is_email:
-            if User.objects.filter(email__iexact=identifier).exists():
-                return Response({'error': 'An account with this email already exists.'}, status=400)
-        else:
-            if UserProfile.objects.filter(phone_number=identifier).exists():
-                return Response({'error': 'An account with this phone number already exists.'}, status=400)
-            
-    # Basic rate limiting (max 3 OTPs in last 5 mins)
-    recent_otps = OTPVerification.objects.filter(identifier=identifier, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
-    if recent_otps >= 3:
-        return Response({'error': 'Too many OTP requests. Please wait 5 minutes.'}, status=429)
-
-    # Generate 6 digit OTP
-    otp_code = str(random.randint(100000, 999999))
-    
-    OTPVerification.objects.create(
-        identifier=identifier,
-        otp_code=otp_code
-    )
-    
-    print(f"========== 📱/📧 OTP for {identifier}: {otp_code} ==========", flush=True)
-
 def generate_expense_tracker_email_html(otp_code, title="Security Verification Code", subtitle="Use this one-time code to securely verify your account on Expense Tracker:"):
     return f"""<!DOCTYPE html>
 <html>
@@ -4832,6 +4790,48 @@ def generate_expense_tracker_email_html(otp_code, title="Security Verification C
   </table>
 </body>
 </html>"""
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def api_send_otp(request):
+    identifier = request.data.get('identifier')
+    if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
+        identifier = f"91{identifier}"
+    action = request.data.get('action') # 'register' or 'reset'
+    
+    if not identifier:
+        return Response({'error': 'Identifier (Phone or Email) is required.'}, status=400)
+        
+    is_email = '@' in str(identifier)
+    
+    if action == 'reset':
+        # Check if user exists
+        exists = User.objects.filter(email__iexact=identifier).exists() or UserProfile.objects.filter(phone_number=identifier).exists() or User.objects.filter(username__iexact=identifier).exists()
+        if not exists:
+            return Response({'error': 'No account found with this identifier.'}, status=404)
+    elif action == 'register':
+        if is_email:
+            if User.objects.filter(email__iexact=identifier).exists():
+                return Response({'error': 'An account with this email already exists.'}, status=400)
+        else:
+            if UserProfile.objects.filter(phone_number=identifier).exists():
+                return Response({'error': 'An account with this phone number already exists.'}, status=400)
+            
+    # Basic rate limiting (max 10 OTPs in last 5 mins so testing is never blocked)
+    recent_otps = OTPVerification.objects.filter(identifier=identifier, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
+    if recent_otps >= 10:
+        return Response({'error': 'Too many OTP requests. Please wait a moment.'}, status=429)
+
+    # Generate 6 digit OTP
+    otp_code = str(random.randint(100000, 999999))
+    
+    OTPVerification.objects.create(
+        identifier=identifier,
+        otp_code=otp_code
+    )
+    
+    print(f"========== 📱/📧 OTP for {identifier}: {otp_code} ==========", flush=True)
 
     if is_email:
         subject = f"Expense Tracker OTP: {otp_code}"
