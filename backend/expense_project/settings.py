@@ -172,7 +172,7 @@ EMAIL_USE_TLS = str(os.getenv('EMAIL_USE_TLS', 'True')).strip().lower() in ('tru
 EMAIL_HOST_USER = _raw_user
 EMAIL_HOST_PASSWORD = _raw_pass
 DEFAULT_FROM_EMAIL = (os.getenv('DEFAULT_FROM_EMAIL') or f'Expense Tracker <{_raw_user or "gagankumar160380@gmail.com"}>').strip()
-EMAIL_TIMEOUT = 15
+EMAIL_TIMEOUT = 5
 
 # Resend HTTP Email API (Port 443 HTTPS - Works on Render Free Tier)
 RESEND_API_KEY = (os.getenv('RESEND_API_KEY') or '').strip()

@@ -427,6 +427,62 @@ export default function ProfileScreen({ navigation }) {
               </>
             )}
 
+            {/* Email Address Row with status badge & tap to verify */}
+            <TouchableOpacity
+              style={styles.detailRow}
+              onPress={() => {
+                if (!profile?.email) {
+                  openEditProfile();
+                } else if (!profile?.email_verified) {
+                  handleSendEmailVerification();
+                } else {
+                  Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.detailLabel}>Email Address</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', maxWidth: '65%', justifyContent: 'flex-end' }}>
+                <Text
+                  style={[
+                    styles.detailValue,
+                    !profile?.email && { color: '#94A3B8', fontWeight: '500' }
+                  ]}
+                  numberOfLines={1}
+                >
+                  {profile?.email || 'Add Email'}
+                </Text>
+                <View
+                  style={[
+                    styles.emailChip,
+                    {
+                      backgroundColor: profile?.email_verified
+                        ? 'rgba(16, 185, 129, 0.15)'
+                        : (profile?.email ? 'rgba(245, 158, 11, 0.15)' : 'rgba(6, 182, 212, 0.15)'),
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={profile?.email_verified ? 'shield-checkmark' : (profile?.email ? 'alert-circle' : 'add')}
+                    size={11}
+                    color={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#06B6D4')}
+                    style={{ marginRight: 3 }}
+                  />
+                  <Text
+                    style={[
+                      styles.emailChipText,
+                      {
+                        color: profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#06B6D4'),
+                      },
+                    ]}
+                  >
+                    {profile?.email_verified ? 'Verified' : (profile?.email ? 'Verify' : 'Add')}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+            <View style={styles.detailDivider} />
+
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Monthly Budget</Text>
               <Text style={[styles.detailValue, { color: '#10B981', fontWeight: '800' }]}>
@@ -1195,6 +1251,18 @@ const styles = StyleSheet.create({
   detailDivider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  emailChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  emailChipText: {
+    fontSize: 10.5,
+    fontWeight: '700',
   },
 
   // ── Lifetime Stats Bento ──

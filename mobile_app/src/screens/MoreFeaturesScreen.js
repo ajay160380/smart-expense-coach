@@ -33,6 +33,8 @@ import * as Haptics from 'expo-haptics';
 import * as Updates from 'expo-updates';
 
 import api from '../api/config';
+import { clearAuthData } from '../utils/auth';
+import { formatApiError } from '../utils/errors';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
 import { requestPinWidget } from 'react-native-android-widget';
 
@@ -42,6 +44,59 @@ export default function MoreFeaturesScreen({ navigation }) {
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleLogout = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert('Sign Out', 'Are you sure you want to sign out of your account?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.post('/api/logout/').catch(() => {});
+          } catch (e) {}
+          await clearAuthData();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    Alert.alert(
+      '⚠️ Delete Account Forever?',
+      'This will permanently delete your account, expenses, budgets, savings goals, subscriptions, and all personal records. This action is irreversible.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Permanently',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingAccount(true);
+            try {
+              const res = await api.post('/api/auth/delete-account/');
+              await clearAuthData();
+              Alert.alert('Account Deleted', res.data?.message || 'Your account has been deleted.');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Welcome' }],
+              });
+            } catch (error) {
+              Alert.alert('Deletion Failed', formatApiError(error));
+            } finally {
+              setDeletingAccount(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const fetchProfile = async () => {
     try {
@@ -482,6 +537,80 @@ export default function MoreFeaturesScreen({ navigation }) {
             />
           )}
         </View>
+
+        {/* ── SECTION: ACCOUNT & SECURITY ── */}
+        <View style={styles.sectionHeader}>
+          <Ionicons name="person-circle-outline" size={13} color="#06B6D4" style={{ marginRight: 6 }} />
+          <Text style={styles.sectionTitle}>ACCOUNT & SECURITY</Text>
+        </View>
+
+        <View style={styles.listCard}>
+          <ListItem
+            icon="mail-outline"
+            iconColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#06B6D4')}
+            title="Email Address"
+            desc={
+              profile?.email
+                ? (profile?.email_verified ? `${profile.email} • Verified` : `${profile.email} • Tap to verify`)
+                : 'Add an email to secure your account'
+            }
+            badge={profile?.email_verified ? 'Verified' : (profile?.email ? 'Verify' : 'Add')}
+            badgeColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#06B6D4')}
+            showArrow
+            onPress={() => navigation.navigate('Profile')}
+          />
+          <ListItem
+            icon="settings-outline"
+            iconColor="#818CF8"
+            title="Profile & Preferences"
+            desc="Manage name, avatar, lock & notifications"
+            showArrow
+            onPress={() => navigation.navigate('Profile')}
+          />
+          <ListItem
+            icon="shield-checkmark-outline"
+            iconColor="#10B981"
+            title="Privacy Policy"
+            desc="Encryption, GDPR & data handling"
+            showArrow
+            onPress={() => navigation.navigate('PrivacyPolicy')}
+          />
+          <ListItem
+            icon="newspaper-outline"
+            iconColor="#38BDF8"
+            title="Terms of Service"
+            desc="Rules of use and legal terms"
+            showArrow
+            onPress={() => navigation.navigate('Terms')}
+            isLast
+          />
+        </View>
+
+        {/* ── SECTION: DANGER ZONE ── */}
+        <View style={styles.sectionHeader}>
+          <Ionicons name="warning-outline" size={13} color="#EF4444" style={{ marginRight: 6 }} />
+          <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
+        </View>
+
+        <View style={[styles.listCard, { borderColor: 'rgba(239, 68, 68, 0.3)', backgroundColor: 'rgba(239, 68, 68, 0.04)' }]}>
+          <ListItem
+            icon="trash-bin-outline"
+            iconColor="#EF4444"
+            title={deletingAccount ? "Deleting Account..." : "Delete Account"}
+            desc="Permanently delete account, expenses & all records"
+            badge="Permanent"
+            badgeColor="#EF4444"
+            showArrow
+            onPress={handleDeleteAccount}
+            isLast
+          />
+        </View>
+
+        {/* ── Sign Out Button ── */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
 
         {/* ── Developer Footer ── */}
         <TouchableOpacity
@@ -1074,5 +1203,23 @@ const styles = StyleSheet.create({
   devFooterLink: {
     color: '#818CF8',
     fontWeight: '700',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    paddingVertical: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+  },
+  logoutText: {
+    color: '#EF4444',
+    fontSize: 14.5,
+    fontWeight: '800',
   },
 });

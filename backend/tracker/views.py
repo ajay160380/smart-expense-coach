@@ -5213,8 +5213,17 @@ def api_send_email_verification(request):
     from .email_service import send_transactional_email
     email_sent, info = send_transactional_email(email, subject, body, html_body=html_body)
     if not email_sent:
-        print(f"⚠️ Email verification send failed: {info.get('error')}", flush=True)
-        return Response({'error': f"Failed to send email verification: {info.get('error')}"}, status=500)
+        err = str(info.get('error') or '')
+        resend_err = str(info.get('resend_error') or '')
+        print(f"⚠️ Email verification send failed: {err} | {resend_err}", flush=True)
+        if 'testing emails to your own email' in resend_err or 'You can only send testing emails' in resend_err:
+            user_msg = (
+                "Free Resend sandbox only delivers to your registered email (ajaykumar160380@gmail.com). "
+                "To deliver to external email addresses, please add & verify your custom domain on resend.com/domains."
+            )
+        else:
+            user_msg = f"Failed to send email verification: {err or resend_err}"
+        return Response({'error': user_msg}, status=400)
 
     print(f"========== 📧 VERIFICATION CODE for {email}: {otp_code} (via {info.get('provider')}) ==========", flush=True)
     resp = {
