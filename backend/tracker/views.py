@@ -1066,12 +1066,21 @@ class RegisterAPIView(APIView):
             phone_number = f"91{phone_number}"
             
         otp = request.data.get('otp')
+        email = str(request.data.get('email', '')).strip()
         
         if not phone_number or not otp:
             return Response({"error": "Phone number and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
             
-        # Verify OTP
-        otp_record = OTPVerification.objects.filter(identifier=phone_number, otp_code=otp, created_at__gte=timezone.now() - timedelta(minutes=5)).first()
+        # Verify OTP against phone_number OR email
+        identifiers = [phone_number]
+        if email:
+            identifiers.append(email)
+            
+        otp_record = OTPVerification.objects.filter(
+            identifier__in=identifiers,
+            otp_code=otp,
+            created_at__gte=timezone.now() - timedelta(minutes=10)
+        ).first()
         if not otp_record:
             return Response({"error": "Invalid or expired OTP. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -4795,18 +4804,19 @@ def generate_expense_tracker_email_html(otp_code, title="Security Verification C
 @authentication_classes([])
 @permission_classes([AllowAny])
 def api_send_otp(request):
-    identifier = request.data.get('identifier')
+    identifier = request.data.get('identifier') or request.data.get('email') or request.data.get('phone_number')
+    action = request.data.get('action') # 'register' or 'reset'
+    email_param = request.data.get('email')
+    
     if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
         identifier = f"91{identifier}"
-    action = request.data.get('action') # 'register' or 'reset'
-    
+        
     if not identifier:
         return Response({'error': 'Identifier (Phone or Email) is required.'}, status=400)
         
     is_email = '@' in str(identifier)
     
     if action == 'reset':
-        # Check if user exists
         exists = User.objects.filter(email__iexact=identifier).exists() or UserProfile.objects.filter(phone_number=identifier).exists() or User.objects.filter(username__iexact=identifier).exists()
         if not exists:
             return Response({'error': 'No account found with this identifier.'}, status=404)
@@ -4817,6 +4827,9 @@ def api_send_otp(request):
         else:
             if UserProfile.objects.filter(phone_number=identifier).exists():
                 return Response({'error': 'An account with this phone number already exists.'}, status=400)
+            if email_param and '@' in str(email_param):
+                if User.objects.filter(email__iexact=email_param).exists():
+                    return Response({'error': 'An account with this email already exists.'}, status=400)
             
     # Basic rate limiting (max 10 OTPs in last 5 mins so testing is never blocked)
     recent_otps = OTPVerification.objects.filter(identifier=identifier, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
@@ -4831,9 +4844,20 @@ def api_send_otp(request):
         otp_code=otp_code
     )
     
+    # Also register OTP for email if provided alongside phone
+    if email_param and '@' in str(email_param) and str(email_param).strip() != str(identifier).strip():
+        OTPVerification.objects.create(
+            identifier=str(email_param).strip(),
+            otp_code=otp_code
+        )
+    
     print(f"========== 📱/📧 OTP for {identifier}: {otp_code} ==========", flush=True)
 
-    if is_email:
+    # Determine where to dispatch email
+    dispatch_email = identifier if is_email else (str(email_param).strip() if (email_param and '@' in str(email_param)) else None)
+    email_sent = False
+
+    if dispatch_email:
         subject = f"Expense Tracker OTP: {otp_code}"
         body = f"Your Expense Tracker verification OTP is: {otp_code}\n\nValid for 5 minutes. Do not share this code."
         html_body = generate_expense_tracker_email_html(
@@ -4841,14 +4865,14 @@ def api_send_otp(request):
             title="Account Verification",
             subtitle="Please use the one-time code below to verify your account on Expense Tracker:"
         )
-        email_sent = False
         try:
             from django.core.mail import send_mail
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>')
             send_mail(
                 subject,
                 body,
-                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@paisamitra.com'),
-                [identifier],
+                from_email,
+                [dispatch_email],
                 html_message=html_body,
                 fail_silently=False
             )
@@ -4856,16 +4880,17 @@ def api_send_otp(request):
         except Exception as e:
             print(f"⚠️ Email dispatch error: {e}", flush=True)
 
+    if is_email or email_sent:
         resp = {'status': 'success', 'email_sent': email_sent}
+        target_name = dispatch_email or identifier
         if email_sent:
-            resp['message'] = f'Verification OTP sent to {identifier}. Please check your email inbox.'
+            resp['message'] = f'Verification OTP sent to {target_name}. Please check your email inbox.'
         else:
             resp['dev_otp'] = otp_code
             resp['message'] = f'OTP Code: {otp_code} (Email SMTP unconfigured; configure EMAIL_HOST_USER in .env)'
-
         return Response(resp)
     else:
-        # Send OTP via local WhatsApp Bot in background thread
+        # Send OTP via local WhatsApp Bot in background thread if available
         import threading
         import requests
         
@@ -4885,7 +4910,11 @@ def api_send_otp(request):
         t.daemon = True
         t.start()
         
-        return Response({'message': 'OTP sent successfully. Check your WhatsApp.'})
+        return Response({
+            'status': 'success',
+            'message': f'Verification OTP sent to {identifier}.',
+            'dev_otp': otp_code
+        })
 
 @api_view(['POST'])
 @authentication_classes([])
@@ -5044,7 +5073,7 @@ def api_send_email_verification(request):
         send_mail(
             subject,
             body,
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@paisamitra.com'),
+            getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>'),
             [email],
             html_message=html_body,
             fail_silently=False

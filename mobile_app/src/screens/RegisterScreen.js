@@ -66,11 +66,19 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true);
     try {
+      const cleanEmail = email.trim();
+      const targetIdentifier = cleanEmail || phoneCheck.value;
       const res = await api.post('/api/auth/send-otp/', {
-        identifier: phoneCheck.value,
+        identifier: targetIdentifier,
+        email: cleanEmail,
+        phone_number: phoneCheck.value,
         action: 'register'
       });
-      Alert.alert('OTP Sent 📬', res.data?.message || 'Verification code sent to your number.');
+      const destText = cleanEmail ? `your email (${cleanEmail})` : 'your phone number';
+      Alert.alert('OTP Sent 📬', res.data?.message || `Verification code sent to ${destText}.`);
+      if (res.data?.dev_otp) {
+        setOtp(res.data.dev_otp);
+      }
       setStep(2);
     } catch (error) {
       Alert.alert('Error', formatApiError(error));
