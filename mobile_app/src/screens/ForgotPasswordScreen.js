@@ -147,7 +147,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                   autoCorrect={false}
                 />
                 <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading} style={{marginTop: 10}}>
-                  <LinearGradient colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']} style={styles.button}>
+                  <LinearGradient colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']} style={styles.button}>
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
                   </LinearGradient>
                 </TouchableOpacity>
@@ -167,7 +167,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                   maxLength={6}
                 />
                 <TouchableOpacity activeOpacity={0.85} onPress={handleVerifyOTP} disabled={loading} style={{marginTop: 10}}>
-                  <LinearGradient colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']} style={styles.button}>
+                  <LinearGradient colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']} style={styles.button}>
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Verify OTP</Text>}
                   </LinearGradient>
                 </TouchableOpacity>
@@ -209,7 +209,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                 </View>
 
                 <TouchableOpacity activeOpacity={0.85} onPress={handleResetPassword} disabled={loading} style={{marginTop: 10}}>
-                  <LinearGradient colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']} style={styles.button}>
+                  <LinearGradient colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']} style={styles.button}>
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Set New Password</Text>}
                   </LinearGradient>
                 </TouchableOpacity>
@@ -223,7 +223,7 @@ export default function ForgotPasswordScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  container: { flex: 1, backgroundColor: '#F7F7FB' },
   safeArea: { flex: 1, paddingTop: Platform.OS === 'android' ? 30 : 0 },
   keyboardView: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
   backBtn: {
@@ -255,9 +255,9 @@ const styles = StyleSheet.create({
   eyeBtn: { padding: 14 },
   button: {
     height: 54, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#1A73E8', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3, shadowRadius: 10, elevation: 8,
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
   },
   buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
-  linkText: { color: '#1A73E8', fontSize: 14, fontWeight: 'bold' },
+  linkText: { color: '#FF6B35', fontSize: 14, fontWeight: 'bold' },
 });

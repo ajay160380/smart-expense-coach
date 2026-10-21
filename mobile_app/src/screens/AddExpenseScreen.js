@@ -173,7 +173,7 @@ export default function AddExpenseScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ── TOP HALF: MASSIVE DYNAMIC GLOWING BACKGROUND & AMOUNT ── */}
       <View style={[styles.topHalf, { backgroundColor: selectedCat.color + '10' }]}>
@@ -342,7 +342,7 @@ export default function AddExpenseScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: '#F7F7FB',
   },
   topHalf: {
     paddingTop: Platform.OS === 'android' ? 30 : 0,
@@ -361,14 +361,15 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    ...SHADOW.sm,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontWeight: '800',
+    color: '#1F2937',
   },
   amountContainer: {
     flexDirection: 'row',
@@ -377,15 +378,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   rupee: {
-    fontSize: 48,
-    fontWeight: '600',
-    marginRight: 8,
+    fontSize: 44,
+    fontWeight: '800',
+    color: '#7C3AED',
+    marginRight: 6,
     marginTop: 8,
   },
   amountInput: {
-    color: COLORS.textPrimary,
-    fontSize: 72,
-    fontWeight: '800',
+    color: '#1F2937',
+    fontSize: 68,
+    fontWeight: '900',
     minWidth: 150,
     textAlign: 'center',
   },
@@ -407,15 +409,11 @@ const styles = StyleSheet.create({
   },
   bottomSheet: {
     flex: 1,
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     marginTop: -40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 20,
+    ...SHADOW.card,
     position: 'relative',
   },
   scrollContent: {
@@ -428,8 +426,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.textSecondary,
-    letterSpacing: 1,
+    color: '#6B7280',
+    letterSpacing: 0.8,
     marginBottom: 12,
   },
   categoryGrid: {
@@ -441,44 +439,47 @@ const styles = StyleSheet.create({
   categoryCard: {
     width: '22%',
     aspectRatio: 1,
-    backgroundColor: COLORS.bgCard,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#F1F3F9',
     borderRadius: RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 4,
+    ...SHADOW.sm,
   },
   catEmoji: {
     fontSize: 24,
     marginBottom: 4,
   },
   catLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4B5563',
   },
   input: {
-    backgroundColor: COLORS.bgCard,
-    borderWidth: 1.5,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     borderRadius: RADIUS.lg,
     padding: 16,
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: '500',
+    color: '#1F2937',
+    fontSize: 15,
+    fontWeight: '600',
   },
   dateChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: '#E5E7EB',
+    ...SHADOW.sm,
   },
   dateChipText: {
-    color: COLORS.textSecondary,
+    color: '#4B5563',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   footer: {
     position: 'absolute',
@@ -487,8 +488,8 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 24,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: '#F1F3F9',
   }
 });

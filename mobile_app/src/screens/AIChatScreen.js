@@ -132,7 +132,7 @@ export default function AIChatScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -189,7 +189,7 @@ export default function AIChatScreen({ navigation }) {
             <Text style={{ fontSize: 14 }}>🤖</Text>
           </View>
           <View style={styles.typingBubble}>
-            <ActivityIndicator size="small" color={COLORS.cyan} />
+            <ActivityIndicator size="small" color={COLORS.primary} />
             <Text style={styles.typingText}>ExpenseTracker is thinking...</Text>
           </View>
         </View>
@@ -214,7 +214,7 @@ export default function AIChatScreen({ navigation }) {
             disabled={!inputText.trim() || loading}
           >
             <LinearGradient
-              colors={inputText.trim() ? COLORS.gradCyan : ['#334155', '#334155']}
+              colors={inputText.trim() ? ['#7C3AED', '#6D28D9'] : ['#E5E7EB', '#E5E7EB']}
               style={styles.sendGrad}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -239,19 +239,19 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 12, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+    borderBottomWidth: 1, borderBottomColor: '#E5E7EB',
   },
   backBtn: { padding: 8 },
   headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', marginLeft: 4 },
   headerAvatar: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.cyan,
+    backgroundColor: '#EDE9FE', borderWidth: 1, borderColor: '#DDD6FE',
     justifyContent: 'center', alignItems: 'center', marginRight: 10,
   },
   headerTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold' },
   onlineRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.green, marginRight: 4 },
-  onlineText: { color: COLORS.green, fontSize: 11 },
+  onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E', marginRight: 4 },
+  onlineText: { color: '#22C55E', fontSize: 11, fontWeight: '600' },
 
   // ── Chat List ──
   chatList: { padding: 16, paddingBottom: 8 },
@@ -259,31 +259,37 @@ const styles = StyleSheet.create({
   // ── Quick Chips ──
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
   chip: {
-    backgroundColor: COLORS.bgCard, borderRadius: 20,
-    paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: '#FFFFFF', borderRadius: 20,
+    paddingHorizontal: 13, paddingVertical: 8,
     marginRight: 8, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: '#F1F3F9',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04, shadowRadius: 10, elevation: 1,
   },
-  chipText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '500' },
+  chipText: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '600' },
 
   // ── Messages ──
-  msgRow: { flexDirection: 'row', marginBottom: 12, alignItems: 'flex-end' },
+  msgRow: { flexDirection: 'row', marginBottom: 14, alignItems: 'flex-end' },
   msgRowUser: { justifyContent: 'flex-end' },
   botAvatar: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: COLORS.bgCard, justifyContent: 'center', alignItems: 'center',
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#EDE9FE', justifyContent: 'center', alignItems: 'center',
     marginRight: 8,
   },
   msgBubble: { maxWidth: '78%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
   userBubble: {
-    backgroundColor: COLORS.primary, borderBottomRightRadius: 4,
+    backgroundColor: '#7C3AED', borderBottomRightRadius: 4,
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2, shadowRadius: 6, elevation: 2,
   },
   botBubble: {
-    backgroundColor: COLORS.bgCard, borderBottomLeftRadius: 4,
-    borderWidth: 1, borderColor: COLORS.borderLight,
+    backgroundColor: '#FFFFFF', borderBottomLeftRadius: 4,
+    borderWidth: 1, borderColor: '#F1F3F9',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04, shadowRadius: 12, elevation: 1,
   },
   msgText: { fontSize: 14, lineHeight: 20 },
-  userText: { color: '#fff' },
+  userText: { color: '#FFFFFF' },
   botText: { color: COLORS.textPrimary },
   msgTime: { color: COLORS.textMuted, fontSize: 10, marginTop: 4, textAlign: 'right' },
 
@@ -291,8 +297,9 @@ const styles = StyleSheet.create({
   typingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   typingBubble: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.bgCard, borderRadius: 16,
+    backgroundColor: '#FFFFFF', borderRadius: 16,
     paddingHorizontal: 14, paddingVertical: 8,
+    borderWidth: 1, borderColor: '#F1F3F9',
   },
   typingText: { color: COLORS.textMuted, fontSize: 12, marginLeft: 8 },
 
@@ -300,19 +307,21 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end',
     paddingHorizontal: 12, paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: COLORS.borderLight,
-    backgroundColor: COLORS.bg,
+    borderTopWidth: 1, borderTopColor: '#E5E7EB',
+    backgroundColor: '#F7F7FB',
   },
   input: {
-    flex: 1, backgroundColor: COLORS.bgCard,
+    flex: 1, backgroundColor: '#FFFFFF',
     borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10,
     color: COLORS.textPrimary, fontSize: 15, maxHeight: 100,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: '#E5E7EB',
   },
   sendBtn: { marginLeft: 8 },
   sendBtnDisabled: { opacity: 0.5 },
   sendGrad: {
     width: 42, height: 42, borderRadius: 21,
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25, shadowRadius: 4, elevation: 2,
   },
 });

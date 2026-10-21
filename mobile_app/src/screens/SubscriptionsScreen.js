@@ -106,7 +106,7 @@ export default function SubscriptionsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
@@ -120,12 +120,12 @@ export default function SubscriptionsScreen({ navigation }) {
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Totals Card ── */}
         {subs.length > 0 && (
-          <LinearGradient colors={COLORS.gradDeepPurp} style={styles.totalsCard}>
+          <LinearGradient colors={COLORS.heroGradient} style={styles.totalsCard}>
             <View style={styles.totalsRow}>
               <View style={styles.totalItem}>
                 <Text style={styles.totalLabel}>MONTHLY</Text>
@@ -134,7 +134,7 @@ export default function SubscriptionsScreen({ navigation }) {
               <View style={styles.totalDivider} />
               <View style={styles.totalItem}>
                 <Text style={styles.totalLabel}>YEARLY</Text>
-                <Text style={[styles.totalValue, { color: COLORS.orange }]}>₹{Math.round(totalYearly).toLocaleString('en-IN')}</Text>
+                <Text style={[styles.totalValue, { color: '#FFE0B2' }]}>₹{Math.round(totalYearly).toLocaleString('en-IN')}</Text>
               </View>
             </View>
             <Text style={styles.totalCount}>{subs.length} active subscription{subs.length !== 1 ? 's' : ''}</Text>
@@ -243,13 +243,22 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, flexGrow: 1 },
 
   // ── Totals ──
-  totalsCard: { borderRadius: RADIUS.xl, padding: 22, marginBottom: 16 },
+  totalsCard: {
+    borderRadius: 22,
+    padding: 22,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 4,
+  },
   totalsRow: { flexDirection: 'row', alignItems: 'center' },
   totalItem: { flex: 1, alignItems: 'center' },
-  totalDivider: { width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.1)' },
-  totalLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5 },
+  totalDivider: { width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.2)' },
+  totalLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5 },
   totalValue: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
-  totalCount: { color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center', marginTop: 12 },
+  totalCount: { color: 'rgba(255,255,255,0.8)', fontSize: 12, textAlign: 'center', marginTop: 12 },
 
   // ── Sub Row ──
   subRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 },
@@ -265,16 +274,16 @@ const styles = StyleSheet.create({
   subFreq: { color: COLORS.textMuted, fontSize: 10 },
 
   // ── Modal ──
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.bgCard, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '85%' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(17, 24, 39, 0.45)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' },
   label: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 14 },
-  input: { backgroundColor: COLORS.bgInput, borderRadius: 12, padding: 14, color: COLORS.textPrimary, fontSize: 16, borderWidth: 1, borderColor: COLORS.border },
+  input: { backgroundColor: '#F9FAFB', borderRadius: 14, padding: 14, color: COLORS.textPrimary, fontSize: 16, borderWidth: 1, borderColor: '#E5E7EB' },
   catChip: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.bgInput, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8,
-    marginRight: 8, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8,
+    marginRight: 8, borderWidth: 1, borderColor: '#E5E7EB',
   },
   catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   catChipText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' },

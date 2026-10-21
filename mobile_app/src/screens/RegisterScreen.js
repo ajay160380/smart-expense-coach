@@ -260,17 +260,17 @@ export default function RegisterScreen({ navigation, route }) {
                 <View style={{ marginTop: 2, marginBottom: 4, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 11, color: '#9CA3AF' }}>By continuing, you agree to our </Text>
                   <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
-                    <Text style={{ fontSize: 11, color: '#1A73E8', fontWeight: '600' }}>Terms</Text>
+                    <Text style={{ fontSize: 11, color: '#FF6B35', fontWeight: '600' }}>Terms</Text>
                   </TouchableOpacity>
                   <Text style={{ fontSize: 11, color: '#9CA3AF' }}> & </Text>
                   <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
-                    <Text style={{ fontSize: 11, color: '#1A73E8', fontWeight: '600' }}>Privacy Policy</Text>
+                    <Text style={{ fontSize: 11, color: '#FF6B35', fontWeight: '600' }}>Privacy Policy</Text>
                   </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading || googleLoading}>
                   <LinearGradient
-                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
+                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']}
                     style={styles.button}
                   >
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
@@ -310,7 +310,7 @@ export default function RegisterScreen({ navigation, route }) {
                 
                 <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading} style={{marginTop: 10}}>
                   <LinearGradient
-                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
+                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']}
                     style={styles.button}
                   >
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Verify & Sign Up</Text>}
@@ -352,7 +352,7 @@ export default function RegisterScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  container: { flex: 1, backgroundColor: '#F7F7FB' },
   safeArea: { flex: 1, paddingTop: Platform.OS === 'android' ? 30 : 0 },
   keyboardView: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
 
@@ -394,8 +394,8 @@ const styles = StyleSheet.create({
   button: {
     height: 54, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
     marginTop: 4,
-    shadowColor: '#1A73E8', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3, shadowRadius: 10, elevation: 8,
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
   },
   buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
   dividerRow: {
@@ -418,5 +418,5 @@ const styles = StyleSheet.create({
 
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 22 },
   footerText: { color: '#6B7280', fontSize: 14 },
-  linkText: { color: '#1A73E8', fontSize: 14, fontWeight: 'bold' },
+  linkText: { color: '#FF6B35', fontSize: 14, fontWeight: 'bold' },
 });

@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 export default function PrivacyPolicyScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       {/* Top Header */}
       <View style={styles.topBar}>
         <TouchableOpacity
@@ -21,7 +21,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
           style={styles.backBtn}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={22} color="#CBD5E1" />
+          <Ionicons name="arrow-back" size={22} color="#1F2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Privacy Policy</Text>
         <View style={{ width: 40 }} />
@@ -30,7 +30,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.heroSection}>
           <View style={styles.shieldBadge}>
-            <Ionicons name="shield-checkmark" size={28} color="#10B981" />
+            <Ionicons name="shield-checkmark" size={28} color="#22C55E" />
           </View>
           <Text style={styles.heroTitle}>Your Financial Privacy Matters</Text>
           <Text style={styles.lastUpdated}>Last updated: October 2026</Text>
@@ -93,7 +93,7 @@ export default function PrivacyPolicyScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0E14',
+    backgroundColor: '#F7F7FB',
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0,
   },
   topBar: {
@@ -103,20 +103,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: '#E5E7EB',
   },
   backBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#F8FAFC',
+    color: '#1F2937',
   },
   content: {
     padding: 20,
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    backgroundColor: '#DCFCE7',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -138,31 +140,36 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1F2937',
     textAlign: 'center',
   },
   lastUpdated: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#6B7280',
     marginTop: 4,
   },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 18,
+    borderColor: '#F1F3F9',
+    borderRadius: 20,
     padding: 18,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 2,
   },
   sectionHeading: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#A888FF',
+    color: '#7C3AED',
     marginBottom: 8,
   },
   bodyText: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#6B7280',
     lineHeight: 22,
   },
 });

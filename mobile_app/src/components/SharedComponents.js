@@ -1,34 +1,25 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * SHARED UI COMPONENTS — ExpenseTracker Premium
- * Reusable components for the glassmorphic dark theme
+ * SHARED UI COMPONENTS — ExpenseTracker
+ * Light Theme Components matching Target Design (Image 2)
+ * Pure white cards, soft 0 8px 24px shadows, vivid accents
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, UIManager } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Animated,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-
-import Logo from './Logo';
-
-
-
-
-
-
-
-
-
-
-
-
-
 import { COLORS, RADIUS, SPACING, FONT, SHADOW } from '../utils/theme';
 
 // ═══════════════════════════════════════════════
-// GLASS CARD — Glassmorphic container
+// GLASS CARD — Pure White Card with Soft Elevation
 // ═══════════════════════════════════════════════
 export function GlassCard({ children, style, onPress }) {
   const Wrapper = onPress ? TouchableOpacity : View;
@@ -36,7 +27,7 @@ export function GlassCard({ children, style, onPress }) {
     <Wrapper
       style={[styles.glassCard, style]}
       onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
+      activeOpacity={onPress ? 0.75 : 1}
     >
       {children}
     </Wrapper>
@@ -44,10 +35,17 @@ export function GlassCard({ children, style, onPress }) {
 }
 
 // ═══════════════════════════════════════════════
-// GRADIENT BUTTON — Animated gradient button
+// GRADIENT BUTTON — Animated Vivid Button
 // ═══════════════════════════════════════════════
 export function GradientButton({
-  title, onPress, colors, loading, disabled, style, textStyle, icon,
+  title,
+  onPress,
+  colors,
+  loading,
+  disabled,
+  style,
+  textStyle,
+  icon,
 }) {
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -88,7 +86,7 @@ export function GradientButton({
 }
 
 // ═══════════════════════════════════════════════
-// CATEGORY BADGE — Icon + Color for categories
+// CATEGORY BADGE — Pill style
 // ═══════════════════════════════════════════════
 export function CategoryBadge({ category, icon, color, selected, onPress, size = 'md' }) {
   const sizeMd = size === 'md';
@@ -97,20 +95,23 @@ export function CategoryBadge({ category, icon, color, selected, onPress, size =
       style={[
         styles.catBadge,
         {
-          backgroundColor: selected ? color : 'rgba(255,255,255,0.06)',
-          borderColor: selected ? color : COLORS.border,
+          backgroundColor: selected ? (color || COLORS.primary) : '#FFFFFF',
+          borderColor: selected ? (color || COLORS.primary) : COLORS.border,
           paddingHorizontal: sizeMd ? 14 : 10,
-          paddingVertical: sizeMd ? 10 : 6,
+          paddingVertical: sizeMd ? 8 : 6,
         },
       ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text style={{ fontSize: sizeMd ? 16 : 13, marginRight: 6 }}>{icon}</Text>
+      {icon && <Text style={{ fontSize: sizeMd ? 15 : 12, marginRight: 6 }}>{icon}</Text>}
       <Text
         style={[
           styles.catBadgeText,
-          { color: selected ? '#fff' : COLORS.textSecondary, fontSize: sizeMd ? 13 : 11 },
+          {
+            color: selected ? '#FFFFFF' : COLORS.textPrimary,
+            fontSize: sizeMd ? 13 : 11,
+          },
         ]}
       >
         {category}
@@ -120,66 +121,7 @@ export function CategoryBadge({ category, icon, color, selected, onPress, size =
 }
 
 // ═══════════════════════════════════════════════
-// PROGRESS RING — Circular progress indicator
-// ═══════════════════════════════════════════════
-export function ProgressRing({ percent = 0, size = 120, strokeWidth = 10, color = COLORS.primary }) {
-  const animVal = useRef(new Animated.Value(0)).current;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  useEffect(() => {
-    Animated.timing(animVal, {
-      toValue: Math.min(percent, 100),
-      duration: 1200,
-      useNativeDriver: false,
-    }).start();
-  }, [percent]);
-
-  const clampedPct = Math.min(percent, 100);
-  const dashOffset = circumference - (circumference * clampedPct) / 100;
-
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Background circle */}
-      <View
-        style={{
-          position: 'absolute',
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: strokeWidth,
-          borderColor: 'rgba(255,255,255,0.06)',
-        }}
-      />
-      {/* Progress arc (using a border hack for simple implementation) */}
-      <View
-        style={{
-          position: 'absolute',
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: strokeWidth,
-          borderColor: 'transparent',
-          borderTopColor: color,
-          borderRightColor: clampedPct > 25 ? color : 'transparent',
-          borderBottomColor: clampedPct > 50 ? color : 'transparent',
-          borderLeftColor: clampedPct > 75 ? color : 'transparent',
-          transform: [{ rotate: '-90deg' }],
-        }}
-      />
-      {/* Center content */}
-      <View style={{ alignItems: 'center' }}>
-        <Text style={{ color: COLORS.textPrimary, fontSize: size * 0.22, fontWeight: 'bold' }}>
-          {Math.round(clampedPct)}%
-        </Text>
-        <Text style={{ color: COLORS.textMuted, fontSize: size * 0.1 }}>used</Text>
-      </View>
-    </View>
-  );
-}
-
-// ═══════════════════════════════════════════════
-// ANIMATED NUMBER — Count-up animation
+// ANIMATED NUMBER — Smooth counter
 // ═══════════════════════════════════════════════
 export function AnimatedNumber({ value, prefix = '', suffix = '', style }) {
   const animVal = useRef(new Animated.Value(0)).current;
@@ -202,7 +144,9 @@ export function AnimatedNumber({ value, prefix = '', suffix = '', style }) {
 
   return (
     <Text style={style}>
-      {prefix}{displayVal.toLocaleString('en-IN')}{suffix}
+      {prefix}
+      {displayVal.toLocaleString('en-IN')}
+      {suffix}
     </Text>
   );
 }
@@ -217,7 +161,7 @@ export function EmptyState({ icon = '📭', title, message, actionText, onAction
       <Text style={styles.emptyTitle}>{title}</Text>
       {message && <Text style={styles.emptyMessage}>{message}</Text>}
       {actionText && onAction && (
-        <TouchableOpacity style={styles.emptyAction} onPress={onAction}>
+        <TouchableOpacity style={styles.emptyAction} onPress={onAction} activeOpacity={0.85}>
           <Text style={styles.emptyActionText}>{actionText}</Text>
         </TouchableOpacity>
       )}
@@ -226,32 +170,32 @@ export function EmptyState({ icon = '📭', title, message, actionText, onAction
 }
 
 // ═══════════════════════════════════════════════
-// LOADING SCREEN — Branded shimmer
+// LOADING SCREEN
 // ═══════════════════════════════════════════════
 export function LoadingScreen({ message = 'Loading...' }) {
-  const pulse = useRef(new Animated.Value(0.4)).current;
+  const pulse = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.5, duration: 800, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
   return (
     <View style={styles.loadingContainer}>
-      <Animated.Text style={[styles.loadingLogo, { opacity: pulse }]}>✨</Animated.Text>
+      <Animated.Text style={[styles.loadingLogo, { opacity: pulse }]}>💳</Animated.Text>
       <Text style={styles.loadingBrand}>ExpenseTracker</Text>
-      <ActivityIndicator color={COLORS.cyan} size="small" style={{ marginTop: 16 }} />
+      <ActivityIndicator color={COLORS.primary} size="small" style={{ marginTop: 16 }} />
       <Text style={styles.loadingMsg}>{message}</Text>
     </View>
   );
 }
 
 // ═══════════════════════════════════════════════
-// STAT CARD — Mini stat display
+// STAT CARD — Clean white mini-card
 // ═══════════════════════════════════════════════
 export function StatCard({ label, value, color, icon }) {
   return (
@@ -264,14 +208,14 @@ export function StatCard({ label, value, color, icon }) {
 }
 
 // ═══════════════════════════════════════════════
-// SECTION HEADER
+// SECTION HEADER — With Orange "View All >" Link
 // ═══════════════════════════════════════════════
-export function SectionHeader({ title, actionText, onAction }) {
+export function SectionHeader({ title, actionText = 'View All >', onAction }) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {actionText && (
-        <TouchableOpacity onPress={onAction}>
+      {onAction && (
+        <TouchableOpacity onPress={onAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.sectionAction}>{actionText}</Text>
         </TouchableOpacity>
       )}
@@ -279,42 +223,52 @@ export function SectionHeader({ title, actionText, onAction }) {
   );
 }
 
-
 const styles = StyleSheet.create({
-  // ── Glass Card ──
+  // ── Pure White Card ──
   glassCard: {
-    backgroundColor: COLORS.glass,
-    borderRadius: RADIUS.xl,
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.card,
     borderWidth: 1,
-    borderColor: COLORS.glassBorder,
+    borderColor: '#F1F3F9',
     padding: SPACING.lg,
-    ...SHADOW.md,
+    ...SHADOW.card,
   },
 
   // ── Gradient Button ──
   gradientButton: {
-    borderRadius: RADIUS.md,
-    paddingVertical: 15,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 14,
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
   gradBtnContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   gradBtnText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: FONT.md,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 
   // ── Category Badge ──
   catBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   catBadgeText: {
     fontWeight: '600',
@@ -324,36 +278,37 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 48,
     paddingHorizontal: 32,
   },
   emptyIcon: {
-    fontSize: 56,
-    marginBottom: 16,
+    fontSize: 52,
+    marginBottom: 14,
   },
   emptyTitle: {
     color: COLORS.textPrimary,
     fontSize: FONT.lg,
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   emptyMessage: {
     color: COLORS.textSecondary,
     fontSize: FONT.base,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   emptyAction: {
-    marginTop: 20,
+    marginTop: 18,
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: RADIUS.full,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: RADIUS.pill,
+    ...SHADOW.sm,
   },
   emptyActionText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontWeight: '700',
     fontSize: FONT.base,
   },
 
@@ -371,11 +326,11 @@ const styles = StyleSheet.create({
   loadingBrand: {
     color: COLORS.textPrimary,
     fontSize: FONT.xxl,
-    fontWeight: 'bold',
+    fontWeight: '800',
     letterSpacing: -0.5,
   },
   loadingMsg: {
-    color: COLORS.textMuted,
+    color: COLORS.textSecondary,
     fontSize: FONT.sm,
     marginTop: 8,
   },
@@ -383,25 +338,26 @@ const styles = StyleSheet.create({
   // ── Stat Card ──
   statCard: {
     flex: 1,
-    backgroundColor: COLORS.bgCard,
-    padding: SPACING.lg,
+    backgroundColor: '#FFFFFF',
+    padding: SPACING.md,
     borderRadius: RADIUS.lg,
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: '#F1F3F9',
+    ...SHADOW.sm,
   },
   statLabel: {
     color: COLORS.textSecondary,
     fontSize: FONT.xs,
-    fontWeight: 'bold',
+    fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   statValue: {
     color: COLORS.textPrimary,
-    fontSize: FONT.xl,
-    fontWeight: 'bold',
+    fontSize: FONT.lg,
+    fontWeight: '800',
   },
 
   // ── Section Header ──
@@ -411,15 +367,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.md,
     marginTop: SPACING.lg,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
     color: COLORS.textPrimary,
     fontSize: FONT.md,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   sectionAction: {
-    color: COLORS.cyan,
+    color: COLORS.orange,
     fontSize: FONT.sm,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

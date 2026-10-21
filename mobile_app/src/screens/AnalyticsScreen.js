@@ -1,29 +1,36 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — ANALYTICS SCREEN
- * Charts, category breakdown, AI report, anomaly alerts
+ * EXPENSE TRACKER — ANALYTICS SCREEN (TOTAL EXPENSES)
+ * Target Design (Image 2 Screen 3): Clean Light Theme,
+ * Dual Side-by-Side Purple & Orange Summary Cards,
+ * Donut Chart Expense Breakdown, Pure White Elevated Cards.
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  StyleSheet,
+  Platform,
+  Animated,
+  RefreshControl,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { GlassCard, EmptyState, SectionHeader } from '../components/SharedComponents';
+import DonutChart from '../components/DonutChart';
 import { useFocusEffect } from '@react-navigation/native';
-
-
-
-
-
 import api from '../api/config';
-import { COLORS, CAT_COLORS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
+import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
 
-const { width } = Dimensions.get('window');
 const PERIODS = ['week', 'month', 'quarter', 'year'];
 const PERIOD_LABELS = { week: 'This Week', month: 'This Month', quarter: 'Quarter', year: 'This Year' };
-
 
 export default function AnalyticsScreen({ navigation }) {
   const [period, setPeriod] = useState('month');
@@ -48,7 +55,10 @@ export default function AnalyticsScreen({ navigation }) {
     fetchAnalytics();
   }, [period]);
 
-  const onRefresh = () => { setRefreshing(true); fetchAnalytics(); };
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchAnalytics();
+  };
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -56,10 +66,10 @@ export default function AnalyticsScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       fadeAnim.setValue(0);
-      slideAnim.setValue(100);
+      slideAnim.setValue(60);
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.spring(slideAnim, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true })
+        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
       ]).start();
     }, [])
   );
@@ -67,10 +77,12 @@ export default function AnalyticsScreen({ navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <View style={styles.center}>
-          <ActivityIndicator color={COLORS.cyan} size="large" />
-          <Text style={{ color: COLORS.textMuted, marginTop: 12 }}>Analyzing your data...</Text>
+          <ActivityIndicator color={COLORS.primary} size="large" />
+          <Text style={{ color: COLORS.textSecondary, marginTop: 12, fontWeight: '600' }}>
+            Analyzing spending data...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -86,251 +98,439 @@ export default function AnalyticsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
-      {/* ── Header ── */}
+      {/* ── Top Header with Back Button ── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>📊 Analytics</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={22} color="#1F2937" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Total Expenses</Text>
+        <View style={{ width: 38 }} />
       </View>
 
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Period Tabs ── */}
-        <View style={styles.tabs}>
-          {PERIODS.map((p) => (
-            <TouchableOpacity
-              key={p}
-              style={[styles.tab, period === p && styles.tabActive]}
-              onPress={() => setPeriod(p)}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Period Selector Pill Tabs ── */}
+          <View style={styles.tabs}>
+            {PERIODS.map((p) => {
+              const isActive = period === p;
+              return (
+                <TouchableOpacity
+                  key={p}
+                  style={[styles.tab, isActive && styles.tabActive]}
+                  onPress={() => setPeriod(p)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                    {PERIOD_LABELS[p]}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* ── 2 Side-by-Side Summary Cards (Purple & Orange from Image 2 Screen 3) ── */}
+          <View style={styles.sideBySideRow}>
+            {/* Card 1: Purple (Total Spent / Limit) */}
+            <LinearGradient
+              colors={['#7C3AED', '#6D28D9']}
+              style={styles.statCardHalf}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <Text style={[styles.tabText, period === p && styles.tabTextActive]}>
-                {PERIOD_LABELS[p]}
+              <Text style={styles.statCardHalfLabel}>Total Spent</Text>
+              <Text style={styles.statCardHalfAmount}>
+                ₹{Math.round(stats.total_spent || 0).toLocaleString('en-IN')}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* ── Overview Card ── */}
-        <LinearGradient colors={COLORS.gradDeepPurp} style={styles.overviewCard}>
-          <View style={styles.overviewRow}>
-            <View style={styles.overviewItem}>
-              <Text style={styles.overviewLabel}>Total Spent</Text>
-              <Text style={styles.overviewValue}>₹{Math.round(stats.total_spent || 0).toLocaleString('en-IN')}</Text>
-            </View>
-            <View style={styles.overviewItem}>
-              <Text style={styles.overviewLabel}>Transactions</Text>
-              <Text style={styles.overviewValue}>{stats.transaction_count || 0}</Text>
-            </View>
-            <View style={styles.overviewItem}>
-              <Text style={styles.overviewLabel}>Avg/Day</Text>
-              <Text style={styles.overviewValue}>₹{Math.round(stats.avg_per_day || 0).toLocaleString('en-IN')}</Text>
-            </View>
-          </View>
-          <View style={styles.overviewRow2}>
-            <View style={styles.overviewItem2}>
-              <Text style={styles.overviewLabel}>Highest</Text>
-              <Text style={[styles.overviewVal2, { color: COLORS.red }]}>₹{Math.round(stats.highest_expense || 0).toLocaleString('en-IN')}</Text>
-            </View>
-            <View style={styles.overviewItem2}>
-              <Text style={styles.overviewLabel}>Average</Text>
-              <Text style={[styles.overviewVal2, { color: COLORS.yellow }]}>₹{Math.round(stats.average_expense || 0).toLocaleString('en-IN')}</Text>
-            </View>
-            <View style={styles.overviewItem2}>
-              <Text style={styles.overviewLabel}>Savings</Text>
-              <Text style={[styles.overviewVal2, { color: COLORS.green }]}>{Math.round(stats.savings_rate || 0)}%</Text>
-            </View>
-          </View>
-        </LinearGradient>
-
-        {/* ── Monthly Trend Chart ── */}
-        {trend.length > 0 && (
-          <>
-            <SectionHeader title="Monthly Trend" />
-            <GlassCard>
-              <View style={styles.chartContainer}>
-                {trend.map((month, idx) => (
-                  <View key={idx} style={styles.barCol}>
-                    <Text style={styles.barValue}>
-                      {month.total >= 1000 ? `${Math.round(month.total / 1000)}k` : Math.round(month.total)}
-                    </Text>
-                    <View style={[styles.bar, {
-                      height: Math.max((month.total / maxTrend) * 100, 4),
-                      backgroundColor: idx === trend.length - 1 ? COLORS.primary : COLORS.cyan,
-                    }]} />
-                    <Text style={styles.barLabel}>{month.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </GlassCard>
-          </>
-        )}
-
-                {/* ── Category Breakdown (Progress Bar Style) ── */}
-        {categories.length > 0 && (
-          <>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 8, paddingHorizontal: 4 }}>
-              <Text style={{ color: '#F8FAFC', fontSize: 18, fontWeight: '700', letterSpacing: 0.5 }}>Category Breakdown</Text>
-              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ color: '#38BDF8', fontSize: 13, fontWeight: '600', marginRight: 4 }}>Details</Text>
-                <Ionicons name="arrow-forward" size={14} color="#38BDF8" />
-              </TouchableOpacity>
-            </View>
-
-            <GlassCard style={{ padding: 16, marginBottom: 16 }}>
-              {categories.map((cat, idx) => (
-                <View key={idx} style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 12,
-                  borderBottomWidth: idx < categories.length - 1 ? 1 : 0,
-                  borderBottomColor: 'rgba(255,255,255,0.05)'
-                }}>
-                  {/* Icon */}
-                  <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginRight: 14 }}>
-                    <Text style={{ fontSize: 22 }}>{cat.icon || getFallbackIcon(cat.category)}</Text>
-                  </View>
-                  
-                  {/* Name & Progress Bar */}
-                  <View style={{ flex: 1, marginRight: 16 }}>
-                    <Text style={{ color: '#E2E8F0', fontSize: 15, fontWeight: '600', marginBottom: 8 }} numberOfLines={1}>{cat.title || cat.name}</Text>
-                    <View style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-                      <View style={{ width: `${Math.min(cat.percent || 0, 100)}%`, height: '100%', backgroundColor: cat.color || '#A78BFA', borderRadius: 2 }} />
-                    </View>
-                  </View>
-                  
-                  {/* Amount */}
-                  <Text style={{ color: '#F8FAFC', fontSize: 15, fontWeight: '700' }}>₹{Math.round(cat.total).toLocaleString('en-IN')}</Text>
-                </View>
-              ))}
-            </GlassCard>
-          </>
-        )}
-        
-{/* ── Anomaly Alerts ── */}
-        {anomalies.length > 0 && (
-          <>
-            <SectionHeader title="⚠️ Alerts" />
-            {anomalies.map((alert, idx) => (
-              <View key={idx} style={[styles.alertCard, {
-                borderLeftColor: alert.severity === 'critical' ? COLORS.red :
-                                 alert.severity === 'high' ? COLORS.orange : COLORS.yellow,
-              }]}>
-                <Text style={styles.alertIcon}>{alert.icon}</Text>
-                <Text style={styles.alertText}>{alert.message}</Text>
-              </View>
-            ))}
-          </>
-        )}
-
-        {/* ── Top Spending Day ── */}
-        {topDay && (
-          <>
-            <SectionHeader title="🔥 Top Spending Day" />
-            <GlassCard style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={styles.topDayIcon}>
-                <Text style={{ fontSize: 24 }}>📅</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.topDayDate}>
-                  {new Date(topDay.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
+              <View style={styles.statCardHalfFooter}>
+                <Ionicons name="wallet-outline" size={16} color="rgba(255,255,255,0.85)" />
+                <Text style={styles.statCardHalfFooterText}>
+                  {stats.transaction_count || 0} Txns
                 </Text>
-                <Text style={styles.topDayAmount}>₹{Math.round(topDay.total).toLocaleString('en-IN')}</Text>
               </View>
-            </GlassCard>
-          </>
-        )}
-
-        {/* ── AI Report ── */}
-        {aiReport ? (
-          <>
-            <SectionHeader title="🤖 AI Spending Report" />
-            <LinearGradient colors={COLORS.gradCyan} style={styles.aiReportCard}>
-              <Text style={styles.aiReportText}>{aiReport}</Text>
             </LinearGradient>
-          </>
-        ) : null}
 
-        {categories.length === 0 && (
-          <EmptyState
-            icon="📊"
-            title="No data yet"
-            message="Start adding expenses to see your analytics"
-          />
-        )}
+            {/* Card 2: Orange (Daily Average / Pace) */}
+            <LinearGradient
+              colors={['#FF6B35', '#F97316']}
+              style={styles.statCardHalf}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.statCardHalfLabel}>Avg / Day</Text>
+              <Text style={styles.statCardHalfAmount}>
+                ₹{Math.round(stats.avg_per_day || 0).toLocaleString('en-IN')}
+              </Text>
+              <View style={styles.statCardHalfFooter}>
+                <Ionicons name="trending-up-outline" size={16} color="rgba(255,255,255,0.85)" />
+                <Text style={styles.statCardHalfFooterText}>
+                  {Math.round(stats.savings_rate || 0)}% Saved
+                </Text>
+              </View>
+            </LinearGradient>
+          </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          {/* ── Expense Breakdown Card with Donut Chart ── */}
+          <View style={styles.breakdownCard}>
+            <View style={styles.breakdownHeaderRow}>
+              <Text style={styles.cardHeading}>Expense Breakdown</Text>
+              <Text style={styles.subtleBadgeText}>{categories.length} Categories</Text>
+            </View>
+
+            {categories.length > 0 ? (
+              <>
+                <View style={styles.donutCenterWrapper}>
+                  <DonutChart data={categories} size={140} holeRatio={0.58} />
+                </View>
+
+                {/* Categories Grid List */}
+                <View style={styles.catGrid}>
+                  {categories.map((cat, idx) => (
+                    <View key={idx} style={styles.catGridItem}>
+                      <View style={[styles.catGridDot, { backgroundColor: cat.color || '#7C3AED' }]} />
+                      <Text style={styles.catGridName} numberOfLines={1}>{cat.title || cat.name}</Text>
+                      <Text style={styles.catGridPercent}>{Math.round(cat.percent || 0)}%</Text>
+                      <Text style={styles.catGridAmount}>₹{Math.round(cat.total).toLocaleString('en-IN')}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            ) : (
+              <EmptyState
+                icon="📊"
+                title="No expenses logged"
+                message="Start logging expenses to view your breakdown chart"
+              />
+            )}
+          </View>
+
+          {/* ── Monthly Trend Chart ── */}
+          {trend.length > 0 && (
+            <View style={styles.trendSection}>
+              <SectionHeader title="Spending Trend" />
+              <View style={styles.whiteCard}>
+                <View style={styles.chartContainer}>
+                  {trend.map((month, idx) => (
+                    <View key={idx} style={styles.barCol}>
+                      <Text style={styles.barValue}>
+                        {month.total >= 1000 ? `${Math.round(month.total / 1000)}k` : Math.round(month.total)}
+                      </Text>
+                      <View
+                        style={[
+                          styles.bar,
+                          {
+                            height: Math.max((month.total / maxTrend) * 100, 6),
+                            backgroundColor: idx === trend.length - 1 ? '#7C3AED' : '#93C5FD',
+                          },
+                        ]}
+                      />
+                      <Text style={styles.barLabel}>{month.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* ── Top Spending Day ── */}
+          {topDay && (
+            <View style={{ marginTop: 12 }}>
+              <SectionHeader title="Peak Spending Day" />
+              <View style={[styles.whiteCard, { flexDirection: 'row', alignItems: 'center' }]}>
+                <View style={styles.topDayIcon}>
+                  <Ionicons name="calendar" size={22} color="#7C3AED" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.topDayDate}>
+                    {new Date(topDay.date).toLocaleDateString('en-IN', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </Text>
+                  <Text style={styles.topDayAmount}>₹{Math.round(topDay.total).toLocaleString('en-IN')}</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* ── AI Spending Report ── */}
+          {aiReport ? (
+            <View style={{ marginTop: 14 }}>
+              <SectionHeader title="AI Coach Financial Report" />
+              <View style={styles.aiReportCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <Ionicons name="sparkles" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
+                  <Text style={{ color: '#7C3AED', fontWeight: '800', fontSize: 13 }}>Smart AI Summary</Text>
+                </View>
+                <Text style={styles.aiReportText}>{aiReport}</Text>
+              </View>
+            </View>
+          ) : null}
+
+          <View style={{ height: 60 }} />
+        </ScrollView>
       </Animated.View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg, paddingTop: Platform.OS === 'android' ? 30 : 0 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
-  header: {
-    paddingHorizontal: 20, paddingVertical: 16,
-    borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+  container: {
+    flex: 1,
+    backgroundColor: '#F7F7FB',
+    paddingTop: Platform.OS === 'android' ? 30 : 0,
   },
-  headerTitle: { color: COLORS.textPrimary, fontSize: 22, fontWeight: 'bold' },
-  scrollContent: { padding: 16, flexGrow: 1 },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#F7F7FB',
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOW.sm,
+  },
+  headerTitle: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
 
   // ── Period Tabs ──
-  tabs: { flexDirection: 'row', marginBottom: 16 },
-  tab: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, marginRight: 8 },
-  tabActive: { backgroundColor: COLORS.primary },
-  tabText: { color: COLORS.textSecondary, fontWeight: '600', fontSize: 13 },
-  tabTextActive: { color: '#fff' },
-
-  // ── Overview Card ──
-  overviewCard: { borderRadius: RADIUS.xl, padding: 20, marginBottom: 16, ...SHADOW.md },
-  overviewRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  overviewItem: { alignItems: 'center', flex: 1 },
-  overviewLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5, marginBottom: 4 },
-  overviewValue: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  overviewRow2: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 14 },
-  overviewItem2: { alignItems: 'center', flex: 1 },
-  overviewVal2: { fontSize: 15, fontWeight: 'bold', marginTop: 4 },
-
-  // ── Chart ──
-  chartContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 140, paddingTop: 10 },
-  barCol: { alignItems: 'center', flex: 1 },
-  bar: { width: 28, borderRadius: 6, marginVertical: 4, minHeight: 4 },
-  barValue: { color: COLORS.textMuted, fontSize: 9, fontWeight: '600' },
-  barLabel: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '500' },
-
-  // ── Category ──
-  catRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 },
-  catBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
-  catIcon: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  catNameRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  catName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '600' },
-  catPercent: { color: COLORS.textMuted, fontSize: 12 },
-  catBarBg: { height: 5, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' },
-  catBarFill: { height: '100%', borderRadius: 3 },
-  catAmount: { color: COLORS.textPrimary, fontSize: 14, fontWeight: 'bold', marginLeft: 12 },
-
-  // ── Alerts ──
-  alertCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md,
-    padding: 14, marginBottom: 8, borderLeftWidth: 3,
-    borderWidth: 1, borderColor: COLORS.borderLight,
+  tabs: {
+    flexDirection: 'row',
+    marginBottom: 16,
   },
-  alertIcon: { fontSize: 20, marginRight: 12 },
-  alertText: { color: COLORS.textPrimary, fontSize: 13, flex: 1, lineHeight: 18 },
+  tab: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    ...SHADOW.sm,
+  },
+  tabActive: {
+    backgroundColor: '#7C3AED',
+    borderColor: '#7C3AED',
+  },
+  tabText: {
+    color: '#6B7280',
+    fontWeight: '700',
+    fontSize: 12.5,
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // ── Side-by-Side Dual Stat Cards ──
+  sideBySideRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 12,
+  },
+  statCardHalf: {
+    flex: 1,
+    borderRadius: 22,
+    padding: 16,
+    ...SHADOW.md,
+  },
+  statCardHalfLabel: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  statCardHalfAmount: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+    marginBottom: 10,
+    letterSpacing: -0.5,
+  },
+  statCardHalfFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statCardHalfFooterText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 11,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+
+  // ── Breakdown Card ──
+  breakdownCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#F1F3F9',
+    marginBottom: 16,
+    ...SHADOW.card,
+  },
+  breakdownHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  cardHeading: {
+    color: '#1F2937',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  subtleBadgeText: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  donutCenterWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+  },
+  catGrid: {
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 12,
+  },
+  catGridItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  catGridDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  catGridName: {
+    flex: 1,
+    color: '#1F2937',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  catGridPercent: {
+    color: '#6B7280',
+    fontSize: 12.5,
+    fontWeight: '600',
+    marginRight: 10,
+  },
+  catGridAmount: {
+    color: '#1F2937',
+    fontSize: 13.5,
+    fontWeight: '800',
+  },
+
+  // ── Trend Section ──
+  trendSection: {
+    marginBottom: 14,
+  },
+  whiteCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F3F9',
+    ...SHADOW.card,
+  },
+  chartContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 130,
+    paddingTop: 10,
+  },
+  barCol: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  bar: {
+    width: 22,
+    borderRadius: 6,
+    marginVertical: 4,
+    minHeight: 6,
+  },
+  barValue: {
+    color: '#6B7280',
+    fontSize: 9.5,
+    fontWeight: '700',
+  },
+  barLabel: {
+    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '600',
+  },
 
   // ── Top Day ──
-  topDayIcon: { width: 50, height: 50, borderRadius: 14, backgroundColor: 'rgba(168,136,255,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  topDayDate: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '600' },
-  topDayAmount: { color: COLORS.red, fontSize: 20, fontWeight: 'bold', marginTop: 2 },
+  topDayIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#EDE9FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  topDayDate: {
+    color: '#1F2937',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  topDayAmount: {
+    color: '#EF4444',
+    fontSize: 18,
+    fontWeight: '900',
+    marginTop: 2,
+  },
 
-  // ── AI Report ──
-  aiReportCard: { borderRadius: RADIUS.lg, padding: 20, marginBottom: 16 },
-  aiReportText: { color: '#fff', fontSize: 14, lineHeight: 22 },
+  // ── AI Report Card ──
+  aiReportCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#EDE9FE',
+    ...SHADOW.card,
+  },
+  aiReportText: {
+    color: '#4B5563',
+    fontSize: 13.5,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
 });

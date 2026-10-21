@@ -19,22 +19,22 @@ import { COLORS, RADIUS } from '../utils/theme';
 
 const GOAL_ICONS = ['🎯', '📱', '🏖️', '🚗', '🏠', '💻', '👗', '✈️', '🎓', '💰', '🎮', '💍'];
 
-// ── Design Direction Theme: Deep Purple / Violet Aesthetics ──
+// ── Design System: Soft Light Theme + Blue Hero Header ──
 const THEME = {
-  bg: '#251D4A',
-  topBg: '#4A3E99',
-  sheetBg: '#1B1438',
-  cardBg: 'rgba(255, 255, 255, 0.08)',
-  cardBorder: 'rgba(255, 255, 255, 0.14)',
-  primary: '#8B5CF6',
-  accentNeon: '#B794F6',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#E9D5FF',
-  textMuted: '#A79BBF',
-  green: '#34D399',
-  gradPurple: ['#8B5CF6', '#6D28D9', '#4C1D95'],
-  gradNeon: ['#C4B5FD', '#8B5CF6', '#6D28D9'],
-  gradGreen: ['#34D399', '#059669'],
+  bg: '#F7F7FB',
+  sheetBg: '#F7F7FB',
+  cardBg: '#FFFFFF',
+  cardBorder: '#F1F3F9',
+  primary: '#7C3AED',
+  accentNeon: '#FF6B35',
+  textPrimary: '#1F2937',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  green: '#22C55E',
+  gradPurple: ['#7C3AED', '#6D28D9'],
+  gradNeon: ['#FF6B35', '#FF8C42'],
+  gradGreen: ['#22C55E', '#16A34A'],
+  gradBlue: ['#4F7CFF', '#3B5BDB'],
 };
 
 export default function SavingsGoalsScreen({ navigation }) {
@@ -176,18 +176,26 @@ export default function SavingsGoalsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* ── TOP: GLOWING SUMMARY HEADER ── */}
-      <View style={styles.topSection}>
-        <Animated.View style={{
+      {/* ── TOP: HERO BLUE GRADIENT SUMMARY HEADER ── */}
+      <LinearGradient colors={THEME.gradBlue} style={styles.topSection}>
+        {/* Subtle decorative circles (Image 2 style) */}
+        <View style={{
           position: 'absolute',
-          top: -120,
-          left: -80,
-          right: -80,
-          height: 350,
-          backgroundColor: THEME.accentNeon,
-          opacity: 0.18,
-          borderRadius: 300,
-          transform: [{ scaleX: 1.6 }],
+          top: -50,
+          right: -50,
+          width: 200,
+          height: 200,
+          borderRadius: 100,
+          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+        }} />
+        <View style={{
+          position: 'absolute',
+          bottom: -40,
+          left: -40,
+          width: 150,
+          height: 150,
+          borderRadius: 75,
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
         }} />
 
         <SafeAreaView>
@@ -197,7 +205,7 @@ export default function SavingsGoalsScreen({ navigation }) {
               style={styles.addBtn}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowAddModal(true); }}
             >
-              <Ionicons name="add" size={22} color="#fff" />
+              <Ionicons name="add" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
 
@@ -243,7 +251,7 @@ export default function SavingsGoalsScreen({ navigation }) {
             </View>
           </Animated.View>
         </SafeAreaView>
-      </View>
+      </LinearGradient>
 
       {/* ── BOTTOM: OVERLAPPING SHEET WITH GOAL CARDS ── */}
       <Animated.View style={[styles.bottomSheet, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -477,9 +485,8 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.bg,
   },
 
-  // ── Top Section (Deep Purple panel with wave glow) ──
+  // ── Top Section (Blue Gradient Hero) ──
   topSection: {
-    backgroundColor: THEME.topBg,
     paddingTop: Platform.OS === 'android' ? 30 : 0,
     paddingBottom: 48,
     position: 'relative',
@@ -495,7 +502,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTitle: {
-    color: THEME.textPrimary,
+    color: '#FFFFFF',
     fontSize: 26,
     fontWeight: '800',
     letterSpacing: 0.3,
@@ -504,16 +511,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: THEME.primary,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
 
   // ── Summary ──
@@ -530,19 +532,19 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: THEME.textSecondary,
+    color: 'rgba(255, 255, 255, 0.8)',
     letterSpacing: 1.2,
     marginBottom: 4,
   },
   summaryAmount: {
     fontSize: 34,
     fontWeight: '800',
-    color: THEME.textPrimary,
+    color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   summarySubtext: {
     fontSize: 13,
-    color: THEME.textSecondary,
+    color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 2,
     fontWeight: '500',
   },
@@ -557,31 +559,31 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: 'rgba(196, 181, 253, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   ringFill: {
     position: 'absolute',
     width: '100%',
     height: '100%',
     borderRadius: 38,
-    opacity: 0.35,
+    opacity: 0.4,
   },
   ringInner: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: THEME.topBg,
+    backgroundColor: '#3B5BDB',
     justifyContent: 'center',
     alignItems: 'center',
   },
   ringPercent: {
     fontSize: 16,
     fontWeight: '800',
-    color: THEME.textPrimary,
+    color: '#FFFFFF',
   },
 
   // ── Stats Row ──
@@ -594,22 +596,22 @@ const styles = StyleSheet.create({
   statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     gap: 6,
   },
   statNumber: {
     fontSize: 16,
     fontWeight: '800',
-    color: THEME.textPrimary,
+    color: '#FFFFFF',
   },
   statLabel: {
     fontSize: 12,
-    color: THEME.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     fontWeight: '600',
   },
 
@@ -622,11 +624,9 @@ const styles = StyleSheet.create({
     marginTop: -20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.05,
     shadowRadius: 12,
-    elevation: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    elevation: 10,
   },
   scrollContent: {
     padding: 20,
@@ -643,21 +643,21 @@ const styles = StyleSheet.create({
 
   // ── Goal Card ──
   goalCard: {
-    backgroundColor: THEME.cardBg,
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: THEME.cardBorder,
+    borderColor: '#F1F3F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
     elevation: 3,
   },
   completedCard: {
-    backgroundColor: 'rgba(52, 211, 153, 0.06)',
-    borderColor: 'rgba(52, 211, 153, 0.3)',
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
   },
   goalHeader: {
     flexDirection: 'row',
@@ -668,36 +668,36 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 18,
-    backgroundColor: 'rgba(183, 148, 246, 0.16)',
+    backgroundColor: '#EDE9FE',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
     borderWidth: 1,
-    borderColor: 'rgba(183, 148, 246, 0.25)',
+    borderColor: '#DDD6FE',
   },
   goalIconLarge: { fontSize: 26 },
   goalName: {
-    color: THEME.textPrimary,
+    color: '#1F2937',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
   goalRemaining: {
-    color: THEME.textSecondary,
+    color: '#6B7280',
     fontSize: 12,
     marginTop: 2,
     fontWeight: '500',
   },
   goalPercentBadge: {
-    backgroundColor: 'rgba(183, 148, 246, 0.18)',
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     paddingHorizontal: 11,
     paddingVertical: 5,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(183, 148, 246, 0.35)',
+    borderColor: 'rgba(255, 107, 53, 0.25)',
   },
   goalPercentText: {
-    color: THEME.accentNeon,
+    color: '#FF6B35',
     fontSize: 13,
     fontWeight: '800',
   },
@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
   // ── Progress ──
   progressBarBg: {
     height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#F3F4F6',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 10,
@@ -720,12 +720,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   savedText: {
-    color: THEME.green,
+    color: '#22C55E',
     fontSize: 13,
     fontWeight: '700',
   },
   targetText: {
-    color: THEME.textSecondary,
+    color: '#1F2937',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -733,22 +733,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#F9FAFB',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#E5E7EB',
   },
   deadlineText: {
-    color: THEME.textMuted,
+    color: '#6B7280',
     fontSize: 11,
     fontWeight: '600',
   },
   etaText: {
-    color: THEME.textMuted,
+    color: '#9CA3AF',
     fontSize: 11,
     marginBottom: 10,
   },
@@ -770,9 +770,9 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: 18,
     gap: 6,
-    shadowColor: THEME.primary,
+    shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 3,
   },
@@ -785,11 +785,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    backgroundColor: '#FEE2E2',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 107, 0.25)',
+    borderColor: '#FECACA',
   },
   addMoneyInput: {
     flexDirection: 'row',
@@ -798,25 +798,25 @@ const styles = StyleSheet.create({
   },
   moneyInput: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     padding: 13,
-    color: THEME.textPrimary,
+    color: '#1F2937',
     fontSize: 16,
     borderWidth: 1.5,
-    borderColor: THEME.accentNeon + '60',
+    borderColor: '#E5E7EB',
   },
   moneyConfirm: {
-    backgroundColor: THEME.primary,
+    backgroundColor: '#7C3AED',
     width: 42,
     height: 42,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
-    shadowColor: THEME.primary,
+    shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 3,
   },
@@ -827,12 +827,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: '#E5E7EB',
   },
   completedAmount: {
-    color: THEME.green,
+    color: '#22C55E',
     fontSize: 16,
     fontWeight: '800',
   },
@@ -840,28 +840,26 @@ const styles = StyleSheet.create({
   // ── Modal ──
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 10, 30, 0.75)',
+    backgroundColor: 'rgba(17, 24, 39, 0.45)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: THEME.sheetBg,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 24,
     maxHeight: '85%',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
     elevation: 25,
   },
   modalHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#E5E7EB',
     alignSelf: 'center',
     marginBottom: 20,
   },
@@ -872,7 +870,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalTitle: {
-    color: THEME.textPrimary,
+    color: '#1F2937',
     fontSize: 22,
     fontWeight: '800',
   },
@@ -880,29 +878,29 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#E5E7EB',
   },
   label: {
     fontSize: 11,
     fontWeight: '700',
-    color: THEME.textSecondary,
+    color: '#4B5563',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     marginBottom: 8,
     marginTop: 16,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#F9FAFB',
     borderRadius: 18,
     padding: 15,
-    color: THEME.textPrimary,
+    color: '#1F2937',
     fontSize: 16,
     borderWidth: 1.5,
-    borderColor: THEME.cardBorder,
+    borderColor: '#E5E7EB',
     fontWeight: '500',
   },
   iconGrid: {
@@ -917,15 +915,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#F9FAFB',
     borderWidth: 1.5,
-    borderColor: THEME.cardBorder,
+    borderColor: '#E5E7EB',
   },
   iconOptionSelected: {
-    borderColor: THEME.accentNeon,
-    backgroundColor: 'rgba(183, 148, 246, 0.22)',
-    shadowColor: THEME.primary,
-    shadowOpacity: 0.35,
+    borderColor: '#7C3AED',
+    backgroundColor: '#EDE9FE',
+    shadowColor: '#7C3AED',
+    shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
   },

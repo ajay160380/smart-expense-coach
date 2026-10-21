@@ -133,7 +133,7 @@ export default function NotepadScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ── Top Bar ── */}
       <View style={styles.topBar}>
@@ -145,7 +145,7 @@ export default function NotepadScreen({ navigation }) {
           style={styles.backBtn}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={20} color="#F8FAFC" />
+          <Ionicons name="arrow-back" size={20} color="#1F2937" />
         </TouchableOpacity>
 
         <View style={{ flex: 1, marginLeft: 12 }}>
@@ -167,7 +167,7 @@ export default function NotepadScreen({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Write a note, shopping list, or plan..."
-            placeholderTextColor="#64748B"
+            placeholderTextColor="#9CA3AF"
             multiline
             numberOfLines={3}
             value={newNote}
@@ -182,7 +182,7 @@ export default function NotepadScreen({ navigation }) {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#6366F1', '#8B5CF6']}
+                colors={['#7C3AED', '#6D28D9']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.saveBtnGrad}
@@ -203,13 +203,13 @@ export default function NotepadScreen({ navigation }) {
         {/* ── Notes List ── */}
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color="#06B6D4" />
+            <ActivityIndicator size="large" color="#7C3AED" />
             <Text style={styles.loadingText}>Loading notes...</Text>
           </View>
         ) : notes.length === 0 ? (
           <View style={styles.center}>
             <View style={styles.emptyIconBox}>
-              <Ionicons name="document-text-outline" size={40} color="#06B6D4" />
+              <Ionicons name="document-text-outline" size={40} color="#7C3AED" />
             </View>
             <Text style={styles.emptyText}>No Notes Yet</Text>
             <Text style={styles.emptySubtext}>
@@ -240,7 +240,7 @@ export default function NotepadScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0E14',
+    backgroundColor: '#F7F7FB',
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0,
   },
   topBar: {
@@ -249,65 +249,69 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: '#E5E7EB',
   },
   backBtn: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#E5E7EB',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: '#1F2937',
     letterSpacing: -0.3,
   },
   headerSub: {
     fontSize: 11.5,
-    color: '#64748B',
+    color: '#6B7280',
     marginTop: 1,
   },
   countBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: '#EDE9FE',
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderColor: '#DDD6FE',
   },
   countBadgeText: {
-    color: '#818CF8',
+    color: '#7C3AED',
     fontSize: 11,
     fontWeight: '700',
   },
 
   // ── Input Box ──
   inputCard: {
-    backgroundColor: '#111827',
+    backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
     marginTop: 14,
     marginBottom: 8,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.25)',
-    ...SHADOW.md,
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 3,
   },
   input: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#F9FAFB',
     borderRadius: 12,
     padding: 12,
-    color: '#FFFFFF',
+    color: '#1F2937',
     fontSize: 14,
     minHeight: 70,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#E5E7EB',
   },
   inputActionsRow: {
     flexDirection: 'row',
@@ -316,7 +320,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   charCount: {
-    color: '#64748B',
+    color: '#9CA3AF',
     fontSize: 11,
   },
   saveButton: {
@@ -342,16 +346,21 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   noteCard: {
-    backgroundColor: '#111827',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 2,
   },
   noteText: {
     fontSize: 14,
-    color: '#F1F5F9',
+    color: '#1F2937',
     lineHeight: 20,
     marginBottom: 10,
   },
@@ -361,7 +370,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: '#F3F4F6',
   },
   dateRow: {
     flexDirection: 'row',
@@ -369,17 +378,17 @@ const styles = StyleSheet.create({
   },
   noteDate: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#9CA3AF',
   },
   deleteButton: {
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: 'rgba(244, 63, 94, 0.12)',
+    backgroundColor: '#FEE2E2',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(244, 63, 94, 0.25)',
+    borderColor: '#FECACA',
   },
 
   // ── Empty & Loading ──
@@ -390,7 +399,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   loadingText: {
-    color: '#64748B',
+    color: '#6B7280',
     fontSize: 13,
     marginTop: 10,
   },
@@ -398,22 +407,22 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 24,
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    backgroundColor: '#EDE9FE',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.25)',
+    borderColor: '#DDD6FE',
     marginBottom: 16,
   },
   emptyText: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: '#1F2937',
     marginBottom: 6,
   },
   emptySubtext: {
     fontSize: 12.5,
-    color: '#64748B',
+    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 18,
     maxWidth: 240,

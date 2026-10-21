@@ -72,11 +72,12 @@ const MoreStack = createStackNavigator();
 export const navigationRef = createNavigationContainerRef();
 
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // HOME STACK — Dashboard + sub-screens
 // ═══════════════════════════════════════════════
 function HomeStackScreen() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#0B0E14' } }}>
+    <HomeStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F7F7FB' } }}>
       <HomeStack.Screen name="DashboardMain" component={DashboardScreen} />
       <HomeStack.Screen name="Profile" component={ProfileScreen} />
       <HomeStack.Screen name="AIChat" component={AIChatScreen} />
@@ -99,7 +100,7 @@ function HomeStackScreen() {
 // ═══════════════════════════════════════════════
 function GoalsStackScreen() {
   return (
-    <GoalsStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#0B0E14' } }}>
+    <GoalsStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F7F7FB' } }}>
       <GoalsStack.Screen name="GoalsMain" component={SavingsGoalsScreen} />
     </GoalsStack.Navigator>
   );
@@ -110,7 +111,7 @@ function GoalsStackScreen() {
 // ═══════════════════════════════════════════════
 function MoreStackScreen() {
   return (
-    <MoreStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#0B0E14' } }}>
+    <MoreStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F7F7FB' } }}>
       <MoreStack.Screen name="MoreMain" component={MoreFeaturesScreen} />
       <MoreStack.Screen name="Profile" component={ProfileScreen} />
       <MoreStack.Screen name="AIChat" component={AIChatScreen} />
@@ -129,23 +130,25 @@ function MoreStackScreen() {
 }
 
 // ═══════════════════════════════════════════════
-// CUSTOM ADD BUTTON (Center FAB)
+// CUSTOM ADD BUTTON (Center FAB with White Ring)
 // ═══════════════════════════════════════════════
 function AddButton({ onPress }) {
   return (
     <View style={styles.addBtnContainer}>
-      <LinearGradient
-        colors={['#8B5CF6', '#6D28D9']}
-        style={styles.addBtnGradient}
-      >
-        <Ionicons name="add" size={32} color="#fff" />
-      </LinearGradient>
+      <View style={styles.addBtnWhiteRing}>
+        <LinearGradient
+          colors={['#7C3AED', '#6D28D9']}
+          style={styles.addBtnGradient}
+        >
+          <Ionicons name="add" size={32} color="#FFFFFF" />
+        </LinearGradient>
+      </View>
     </View>
   );
 }
 
 // ═══════════════════════════════════════════════
-// MAIN TAB NAVIGATOR
+// MAIN TAB NAVIGATOR (Dark Floating Bar)
 // ═══════════════════════════════════════════════
 function MainTabNavigator() {
   const insets = useSafeAreaInsets();
@@ -161,23 +164,24 @@ function MainTabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0f1520',
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(255,255,255,0.05)',
+          backgroundColor: '#111827',
+          borderTopWidth: 0,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
           height: tabHeight,
           paddingBottom: bottomPadding,
           paddingTop: 8,
           elevation: 20,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 12,
+          shadowOpacity: 0.25,
+          shadowRadius: 14,
         },
-        tabBarActiveTintColor: '#A888FF',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarActiveTintColor: '#FF6B35',
+        tabBarInactiveTintColor: '#9CA3AF',
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '600',
+          fontWeight: '700',
           letterSpacing: 0.3,
         },
         tabBarIcon: ({ focused, color, size }) => {
@@ -574,12 +578,12 @@ export default function App() {
               }
             }}
           >
-            <StatusBar style="light" />
+            <StatusBar style="dark" />
             <Stack.Navigator
               initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
               screenOptions={{
                 headerShown: false,
-                cardStyle: { backgroundColor: '#0B0E14' },
+                cardStyle: { backgroundColor: '#F7F7FB' },
               }}
             >
               {/* Auth Flow */}
@@ -611,7 +615,7 @@ export default function App() {
               statusBarTranslucent={true}
               onRequestClose={() => setShowSplash(false)}
             >
-              <View style={{ flex: 1, backgroundColor: '#0B0E14', justifyContent: 'center', alignItems: 'center' }}>
+              <View style={{ flex: 1, backgroundColor: '#F7F7FB', justifyContent: 'center', alignItems: 'center' }}>
                 <MoneySplashScreen
                   onFinish={() => setShowSplash(false)}
                 />
@@ -630,7 +634,7 @@ export default function App() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0B0E14',
+    backgroundColor: '#F7F7FB',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -669,23 +673,32 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 
-  // ── Add Button ──
+  // ── Add Button (Center FAB with White Ring) ──
   addBtnContainer: {
     position: 'relative',
-    top: Platform.OS === 'ios' ? -16 : -18,
+    top: Platform.OS === 'ios' ? -18 : -20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addBtnGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  addBtnWhiteRing: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: '#FFFFFF',
+    padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#A888FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
     elevation: 8,
+  },
+  addBtnGradient: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

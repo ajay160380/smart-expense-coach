@@ -119,7 +119,7 @@ export default function VoiceExpenseScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ── Header ── */}
       <View style={styles.header}>
@@ -145,7 +145,7 @@ export default function VoiceExpenseScreen({ navigation }) {
         <View style={styles.micContainer}>
           {loading ? (
             <View style={styles.loadingCircle}>
-              <ActivityIndicator size="large" color={COLORS.orange} />
+              <ActivityIndicator size="large" color="#7C3AED" />
             </View>
           ) : (
             <Pressable
@@ -157,7 +157,7 @@ export default function VoiceExpenseScreen({ navigation }) {
               ]}
             >
               <LinearGradient 
-                colors={isRecording ? ['#ef4444', '#dc2626'] : COLORS.gradOrange} 
+                colors={isRecording ? ['#ef4444', '#dc2626'] : ['#7C3AED', '#6D28D9']} 
                 style={styles.micGradient}
               >
                 <MaterialCommunityIcons 
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   subInstructionText: {
-    color: COLORS.textMuted,
+    color: '#6B7280',
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 60,
@@ -223,11 +223,18 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    ...SHADOW.lg,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 6,
   },
   micButtonRecording: {
     transform: [{ scale: 1.1 }],
-    ...SHADOW.xl,
+    shadowColor: '#EF4444',
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 10,
   },
   micGradient: {
     width: 120,
@@ -240,15 +247,20 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: COLORS.orange,
+    borderColor: '#7C3AED',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 3,
   },
   stopText: {
     marginTop: 30,
-    color: COLORS.red,
+    color: '#EF4444',
     fontSize: 16,
     fontWeight: '600',
   }

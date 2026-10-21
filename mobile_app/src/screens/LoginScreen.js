@@ -230,7 +230,7 @@ export default function LoginScreen({ navigation }) {
                 <Ionicons
                   name="key-outline"
                   size={15}
-                  color={loginMethod === 'password' ? '#1A73E8' : '#6B7280'}
+                  color={loginMethod === 'password' ? '#7C3AED' : '#6B7280'}
                   style={{ marginRight: 6 }}
                 />
                 <Text style={[styles.methodTabText, loginMethod === 'password' && styles.methodTabTextActive]}>
@@ -393,7 +393,7 @@ export default function LoginScreen({ navigation }) {
 
                 <View style={{alignItems: 'flex-end', marginTop: -4, marginBottom: 4}}>
                   <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                    <Text style={{color: '#1A73E8', fontSize: 13, fontWeight: '600'}}>Forgot Password?</Text>
+                    <Text style={{color: '#FF6B35', fontSize: 13, fontWeight: '600'}}>Forgot Password?</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -403,7 +403,7 @@ export default function LoginScreen({ navigation }) {
                   disabled={loading || googleLoading}
                 >
                   <LinearGradient
-                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
+                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']}
                     style={styles.button}
                   >
                     {loading ? (
@@ -458,7 +458,7 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  container: { flex: 1, backgroundColor: '#F7F7FB' },
   safeArea: { flex: 1, paddingTop: Platform.OS === 'android' ? 30 : 0 },
   keyboardView: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
 
@@ -499,8 +499,8 @@ const styles = StyleSheet.create({
   button: {
     height: 56, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
     marginTop: 4,
-    shadowColor: '#1A73E8', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3, shadowRadius: 10, elevation: 8,
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
   },
   buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
   dividerRow: {
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
 
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
   footerText: { color: '#6B7280', fontSize: 14 },
-  linkText: { color: '#1A73E8', fontSize: 14, fontWeight: 'bold' },
+  linkText: { color: '#FF6B35', fontSize: 14, fontWeight: 'bold' },
 
   methodToggleWrap: {
     flexDirection: 'row',
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   methodTabTextActive: {
-    color: '#1A73E8',
+    color: '#7C3AED',
     fontWeight: '700',
   },
   secureBadge: {

@@ -49,7 +49,7 @@ export default function NotificationsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
@@ -102,10 +102,12 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 42,
     height: 42,
-    borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   headerTitle: {
     color: COLORS.textPrimary,
@@ -115,15 +117,15 @@ const styles = StyleSheet.create({
   clearBtn: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(168, 136, 255, 0.12)',
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(168, 136, 255, 0.25)',
+    borderColor: 'rgba(255, 107, 53, 0.25)',
   },
   clearText: {
-    color: COLORS.primary,
+    color: '#FF6B35',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   emptyContainer: {
     flex: 1,
@@ -132,66 +134,65 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   iconBox: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(168, 136, 255, 0.1)',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#EDE9FE',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   emptyTitle: {
     color: COLORS.textPrimary,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   emptyDesc: {
     color: COLORS.textMuted,
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 22,
-  },
-  clearBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  clearText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
+    lineHeight: 20,
   },
   notificationCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.md,
-    padding: 15,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 2,
   },
   iconBoxSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(168, 136, 255, 0.1)',
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#EDE9FE',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: 14,
   },
   notificationContent: {
     flex: 1,
   },
   notifTitle: {
     color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   notifBody: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 6,
   },
   notifDate: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
+    color: COLORS.textMuted,
+    fontSize: 11,
   },
 });

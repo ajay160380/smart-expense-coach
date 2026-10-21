@@ -320,7 +320,7 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ── Top Bar ── */}
       <View style={styles.topBar}>
@@ -330,24 +330,24 @@ export default function ProfileScreen({ navigation }) {
             style={styles.topBackBtn}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={20} color="#CBD5E1" />
+            <Ionicons name="arrow-back" size={20} color="#1F2937" />
           </TouchableOpacity>
           <Text style={styles.topBarTitle}>User Profile</Text>
         </View>
         <TouchableOpacity onPress={openEditProfile} style={styles.topEditBtn} activeOpacity={0.7}>
-          <Ionicons name="create-outline" size={17} color="#06B6D4" style={{ marginRight: 4 }} />
+          <Ionicons name="create-outline" size={17} color="#FF6B35" style={{ marginRight: 4 }} />
           <Text style={styles.topEditText}>Edit</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Profile Header Hero ── */}
         <LinearGradient
-          colors={['#131B2E', '#0D1424', '#0B0E14']}
+          colors={['#F5F3FF', '#EDE9FE', '#F7F7FB']}
           style={styles.profileHeader}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -357,17 +357,17 @@ export default function ProfileScreen({ navigation }) {
           {/* ── Avatar Initial DP with Verified Shield ── */}
           <View style={styles.avatarGlowWrapper}>
             <LinearGradient
-              colors={['#6366F1', '#EC4899', '#06B6D4']}
+              colors={['#7C3AED', '#FF6B35']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.avatarOuterRing}
             >
-              <LinearGradient colors={['#1E1B4B', '#0F172A']} style={styles.avatarInner}>
-                <Text style={styles.avatarLetterText}>{initialLetter}</Text>
-              </LinearGradient>
+              <View style={[styles.avatarInner, { backgroundColor: '#FFFFFF' }]}>
+                <Text style={[styles.avatarLetterText, { color: '#7C3AED' }]}>{initialLetter}</Text>
+              </View>
             </LinearGradient>
             <View style={styles.avatarBadge}>
-              <Ionicons name="shield-checkmark" size={13} color="#10B981" />
+              <Ionicons name="shield-checkmark" size={13} color="#22C55E" />
             </View>
           </View>
 
@@ -393,7 +393,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.detailsCard}>
             <View style={styles.cardHeaderRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="person-circle-outline" size={16} color="#06B6D4" style={{ marginRight: 6 }} />
+                <Ionicons name="person-circle-outline" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
                 <Text style={styles.cardHeaderTitle}>PERSONAL DETAILS</Text>
               </View>
               <TouchableOpacity onPress={openEditProfile} activeOpacity={0.7}>
@@ -1061,7 +1061,7 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0E14',
+    backgroundColor: '#F7F7FB',
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0,
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -1074,9 +1074,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#0B0E14',
+    backgroundColor: '#F7F7FB',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: '#E5E7EB',
   },
   topBarLeft: {
     flexDirection: 'row',
@@ -1086,17 +1086,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#E5E7EB',
   },
   topBarTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1F2937',
     letterSpacing: -0.3,
   },
   topEditBtn: {
@@ -1105,12 +1105,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.3)',
+    borderColor: 'rgba(255, 107, 53, 0.25)',
   },
   topEditText: {
-    color: '#06B6D4',
+    color: '#FF6B35',
     fontSize: 12.5,
     fontWeight: '700',
   },
@@ -1129,7 +1129,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: 'rgba(124, 58, 237, 0.08)',
     opacity: 0.8,
   },
   avatarGlowWrapper: {
@@ -1153,7 +1153,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarLetterText: {
-    color: '#FFFFFF',
+    color: '#7C3AED',
     fontSize: 34,
     fontWeight: '900',
     letterSpacing: -1,
@@ -1165,29 +1165,29 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#10B981',
+    borderColor: '#22C55E',
   },
   profileName: {
-    color: '#FFFFFF',
+    color: '#1F2937',
     fontSize: 22,
     fontWeight: '900',
     letterSpacing: -0.4,
   },
   usernameChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
     marginTop: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#E5E7EB',
   },
   usernameChipText: {
-    color: '#94A3B8',
+    color: '#6B7280',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1200,42 +1200,46 @@ const styles = StyleSheet.create({
   metaBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#E5E7EB',
   },
   metaBadgeText: {
-    color: '#94A3B8',
+    color: '#6B7280',
     fontSize: 11,
     fontWeight: '600',
   },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.25)',
+    borderColor: 'rgba(255, 107, 53, 0.25)',
   },
   streakBadgeText: {
-    color: '#F59E0B',
+    color: '#FF6B35',
     fontSize: 11,
     fontWeight: '700',
   },
 
   // ── Personal Details Card ──
   detailsCard: {
-    backgroundColor: '#111827',
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    ...SHADOW.md,
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 3,
   },
   cardHeaderRow: {
     flexDirection: 'row',
@@ -1244,17 +1248,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: '#F3F4F6',
   },
   cardHeaderTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#CBD5E1',
+    color: '#1F2937',
     letterSpacing: 0.7,
   },
   cardHeaderAction: {
     fontSize: 11.5,
-    color: '#06B6D4',
+    color: '#FF6B35',
     fontWeight: '700',
   },
   detailRow: {
@@ -1264,18 +1268,18 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   detailLabel: {
-    color: '#64748B',
+    color: '#6B7280',
     fontSize: 12.5,
     fontWeight: '500',
   },
   detailValue: {
-    color: '#F1F5F9',
+    color: '#1F2937',
     fontSize: 13,
     fontWeight: '700',
   },
   detailDivider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#F3F4F6',
   },
   emailChip: {
     flexDirection: 'row',
@@ -1292,11 +1296,16 @@ const styles = StyleSheet.create({
 
   // ── Lifetime Stats Bento ──
   lifetimeCard: {
-    backgroundColor: '#111827',
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 3,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -1316,13 +1325,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   statValue: {
-    color: '#FFFFFF',
+    color: '#1F2937',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
   statLabel: {
-    color: '#64748B',
+    color: '#6B7280',
     fontSize: 9.5,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -1340,17 +1349,22 @@ const styles = StyleSheet.create({
   sectionHeaderTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: '#6B7280',
     letterSpacing: 0.8,
   },
   menuGroupCard: {
-    backgroundColor: '#111827',
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
     marginHorizontal: 16,
     paddingVertical: 4,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 2,
   },
   menuItem: {
     flexDirection: 'row',
@@ -1367,12 +1381,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   menuLabel: {
-    color: '#F1F5F9',
+    color: '#1F2937',
     fontSize: 13.5,
     fontWeight: '700',
   },
   menuSub: {
-    color: '#64748B',
+    color: '#6B7280',
     fontSize: 11,
     marginTop: 2,
   },
@@ -1389,18 +1403,22 @@ const styles = StyleSheet.create({
   },
   itemDivider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#F3F4F6',
     marginLeft: 48,
   },
 
   // ── Developer Card ──
   devCard: {
-    backgroundColor: '#111827',
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.25)',
-    ...SHADOW.md,
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 3,
   },
   devTopRow: {
     flexDirection: 'row',
@@ -1420,12 +1438,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   devName: {
-    color: '#F8FAFC',
+    color: '#1F2937',
     fontSize: 15,
     fontWeight: '800',
   },
   devRole: {
-    color: '#94A3B8',
+    color: '#6B7280',
     fontSize: 11.5,
     marginTop: 2,
   },
@@ -1438,14 +1456,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#E5E7EB',
     paddingVertical: 9,
     borderRadius: 12,
   },
   devLinkText: {
-    color: '#F1F5F9',
+    color: '#1F2937',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -1455,13 +1473,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: '#FEE2E2',
     marginHorizontal: 16,
     marginTop: 24,
     paddingVertical: 14,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderColor: '#FECACA',
   },
   logoutText: {
     color: '#EF4444',
@@ -1472,16 +1490,21 @@ const styles = StyleSheet.create({
   // ── Modals ──
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(17, 24, 39, 0.45)',
     justifyContent: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#1E293B',
-    borderRadius: RADIUS.lg,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1492,23 +1515,23 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#1F2937',
   },
   feedbackInput: {
-    backgroundColor: '#0F172A',
-    borderRadius: RADIUS.md,
-    padding: 12,
-    color: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    padding: 14,
+    color: '#1F2937',
     minHeight: 80,
     textAlignVertical: 'top',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#E5E7EB',
   },
   submitFeedbackBtn: {
-    backgroundColor: COLORS.cyan,
-    paddingVertical: 13,
-    borderRadius: RADIUS.md,
+    backgroundColor: '#7C3AED',
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
   },
   submitFeedbackText: {

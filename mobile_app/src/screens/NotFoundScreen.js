@@ -14,12 +14,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function NotFoundScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <View style={styles.content}>
         <View style={styles.glowCircle} />
         
         <View style={styles.iconBox}>
-          <Ionicons name="compass-outline" size={54} color="#8B5CF6" />
+          <Ionicons name="compass-outline" size={54} color="#7C3AED" />
         </View>
 
         <View style={styles.badge}>
@@ -37,7 +37,7 @@ export default function NotFoundScreen({ navigation }) {
           style={styles.buttonWrapper}
         >
           <LinearGradient
-            colors={['#8B5CF6', '#6D28D9']}
+            colors={['#7C3AED', '#6D28D9']}
             style={styles.button}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -54,7 +54,7 @@ export default function NotFoundScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0E14',
+    backgroundColor: '#F7F7FB',
   },
   content: {
     flex: 1,
@@ -67,16 +67,15 @@ const styles = StyleSheet.create({
     width: 240,
     height: 240,
     borderRadius: 120,
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
-    filter: 'blur(40px)',
+    backgroundColor: 'rgba(124, 58, 237, 0.08)',
   },
   iconBox: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    backgroundColor: '#EDE9FE',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.25)',
+    borderColor: '#DDD6FE',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -85,27 +84,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#EDE9FE',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#DDD6FE',
     marginBottom: 14,
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#A888FF',
+    color: '#7C3AED',
     letterSpacing: 1,
   },
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1F2937',
     textAlign: 'center',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
@@ -113,10 +112,10 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     width: '100%',
     maxWidth: 280,
-    shadowColor: '#8B5CF6',
-    shadowOpacity: 0.35,
+    shadowColor: '#7C3AED',
+    shadowOpacity: 0.25,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 4,
   },
   button: {
     flexDirection: 'row',

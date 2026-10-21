@@ -95,7 +95,7 @@ export default function AdminPanelScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       
       {/* ── Header ── */}
       <View style={styles.header}>
@@ -194,9 +194,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    width: 40, height: 40, borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#E5E7EB',
   },
   headerTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' },
 
@@ -209,17 +210,17 @@ const styles = StyleSheet.create({
   userDate: { color: COLORS.textMuted, fontSize: 12 },
   
   deleteBtn: {
-    width: 40, height: 40, borderRadius: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: '#FEE2E2',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderWidth: 1, borderColor: '#FECACA',
   },
   tabContainer: {
     flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 14,
     padding: 4,
   },
   tabBtn: {
@@ -228,10 +229,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   tabBtnActive: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tabText: {
     color: COLORS.textMuted,
@@ -240,6 +246,7 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: COLORS.primary,
+    fontWeight: '700',
   },
 
   feedbackCard: {

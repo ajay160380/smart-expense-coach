@@ -207,7 +207,7 @@ export default function ExpenseSplitScreen({ navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.center}><ActivityIndicator color={COLORS.cyan} size="large" /></View>
+        <View style={styles.center}><ActivityIndicator color={COLORS.primary} size="large" /></View>
       </SafeAreaView>
     );
   }
@@ -217,7 +217,7 @@ export default function ExpenseSplitScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
@@ -538,20 +538,21 @@ const styles = StyleSheet.create({
   groupMeta: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
 
   splitStats: { flexDirection: 'row', marginBottom: 12 },
-  splitStatItem: { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 12, marginHorizontal: 3 },
+  splitStatItem: { flex: 1, backgroundColor: '#F3F4F6', borderRadius: 12, padding: 12, marginHorizontal: 3 },
   splitStatLabel: { color: COLORS.textMuted, fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5 },
   splitStatValue: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold', marginTop: 4 },
 
   memberChips: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 },
-  memberChip: { backgroundColor: 'rgba(168,136,255,0.12)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5, marginRight: 6, marginBottom: 6 },
+  memberChip: { backgroundColor: '#EDE9FE', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5, marginRight: 6, marginBottom: 6 },
   memberChipText: { color: COLORS.primary, fontSize: 12, fontWeight: '600' },
 
   // ── Expense List ──
   expenseList: { marginBottom: 12, borderTopWidth: 1, borderTopColor: COLORS.borderLight, paddingTop: 10 },
   expenseRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8,
+    backgroundColor: '#F9FAFB', borderRadius: 10,
     padding: 10, marginBottom: 4,
+    borderWidth: 1, borderColor: '#F1F3F9',
   },
   expenseDesc: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '600' },
   expenseMeta: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
@@ -562,23 +563,23 @@ const styles = StyleSheet.create({
   groupBtnText: { fontSize: 12, fontWeight: '600', marginLeft: 4 },
 
   // ── Modal ──
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.bgCard, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(17, 24, 39, 0.45)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: '80%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' },
   label: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: COLORS.bgInput, borderRadius: 12, padding: 14, color: COLORS.textPrimary, fontSize: 16, borderWidth: 1, borderColor: COLORS.border },
+  input: { backgroundColor: '#F9FAFB', borderRadius: 14, padding: 14, color: COLORS.textPrimary, fontSize: 16, borderWidth: 1, borderColor: COLORS.border },
   addMemberBtn: { flexDirection: 'row', alignItems: 'center', padding: 8 },
 
   // ── Paid By Chips ──
   paidByChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   paidByChip: {
-    backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12,
+    backgroundColor: '#F3F4F6', borderRadius: 12,
     paddingHorizontal: 16, paddingVertical: 10,
     borderWidth: 1.5, borderColor: COLORS.border,
   },
   paidByChipActive: {
-    backgroundColor: 'rgba(168,136,255,0.2)',
+    backgroundColor: '#EDE9FE',
     borderColor: COLORS.primary,
   },
   paidByChipText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '600' },
@@ -586,19 +587,20 @@ const styles = StyleSheet.create({
 
   // ── Summary ──
   summaryTotals: { flexDirection: 'row', marginBottom: 8 },
-  summaryTotalItem: { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 16, marginHorizontal: 4 },
+  summaryTotalItem: { flex: 1, backgroundColor: '#F3F4F6', borderRadius: 14, padding: 16, marginHorizontal: 4 },
   summaryLabel: { color: COLORS.textMuted, fontSize: 11, fontWeight: 'bold' },
   summaryValue: { color: COLORS.textPrimary, fontSize: 22, fontWeight: 'bold', marginTop: 4 },
 
   memberRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 14, marginBottom: 6,
+    backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, marginBottom: 6,
+    borderWidth: 1, borderColor: '#F1F3F9',
   },
   memberName: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '600' },
   memberPaid: { color: COLORS.textSecondary, fontSize: 12 },
   memberNet: { fontSize: 13, fontWeight: 'bold', marginTop: 2 },
 
-  settlementRow: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 14, marginBottom: 6 },
+  settlementRow: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, marginBottom: 6, borderWidth: 1, borderColor: '#F1F3F9' },
   settlementText: { color: COLORS.textPrimary, fontSize: 14 },
 
   waShareBtn: {
@@ -613,8 +615,8 @@ const styles = StyleSheet.create({
   },
   aiEstimateText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   aiEstimateBox: {
-    backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: 12, borderRadius: 12,
-    borderWidth: 1, borderColor: 'rgba(99, 102, 241, 0.3)', marginBottom: 16,
+    backgroundColor: '#EDE9FE', padding: 12, borderRadius: 12,
+    borderWidth: 1, borderColor: '#DDD6FE', marginBottom: 16,
   },
   aiEstimateBoxText: { color: COLORS.textPrimary, fontSize: 13, lineHeight: 18, fontStyle: 'italic' },
 });

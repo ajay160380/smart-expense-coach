@@ -13,6 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import Logo from '../components/Logo';
 import { GlassCard, AnimatedNumber, EmptyState, StatCard, SectionHeader } from '../components/SharedComponents';
+import DonutChart from '../components/DonutChart';
 
 
 
@@ -632,51 +633,59 @@ export default function DashboardScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
-
+      <StatusBar style="dark" />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── GREETING & STATUS PILL (Centered & Elegant) ── */}
-        <Animated.View style={[styles.greetingSection, { alignItems: 'center', paddingVertical: 24, opacity: animGreetingOpacity, transform: [{ translateX: animGreetingX }] }]}>
-          <Text style={[styles.greetText, { fontSize: 30, textAlign: 'center', fontWeight: '800' }]} numberOfLines={1}>
-            {getGreeting()}, <Text style={{ color: '#A5B4FC' }}>{username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Friend'}</Text>
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
-            <Ionicons name="calendar-outline" size={13} color="#94A3B8" style={{ marginRight: 5 }} />
-            <Text style={{ color: '#94A3B8', fontSize: 13, fontWeight: '600' }}>{formatShortMonth(stats?.month)}</Text>
-            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#475569', marginHorizontal: 10 }} />
-            <Ionicons name="hourglass-outline" size={13} color="#06B6D4" style={{ marginRight: 5 }} />
-            <Text style={{ color: '#06B6D4', fontSize: 13, fontWeight: '700' }}>{daysLeft}d left</Text>
+        {/* ── GREETING & HEADER (Target Design Style) ── */}
+        <Animated.View style={[styles.greetingSection, { opacity: animGreetingOpacity, transform: [{ translateX: animGreetingX }] }]}>
+          <View style={styles.greetingHeaderRow}>
+            <View>
+              <Text style={styles.greetText}>
+                {getGreeting()} ☀️
+              </Text>
+              <Text style={styles.greetSubtext}>
+                Today, {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Profile')}
+              style={styles.avatarBtn}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#7C3AED', '#FF6B35']}
+                style={styles.avatarGradientRing}
+              >
+                <View style={styles.avatarInnerCircle}>
+                  <Text style={styles.avatarText}>
+                    {username ? username.charAt(0).toUpperCase() : 'A'}
+                  </Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         </Animated.View>
 
-        {/* ── ANOMALY SPENDING INSIGHT (Compact Sleek Strip) ── */}
+        {/* ── ANOMALY SPENDING INSIGHT ── */}
         {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
           <Animated.View style={[styles.alertBanner, { opacity: animGreetingOpacity }]}>
             {anomalies.map((alert, idx) => {
               if (dismissedAnomalies[idx]) return null;
               return (
-                <LinearGradient
+                <View
                   key={idx}
-                  colors={['rgba(245, 158, 11, 0.12)', 'rgba(17, 24, 39, 0.7)']}
                   style={styles.alertItem}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
                 >
                   <View style={styles.alertIconBadge}>
-                    <Ionicons name="bulb" size={13} color="#F59E0B" />
+                    <Ionicons name="bulb" size={13} color="#FF6B35" />
                   </View>
-                  <View style={{ flex: 1, paddingHorizontal: 6 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 1 }}>
-                      <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
-                      <View style={styles.alertBadgeDot} />
-                      <Text style={styles.alertBadgeSub}>Smart Advice</Text>
-                    </View>
+                  <View style={{ flex: 1, paddingHorizontal: 8 }}>
+                    <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
                     <Text style={styles.alertText} numberOfLines={2}>
                       {alert.message}
                     </Text>
@@ -689,204 +698,129 @@ export default function DashboardScreen({ navigation }) {
                     style={styles.alertDismissBtn}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Ionicons name="close" size={13} color="#94A3B8" />
+                    <Ionicons name="close" size={13} color="#9CA3AF" />
                   </TouchableOpacity>
-                </LinearGradient>
+                </View>
               );
             })}
           </Animated.View>
         )}
 
-        {/* ── WHATSAPP BANNER ── */}
-        {!stats?.whatsapp_linked && (
-          <Animated.View style={{ opacity: animGreetingOpacity }}>
-            <TouchableOpacity 
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                openWhatsApp();
-              }} 
-              activeOpacity={0.85}
-            >
-              <View style={styles.waBanner}>
-                <View style={styles.waIconContainer}>
-                  <FontAwesome name="whatsapp" size={24} color="#fff" />
-                </View>
-                <View style={styles.waTextContainer}>
-                  <Text style={styles.waTitle}>Track via WhatsApp</Text>
-                  <Text style={styles.waSubtitle}>Text "500 petrol" to +91 7379053923</Text>
-                </View>
-                <View style={styles.waButton}>
-                  <Text style={styles.waButtonText}>Open →</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-
-        {/* ── LUXURY MAIN BUDGET CARD ── */}
+        {/* ── BLUE GRADIENT HERO BALANCE CARD (Target Design Style) ── */}
         <Animated.View style={{ opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }] }}>
           <LinearGradient
-            colors={overspent ? ['#3D0C14', '#1E1226', '#0B0F19'] : ['#18213D', '#11172A', '#0A0E1A']}
+            colors={['#4F7CFF', '#3B5BDB']}
             style={styles.mainCard}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {/* Ambient decorative glowing orb */}
-          <View style={styles.cardGlowCircle} />
-
-          <View style={styles.mainCardHeader}>
-            <View style={styles.mainCardTitleRow}>
-              <View style={styles.walletIconBox}>
-                <Ionicons name="wallet-outline" size={13} color="#818CF8" />
-              </View>
-              <Text style={styles.mainCardTitle}>TOTAL SPENT</Text>
-            </View>
-
-            {overspent ? (
-              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(239, 68, 68, 0.16)', borderColor: 'rgba(239, 68, 68, 0.4)' }]}>
-                <View style={[styles.liveDot, { backgroundColor: '#EF4444' }]} />
-                <Text style={[styles.overspentText, { color: '#F87171' }]}>OVERSPENT</Text>
-              </View>
-            ) : usedPercent > 85 ? (
-              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.16)', borderColor: 'rgba(245, 158, 11, 0.4)' }]}>
-                <View style={[styles.liveDot, { backgroundColor: '#F59E0B' }]} />
-                <Text style={[styles.overspentText, { color: '#FBBF24' }]}>85%+ USED</Text>
-              </View>
-            ) : (
-              <View style={[styles.overspentBadge, { backgroundColor: 'rgba(16, 185, 129, 0.14)', borderColor: 'rgba(16, 185, 129, 0.35)' }]}>
-                <View style={styles.liveDot} />
-                <Text style={[styles.overspentText, { color: '#34D399' }]}>ON TRACK</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.balanceContainer}>
-            <Text style={styles.currencySymbol}>₹</Text>
-            <AnimatedNumber
-              value={spent}
-              style={styles.balanceAmount}
-            />
-          </View>
-
-          <TouchableOpacity 
-            style={styles.budgetEditRow} 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setNewBudget(budget.toString());
-              setNewBudgetCycleDay(budgetCycleDay.toString());
-              setBudgetModalVisible(true);
-            }}
-            activeOpacity={0.7}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            <Text style={styles.budgetSubtext}>of ₹{budget.toLocaleString('en-IN')} budget</Text>
-            <Ionicons name="pencil" size={11} color="#06B6D4" style={styles.budgetEditIcon} />
-          </TouchableOpacity>
+            {/* Subtle circle decorations */}
+            <View style={styles.cardGlowCircle} />
+            <View style={styles.cardGlowCircleSmall} />
 
-          {/* Budget Progress Bar */}
-          <View style={styles.progressBarBg}>
-            <LinearGradient
-              colors={usedPercent > 90 ? ['#EF4444', '#DC2626'] : usedPercent > 70 ? ['#F59E0B', '#D97706'] : ['#10B981', '#06B6D4']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[styles.progressBarFill, {
-                width: `${Math.min(usedPercent, 100)}%`,
-              }]}
-            />
-          </View>
+            {/* Top row: Label & Chip Icon */}
+            <View style={styles.mainCardHeader}>
+              <View>
+                <Text style={styles.heroCardSubLabel}>Available Balance</Text>
+                <View style={styles.balanceContainer}>
+                  <Text style={styles.currencySymbol}>₹</Text>
+                  <AnimatedNumber
+                    value={spent}
+                    style={styles.balanceAmount}
+                  />
+                </View>
+              </View>
 
-          {/* Connected 3-Metric Strip */}
-          <View style={styles.metricsStrip}>
-            <View style={styles.metricColumn}>
-              <Text style={styles.metricLabel}>USED</Text>
-              <Text style={styles.metricVal}>{Math.round(usedPercent)}%</Text>
+              {/* Golden Credit Card Chip Icon Style */}
+              <View style={styles.cardChip}>
+                <View style={styles.cardChipInner} />
+              </View>
             </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricColumn}>
-              <Text style={styles.metricLabel}>REMAINING</Text>
-              <Text style={[styles.metricVal, { color: remaining >= 0 ? '#10B981' : '#EF4444' }]}>
-                ₹{remaining.toLocaleString('en-IN')}
-              </Text>
+
+            {/* Card Mid: Card Number / Cycle Days */}
+            <View style={styles.cardMidRow}>
+              <Text style={styles.cardNumberText}>•••• •••• {daysLeft}d left</Text>
+              <TouchableOpacity 
+                style={styles.budgetPillBtn} 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setNewBudget(budget.toString());
+                  setNewBudgetCycleDay(budgetCycleDay.toString());
+                  setBudgetModalVisible(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.budgetPillText}>of ₹{budget.toLocaleString('en-IN')} budget ✎</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricColumn}>
-              <Text style={styles.metricLabel}>TXNS</Text>
-              <Text style={styles.metricVal}>{txCount}</Text>
+
+            {/* Card Bottom Row: Holder + Mastercard Circles */}
+            <View style={styles.cardFooterRow}>
+              <View>
+                <Text style={styles.cardHolderLabel}>Card Holder</Text>
+                <Text style={styles.cardHolderName} numberOfLines={1}>
+                  {username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Ajay'}
+                </Text>
+              </View>
+
+              <View style={styles.mastercardContainer}>
+                <View style={[styles.mcCircle, { backgroundColor: '#EF4444' }]} />
+                <View style={[styles.mcCircle, { backgroundColor: '#F59E0B', marginLeft: -12 }]} />
+              </View>
             </View>
-          </View>
-        </LinearGradient>
+
+            {/* Connected 3-Metric Strip */}
+            <View style={styles.metricsStrip}>
+              <View style={styles.metricColumn}>
+                <Text style={styles.metricLabel}>USED</Text>
+                <Text style={styles.metricVal}>{Math.round(usedPercent)}%</Text>
+              </View>
+              <View style={styles.metricDivider} />
+              <View style={styles.metricColumn}>
+                <Text style={styles.metricLabel}>REMAINING</Text>
+                <Text style={styles.metricVal}>
+                  ₹{remaining.toLocaleString('en-IN')}
+                </Text>
+              </View>
+              <View style={styles.metricDivider} />
+              <View style={styles.metricColumn}>
+                <Text style={styles.metricLabel}>TXNS</Text>
+                <Text style={styles.metricVal}>{txCount}</Text>
+              </View>
+            </View>
+          </LinearGradient>
         </Animated.View>
 
-        {/* ── QUICK ACTION DOCK (Customizable 1-8 items with auto space fill) ── */}
+        {/* ── QUICK ACTION PILL CHIPS (Horizontally Scrollable) ── */}
         <Animated.View style={[styles.actionDockSection, { opacity: animDockOpacity, transform: [{ translateX: animDockX }] }]}>
-          <View style={styles.actionDockHeaderRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="flash-outline" size={12} color="#818CF8" style={{ marginRight: 5 }} />
-              <Text style={styles.actionDockHeaderTitle}>QUICK ACTIONS</Text>
-              <View style={styles.actionDockCountBadge}>
-                <Text style={styles.actionDockCountText}>{activeActions.length}/8</Text>
-              </View>
-            </View>
-            <TouchableOpacity 
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPillsScroll}>
+            {activeActions.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.whitePillChip}
+                onPress={() => handleActionPress(item)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.pillIconBox, { backgroundColor: (item.colors ? item.colors[0] : '#7C3AED') + '15' }]}>
+                  <Ionicons name={item.icon} size={15} color={item.colors ? item.colors[0] : '#7C3AED'} />
+                </View>
+                <Text style={styles.whitePillLabel}>{item.label}</Text>
+                <Text style={[styles.whitePillPlus, { color: item.colors ? item.colors[0] : '#FF6B35' }]}>+</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.customizePillChip}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setTempActionDockKeys([...actionDockKeys]);
                 setActionDockModalVisible(true);
               }}
-              style={styles.actionDockEditBtn}
-              activeOpacity={0.7}
+              activeOpacity={0.75}
             >
-              <Ionicons name="create-outline" size={12} color="#06B6D4" style={{ marginRight: 3 }} />
-              <Text style={styles.actionDockEditText}>Customize</Text>
+              <Ionicons name="create-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
+              <Text style={styles.customizePillText}>Customize</Text>
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.actionDock}>
-            {/* Row 1 (up to 4 items) */}
-            <View style={styles.actionDockRow}>
-              {row1.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.actionDockBtn}
-                  onPress={() => handleActionPress(item)}
-                  onLongPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setTempActionDockKeys([...actionDockKeys]);
-                    setActionDockModalVisible(true);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient colors={item.colors} style={styles.actionDockIcon}>
-                    <Ionicons name={item.icon} size={item.iconSize || 20} color="#fff" />
-                  </LinearGradient>
-                  <Text style={styles.actionDockLabel} numberOfLines={1}>{item.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Row 2 (if > 4 items) */}
-            {row2.length > 0 && (
-              <View style={[styles.actionDockRow, { marginTop: 14 }]}>
-                {row2.map((item) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={styles.actionDockBtn}
-                    onPress={() => handleActionPress(item)}
-                    onLongPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setTempActionDockKeys([...actionDockKeys]);
-                      setActionDockModalVisible(true);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient colors={item.colors} style={styles.actionDockIcon}>
-                      <Ionicons name={item.icon} size={item.iconSize || 20} color="#fff" />
-                    </LinearGradient>
-                    <Text style={styles.actionDockLabel} numberOfLines={1}>{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
+          </ScrollView>
         </Animated.View>
 
         {/* ── 1-TAP QUICK LOG (Dynamic & Customizable) ── */}
@@ -1035,70 +969,60 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         )}
 
-                {/* ── CATEGORY BREAKDOWN (Progress Bar Style) ── */}
+        {/* ── SPENDING BREAKDOWN (Donut Chart + Legend) ── */}
         {recentExpenses.length > 0 && (
-          <View style={{ marginTop: 10 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 8, paddingHorizontal: 4 }}>
-              <Text style={{ color: '#F8FAFC', fontSize: 18, fontWeight: '700', letterSpacing: 0.5 }}>Category Breakdown</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Analytics')} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ color: '#38BDF8', fontSize: 13, fontWeight: '600', marginRight: 4 }}>Details</Text>
-                <Ionicons name="arrow-forward" size={14} color="#38BDF8" />
+          <View style={{ marginTop: 14 }}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Spending Breakdown</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Analytics')} activeOpacity={0.7}>
+                <Text style={styles.viewAllLink}>View All &gt;</Text>
               </TouchableOpacity>
             </View>
 
-            <GlassCard style={{ padding: 16 }}>
-              {getCategoryBreakdown(recentExpenses).slice(0, 3).map((cat, idx) => (
-                <View key={idx} style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 12,
-                  borderBottomWidth: idx < Math.min(getCategoryBreakdown(recentExpenses).length - 1, 2) ? 1 : 0,
-                  borderBottomColor: 'rgba(255,255,255,0.05)'
-                }}>
-                  {/* Icon */}
-                  <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginRight: 14 }}>
-                    <Text style={{ fontSize: 22 }}>{cat.icon || getFallbackIcon(cat.category)}</Text>
+            <View style={styles.whiteCardBox}>
+              <View style={styles.breakdownRow}>
+                {/* Left Legend */}
+                <View style={styles.breakdownLegend}>
+                  <View style={styles.legendHeaderRow}>
+                    <Text style={styles.legendColTitle}>Label</Text>
+                    <Text style={styles.legendColTitle}>Amount</Text>
                   </View>
-                  
-                  {/* Name & Progress Bar */}
-                  <View style={{ flex: 1, marginRight: 16 }}>
-                    <Text style={{ color: '#E2E8F0', fontSize: 15, fontWeight: '600', marginBottom: 8 }} numberOfLines={1}>{cat.title || cat.name}</Text>
-                    <View style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-                      <View style={{ width: `${Math.min(cat.percent || 0, 100)}%`, height: '100%', backgroundColor: cat.color || '#A78BFA', borderRadius: 2 }} />
+                  {getCategoryBreakdown(recentExpenses).slice(0, 5).map((cat, idx) => (
+                    <View key={idx} style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: cat.color || '#7C3AED' }]} />
+                      <Text style={styles.legendName} numberOfLines={1}>{cat.name}</Text>
+                      <Text style={styles.legendAmount}>₹{cat.total.toLocaleString('en-IN')}</Text>
                     </View>
-                  </View>
-                  
-                  {/* Amount */}
-                  <Text style={{ color: '#F8FAFC', fontSize: 15, fontWeight: '700' }}>₹{Math.round(cat.total).toLocaleString('en-IN')}</Text>
+                  ))}
                 </View>
-              ))}
-            </GlassCard>
+
+                {/* Right Donut Chart */}
+                <View style={styles.donutWrapper}>
+                  <DonutChart data={getCategoryBreakdown(recentExpenses)} size={118} />
+                </View>
+              </View>
+            </View>
           </View>
         )}
         
-{/* ── AI FINANCIAL COACH & DAILY MONEY TIP (CONSOLIDATED) ── */}
+        {/* ── AI FINANCIAL COACH & DAILY MONEY TIP ── */}
         <TouchableOpacity 
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             navigation.navigate('AIChat');
           }} 
           activeOpacity={0.85}
-          style={{ marginTop: 12 }}
+          style={{ marginTop: 14 }}
         >
-          <LinearGradient
-            colors={['rgba(99, 102, 241, 0.18)', 'rgba(6, 182, 212, 0.08)']}
-            style={styles.aiUnifiedCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+          <View style={styles.aiLightCard}>
             <View style={styles.aiUnifiedHeader}>
               <View style={styles.aiUnifiedBadge}>
-                <Ionicons name="sparkles" size={12} color="#818CF8" style={{ marginRight: 5 }} />
+                <Ionicons name="sparkles" size={13} color="#7C3AED" style={{ marginRight: 5 }} />
                 <Text style={styles.aiUnifiedBadgeText}>AI COACH & DAILY TIP</Text>
               </View>
               <View style={styles.aiUnifiedChatBtn}>
-                <Text style={styles.aiUnifiedChatText}>Chat with AI</Text>
-                <Ionicons name="arrow-forward" size={11} color={COLORS.cyan} />
+                <Text style={styles.aiUnifiedChatText}>Chat</Text>
+                <Ionicons name="arrow-forward" size={11} color="#FF6B35" />
               </View>
             </View>
             <Text style={styles.aiUnifiedBody}>
@@ -1106,7 +1030,7 @@ export default function DashboardScreen({ navigation }) {
                 ? `Budget exceeded! You've spent ₹${spent.toLocaleString('en-IN')}. Tap to get advice.`
                 : `Great job! You used ${Math.round(usedPercent)}% of your budget. Tap to chat!`)}
             </Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
 
         {/* ── QUICK TOOLS ROW (2-Column Bento: Notepad & Analytics) ── */}
@@ -1119,16 +1043,13 @@ export default function DashboardScreen({ navigation }) {
             activeOpacity={0.8}
             style={styles.toolBentoCard}
           >
-            <LinearGradient
-              colors={['rgba(236, 72, 153, 0.12)', 'rgba(236, 72, 153, 0.04)']}
-              style={styles.toolBentoInner}
-            >
-              <View style={styles.toolBentoIconBoxPink}>
-                <MaterialCommunityIcons name="notebook-outline" size={20} color="#F472B6" />
+            <View style={styles.toolBentoInner}>
+              <View style={[styles.toolBentoIconBox, { backgroundColor: '#FDF2F8' }]}>
+                <MaterialCommunityIcons name="notebook-outline" size={18} color="#EC4899" />
               </View>
-              <Text style={styles.toolBentoTitle}>Personal Notepad</Text>
-              <Text style={styles.toolBentoSub}>Lists, memos & thoughts</Text>
-            </LinearGradient>
+              <Text style={styles.toolBentoTitle}>Notepad</Text>
+              <Text style={styles.toolBentoSub}>Memos & lists</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -1139,92 +1060,98 @@ export default function DashboardScreen({ navigation }) {
             activeOpacity={0.8}
             style={styles.toolBentoCard}
           >
-            <LinearGradient
-              colors={['rgba(6, 182, 212, 0.12)', 'rgba(6, 182, 212, 0.04)']}
-              style={styles.toolBentoInner}
-            >
-              <View style={styles.toolBentoIconBoxCyan}>
-                <Ionicons name="pie-chart-outline" size={20} color="#06B6D4" />
+            <View style={styles.toolBentoInner}>
+              <View style={[styles.toolBentoIconBox, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="pie-chart-outline" size={18} color="#3B82F6" />
               </View>
-              <Text style={styles.toolBentoTitle}>Analytics & Trends</Text>
-              <Text style={styles.toolBentoSub}>Monthly reports & graphs</Text>
-            </LinearGradient>
+              <Text style={styles.toolBentoTitle}>Analytics</Text>
+              <Text style={styles.toolBentoSub}>Trends & charts</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
-        {/* ── RECENT EXPENSES ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Recent Expenses {recentExpenses.length > 0 ? `(${recentExpenses.length})` : ''}
-          </Text>
-          <TouchableOpacity 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('History');
-            }} 
-            style={{ flexDirection: 'row', alignItems: 'center' }}
-          >
-            <Text style={{ color: COLORS.cyan, fontWeight: 'bold', marginRight: 4 }}>See All</Text>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.cyan} />
-          </TouchableOpacity>
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, marginBottom: 12, gap: 10 }}>
-          <TouchableOpacity onPress={() => exportData('pdf')} style={styles.exportPill}>
-            <Text style={styles.exportPillText}>📄 Export PDF</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => exportData('csv')} style={styles.exportPill}>
-            <Text style={styles.exportPillText}>📊 Export CSV</Text>
-          </TouchableOpacity>
-        </View>
-        {recentExpenses.length > 0 ? (
-          <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
-            {recentExpenses.map((exp, idx) => (
-              <TouchableOpacity 
-                key={exp.id || idx} 
-                style={[styles.expenseItem, idx < recentExpenses.length - 1 && styles.expenseBorder]}
-                onPress={() => navigation.navigate('AddExpense', { expense: exp })}
-              >
-                <View style={[styles.expIcon, { backgroundColor: (CAT_COLORS[exp.category] || '#888') + '22' }]}>
-                  <Text style={{ fontSize: 18 }}>{CAT_ICONS[exp.category] || getFallbackIcon(exp.category)}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.expCategory} numberOfLines={1}>
-                    {exp.description 
-                      ? exp.description.charAt(0).toUpperCase() + exp.description.slice(1) 
-                      : (exp.category || 'other').charAt(0).toUpperCase() + (exp.category || 'other').slice(1)}
-                  </Text>
-                  <Text style={styles.expDate}>{formatDate(exp.date)}</Text>
-                </View>
-                <Text style={[styles.expAmount, { marginRight: 10 }]}>-₹{Number(exp.amount).toLocaleString('en-IN')}</Text>
-                
-                <TouchableOpacity 
-                  onPress={() => navigation.navigate('AddExpense', { expense: exp })}
-                  style={{ padding: 5 }}
-                >
-                  <Ionicons name="pencil-outline" size={18} color={COLORS.textSecondary} />
-                </TouchableOpacity>
+        {/* ── RECENT EXPENSES (White Card with Target Icons & "View All >") ── */}
+        <View style={{ marginTop: 16 }}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>
+              Recent Expenses {recentExpenses.length > 0 ? `(${recentExpenses.length})` : ''}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('History');
+              }} 
+              activeOpacity={0.7}
+            >
+              <Text style={styles.viewAllLink}>View All &gt;</Text>
+            </TouchableOpacity>
+          </View>
 
-                <TouchableOpacity 
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    handleDeleteExpense(exp.id);
-                  }}
-                  style={{ padding: 5 }}
-                >
-                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                </TouchableOpacity>
-              </TouchableOpacity>
-            ))}
-          </GlassCard>
-        ) : (
-          <EmptyState
-            icon="📝"
-            title="No expenses yet"
-            message="Start tracking your expenses to see insights"
-            actionText="Add First Expense"
-            onAction={() => navigation.navigate('AddExpense')}
-          />
-        )}
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 10, gap: 8 }}>
+            <TouchableOpacity onPress={() => exportData('pdf')} style={styles.exportPill}>
+              <Text style={styles.exportPillText}>📄 PDF</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => exportData('csv')} style={styles.exportPill}>
+              <Text style={styles.exportPillText}>📊 CSV</Text>
+            </TouchableOpacity>
+          </View>
+
+          {recentExpenses.length > 0 ? (
+            <View style={styles.whiteCardBox}>
+              {recentExpenses.slice(0, 6).map((exp, idx) => {
+                const catKey = (exp.category || 'other').toLowerCase();
+                const catColor = CAT_COLORS[catKey] || '#7C3AED';
+                const catIcon = CAT_ICONS[catKey] || 'pricetag';
+
+                return (
+                  <TouchableOpacity 
+                    key={exp.id || idx} 
+                    style={[styles.expenseItemRow, idx < Math.min(recentExpenses.length, 6) - 1 && styles.expenseItemBorder]}
+                    onPress={() => navigation.navigate('AddExpense', { expense: exp })}
+                    activeOpacity={0.75}
+                  >
+                    {/* Colored rounded-square icon on left */}
+                    <View style={[styles.catSquareIcon, { backgroundColor: catColor }]}>
+                      <Ionicons name={catIcon} size={18} color="#FFFFFF" />
+                    </View>
+
+                    {/* Title + Time below */}
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.expTitle} numberOfLines={1}>
+                        {exp.description 
+                          ? exp.description.charAt(0).toUpperCase() + exp.description.slice(1) 
+                          : catKey.charAt(0).toUpperCase() + catKey.slice(1)}
+                      </Text>
+                      <Text style={styles.expSubTime}>{formatDate(exp.date)}</Text>
+                    </View>
+
+                    {/* Amount bold on right */}
+                    <Text style={styles.expAmountBold}>₹{Number(exp.amount).toLocaleString('en-IN')}</Text>
+
+                    <TouchableOpacity 
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        handleDeleteExpense(exp.id);
+                      }}
+                      style={{ padding: 6, marginLeft: 6 }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : (
+            <EmptyState
+              icon="📝"
+              title="No expenses yet"
+              message="Start tracking your expenses to see insights"
+              actionText="Add First Expense"
+              onAction={() => navigation.navigate('AddExpense')}
+            />
+          )}
+        </View>
 
         </Animated.View>
 
@@ -1733,262 +1660,112 @@ function getCategoryBreakdown(expenses) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: '#F7F7FB',
     paddingTop: Platform.OS === 'android' ? 30 : 0,
   },
   center: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    marginTop: 8,
-    paddingHorizontal: 4,
-  },
-  sectionTitle: {
-    color: '#F8FAFC',
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
 
-  // ── Luxury Top Navbar ──
-  navbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#0B0E14',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    overflow: 'hidden',
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    backgroundColor: '#1E293B',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  logoIconImage: {
-    width: '100%',
-    height: '100%',
-  },
-  logoTextMain: {
-    color: '#FFFFFF',
-    fontSize: 17.5,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  logoTextAccent: {
-    color: '#06B6D4',
-    fontSize: 17.5,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  logoStatusDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#10B981',
-    marginRight: 4,
-  },
-  logoSubText: {
-    color: '#64748B',
-    fontSize: 9.5,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  navRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  navIconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 7,
-    right: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#EF4444',
-    borderWidth: 1.5,
-    borderColor: '#0B0E14',
-  },
-  avatarBtn: {
-    borderRadius: 19,
-  },
-  avatarGradientRing: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    padding: 1.8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  avatarInnerCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-    backgroundColor: '#0F172A',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 14.5,
-    letterSpacing: -0.2,
-  },
-
-  scrollContent: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 16, flexGrow: 1 },
-
-  // ── Greeting & Date Pill (Compact & Elegant) ──
+  // ── Greeting & Header ──
   greetingSection: {
-    marginBottom: 8,
+    marginBottom: 16,
+    paddingTop: 4,
   },
   greetingHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 2,
   },
   greetText: {
-    color: '#FFFFFF',
-    fontSize: 17,
+    color: '#1F2937',
+    fontSize: 24,
     fontWeight: '800',
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
   greetSubtext: {
-    color: '#64748B',
-    fontSize: 11,
-    marginTop: 1,
+    color: '#6B7280',
+    fontSize: 13,
+    marginTop: 2,
     fontWeight: '500',
   },
-  unifiedPill: {
-    flexDirection: 'row',
+  avatarBtn: {
+    borderRadius: 22,
+  },
+  avatarGradientRing: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    padding: 2,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    ...SHADOW.sm,
   },
-  unifiedPillMonth: {
-    color: '#94A3B8',
-    fontSize: 10.5,
-    fontWeight: '600',
+  avatarInnerCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  pillDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#64748B',
-    marginHorizontal: 5,
-  },
-  unifiedPillDays: {
-    color: '#06B6D4',
-    fontSize: 10.5,
-    fontWeight: '700',
+  avatarText: {
+    color: '#7C3AED',
+    fontWeight: '800',
+    fontSize: 16,
   },
 
-  // ── Smart Alert Banner (Compact Sleek Strip) ──
+  // ── Smart Alert Banner ──
   alertBanner: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   alertItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 13,
-    paddingVertical: 7,
-    paddingHorizontal: 10,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 14,
+    padding: 10,
     marginBottom: 6,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.28)',
+    borderColor: '#FED7AA',
   },
   alertIconBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
-    backgroundColor: 'rgba(245, 158, 11, 0.18)',
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: '#FFEDD5',
     justifyContent: 'center',
     alignItems: 'center',
   },
   alertCategoryTitle: {
-    color: '#F59E0B',
-    fontSize: 9.5,
+    color: '#EA580C',
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  alertBadgeDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#D97706',
-    marginHorizontal: 4,
-  },
-  alertBadgeSub: {
-    color: '#D97706',
-    fontSize: 9.5,
-    fontWeight: '600',
-  },
   alertText: {
-    color: '#E2E8F0',
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: '500',
+    color: '#9A3412',
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 1,
   },
   alertDismissBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
+    padding: 4,
   },
 
   // ── WhatsApp ──
   waBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: '#FFFFFF',
     borderRadius: RADIUS.lg,
     padding: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: '#E5E7EB',
+    ...SHADOW.sm,
   },
   waIconContainer: {
     width: 42,
@@ -2000,193 +1777,537 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   waTextContainer: { flex: 1 },
-  waTitle: { color: '#fff', fontWeight: 'bold', fontSize: 14, marginBottom: 2 },
+  waTitle: { color: '#1F2937', fontWeight: 'bold', fontSize: 14, marginBottom: 2 },
   waSubtitle: { color: COLORS.textSecondary, fontSize: 11 },
   waButton: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#F0FDF4',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
   },
-  waButtonText: { color: COLORS.whatsapp, fontWeight: '600', fontSize: 12 },
+  waButtonText: { color: '#16A34A', fontWeight: '700', fontSize: 12 },
 
-  // ── Luxury Main Budget Card ──
+  // ── Blue Gradient Hero Balance Card ──
   mainCard: { 
-    borderRadius: 28, 
-    padding: 24, 
+    borderRadius: 24, 
+    padding: 22, 
     marginBottom: 16, 
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     position: 'relative',
     overflow: 'hidden',
-    shadowColor: '#6366F1',
+    shadowColor: '#3B5BDB',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.28,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: 8,
   },
   cardGlowCircle: {
     position: 'absolute',
-    top: -60,
-    right: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+    top: -40,
+    right: -40,
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  cardGlowCircleSmall: {
+    position: 'absolute',
+    bottom: -30,
+    left: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   mainCardHeader: {
     flexDirection: 'row', 
     justifyContent: 'space-between',
-    alignItems: 'center', 
-    marginBottom: 10,
+    alignItems: 'flex-start', 
+    marginBottom: 6,
   },
-  mainCardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  heroCardSubLabel: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
-  walletIconBox: {
-    width: 26,
+  cardChip: {
+    width: 38,
     height: 26,
-    borderRadius: 8,
-    backgroundColor: 'rgba(129, 140, 248, 0.15)',
+    borderRadius: 6,
+    backgroundColor: '#FDE047',
+    borderWidth: 1,
+    borderColor: '#EAB308',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 7,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  mainCardTitle: {
-    color: '#94A3B8', 
-    fontSize: 10.5,
-    fontWeight: '800', 
-    letterSpacing: 1,
-  },
-  overspentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 9, 
-    paddingVertical: 4, 
-    borderRadius: 10,
+  cardChipInner: {
+    width: 24,
+    height: 14,
+    borderRadius: 3,
     borderWidth: 1,
+    borderColor: '#CA8A04',
   },
-  overspentText: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5 },
   balanceContainer: { 
     flexDirection: 'row', 
     alignItems: 'baseline', 
-    marginBottom: 4,
-    marginTop: 2,
+    marginTop: 4,
   },
   currencySymbol: { 
-    color: '#818CF8', 
-    fontSize: 32, 
+    color: 'rgba(255, 255, 255, 0.9)', 
+    fontSize: 28, 
     fontWeight: '700', 
-    marginRight: 6,
+    marginRight: 4,
   },
   balanceAmount: { 
     color: '#FFFFFF', 
-    fontSize: 48, 
+    fontSize: 38, 
     fontWeight: '900', 
-    letterSpacing: -1.5,
+    letterSpacing: -1,
   },
-  budgetEditRow: {
+  cardMidRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  cardNumberText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12.5,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+  },
+  budgetPillBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  budgetPillText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  cardFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+    marginBottom: 14,
+  },
+  cardHolderLabel: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 9.5,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  cardHolderName: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 1,
+  },
+  mastercardContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4.5,
-    borderRadius: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  budgetSubtext: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600' },
-  budgetEditIcon: {
-    marginLeft: 6,
+  mcCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    opacity: 0.9,
   },
 
-  // ── Modal Styles ──
+  // ── Connected 3-Metric Strip ──
+  metricsStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+  },
+  metricColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  metricDivider: {
+    width: 1,
+    height: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  metricLabel: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  metricVal: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  // ── Quick Action Pill Chips (Horizontal) ──
+  actionDockSection: {
+    marginVertical: 8,
+  },
+  quickPillsScroll: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  whitePillChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginRight: 8,
+    ...SHADOW.sm,
+  },
+  pillIconBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  whitePillLabel: {
+    color: '#1F2937',
+    fontSize: 13,
+    fontWeight: '700',
+    marginRight: 4,
+  },
+  whitePillPlus: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  customizePillChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    ...SHADOW.sm,
+  },
+  customizePillText: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // ── Section Header Row ──
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  sectionTitle: {
+    color: '#1F2937',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  viewAllLink: {
+    color: '#FF6B35',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // ── White Card Box (0 8px 24px Shadow) ──
+  whiteCardBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F3F9',
+    ...SHADOW.card,
+  },
+
+  // ── Spending Breakdown ──
+  breakdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  breakdownLegend: {
+    flex: 1,
+    marginRight: 12,
+  },
+  legendHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  legendColTitle: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  legendName: {
+    flex: 1,
+    color: '#1F2937',
+    fontSize: 12.5,
+    fontWeight: '600',
+  },
+  legendAmount: {
+    color: '#1F2937',
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  donutWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── AI Coach Light Card ──
+  aiLightCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#EDE9FE',
+    ...SHADOW.card,
+  },
+  aiUnifiedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  aiUnifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EDE9FE',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  aiUnifiedBadgeText: {
+    color: '#7C3AED',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  aiUnifiedChatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  aiUnifiedChatText: {
+    color: '#FF6B35',
+    fontSize: 11,
+    fontWeight: '700',
+    marginRight: 3,
+  },
+  aiUnifiedBody: {
+    color: '#4B5563',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+
+  // ── Bento Tools ──
+  toolsBentoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  toolBentoCard: {
+    flex: 1,
+    marginHorizontal: 3,
+  },
+  toolBentoInner: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F1F3F9',
+    ...SHADOW.card,
+  },
+  toolBentoIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  toolBentoTitle: {
+    color: '#1F2937',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  toolBentoSub: {
+    color: '#6B7280',
+    fontSize: 11,
+    marginTop: 1,
+  },
+
+  // ── Expense Rows in Recent Expenses ──
+  expenseItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  expenseItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  catSquareIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  expTitle: {
+    color: '#1F2937',
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  expSubTime: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  expAmountBold: {
+    color: '#1F2937',
+    fontSize: 15.5,
+    fontWeight: '800',
+  },
+  exportPill: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    ...SHADOW.sm,
+  },
+  exportPillText: {
+    color: '#4B5563',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // ── Modals ──
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(11, 14, 20, 0.85)',
+    backgroundColor: 'rgba(17, 24, 39, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#1E293B',
-    borderRadius: RADIUS.xl,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 24,
     width: '100%',
     maxWidth: 340,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#F1F3F9',
     alignItems: 'center',
-    ...SHADOW.lg,
+    ...SHADOW.card,
   },
   modalTitle: {
-    color: COLORS.textPrimary,
+    color: '#1F2937',
     fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontWeight: '800',
+    marginBottom: 6,
   },
   modalSubtitle: {
-    color: COLORS.textSecondary,
+    color: '#6B7280',
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.bgInput,
+    backgroundColor: '#F3F4F6',
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E5E7EB',
     paddingHorizontal: 16,
     width: '100%',
-    height: 56,
-    marginBottom: 24,
+    height: 52,
+    marginBottom: 16,
   },
   inputPrefix: {
-    color: COLORS.primary,
-    fontSize: 20,
+    color: '#7C3AED',
+    fontSize: 18,
     fontWeight: 'bold',
     marginRight: 8,
   },
   budgetInput: {
     flex: 1,
-    color: COLORS.textPrimary,
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#1F2937',
+    fontSize: 17,
+    fontWeight: '700',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+    marginTop: 8,
   },
   modalBtn: {
     flex: 1,
-    height: 48,
-    borderRadius: RADIUS.md,
+    height: 46,
+    borderRadius: RADIUS.pill,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 6,
   },
   modalBtnCancel: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#F3F4F6',
   },
   modalBtnCancelText: {
-    color: COLORS.textSecondary,
+    color: '#6B7280',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   modalBtnSave: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#7C3AED',
   },
   modalBtnSaveText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 
   // ── Progress Bar ──

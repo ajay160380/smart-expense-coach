@@ -32,12 +32,13 @@ const { width, height } = Dimensions.get('window');
 
 // ── Theme Colors ──
 const THEME = {
-  bg: '#F8F9FA', 
-  textMain: '#111827', 
+  bg: '#F7F7FB', 
+  textMain: '#1F2937', 
   textSub: '#6B7280', 
-  primary: '#8B5CF6', 
+  primary: '#7C3AED', 
   primaryLight: '#EDE9FE',
-  success: '#10B981',
+  accent: '#FF6B35',
+  success: '#22C55E',
   warning: '#F59E0B'
 };
 

@@ -1,75 +1,111 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — DESIGN SYSTEM
- * Premium dark glassmorphic theme with consistent tokens
+ * EXPENSE TRACKER — DESIGN SYSTEM & THEME TOKENS
+ * Matches Target Style (Image 2): Clean Light Theme, Vivid Accents,
+ * Floating Dark Nav, Crisp Cards with Soft Elevation.
+ * Centralized theme file for easy customization.
  * ═══════════════════════════════════════════════════════════════
  */
 
 export const COLORS = {
-  // ── Base ──
-  bg:           '#0B0E14',
-  bgCard:       '#1E293B',
-  bgInput:      '#0f172a',
-  bgElevated:   '#1a2332',
-  surface:      'rgba(30, 41, 59, 0.85)',
-  glass:        'rgba(30, 41, 59, 0.6)',
-  glassBorder:  'rgba(255, 255, 255, 0.08)',
-  
-  // ── Text ──
-  textPrimary:   '#f8fafc',
-  textSecondary: '#94a3b8',
-  textMuted:     '#64748b',
-  textInverse:   '#0f172a',
+  // ── Light Theme Base ──
+  bg:            '#F7F7FB', // Soft off-white
+  bgSoft:        '#F0F2F8',
+  bgCard:        '#FFFFFF', // Pure white card
+  bgCardAlt:     '#F9FAFB',
+  bgInput:       '#F3F4F6', // Soft light input background
+  bgElevated:    '#FFFFFF',
+  surface:       '#FFFFFF',
+  glass:         '#FFFFFF',
+  glassBorder:   'rgba(0, 0, 0, 0.04)',
 
-  // ── Accent ──
-  primary:      '#A888FF',
-  primaryDark:  '#9333EA',
-  cyan:         '#06b6d4',
-  green:        '#10b981',
-  greenBright:  '#22c55e',
-  orange:       '#f97316',
-  red:          '#ef4444',
-  yellow:       '#facc15',
-  pink:         '#ec4899',
-  blue:         '#3b82f6',
+  // ── Typography ──
+  textPrimary:   '#1F2937', // Dark navy / charcoal (primary text)
+  textSecondary: '#6B7280', // Medium grey (secondary text)
+  textMuted:     '#9CA3AF', // Light grey (labels, hints)
+  textInverse:   '#FFFFFF', // White text on dark/colored cards
 
-  // ── Gradients (as arrays for LinearGradient) ──
-  gradPurple:   ['#A888FF', '#9333EA'],
-  gradDeepPurp: ['#4c1d95', '#2e1065'],
-  gradCyan:     ['#8b5cf6', '#06b6d4'],
-  gradGreen:    ['#2dd4bf', '#10b981'],
-  gradOrange:   ['#f97316', '#ea580c'],
-  gradRed:      ['#ef4444', '#dc2626'],
-  gradBlue:     ['#3b82f6', '#2563eb'],
-  gradPink:     ['#ec4899', '#db2777'],
+  // ── Brand Colors ──
+  primary:       '#7C3AED', // Vivid purple (active action, center FAB)
+  primaryLight:  '#EDE9FE',
+  primaryDark:   '#6D28D9',
+  accent:        '#FF6B35', // Warm orange (active tab, "View All" links)
+  orange:        '#FF6B35',
+  orangeLight:   '#FFF2EB',
 
-  // ── Border ──
-  border:       '#334155',
-  borderLight:  'rgba(255, 255, 255, 0.05)',
-  borderAccent: '#06b6d4',
+  // ── System Accents ──
+  cyan:          '#3B82F6', // Vibrant blue
+  blue:          '#4F7CFF',
+  green:         '#22C55E', // Success green
+  greenBright:   '#22C55E',
+  greenLight:    '#DCFCE7',
+  red:           '#EF4444', // Danger red
+  redLight:      '#FEE2E2',
+  yellow:        '#F59E0B',
+  pink:          '#EC4899',
 
-  // ── Status ──
-  success:      '#10b981',
-  warning:      '#f59e0b',
-  error:        '#ef4444',
-  info:         '#3b82f6',
+  // ── Bottom Navigation Bar ──
+  navBg:         '#111827', // Deep dark floating bar
+  navBorder:     'rgba(255, 255, 255, 0.08)',
+  navActive:     '#FF6B35', // Orange active tab
+  navInactive:   '#9CA3AF', // Grey inactive tab
+  navFabRing:    '#FFFFFF', // White ring around center purple FAB
 
-  // ── WhatsApp ──
-  whatsapp:     '#25D366',
+  // ── Gradients (for LinearGradient) ──
+  gradHero:      ['#4F7CFF', '#3B5BDB'], // Blue hero balance card
+  gradPurple:    ['#7C3AED', '#6D28D9'], // Primary purple
+  gradOrange:    ['#FF6B35', '#F97316'], // Orange accent
+  gradGreen:     ['#22C55E', '#16A34A'],
+  gradRed:       ['#EF4444', '#DC2626'],
+  gradPink:      ['#EC4899', '#DB2777'],
+  gradCyan:      ['#38BDF8', '#0284C7'],
+  gradDeepPurp:  ['#7C3AED', '#4C1D95'],
+  gradCardLight: ['#FFFFFF', '#FAF5FF'],
+  gradPastelMint:['#E6FFFA', '#F0FDF4'],
+  gradPastelPeach:['#FFF7ED', '#FEF2F2'],
+
+  // ── Borders & Dividers ──
+  border:        '#E5E7EB',
+  borderLight:   '#F1F3F9',
+  borderAccent:  '#FF6B35',
+
+  // ── Status Indicators ──
+  success:       '#22C55E',
+  warning:       '#F59E0B',
+  error:         '#EF4444',
+  info:          '#3B82F6',
+
+  // ── WhatsApp Brand ──
+  whatsapp:      '#25D366',
 };
 
 export const CAT_COLORS = {
-  food:          '#6c5ce7',
-  transport:     '#00cec9',
-  shopping:      '#fd79a8',
-  health:        '#00b894',
-  entertainment: '#fdcb6e',
-  education:     '#74b9ff',
-  utilities:     '#a29bfe',
-  other:         '#dfe6e9',
+  food:          '#7C3AED', // Purple
+  transport:     '#22C55E', // Green
+  shopping:      '#FF6B35', // Orange
+  health:        '#EC4899', // Pink
+  entertainment: '#F59E0B', // Amber
+  education:     '#3B82F6', // Blue
+  utilities:     '#06B6D4', // Cyan
+  groceries:     '#EF4444', // Red
+  fuel:          '#3B82F6', // Blue
+  cng:           '#3B82F6',
+  other:         '#8B5CF6',
 };
 
 export const CAT_ICONS = {
+  food:          'restaurant',
+  transport:     'car',
+  shopping:      'cart',
+  health:        'medkit',
+  entertainment: 'film',
+  education:     'book',
+  utilities:     'flash',
+  groceries:     'basket',
+  other:         'cube',
+};
+
+export const CAT_EMOJIS = {
   food:          '🍜',
   transport:     '🚗',
   shopping:      '🛍️',
@@ -77,6 +113,7 @@ export const CAT_ICONS = {
   entertainment: '🎬',
   education:     '📚',
   utilities:     '⚡',
+  groceries:     '🛒',
   other:         '📦',
 };
 
@@ -106,6 +143,8 @@ export const RADIUS = {
   lg: 16,
   xl: 20,
   xxl: 24,
+  card: 22,
+  pill: 999,
   full: 999,
 };
 
@@ -116,7 +155,7 @@ export const FONT = {
   md:    16,
   lg:    18,
   xl:    20,
-  xxl:   24,
+  xxl:   24, // Greeting bold 24px
   xxxl:  28,
   hero:  36,
   mega:  48,
@@ -126,63 +165,43 @@ export const SHADOW = {
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 4,
   },
   lg: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 28,
+    elevation: 6,
+  },
+  nav: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 20,
   },
   glow: (color) => ({
     shadowColor: color,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   }),
-};
-
-// ── Common Styles ──
-export const COMMON = {
-  glassCard: {
-    backgroundColor: COLORS.glass,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-    ...SHADOW.md,
-  },
-  solidCard: {
-    backgroundColor: COLORS.bgCard,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-  },
-  input: {
-    backgroundColor: COLORS.bgInput,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    color: COLORS.textPrimary,
-    fontSize: FONT.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  label: {
-    fontSize: FONT.xs,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
 };

@@ -184,7 +184,7 @@ export default function MoreFeaturesScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ── Top Bar ── */}
       <View style={styles.topBar}>
@@ -201,7 +201,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={['#6366F1', '#8B5CF6']}
+            colors={['#7C3AED', '#6D28D9']}
             style={styles.topProfileGrad}
           >
             <Text style={styles.topProfileInitial}>{initialLetter}</Text>
@@ -216,7 +216,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.cyan}
+            tintColor={COLORS.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -231,7 +231,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#18233C', '#0F172A']}
+            colors={['#4F7CFF', '#3B5BDB']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.profileBannerGrad}
@@ -244,7 +244,7 @@ export default function MoreFeaturesScreen({ navigation }) {
               <Text style={styles.bannerHandle}>@{username} • View Profile & Settings</Text>
             </View>
             <View style={styles.bannerArrowBox}>
-              <Ionicons name="arrow-forward" size={16} color="#06B6D4" />
+              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -738,25 +738,20 @@ function FeatureCard({ icon, iconColor, bgGrad, borderColor, title, desc, badge,
       }}
       activeOpacity={0.8}
     >
-      <LinearGradient
-        colors={bgGrad}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.gridItemCard, { borderColor }]}
-      >
+      <View style={styles.gridItemCard}>
         <View style={styles.gridItemTop}>
-          <View style={[styles.gridIconCircle, { backgroundColor: iconColor + '20' }]}>
+          <View style={[styles.gridIconCircle, { backgroundColor: iconColor + '18' }]}>
             <Ionicons name={icon} size={20} color={iconColor} />
           </View>
           {badge && (
-            <View style={[styles.gridBadge, { backgroundColor: badgeColor + '22', borderColor: badgeColor + '50' }]}>
+            <View style={[styles.gridBadge, { backgroundColor: badgeColor + '18', borderColor: badgeColor + '35' }]}>
               <Text style={[styles.gridBadgeText, { color: badgeColor }]}>{badge}</Text>
             </View>
           )}
         </View>
         <Text style={styles.gridItemTitle}>{title}</Text>
         <Text style={styles.gridItemDesc} numberOfLines={2}>{desc}</Text>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -772,7 +767,7 @@ function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, 
         }}
         activeOpacity={0.7}
       >
-        <View style={[styles.listIconBox, { backgroundColor: iconColor + '18', borderColor: iconColor + '30' }]}>
+        <View style={[styles.listIconBox, { backgroundColor: iconColor + '18' }]}>
           <Ionicons name={icon} size={18} color={iconColor} />
         </View>
         <View style={{ flex: 1, paddingRight: 8 }}>
@@ -785,7 +780,7 @@ function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, 
           </View>
         )}
         {(showArrow || !badge) && (
-          <Ionicons name="chevron-forward" size={15} color="#475569" style={{ marginLeft: 6 }} />
+          <Ionicons name="chevron-forward" size={15} color="#9CA3AF" style={{ marginLeft: 6 }} />
         )}
       </TouchableOpacity>
       {!isLast && <View style={styles.listDivider} />}
@@ -796,7 +791,7 @@ function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0E14',
+    backgroundColor: '#F7F7FB',
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0,
   },
   topBar: {
@@ -806,17 +801,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: '#E5E7EB',
   },
   topBarTitle: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#1F2937',
     letterSpacing: -0.5,
   },
   topBarSub: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#6B7280',
     marginTop: 2,
     fontWeight: '600',
   },
@@ -843,48 +838,50 @@ const styles = StyleSheet.create({
 
   // ── Profile Banner ──
   profileBanner: {
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.25)',
-    ...SHADOW.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 4,
   },
   profileBannerGrad: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
+    padding: 16,
   },
   bannerAvatarBox: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   bannerAvatarLetter: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#06B6D4',
+    color: '#FFFFFF',
   },
   bannerName: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: '#FFFFFF',
   },
   bannerHandle: {
     fontSize: 11.5,
-    color: '#94A3B8',
+    color: 'rgba(255, 255, 255, 0.85)',
     marginTop: 2,
   },
   bannerArrowBox: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -899,7 +896,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: '#6B7280',
     letterSpacing: 1.2,
   },
 
@@ -917,12 +914,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gridItemCard: {
-    borderRadius: 18,
-    padding: 13,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
     borderWidth: 1,
+    borderColor: '#F1F3F9',
     minHeight: 118,
     justifyContent: 'space-between',
     flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 2,
   },
   gridItemTop: {
     flexDirection: 'row',
@@ -931,15 +935,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   gridIconCircle: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   gridBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
     borderRadius: 8,
     borderWidth: 1,
   },
@@ -948,13 +952,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   gridItemTitle: {
-    color: '#F8FAFC',
+    color: '#1F2937',
     fontSize: 15,
     fontWeight: '800',
     marginBottom: 4,
   },
   gridItemDesc: {
-    color: '#94A3B8',
+    color: '#6B7280',
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '500',
@@ -962,13 +966,17 @@ const styles = StyleSheet.create({
 
   // ── WhatsApp Smart Card ──
   waCard: {
-    backgroundColor: '#111827',
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(37, 211, 102, 0.25)',
+    borderColor: '#F1F3F9',
     marginBottom: 16,
-    ...SHADOW.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 3,
   },
   waHeader: {
     flexDirection: 'row',
@@ -979,11 +987,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(37, 211, 102, 0.14)',
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(37, 211, 102, 0.3)',
   },
   waTitleRow: {
     flexDirection: 'row',
@@ -991,7 +997,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   waTitle: {
-    color: '#F8FAFC',
+    color: '#1F2937',
     fontSize: 15,
     fontWeight: '800',
   },
@@ -1014,26 +1020,26 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   waSub: {
-    color: '#94A3B8',
+    color: '#6B7280',
     fontSize: 12,
     marginTop: 2,
   },
   waInfoChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.035)',
+    backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#E5E7EB',
     borderRadius: 14,
     paddingVertical: 9,
     paddingHorizontal: 12,
     marginBottom: 12,
   },
   waInfoChipTitle: {
-    color: '#F1F5F9',
+    color: '#1F2937',
     fontSize: 12,
     fontWeight: '700',
   },
   waInfoChipSub: {
-    color: '#64748B',
+    color: '#6B7280',
     fontSize: 11,
     marginTop: 1,
   },
@@ -1063,7 +1069,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#16A34A',
+    backgroundColor: '#22C55E',
     paddingVertical: 11,
     borderRadius: 13,
     marginRight: 8,
@@ -1077,28 +1083,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#E5E7EB',
     paddingVertical: 11,
     paddingHorizontal: 14,
     borderRadius: 13,
   },
   waRelinkText: {
-    color: '#94A3B8',
+    color: '#6B7280',
     fontSize: 12,
     fontWeight: '700',
   },
 
   // ── List Card ──
   listCard: {
-    backgroundColor: '#111827',
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
     paddingVertical: 4,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#F1F3F9',
     marginBottom: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 2,
   },
   listItem: {
     flexDirection: 'row',
@@ -1111,16 +1122,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
     marginRight: 12,
   },
   listItemTitle: {
-    color: '#F1F5F9',
+    color: '#1F2937',
     fontSize: 13.5,
     fontWeight: '700',
   },
   listItemDesc: {
-    color: '#64748B',
+    color: '#6B7280',
     fontSize: 11,
     marginTop: 2,
   },
@@ -1137,23 +1147,28 @@ const styles = StyleSheet.create({
   },
   listDivider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#F3F4F6',
     marginLeft: 50,
   },
 
   // ── Modal ──
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(17, 24, 39, 0.45)',
     justifyContent: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#1E293B',
-    borderRadius: RADIUS.lg,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#F1F3F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1164,23 +1179,23 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#1F2937',
   },
   feedbackInput: {
-    backgroundColor: '#0F172A',
-    borderRadius: RADIUS.md,
-    padding: 12,
-    color: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    padding: 14,
+    color: '#1F2937',
     minHeight: 100,
     textAlignVertical: 'top',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#E5E7EB',
   },
   submitFeedbackBtn: {
-    backgroundColor: COLORS.cyan,
-    paddingVertical: 13,
-    borderRadius: RADIUS.md,
+    backgroundColor: '#7C3AED',
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
   },
   submitFeedbackText: {
@@ -1196,26 +1211,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   devFooterText: {
-    color: '#64748B',
+    color: '#6B7280',
     fontSize: 12,
     fontWeight: '500',
   },
   devFooterLink: {
-    color: '#818CF8',
+    color: '#7C3AED',
     fontWeight: '700',
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: '#FEE2E2',
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
     paddingVertical: 14,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderColor: '#FECACA',
   },
   logoutText: {
     color: '#EF4444',
