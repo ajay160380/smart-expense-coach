@@ -14,13 +14,20 @@ import api from '../api/config';
 import { saveAuthData } from './auth';
 import analytics from './analytics';
 
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+
 // Ensure browser session can complete properly
 WebBrowser.maybeCompleteAuthSession();
+
+// Check if running inside standard Expo Go client
+const isExpoGo =
+  Constants?.appOwnership === 'expo' ||
+  Constants?.executionEnvironment === ExecutionEnvironment?.StoreClient;
 
 // ── Google OAuth Client IDs ──
 // Project Number: 600331588079 (expense-tracker-67220)
 export const GOOGLE_CONFIG = {
-  // Web Client ID from Firebase / Google Cloud Console (used for verification)
+  // Web Client ID from Firebase / Google Cloud Console (used for verification & Expo Go)
   webClientId: '600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com',
   // Android OAuth Client ID from Google Cloud Console (Package: com.ajay160380.paisamitra)
   androidClientId: '600331588079-97q2pl2l6impkean30df3qig5t6rl7et.apps.googleusercontent.com',
@@ -40,17 +47,23 @@ export const isGoogleAuthConfigured = () => {
 export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
   const [loading, setLoading] = useState(false);
 
-  // Google OAuth 2.0 policy on Android requires the reverse client ID scheme
+  // In standalone APK on Android, Google requires reverse client ID scheme
   const androidRedirectUri = 'com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et:/oauthredirect';
   const defaultRedirectUri = makeRedirectUri({
     scheme: 'paisamitra',
   });
-  const redirectUri = Platform.OS === 'android' ? androidRedirectUri : defaultRedirectUri;
+  
+  // Expo Go needs standard proxy redirect; Standalone Android uses native scheme
+  const redirectUri = isExpoGo
+    ? makeRedirectUri()
+    : Platform.OS === 'android'
+    ? androidRedirectUri
+    : defaultRedirectUri;
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_CONFIG.webClientId,
+    clientId: isExpoGo ? GOOGLE_CONFIG.webClientId : GOOGLE_CONFIG.webClientId,
     webClientId: GOOGLE_CONFIG.webClientId,
-    androidClientId: GOOGLE_CONFIG.androidClientId,
+    androidClientId: isExpoGo ? undefined : GOOGLE_CONFIG.androidClientId,
     iosClientId: GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.webClientId,
     redirectUri,
     scopes: ['profile', 'email'],
@@ -92,6 +105,10 @@ export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
       const idToken = authentication?.idToken || params?.id_token;
 
       if (!accessToken && !idToken) {
+        // If code is present, expo-auth-session is still auto-exchanging in background
+        if (params?.code) {
+          return;
+        }
         setLoading(false);
         Alert.alert('Google Sign-In Failed', 'No authentication token received from Google.');
         if (onError) onError(new Error('No token received'));
