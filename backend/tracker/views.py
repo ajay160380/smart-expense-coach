@@ -4719,6 +4719,19 @@ class CustomAuthToken(ObtainAuthToken):
             
         token, created = Token.objects.get_or_create(user=authenticated_user)
         
+        # Auto-verify email and ensure profile exists on successful password login
+        phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+        while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+            phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+            
+        profile, _ = UserProfile.objects.get_or_create(
+            user=authenticated_user,
+            defaults={'phone_number': phone_dummy, 'email_verified': True if authenticated_user.email else False}
+        )
+        if authenticated_user.email and not profile.email_verified:
+            profile.email_verified = True
+            profile.save(update_fields=['email_verified'])
+        
         # Track login activity
         def get_client_ip(request):
             x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -4733,7 +4746,8 @@ class CustomAuthToken(ObtainAuthToken):
             'user_id': authenticated_user.pk,
             'email': authenticated_user.email,
             'username': authenticated_user.username,
-            'phone_number': authenticated_user.profile.phone_number if hasattr(authenticated_user, 'profile') else None
+            'email_verified': profile.email_verified,
+            'phone_number': profile.phone_number if not str(profile.phone_number).startswith('g_') else None
         })
 
 
@@ -5001,6 +5015,35 @@ def api_send_otp(request):
                 user_found = True
         if not user_found:
             return Response({'error': 'No account found with this phone number or email.'}, status=404)
+    elif action == 'login':
+        user = None
+        if email_target:
+            user = User.objects.filter(email__iexact=email_target).first()
+        if not user and phone_target:
+            p_alt = phone_target[2:] if phone_target.startswith('91') and len(phone_target) == 12 else phone_target
+            profile = UserProfile.objects.filter(phone_number__in=[phone_target, p_alt]).first()
+            if profile:
+                user = profile.user
+        if not user and raw_identifier:
+            user = User.objects.filter(username__iexact=raw_identifier).first()
+            if not user and '@' in str(raw_identifier):
+                user = User.objects.filter(email__iexact=str(raw_identifier).strip().lower()).first()
+            
+        if not user:
+            return Response({
+                'error': 'No account found with this identifier. Please create an account to get started.',
+                'code': 'ACCOUNT_NOT_FOUND'
+            }, status=404)
+            
+        if user.email and not email_target:
+            email_target = user.email.strip().lower()
+        if hasattr(user, 'profile') and user.profile.phone_number and not phone_target:
+            p = user.profile.phone_number
+            if not str(p).startswith('g_'):
+                if p.startswith('91') or len(p) >= 11:
+                    phone_target = p
+                elif len(p) == 10:
+                    phone_target = f"91{p}"
 
     # Basic rate limiting (max 10 OTPs in last 5 mins)
     recent_check = phone_target or email_target
@@ -5116,6 +5159,102 @@ def api_verify_otp(request):
     otp_record.save()
     
     return Response({'message': 'OTP verified successfully.'})
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def api_login_otp(request):
+    raw_identifier = request.data.get('identifier') or request.data.get('username') or request.data.get('email') or request.data.get('phone_number')
+    otp = request.data.get('otp')
+    
+    if not raw_identifier or not otp:
+        return Response({'error': 'Identifier (email/phone/username) and 6-digit OTP are required.'}, status=400)
+        
+    identifier = str(raw_identifier).strip()
+    clean_digits = ''.join(ch for ch in identifier if ch.isdigit())
+    phone_candidate = f"91{clean_digits}" if len(clean_digits) == 10 else clean_digits
+    
+    user = None
+    # Check username
+    user = User.objects.filter(username__iexact=identifier).first()
+    # Check email
+    if not user and '@' in identifier:
+        user = User.objects.filter(email__iexact=identifier.lower()).first()
+    # Check phone
+    if not user and phone_candidate:
+        p_alt = phone_candidate[2:] if phone_candidate.startswith('91') and len(phone_candidate) == 12 else phone_candidate
+        prof = UserProfile.objects.filter(phone_number__in=[phone_candidate, p_alt]).first()
+        if prof:
+            user = prof.user
+    if not user:
+        user = User.objects.filter(email__iexact=identifier).first()
+        
+    if not user:
+        return Response({
+            'error': 'No account found with this identifier. Please create an account to get started.',
+            'code': 'ACCOUNT_NOT_FOUND'
+        }, status=404)
+        
+    # Check OTP for any valid identifier of this user
+    valid_idents = [identifier, user.username]
+    if user.email:
+        valid_idents.append(user.email.strip().lower())
+    if hasattr(user, 'profile') and user.profile.phone_number:
+        p = user.profile.phone_number
+        valid_idents.append(p)
+        if p.startswith('91') and len(p) == 12:
+            valid_idents.append(p[2:])
+        else:
+            valid_idents.append(f"91{p}")
+            
+    otp_record = OTPVerification.objects.filter(
+        identifier__in=list(set(valid_idents)),
+        otp_code=str(otp).strip(),
+        created_at__gte=timezone.now() - timedelta(minutes=10)
+    ).first()
+    
+    if not otp_record:
+        return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
+        
+    # Both email & phone are verified! Ensure profile exists
+    phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+    while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+        phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+        
+    profile, _ = UserProfile.objects.get_or_create(
+        user=user,
+        defaults={'phone_number': phone_dummy, 'email_verified': True}
+    )
+    profile.email_verified = True
+    profile.save()
+    
+    # Clean up OTP record
+    try:
+        otp_record.delete()
+    except Exception:
+        pass
+        
+    # Generate / retrieve token
+    token, _ = Token.objects.get_or_create(user=user)
+    
+    # Activity log
+    try:
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+        UserLoginActivity.objects.create(user=user, ip_address=ip)
+    except Exception:
+        pass
+        
+    return Response({
+        'status': 'success',
+        'token': token.key,
+        'user_id': user.pk,
+        'username': user.username,
+        'email': user.email,
+        'phone_number': profile.phone_number if not str(profile.phone_number).startswith('g_') else None,
+        'email_verified': True,
+        'message': 'Login and verification successful! Email and phone are verified.'
+    })
 
 @api_view(['POST'])
 @authentication_classes([])

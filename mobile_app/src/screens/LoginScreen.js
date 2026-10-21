@@ -29,6 +29,21 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'otp'
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth({
     mode: 'login',
     onSuccess: () => {
@@ -113,6 +128,78 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleSendLoginOTP = async () => {
+    const cleanUsername = sanitizeInput(username).trim();
+    if (!cleanUsername) {
+      Alert.alert('Required Field', 'Please enter your username, email, or phone number.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.post('/api/auth/send-otp/', {
+        identifier: cleanUsername,
+        action: 'login',
+      });
+      setOtpSent(true);
+      setResendTimer(30);
+      Alert.alert(
+        'OTP Sent 📬',
+        res.data?.message || 'Verification OTP sent to your registered WhatsApp & Email. Enter the code to verify & sign in.'
+      );
+    } catch (error) {
+      const isNotFound = error.response?.status === 404 || error.response?.data?.code === 'ACCOUNT_NOT_FOUND';
+      if (isNotFound) {
+        Alert.alert(
+          'Account Not Found',
+          error.response?.data?.error || 'No account found with this identifier. Please create an account to get started.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Create Account',
+              onPress: () => navigation.navigate('Register', {
+                email: cleanUsername.includes('@') ? cleanUsername : '',
+                phone: !cleanUsername.includes('@') && cleanUsername.replace('+', '').match(/^\d+$/) ? cleanUsername : '',
+              }),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error Sending OTP', formatApiError(error, 'Could not send verification OTP.'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyLoginOTP = async () => {
+    const cleanUsername = sanitizeInput(username).trim();
+    const cleanOtp = otp.trim();
+
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      Alert.alert('Invalid OTP', 'Please enter the 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post('/api/auth/login-otp/', {
+        identifier: cleanUsername,
+        otp: cleanOtp,
+      });
+      const { token, user_id, username: apiUsername } = response.data;
+      await recordLoginAttempt(true);
+      await saveAuthData(token, user_id, apiUsername || cleanUsername);
+      analytics.track('login_otp_success', { user_id });
+      navigation.replace('MainTabs');
+    } catch (error) {
+      console.warn('Login OTP error:', error);
+      Alert.alert('Verification Failed', formatApiError(error, 'Invalid or expired OTP code.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -138,55 +225,201 @@ export default function LoginScreen({ navigation }) {
 
           {/* Form */}
           <View style={styles.formSection}>
-            <Text style={styles.label}>USERNAME, EMAIL OR PHONE</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your identifier"
-              placeholderTextColor="#9CA3AF"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-
-            <Text style={styles.label}>PASSWORD</Text>
-            <View style={styles.passwordRow}>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="••••••••"
-                placeholderTextColor="#9CA3AF"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={{alignItems: 'flex-end', marginTop: -4, marginBottom: 4}}>
-              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                <Text style={{color: '#1A73E8', fontSize: 13, fontWeight: '600'}}>Forgot Password?</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleLogin}
-              disabled={loading || googleLoading}
-            >
-              <LinearGradient
-                colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
-                style={styles.button}
+            {/* Login Method Toggle */}
+            <View style={styles.methodToggleWrap}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.methodTab, loginMethod === 'password' && styles.methodTabActive]}
+                onPress={() => { setLoginMethod('password'); setOtpSent(false); }}
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
+                <Ionicons
+                  name="key-outline"
+                  size={15}
+                  color={loginMethod === 'password' ? '#1A73E8' : '#6B7280'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.methodTabText, loginMethod === 'password' && styles.methodTabTextActive]}>
+                  Password
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.methodTab, loginMethod === 'otp' && styles.methodTabActive]}
+                onPress={() => setLoginMethod('otp')}
+              >
+                <Ionicons
+                  name="shield-checkmark"
+                  size={15}
+                  color={loginMethod === 'otp' ? '#10B981' : '#6B7280'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.methodTabText, loginMethod === 'otp' && { color: '#10B981', fontWeight: '700' }]}>
+                  Verify with OTP
+                </Text>
+                <View style={styles.secureBadge}>
+                  <Text style={styles.secureBadgeText}>VERIFY</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {loginMethod === 'otp' ? (
+              <>
+                <Text style={styles.label}>USERNAME, EMAIL OR PHONE</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g. user@gmail.com or 9876543210"
+                  placeholderTextColor="#9CA3AF"
+                  value={username}
+                  onChangeText={(val) => { setUsername(val); if (otpSent) setOtpSent(false); }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+
+                {otpSent ? (
+                  <>
+                    <View style={styles.otpBanner}>
+                      <Ionicons name="checkmark-circle" size={16} color="#10B981" style={{ marginRight: 6 }} />
+                      <Text style={styles.otpBannerText}>
+                        OTP sent to WhatsApp & Email. Enter 6-digit code:
+                      </Text>
+                    </View>
+
+                    <Text style={styles.label}>6-DIGIT VERIFICATION CODE</Text>
+                    <TextInput
+                      style={[styles.input, { textAlign: 'center', fontSize: 22, letterSpacing: 6, fontWeight: '700' }]}
+                      placeholder="••••••"
+                      placeholderTextColor="#9CA3AF"
+                      value={otp}
+                      onChangeText={setOtp}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      autoFocus
+                    />
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <TouchableOpacity
+                        onPress={() => setOtpSent(false)}
+                        disabled={loading}
+                      >
+                        <Text style={{ color: '#6B7280', fontSize: 13, fontWeight: '600' }}>← Change Input</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={handleSendLoginOTP}
+                        disabled={loading || resendTimer > 0}
+                      >
+                        <Text style={{ color: resendTimer > 0 ? '#9CA3AF' : '#10B981', fontSize: 13, fontWeight: '700' }}>
+                          {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={handleVerifyLoginOTP}
+                      disabled={loading || googleLoading}
+                    >
+                      <LinearGradient
+                        colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#10B981', '#059669']}
+                        style={styles.button}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="shield-checkmark" size={18} color="#fff" style={{ marginRight: 8 }} />
+                            <Text style={styles.buttonText}>Verify & Sign In</Text>
+                          </View>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </>
                 ) : (
-                  <Text style={styles.buttonText}>Sign In</Text>
+                  <>
+                    <View style={styles.otpHelperBox}>
+                      <Ionicons name="information-circle-outline" size={16} color="#059669" style={{ marginRight: 6 }} />
+                      <Text style={styles.otpHelperText}>
+                        We&apos;ll send an OTP to your WhatsApp & Email to verify and log you in simultaneously.
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={handleSendLoginOTP}
+                      disabled={loading || googleLoading}
+                    >
+                      <LinearGradient
+                        colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#10B981', '#059669']}
+                        style={styles.button}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="send" size={16} color="#fff" style={{ marginRight: 8 }} />
+                            <Text style={styles.buttonText}>Send Verification OTP</Text>
+                          </View>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </>
                 )}
-              </LinearGradient>
-            </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.label}>USERNAME, EMAIL OR PHONE</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your identifier"
+                  placeholderTextColor="#9CA3AF"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+
+                <Text style={styles.label}>PASSWORD</Text>
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="••••••••"
+                    placeholderTextColor="#9CA3AF"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{alignItems: 'flex-end', marginTop: -4, marginBottom: 4}}>
+                  <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                    <Text style={{color: '#1A73E8', fontSize: 13, fontWeight: '600'}}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={handleLogin}
+                  disabled={loading || googleLoading}
+                >
+                  <LinearGradient
+                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#1A73E8', '#1A73E8']}
+                    style={styles.button}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.buttonText}>Sign In</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </>
+            )}
 
             {/* Divider */}
             <View style={styles.dividerRow}>
@@ -285,4 +518,80 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
   footerText: { color: '#6B7280', fontSize: 14 },
   linkText: { color: '#1A73E8', fontSize: 14, fontWeight: 'bold' },
+
+  methodToggleWrap: {
+    flexDirection: 'row',
+    backgroundColor: '#EEF2F6',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 4,
+  },
+  methodTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  methodTabActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  methodTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  methodTabTextActive: {
+    color: '#1A73E8',
+    fontWeight: '700',
+  },
+  secureBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  secureBadgeText: {
+    color: '#10B981',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  otpBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+  },
+  otpBannerText: {
+    color: '#065F46',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  otpHelperBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  otpHelperText: {
+    color: '#065F46',
+    fontSize: 12,
+    lineHeight: 17,
+    flex: 1,
+  },
 });

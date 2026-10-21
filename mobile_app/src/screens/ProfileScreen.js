@@ -413,15 +413,40 @@ export default function ProfileScreen({ navigation }) {
             </View>
             <View style={styles.detailDivider} />
 
-            {Boolean(profile?.phone_number) && (
+            {Boolean(profile?.phone_number) && !String(profile.phone_number).startsWith('g_') && (
               <>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Registered Mobile</Text>
-                  <Text style={styles.detailValue}>
-                    {profile.phone_number.startsWith('91') && profile.phone_number.length === 12
-                      ? `+91 ${profile.phone_number.slice(2)}`
-                      : profile.phone_number}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', maxWidth: '65%', justifyContent: 'flex-end' }}>
+                    <Text style={styles.detailValue}>
+                      {profile.phone_number.startsWith('91') && profile.phone_number.length === 12
+                        ? `+91 ${profile.phone_number.slice(2)}`
+                        : profile.phone_number}
+                    </Text>
+                    <View
+                      style={[
+                        styles.emailChip,
+                        {
+                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="shield-checkmark"
+                        size={11}
+                        color="#10B981"
+                        style={{ marginRight: 3 }}
+                      />
+                      <Text
+                        style={[
+                          styles.emailChipText,
+                          { color: '#10B981' },
+                        ]}
+                      >
+                        Verified
+                      </Text>
+                    </View>
+                  </View>
                 </View>
                 <View style={styles.detailDivider} />
               </>

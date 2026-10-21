@@ -41,6 +41,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         UserProfile.objects.create(
             user=user,
             phone_number=validated_data['phone_number'],
-            email_verified=False
+            email_verified=True if email else False
         )
         return user

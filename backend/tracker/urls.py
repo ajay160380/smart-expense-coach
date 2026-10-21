@@ -130,6 +130,7 @@ urlpatterns = [
     
     # ─── OTP, Password Recovery & Email Verification ───
     path('api/auth/send-otp/', views.api_send_otp, name='api_send_otp'),
+    path('api/auth/login-otp/', views.api_login_otp, name='api_login_otp'),
     path('api/auth/verify-otp/', views.api_verify_otp, name='api_verify_otp'),
     path('api/auth/reset-password/', views.api_reset_password, name='api_reset_password'),
     path('api/auth/send-email-verification/', views.api_send_email_verification, name='api_send_email_verification'),
