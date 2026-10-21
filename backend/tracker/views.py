@@ -12,6 +12,7 @@ import calendar
 import logging
 import re
 import hashlib
+import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from collections import defaultdict
@@ -5223,16 +5224,23 @@ def api_login_otp(request):
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
         
     # Both email & phone are verified! Ensure profile exists
-    phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
-    while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+    try:
+        profile = user.profile
+        if not profile.email_verified:
+            profile.email_verified = True
+            profile.save(update_fields=['email_verified'])
+    except Exception:
         phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
-        
-    profile, _ = UserProfile.objects.get_or_create(
-        user=user,
-        defaults={'phone_number': phone_dummy, 'email_verified': True}
-    )
-    profile.email_verified = True
-    profile.save()
+        while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+            phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+            
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={'phone_number': phone_dummy, 'email_verified': True}
+        )
+        if not profile.email_verified:
+            profile.email_verified = True
+            profile.save(update_fields=['email_verified'])
     
     # Clean up OTP record
     try:
