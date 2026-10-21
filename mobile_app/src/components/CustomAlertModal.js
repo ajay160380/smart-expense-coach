@@ -317,7 +317,7 @@ export default function CustomAlertModal() {
           ]}
         >
           <LinearGradient
-            colors={['#172036', '#0C111F']}
+            colors={['#FFFFFF', '#FFFFFF']}
             style={styles.cardGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
@@ -482,19 +482,20 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(3, 7, 18, 0.84)',
+    backgroundColor: 'rgba(17, 24, 39, 0.45)',
   },
   cardContainer: {
     width: '100%',
     maxWidth: 360,
-    borderRadius: 26,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: '#F1F3F9',
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.55,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
     shadowRadius: 28,
-    elevation: 22,
+    elevation: 12,
     overflow: 'hidden',
   },
   cardGradient: {
@@ -509,15 +510,15 @@ const styles = StyleSheet.create({
     width: 150,
     height: 110,
     borderRadius: 75,
-    opacity: 0.22,
+    opacity: 0.08,
   },
   iconWrapper: {
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   iconCircle: {
     width: 60,
@@ -526,7 +527,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   typeBadge: {
     paddingHorizontal: 12,
@@ -541,9 +542,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   titleText: {
-    fontSize: 18.5,
+    fontSize: 19,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#111827',
     textAlign: 'center',
     letterSpacing: 0.2,
     marginBottom: 8,
@@ -557,9 +558,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   messageText: {
-    fontSize: 13.5,
+    fontSize: 14,
     lineHeight: 20,
-    color: '#94A3B8',
+    color: '#6B7280',
     textAlign: 'center',
   },
   buttonContainer: {
@@ -580,7 +581,7 @@ const styles = StyleSheet.create({
   primaryBtnTouch: {
     borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -601,9 +602,9 @@ const styles = StyleSheet.create({
   },
   secondaryBtn: {
     height: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: '#E5E7EB',
     borderRadius: 14,
     paddingHorizontal: 16,
     alignItems: 'center',
@@ -611,16 +612,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   secondaryBtnText: {
-    color: '#F1F5F9',
+    color: '#374151',
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
   destructiveBtn: {
     height: 48,
-    backgroundColor: 'rgba(239, 68, 68, 0.14)',
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.32)',
+    borderColor: 'rgba(239, 68, 68, 0.25)',
     borderRadius: 14,
     paddingHorizontal: 16,
     alignItems: 'center',
@@ -628,16 +629,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   destructiveBtnText: {
-    color: '#FCA5A5',
+    color: '#EF4444',
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
   cancelBtn: {
     height: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.09)',
+    borderColor: '#E5E7EB',
     borderRadius: 14,
     paddingHorizontal: 16,
     alignItems: 'center',
@@ -645,7 +646,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cancelBtnText: {
-    color: '#94A3B8',
+    color: '#6B7280',
     fontSize: 14,
     fontWeight: '700',
   },
