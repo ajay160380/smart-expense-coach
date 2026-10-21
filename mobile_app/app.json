@@ -5,7 +5,7 @@
     "version": "1.3.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "scheme": [
       "paisamitra",
       "com.ajay160380.paisamitra",
@@ -20,9 +20,10 @@
       "bundleIdentifier": "com.ajay160380.paisamitra"
     },
     "android": {
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#2C353F"
+        "backgroundColor": "#F7F7FB"
       },
       "softwareKeyboardLayoutMode": "resize",
       "package": "com.ajay160380.paisamitra",
@@ -67,6 +68,6 @@
       }
     },
     "owner": "ajay1506s-team",
-    "runtimeVersion": "1.3.0"
+    "runtimeVersion": "1.3.1"
   }
 }
