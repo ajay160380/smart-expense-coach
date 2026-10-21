@@ -5720,7 +5720,7 @@ def download_apk(request):
     apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
     if os.path.exists(apk_path):
         response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
-        response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
+        response['Content-Disposition'] = 'attachment; filename="ExpenseTracker_1.3.1.apk"'
         response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
         response['Pragma'] = 'no-cache'
         response['Expires'] = '0'
