@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Alert, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
@@ -46,6 +46,18 @@ export const isGoogleAuthConfigured = () => {
  */
 export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
   const [loading, setLoading] = useState(false);
+  const lastProcessedResponseRef = useRef(null);
+
+  // Keep callback refs stable to prevent infinite re-render / effect loops
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  const onStartRef = useRef(onStart);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+    onStartRef.current = onStart;
+  });
 
   // In standalone APK on Android, Google requires reverse client ID scheme
   const androidRedirectUri = 'com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et:/oauthredirect';
@@ -81,23 +93,25 @@ export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
       await saveAuthData(token, user_id, username);
       analytics.track('google_login_success', { user_id, is_new: res.data.is_new });
 
-      if (onSuccess) {
-        onSuccess(res.data);
+      if (onSuccessRef.current) {
+        onSuccessRef.current(res.data);
       }
     } catch (err) {
       console.warn('Google backend verification failed:', err);
       const msg = err.response?.data?.error || err.message || 'Google Sign-In failed.';
       Alert.alert('Google Sign-In Failed', msg);
-      if (onError) {
-        onError(err);
+      if (onErrorRef.current) {
+        onErrorRef.current(err);
       }
     } finally {
       setLoading(false);
     }
-  }, [onSuccess, onError]);
+  }, []);
 
   useEffect(() => {
     if (!response) return;
+    // Prevent processing the same response object multiple times (breaks infinite alert loops)
+    if (lastProcessedResponseRef.current === response) return;
 
     if (response.type === 'success') {
       const { authentication, params } = response;
@@ -109,22 +123,26 @@ export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
         if (params?.code) {
           return;
         }
+        lastProcessedResponseRef.current = response;
         setLoading(false);
         Alert.alert('Google Sign-In Failed', 'No authentication token received from Google.');
-        if (onError) onError(new Error('No token received'));
+        if (onErrorRef.current) onErrorRef.current(new Error('No token received'));
         return;
       }
 
+      lastProcessedResponseRef.current = response;
       handleBackendLogin(accessToken, idToken);
     } else if (response.type === 'cancel' || response.type === 'dismiss') {
+      lastProcessedResponseRef.current = response;
       setLoading(false);
     } else if (response.type === 'error') {
+      lastProcessedResponseRef.current = response;
       setLoading(false);
       console.warn('Google OAuth error:', response.error);
       Alert.alert('Google Sign-In Failed', response.error?.message || 'Authentication cancelled or failed.');
-      if (onError) onError(response.error);
+      if (onErrorRef.current) onErrorRef.current(response.error);
     }
-  }, [response, handleBackendLogin, onError]);
+  }, [response, handleBackendLogin]);
 
   const signInWithGoogle = async () => {
     if (!isGoogleAuthConfigured()) {
@@ -138,13 +156,13 @@ export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
 
     try {
       setLoading(true);
-      if (onStart) onStart();
+      if (onStartRef.current) onStartRef.current();
       await promptAsync();
     } catch (err) {
       setLoading(false);
       console.warn('Google prompt exception:', err);
       Alert.alert('Google Sign-In Error', err.message || 'Could not open Google Sign-In.');
-      if (onError) onError(err);
+      if (onErrorRef.current) onErrorRef.current(err);
     }
   };
 

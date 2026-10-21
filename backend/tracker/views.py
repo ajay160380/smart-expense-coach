@@ -4787,57 +4787,72 @@ def api_google_login(request):
     given_name = str(google_data.get('given_name', '')).strip()
     family_name = str(google_data.get('family_name', '')).strip()
     
-    user = User.objects.filter(email__iexact=email).first()
-    is_new = False
-    
-    if not user:
-        is_new = True
-        base_username = email.split('@')[0]
-        base_username = re.sub(r'[^a-zA-Z0-9_]', '', base_username) or "user"
-        username = base_username[:25]
-        counter = 1
-        while User.objects.filter(username__iexact=username).exists():
-            username = f"{base_username[:20]}_{counter}"
-            counter += 1
-            
-        first_name = given_name or (name.split()[0] if name else '')
-        last_name = family_name or (' '.join(name.split()[1:]) if len(name.split()) > 1 else '')
-        
-        user = User.objects.create(
-            username=username,
-            email=email,
-            first_name=first_name[:30],
-            last_name=last_name[:30],
-        )
-        user.set_unusable_password()
-        user.save()
-        
-    profile, _ = UserProfile.objects.get_or_create(user=user)
-    if not profile.phone_number:
-        profile.phone_number = f"g_{uuid.uuid4().hex[:12]}"
-    profile.email_verified = True
-    profile.save()
-    
-    token, _ = Token.objects.get_or_create(user=user)
-    
-    # Track login activity
     try:
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
-        UserLoginActivity.objects.create(user=user, ip_address=ip)
-    except Exception:
-        pass
+        user = User.objects.filter(email__iexact=email).first()
+        is_new = False
         
-    return Response({
-        'status': 'success',
-        'token': token.key,
-        'user_id': user.pk,
-        'username': user.username,
-        'email': user.email,
-        'phone_number': profile.phone_number if not str(profile.phone_number).startswith('g_') else None,
-        'is_new': is_new,
-        'message': 'Account created successfully with Google!' if is_new else 'Google login successful!'
-    })
+        with transaction.atomic():
+            if not user:
+                is_new = True
+                base_username = email.split('@')[0]
+                base_username = re.sub(r'[^a-zA-Z0-9_]', '', base_username) or "user"
+                username = base_username[:25]
+                counter = 1
+                while User.objects.filter(username__iexact=username).exists():
+                    username = f"{base_username[:20]}_{counter}"
+                    counter += 1
+                    
+                first_name = given_name or (name.split()[0] if name else '')
+                last_name = family_name or (' '.join(name.split()[1:]) if len(name.split()) > 1 else '')
+                
+                user = User.objects.create(
+                    username=username,
+                    email=email,
+                    first_name=first_name[:30],
+                    last_name=last_name[:30],
+                )
+                user.set_unusable_password()
+                user.save()
+                
+            phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+            while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+                phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+
+            profile, _ = UserProfile.objects.get_or_create(
+                user=user,
+                defaults={
+                    'phone_number': phone_dummy,
+                    'email_verified': True,
+                }
+            )
+            if not profile.phone_number:
+                profile.phone_number = phone_dummy
+            profile.email_verified = True
+            profile.save()
+            
+            token, _ = Token.objects.get_or_create(user=user)
+        
+        # Track login activity
+        try:
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+            UserLoginActivity.objects.create(user=user, ip_address=ip)
+        except Exception:
+            pass
+            
+        return Response({
+            'status': 'success',
+            'token': token.key,
+            'user_id': user.pk,
+            'username': user.username,
+            'email': user.email,
+            'phone_number': profile.phone_number if not str(profile.phone_number).startswith('g_') else None,
+            'is_new': is_new,
+            'message': 'Account created successfully with Google!' if is_new else 'Google login successful!'
+        })
+    except Exception as e:
+        logger.exception(f"Error during Google login: {e}")
+        return Response({'error': f'Failed to process Google login: {str(e)}'}, status=500)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # OTP & PASSWORD RECOVERY APIS
