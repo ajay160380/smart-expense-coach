@@ -6,7 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "scheme": "paisamitra",
+    "scheme": [
+      "paisamitra",
+      "com.ajay160380.paisamitra",
+      "com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et"
+    ],
     "updates": {
       "fallbackToCacheTimeout": 3000,
       "url": "https://u.expo.dev/4159228e-c70e-46d2-a231-eda454c6eb0d"

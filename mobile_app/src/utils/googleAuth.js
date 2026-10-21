@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri } from 'expo-auth-session';
@@ -19,12 +19,11 @@ WebBrowser.maybeCompleteAuthSession();
 
 // ── Google OAuth Client IDs ──
 // Project Number: 600331588079 (expense-tracker-67220)
-// Replace with your Web Client ID from Google Cloud Console / Firebase Console
 export const GOOGLE_CONFIG = {
-  // Web Client ID from Firebase / Google Cloud Console
+  // Web Client ID from Firebase / Google Cloud Console (used for verification)
   webClientId: '600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com',
-  // Android & iOS OAuth endpoints use Web Client ID with Expo AuthSession
-  androidClientId: '600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com',
+  // Android OAuth Client ID from Google Cloud Console (Package: com.ajay160380.paisamitra)
+  androidClientId: '600331588079-97q2pl2l6impkean30df3qig5t6rl7et.apps.googleusercontent.com',
   iosClientId: '600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com',
 };
 
@@ -41,14 +40,17 @@ export const isGoogleAuthConfigured = () => {
 export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
   const [loading, setLoading] = useState(false);
 
-  const redirectUri = makeRedirectUri({
+  // Google OAuth 2.0 policy on Android requires the reverse client ID scheme
+  const androidRedirectUri = 'com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et:/oauthredirect';
+  const defaultRedirectUri = makeRedirectUri({
     scheme: 'paisamitra',
   });
+  const redirectUri = Platform.OS === 'android' ? androidRedirectUri : defaultRedirectUri;
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: GOOGLE_CONFIG.webClientId,
     webClientId: GOOGLE_CONFIG.webClientId,
-    androidClientId: GOOGLE_CONFIG.androidClientId || GOOGLE_CONFIG.webClientId,
+    androidClientId: GOOGLE_CONFIG.androidClientId,
     iosClientId: GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.webClientId,
     redirectUri,
     scopes: ['profile', 'email'],

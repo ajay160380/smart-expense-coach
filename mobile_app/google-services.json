@@ -12,7 +12,20 @@
           "package_name": "com.ajay160380.paisamitra"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "600331588079-97q2pl2l6impkean30df3qig5t6rl7et.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ajay160380.paisamitra",
+            "certificate_hash": "36f5c63a4cd7bc208c5f2ec52205a7800389081c"
+          }
+        },
+        {
+          "client_id": "600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC3er9x4Ah8dqjgEp9Ssm6h8IvagJn5daA"

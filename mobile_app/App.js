@@ -539,7 +539,12 @@ export default function App() {
   }
 
   const linking = {
-    prefixes: ['expensetracker://', 'paisamitra://'],
+    prefixes: [
+      'expensetracker://',
+      'paisamitra://',
+      'com.ajay160380.paisamitra://',
+      'com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et://',
+    ],
     config: {
       screens: {
         MainTabs: {
