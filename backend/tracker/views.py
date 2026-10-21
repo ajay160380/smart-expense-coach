@@ -4705,7 +4705,13 @@ class CustomAuthToken(ObtainAuthToken):
                     user = profile_qs.first().user
                     
         if not user:
-            return Response({'error': 'User not found with this identifier.'}, status=404)
+            if '@' in str(identifier):
+                err_msg = 'No account found with this email ID. Please create an account to get started.'
+            elif str(identifier).replace('+', '').isdigit():
+                err_msg = 'No account found with this phone number. Please create an account to get started.'
+            else:
+                err_msg = 'No account found with this username. Please create an account to get started.'
+            return Response({'error': err_msg, 'code': 'ACCOUNT_NOT_FOUND'}, status=404)
             
         authenticated_user = authenticate(request=request, username=user.username, password=password)
         if not authenticated_user:
@@ -4787,9 +4793,20 @@ def api_google_login(request):
     given_name = str(google_data.get('given_name', '')).strip()
     family_name = str(google_data.get('family_name', '')).strip()
     
+    mode = str(request.data.get('mode', 'login')).strip().lower()
+    
     try:
         user = User.objects.filter(email__iexact=email).first()
         is_new = False
+        
+        # If in login mode and user is not registered, prompt to create account
+        if mode == 'login' and not user:
+            return Response({
+                'error': 'This email ID is not registered with Expense Tracker. Please create an account to get started.',
+                'code': 'ACCOUNT_NOT_FOUND',
+                'email': email,
+                'name': name or given_name or ''
+            }, status=404)
         
         with transaction.atomic():
             if not user:

@@ -44,7 +44,7 @@ export const isGoogleAuthConfigured = () => {
 /**
  * Custom hook for Google Authentication across Login and Register screens.
  */
-export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
+export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onAccountNotFound } = {}) {
   const [loading, setLoading] = useState(false);
   const lastProcessedResponseRef = useRef(null);
 
@@ -52,11 +52,13 @@ export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   const onStartRef = useRef(onStart);
+  const onAccountNotFoundRef = useRef(onAccountNotFound);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
     onErrorRef.current = onError;
     onStartRef.current = onStart;
+    onAccountNotFoundRef.current = onAccountNotFound;
   });
 
   // In standalone APK on Android, Google requires reverse client ID scheme
@@ -87,6 +89,7 @@ export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
       const res = await api.post('/api/auth/google/', {
         access_token: accessToken,
         id_token: idToken,
+        mode,
       });
 
       const { token, user_id, username } = res.data;
@@ -98,15 +101,22 @@ export function useGoogleAuth({ onSuccess, onError, onStart } = {}) {
       }
     } catch (err) {
       console.warn('Google backend verification failed:', err);
+      const errCode = err.response?.data?.code;
       const msg = err.response?.data?.error || err.message || 'Google Sign-In failed.';
-      Alert.alert('Google Sign-In Failed', msg);
+      
+      if (errCode === 'ACCOUNT_NOT_FOUND' && onAccountNotFoundRef.current) {
+        onAccountNotFoundRef.current(err.response?.data?.email, err.response?.data?.name);
+      } else {
+        Alert.alert('Google Sign-In Failed', msg);
+      }
+
       if (onErrorRef.current) {
         onErrorRef.current(err);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     if (!response) return;

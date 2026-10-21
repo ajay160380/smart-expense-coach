@@ -22,19 +22,32 @@ import { validateUsername, validateEmail, validatePhone, validatePassword } from
 import { formatApiError } from '../utils/errors';
 import analytics from '../utils/analytics';
 
-export default function RegisterScreen({ navigation }) {
-  const [username, setUsername] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+export default function RegisterScreen({ navigation, route }) {
+  const initialEmail = route?.params?.email || '';
+  const initialUsername = route?.params?.name ? route.params.name.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase().slice(0, 20) : '';
+  const initialPhone = route?.params?.phone || '';
+
+  const [username, setUsername] = useState(initialUsername);
+  const [phone, setPhone] = useState(initialPhone);
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
+  useEffect(() => {
+    if (route?.params?.email) setEmail(route.params.email);
+    if (route?.params?.phone) setPhone(route.params.phone);
+    if (route?.params?.name) {
+      setUsername(route.params.name.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase().slice(0, 20));
+    }
+  }, [route?.params]);
   
   // OTP States
   const [step, setStep] = useState(1); // 1 = Details, 2 = OTP
   const [otp, setOtp] = useState('');
 
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth({
+    mode: 'register',
     onSuccess: () => {
       navigation.replace('MainTabs');
     },

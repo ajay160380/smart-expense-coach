@@ -30,8 +30,22 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth({
+    mode: 'login',
     onSuccess: () => {
       navigation.replace('MainTabs');
+    },
+    onAccountNotFound: (email, name) => {
+      Alert.alert(
+        'Account Not Found',
+        `No account found with this email ID (${email || 'Google email'}).\n\nPlease create an account to get started.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Create Account',
+            onPress: () => navigation.navigate('Register', { email, name }),
+          },
+        ]
+      );
     },
     onError: (err) => {
       console.warn('Google sign-in error:', err);
@@ -75,7 +89,25 @@ export default function LoginScreen({ navigation }) {
     } catch (error) {
       await recordLoginAttempt(false);
       console.warn('Login error:', error);
-      Alert.alert('Login Failed', formatApiError(error, 'Invalid identifier or password.'));
+      const isNotFound = error.response?.status === 404 || error.response?.data?.code === 'ACCOUNT_NOT_FOUND';
+      if (isNotFound) {
+        Alert.alert(
+          'Account Not Found',
+          error.response?.data?.error || 'No account found with this identifier. Please create an account to get started.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Create Account',
+              onPress: () => navigation.navigate('Register', {
+                email: cleanUsername.includes('@') ? cleanUsername : '',
+                phone: !cleanUsername.includes('@') && cleanUsername.replace('+', '').match(/^\d+$/) ? cleanUsername : '',
+              }),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Login Failed', formatApiError(error, 'Invalid identifier or password.'));
+      }
     } finally {
       setLoading(false);
     }
