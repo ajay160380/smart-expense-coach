@@ -92,9 +92,11 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
         mode,
       });
 
-      const { token, user_id, username } = res.data;
-      await saveAuthData(token, user_id, username);
-      analytics.track('google_login_success', { user_id, is_new: res.data.is_new });
+      const { token, user_id, username, needs_phone } = res.data;
+      if (!needs_phone) {
+        await saveAuthData(token, user_id, username);
+        analytics.track('google_login_success', { user_id, is_new: res.data.is_new });
+      }
 
       if (onSuccessRef.current) {
         onSuccessRef.current(res.data);

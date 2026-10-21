@@ -13,6 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import Logo from '../components/Logo';
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import CompleteProfileModal from '../components/CompleteProfileModal';
 import { useGoogleAuth } from '../utils/googleAuth';
 
 import api from '../api/config';
@@ -28,6 +29,9 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [completeProfileVisible, setCompleteProfileVisible] = useState(false);
+  const [googleUserData, setGoogleUserData] = useState(null);
 
   const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'otp'
   const [otp, setOtp] = useState('');
@@ -45,22 +49,13 @@ export default function LoginScreen({ navigation }) {
   }, [resendTimer]);
 
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth({
-    mode: 'login',
-    onSuccess: () => {
-      navigation.replace('MainTabs');
-    },
-    onAccountNotFound: (email, name) => {
-      Alert.alert(
-        'Account Not Found',
-        `No account found with this email ID (${email || 'Google email'}).\n\nPlease create an account to get started.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Create Account',
-            onPress: () => navigation.navigate('Register', { email, name }),
-          },
-        ]
-      );
+    onSuccess: (data) => {
+      if (data?.needs_phone) {
+        setGoogleUserData(data);
+        setCompleteProfileVisible(true);
+      } else {
+        navigation.replace('MainTabs');
+      }
     },
     onError: (err) => {
       console.warn('Google sign-in error:', err);
@@ -447,6 +442,17 @@ export default function LoginScreen({ navigation }) {
 
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* Google Onboarding Profile Completion Modal */}
+      <CompleteProfileModal
+        visible={completeProfileVisible}
+        userData={googleUserData}
+        onComplete={() => {
+          setCompleteProfileVisible(false);
+          navigation.replace('MainTabs');
+        }}
+        onCancel={() => setCompleteProfileVisible(false)}
+      />
     </View>
   );
 }

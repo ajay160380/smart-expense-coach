@@ -13,6 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import Logo from '../components/Logo';
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import CompleteProfileModal from '../components/CompleteProfileModal';
 import { useGoogleAuth } from '../utils/googleAuth';
 
 import api from '../api/config';
@@ -33,6 +34,9 @@ export default function RegisterScreen({ navigation, route }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const [completeProfileVisible, setCompleteProfileVisible] = useState(false);
+  const [googleUserData, setGoogleUserData] = useState(null);
   
   useEffect(() => {
     if (route?.params?.email) setEmail(route.params.email);
@@ -48,8 +52,13 @@ export default function RegisterScreen({ navigation, route }) {
 
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth({
     mode: 'register',
-    onSuccess: () => {
-      navigation.replace('MainTabs');
+    onSuccess: (data) => {
+      if (data?.needs_phone) {
+        setGoogleUserData(data);
+        setCompleteProfileVisible(true);
+      } else {
+        navigation.replace('MainTabs');
+      }
     },
     onError: (err) => {
       console.warn('Google sign-up error:', err);
@@ -327,6 +336,17 @@ export default function RegisterScreen({ navigation, route }) {
 
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* Google Onboarding Profile Completion Modal */}
+      <CompleteProfileModal
+        visible={completeProfileVisible}
+        userData={googleUserData}
+        onComplete={() => {
+          setCompleteProfileVisible(false);
+          navigation.replace('MainTabs');
+        }}
+        onCancel={() => setCompleteProfileVisible(false)}
+      />
     </View>
   );
 }

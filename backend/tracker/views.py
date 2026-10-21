@@ -4813,15 +4813,6 @@ def api_google_login(request):
         user = User.objects.filter(email__iexact=email).first()
         is_new = False
         
-        # If in login mode and user is not registered, prompt to create account
-        if mode == 'login' and not user:
-            return Response({
-                'error': 'This email ID is not registered with Expense Tracker. Please create an account to get started.',
-                'code': 'ACCOUNT_NOT_FOUND',
-                'email': email,
-                'name': name or given_name or ''
-            }, status=404)
-        
         with transaction.atomic():
             if not user:
                 is_new = True
@@ -4871,13 +4862,18 @@ def api_google_login(request):
         except Exception:
             pass
             
+        has_real_phone = bool(profile.phone_number and not str(profile.phone_number).startswith('g_'))
+        user_display_name = f"{user.first_name} {user.last_name}".strip() or name or given_name or user.username
+        
         return Response({
             'status': 'success',
             'token': token.key,
             'user_id': user.pk,
             'username': user.username,
+            'name': user_display_name,
             'email': user.email,
-            'phone_number': profile.phone_number if not str(profile.phone_number).startswith('g_') else None,
+            'phone_number': profile.phone_number if has_real_phone else None,
+            'needs_phone': not has_real_phone,
             'is_new': is_new,
             'message': 'Account created successfully with Google!' if is_new else 'Google login successful!'
         })
@@ -5044,6 +5040,16 @@ def api_send_otp(request):
                     phone_target = p
                 elif len(p) == 10:
                     phone_target = f"91{p}"
+    elif action == 'link_phone':
+        if not phone_target:
+            return Response({'error': 'A valid 10-digit mobile number is required.'}, status=400)
+        p_alt = phone_target[2:] if phone_target.startswith('91') and len(phone_target) == 12 else phone_target
+        existing_profile = UserProfile.objects.filter(phone_number__in=[phone_target, p_alt]).first()
+        if existing_profile and not str(existing_profile.phone_number).startswith('g_'):
+            return Response({
+                'error': 'This mobile number is already registered with another account.',
+                'code': 'PHONE_ALREADY_EXISTS'
+            }, status=400)
 
     # Basic rate limiting (max 10 OTPs in last 5 mins)
     recent_check = phone_target or email_target
@@ -5254,6 +5260,102 @@ def api_login_otp(request):
         'phone_number': profile.phone_number if not str(profile.phone_number).startswith('g_') else None,
         'email_verified': True,
         'message': 'Login and verification successful! Email and phone are verified.'
+    })
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def api_complete_google_profile(request):
+    """
+    Called after Google Sign-In when a new user needs to link their verified mobile number.
+    Accepts:
+      - token (Auth token returned by api_google_login)
+      - phone_number (10-digit mobile number)
+      - otp (6-digit OTP code)
+      - name (optional Full Name)
+      - monthly_budget (optional)
+    """
+    token_key = request.data.get('token') or request.META.get('HTTP_AUTHORIZATION', '').replace('Token ', '').strip()
+    raw_phone = request.data.get('phone_number')
+    otp_code = request.data.get('otp')
+    name = request.data.get('name')
+    monthly_budget = request.data.get('monthly_budget')
+    
+    if not token_key:
+        return Response({'error': 'Authentication token is required.'}, status=401)
+        
+    token_obj = Token.objects.filter(key=token_key).first()
+    if not token_obj:
+        return Response({'error': 'Invalid or expired session. Please sign in with Google again.'}, status=401)
+        
+    user = token_obj.user
+    
+    if not raw_phone or not otp_code:
+        return Response({'error': 'Mobile number and 6-digit OTP are required.'}, status=400)
+        
+    clean_digits = ''.join(ch for ch in str(raw_phone) if ch.isdigit())
+    if len(clean_digits) == 10:
+        phone_target = f"91{clean_digits}"
+    elif len(clean_digits) >= 11:
+        phone_target = clean_digits
+    else:
+        return Response({'error': 'Please enter a valid 10-digit mobile number.'}, status=400)
+        
+    p_alt = phone_target[2:] if phone_target.startswith('91') and len(phone_target) == 12 else phone_target
+    
+    # Check if another user already has this phone number
+    existing_profile = UserProfile.objects.filter(phone_number__in=[phone_target, p_alt]).exclude(user=user).first()
+    if existing_profile and not str(existing_profile.phone_number).startswith('g_'):
+        return Response({
+            'error': 'This mobile number is already registered with another account.',
+            'code': 'PHONE_ALREADY_EXISTS'
+        }, status=400)
+        
+    # Verify OTP
+    otp_record = OTPVerification.objects.filter(
+        identifier__in=[phone_target, p_alt],
+        otp_code=str(otp_code).strip(),
+        created_at__gte=timezone.now() - timedelta(minutes=10)
+    ).first()
+    
+    if not otp_record:
+        return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
+        
+    with transaction.atomic():
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={'phone_number': phone_target, 'email_verified': True}
+        )
+        profile.phone_number = phone_target
+        profile.email_verified = True
+        if monthly_budget:
+            try:
+                profile.monthly_budget = float(monthly_budget)
+            except Exception:
+                pass
+        profile.save()
+        
+        if name and str(name).strip():
+            parts = str(name).strip().split()
+            user.first_name = parts[0][:30]
+            user.last_name = ' '.join(parts[1:])[:30] if len(parts) > 1 else ''
+            user.save(update_fields=['first_name', 'last_name'])
+            
+        try:
+            otp_record.delete()
+        except Exception:
+            pass
+            
+    return Response({
+        'status': 'success',
+        'message': 'Profile completed successfully! Mobile and email are verified.',
+        'user_id': user.pk,
+        'username': user.username,
+        'name': f"{user.first_name} {user.last_name}".strip() or user.username,
+        'email': user.email,
+        'phone_number': profile.phone_number,
+        'email_verified': True,
+        'token': token_obj.key,
     })
 
 @api_view(['POST'])
