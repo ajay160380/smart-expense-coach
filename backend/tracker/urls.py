@@ -148,9 +148,7 @@ urlpatterns = [
     path('api/latest-update-time/', views.get_latest_update_time, name='get_latest_update_time'),
     path('api/wa-link-status/', views.wa_link_status, name='wa_link_status'),
     path('download-apk/', views.download_apk, name='download_apk'),
-    path('static/downloads/ExpenseTracker_1.3.1.apk', views.download_apk, name='static_download_apk_131'),
     path('static/downloads/ExpenseTracker.apk', views.download_apk, name='static_download_apk'),
-    path('downloads/ExpenseTracker_1.3.1.apk', views.download_apk, name='downloads_apk_131'),
     path('downloads/ExpenseTracker.apk', views.download_apk, name='downloads_apk'),
 
     # ══════════════════════════════════════════════════════════════════════

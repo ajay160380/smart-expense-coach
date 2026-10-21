@@ -5717,12 +5717,10 @@ def download_apk(request):
     import os
     from django.conf import settings
     from django.http import FileResponse, Http404
-    apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker_1.3.1.apk')
-    if not os.path.exists(apk_path):
-        apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
+    apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
     if os.path.exists(apk_path):
         response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
-        response['Content-Disposition'] = 'attachment; filename="ExpenseTracker_1.3.1.apk"'
+        response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
         response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
         response['Pragma'] = 'no-cache'
         response['Expires'] = '0'

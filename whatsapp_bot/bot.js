@@ -287,7 +287,7 @@ async function startBot(sessionName = null) {
         }
 
         if (isAllowedAdmin && lowerBody.startsWith('!broadcast_update')) {
-            const downloadLink = "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker_1.3.1.apk";
+            const downloadLink = "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk";
             const defaultMsg = `🚀 *Expense Tracker - Update Available!*\n\n✨ *What's New:*\n• Smart Notepad\n• Refreshed Branding\n\n📲 *Download Now:* ${downloadLink}`;
             const customMessage = text.replace(/^!broadcast_update/i, '').trim() || defaultMsg;
 

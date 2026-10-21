@@ -15,7 +15,7 @@ fi
 
 echo "APK URL: $APK_URL"
 
-DEST="/Users/ajayvishwakarma/Desktop/expense_project/backend/tracker/static/downloads/ExpenseTracker_1.3.1.apk"
+DEST="/Users/ajayvishwakarma/Desktop/expense_project/backend/tracker/static/downloads/ExpenseTracker.apk"
 echo "Downloading APK to $DEST..."
 curl -L -o "$DEST" "$APK_URL"
 
