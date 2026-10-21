@@ -5721,6 +5721,9 @@ def download_apk(request):
     if os.path.exists(apk_path):
         response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
         response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
         return response
     else:
         raise Http404('APK not found')
