@@ -31,6 +31,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import * as Updates from 'expo-updates';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import api from '../api/config';
 import { clearAuthData } from '../utils/auth';
@@ -104,8 +105,15 @@ export default function MoreFeaturesScreen({ navigation }) {
 
   const fetchProfile = async () => {
     try {
+      const cached = await AsyncStorage.getItem('user_profile');
+      if (cached) {
+        setProfile(JSON.parse(cached));
+      }
       const res = await api.get('/profile/');
-      setProfile(res.data);
+      if (res.data) {
+        setProfile(res.data);
+        AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
+      }
     } catch (e) {
       console.log('Error fetching profile in More screen:', e);
     } finally {
@@ -113,18 +121,22 @@ export default function MoreFeaturesScreen({ navigation }) {
     }
   };
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const hasAnimated = useRef(false);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
     useCallback(() => {
       fetchProfile();
-      fadeAnim.setValue(0);
-      slideAnim.setValue(100);
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.spring(slideAnim, { toValue: 0, friction: 6, tension: 50, useNativeDriver: true })
-      ]).start();
+      if (!hasAnimated.current) {
+        hasAnimated.current = true;
+        fadeAnim.setValue(0);
+        slideAnim.setValue(20);
+        Animated.parallel([
+          Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+          Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true })
+        ]).start();
+      }
     }, [])
   );
 

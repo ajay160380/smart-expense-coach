@@ -55,6 +55,7 @@ export default function ProfileScreen({ navigation }) {
   const [editEmail, setEditEmail] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
   const [shakeLevel, setShakeLevel] = useState('3.5');
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   const userPhone = profile?.phone_number || profile?.whatsapp_number || '';
@@ -69,8 +70,16 @@ export default function ProfileScreen({ navigation }) {
 
   const fetchProfile = async () => {
     try {
+      const cached = await AsyncStorage.getItem('user_profile');
+      if (cached) {
+        setProfile(JSON.parse(cached));
+        setLoading(false);
+      }
       const res = await api.get('/profile/');
-      setProfile(res.data);
+      if (res.data) {
+        setProfile(res.data);
+        AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
+      }
     } catch (error) {
       console.error('Profile fetch error:', error);
     } finally {

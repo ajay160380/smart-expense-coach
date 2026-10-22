@@ -445,7 +445,16 @@ export default function DashboardScreen({ navigation }) {
       const localHour = new Date().getHours();
       const localType = (localHour >= 18 || localHour < 5) ? 'night' : 'morning';
 
-      // ── 2. FETCH FRESH DATA IN BACKGROUND ──
+      // ── 2. FETCH FRESH DATA IN BACKGROUND (Instant unblocked UI update) ──
+      api.get('/summary-stats/').then(res => {
+        if (res.data) {
+          setStats(res.data);
+          setLoading(false);
+        }
+      }).catch(err => {
+        if (err.response?.status === 401) navigation.replace('Login');
+      });
+
       const [statsRes, tipRes, compRes, anomRes] = await Promise.allSettled([
         api.get('/summary-stats/'),
         api.get(`/daily-tip/?type=${localType}&hour=${localHour}`),
@@ -718,22 +727,22 @@ export default function DashboardScreen({ navigation }) {
 
           {/* Centered Balance Block (Direct Match to User Screenshot) */}
           <Animated.View style={[styles.heroBalanceBlock, { opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }] }]}>
-            <Text style={styles.heroBalanceLabel}>Current Balance</Text>
+            <Text style={styles.heroBalanceLabel}>Total Spent</Text>
             <View style={styles.heroBalanceRow}>
               <Text style={styles.heroCurrencySymbol}>₹</Text>
               <AnimatedNumber
-                value={remaining}
+                value={spent}
                 style={styles.heroBalanceAmount}
               />
               <Text style={styles.heroBalanceCents}>.00</Text>
             </View>
 
-            {/* Spent & Budget Overview Badge */}
+            {/* Remaining Balance & Budget Overview Badge */}
             <View style={styles.heroSpentBadgeRow}>
               <View style={styles.heroSpentBadge}>
-                <Ionicons name="trending-up" size={13} color="#FCA5A5" style={{ marginRight: 5 }} />
+                <Ionicons name="wallet-outline" size={13} color="#86EFAC" style={{ marginRight: 5 }} />
                 <Text style={styles.heroSpentBadgeText}>
-                  Spent: <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>₹{spent.toLocaleString('en-IN')}</Text>
+                  Remaining: <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>₹{remaining.toLocaleString('en-IN')}</Text>
                 </Text>
                 <Text style={styles.heroSpentBudgetDivider}>•</Text>
                 <Text style={styles.heroSpentBudgetText}>
