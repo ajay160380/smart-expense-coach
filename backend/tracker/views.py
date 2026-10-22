@@ -6310,20 +6310,10 @@ def api_send_admin_push(request):
         return Response({"status": "error", "message": str(e)}, status=500)
 
 def download_apk(request):
-    import os
-    from django.conf import settings
-    from django.http import FileResponse, HttpResponseRedirect
+    from django.http import HttpResponseRedirect
     LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/8Fsk5cNqW_VlG-T8ymlSvz30rNYJhmB5t28wsYtINyk.apk"
-    apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
-    if os.path.exists(apk_path) and os.path.getsize(apk_path) > 1024 * 1024:
-        response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
-        response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
-        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-        response['Pragma'] = 'no-cache'
-        response['Expires'] = '0'
-        return response
-    else:
-        return HttpResponseRedirect(LATEST_EXPO_APK_URL)
+    # Direct high-speed CDN redirect prevents Render free-tier proxy/Gunicorn timeouts that corrupt large 120MB APK downloads
+    return HttpResponseRedirect(LATEST_EXPO_APK_URL)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
