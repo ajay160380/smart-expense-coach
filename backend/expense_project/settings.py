@@ -187,6 +187,7 @@ is_hf = any('7860' in arg for arg in sys.argv)
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
 if is_hf:
     X_FRAME_OPTIONS = 'ALLOWALL'
