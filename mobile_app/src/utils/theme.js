@@ -80,17 +80,17 @@ export const COLORS = {
 };
 
 export const CAT_COLORS = {
-  food:          '#7C3AED', // Purple
-  transport:     '#22C55E', // Green
-  shopping:      '#FF6B35', // Orange
-  health:        '#EC4899', // Pink
-  entertainment: '#F59E0B', // Amber
-  education:     '#3B82F6', // Blue
-  utilities:     '#06B6D4', // Cyan
-  groceries:     '#EF4444', // Red
-  fuel:          '#3B82F6', // Blue
-  cng:           '#3B82F6',
-  other:         '#8B5CF6',
+  food:          '#F97316', // Vibrant Warm Orange
+  transport:     '#06B6D4', // Cyan / Sky Blue
+  shopping:      '#EC4899', // Hot Pink
+  health:        '#10B981', // Emerald Green
+  entertainment: '#8B5CF6', // Vivid Purple
+  education:     '#3B82F6', // Royal Blue
+  utilities:     '#EAB308', // Electric Gold
+  groceries:     '#14B8A6', // Teal
+  fuel:          '#0284C7', // Ocean Blue
+  cng:           '#0284C7',
+  other:         '#64748B', // Cool Slate
 };
 
 export const CAT_ICONS = {

@@ -31,7 +31,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
-    if DEBUG:
+    if DEBUG or any(cmd in sys.argv for cmd in ('collectstatic', 'test', 'check')):
         SECRET_KEY = 'django-insecure-dev-only-local-secret-key-change-me'
     else:
         raise RuntimeError("DJANGO_SECRET_KEY environment variable is required in production.")
@@ -179,7 +179,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # SEC-003: Security headers, cookies & HTTPS redirect
 import sys

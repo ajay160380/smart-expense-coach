@@ -148,192 +148,198 @@ export default function RegisterScreen({ navigation, route }) {
 
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
         >
-          {/* Back Button */}
-          <TouchableOpacity style={styles.backBtn} onPress={() => {
-            if (step === 2) setStep(1);
-            else navigation.goBack();
-          }}>
-            <Ionicons name="chevron-back" size={24} color="#111827" />
-          </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backBtn} onPress={() => {
+              if (step === 2) setStep(1);
+              else navigation.goBack();
+            }}>
+              <Ionicons name="chevron-back" size={24} color="#111827" />
+            </TouchableOpacity>
 
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoSmall}>
-              <Logo size={0.7} circle={true} showText={false} />
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.logoSmall}>
+                <Logo size={0.52} circle={true} showText={false} />
+              </View>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>Join Expense Tracker — it's free!</Text>
             </View>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join Expense Tracker — it's free!</Text>
-          </View>
 
-          {/* Form */}
-          <View style={styles.formSection}>
-            {step === 1 ? (
-              <>
-                <Text style={styles.label}>USERNAME</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Choose a username"
-                  placeholderTextColor="#9CA3AF"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  maxLength={50}
-                />
-
-                <Text style={styles.label}>WHATSAPP NUMBER</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your 10-digit number"
-                  placeholderTextColor="#9CA3AF"
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
-                  maxLength={15}
-                />
-
-                <Text style={styles.label}>EMAIL ADDRESS (OPTIONAL)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="name@example.com (for verification)"
-                  placeholderTextColor="#9CA3AF"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-
-                <Text style={styles.label}>PASSWORD</Text>
-                <View style={styles.passwordRow}>
+            {/* Form */}
+            <View style={styles.formSection}>
+              {step === 1 ? (
+                <>
+                  <Text style={styles.label}>USERNAME</Text>
                   <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Min 6 characters"
+                    style={styles.input}
+                    placeholder="Choose a username"
                     placeholderTextColor="#9CA3AF"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
+                    value={username}
+                    onChangeText={setUsername}
                     autoCapitalize="none"
+                    autoCorrect={false}
+                    maxLength={50}
                   />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
-                  </TouchableOpacity>
-                </View>
 
-                {/* Password Strength */}
-                {password.length > 0 && (
-                  <View style={styles.strengthRow}>
-                    <View style={styles.strengthBg}>
-                      <View style={[styles.strengthFill, { width: `${(pwStrength.score / 4) * 100}%`, backgroundColor: pwStrength.color }]} />
-                    </View>
-                    <Text style={[styles.strengthLabel, { color: pwStrength.color }]}>{pwStrength.label}</Text>
+                  <Text style={styles.label}>WHATSAPP NUMBER</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your 10-digit number"
+                    placeholderTextColor="#9CA3AF"
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                    maxLength={15}
+                  />
+
+                  <Text style={styles.label}>EMAIL ADDRESS (OPTIONAL)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="name@example.com (for verification)"
+                    placeholderTextColor="#9CA3AF"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+
+                  <Text style={styles.label}>PASSWORD</Text>
+                  <View style={styles.passwordRow}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="Min 6 characters"
+                      placeholderTextColor="#9CA3AF"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                      <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+                    </TouchableOpacity>
                   </View>
-                )}
 
-                <Text style={styles.label}>CONFIRM PASSWORD</Text>
-                <View style={styles.passwordRow}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Re-enter password"
-                    placeholderTextColor="#9CA3AF"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                  />
-                  {confirmPassword.length > 0 && (
-                    <View style={styles.matchIcon}>
-                      <Ionicons
-                        name={passwordsMatch ? 'checkmark-circle' : 'close-circle'}
-                        size={20}
-                        color={passwordsMatch ? COLORS.green : COLORS.red}
-                      />
+                  {/* Password Strength */}
+                  {password.length > 0 && (
+                    <View style={styles.strengthRow}>
+                      <View style={styles.strengthBg}>
+                        <View style={[styles.strengthFill, { width: `${(pwStrength.score / 4) * 100}%`, backgroundColor: pwStrength.color }]} />
+                      </View>
+                      <Text style={[styles.strengthLabel, { color: pwStrength.color }]}>{pwStrength.label}</Text>
                     </View>
                   )}
-                </View>
-                {passwordsMismatch && <Text style={styles.mismatchText}>Passwords don't match</Text>}
 
-                {/* Legal notice */}
-                <View style={{ marginTop: 2, marginBottom: 4, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 11, color: '#9CA3AF' }}>By continuing, you agree to our </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
-                    <Text style={{ fontSize: 11, color: '#FF6B35', fontWeight: '600' }}>Terms</Text>
+                  <Text style={styles.label}>CONFIRM PASSWORD</Text>
+                  <View style={styles.passwordRow}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="Re-enter password"
+                      placeholderTextColor="#9CA3AF"
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                    />
+                    {confirmPassword.length > 0 && (
+                      <View style={styles.matchIcon}>
+                        <Ionicons
+                          name={passwordsMatch ? 'checkmark-circle' : 'close-circle'}
+                          size={20}
+                          color={passwordsMatch ? COLORS.green : COLORS.red}
+                        />
+                      </View>
+                    )}
+                  </View>
+                  {passwordsMismatch && <Text style={styles.mismatchText}>Passwords don't match</Text>}
+
+                  {/* Legal notice */}
+                  <View style={{ marginTop: 2, marginBottom: 4, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 11, color: '#9CA3AF' }}>By continuing, you agree to our </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
+                      <Text style={{ fontSize: 11, color: '#FF6B35', fontWeight: '600' }}>Terms</Text>
+                    </TouchableOpacity>
+                    <Text style={{ fontSize: 11, color: '#9CA3AF' }}> & </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
+                      <Text style={{ fontSize: 11, color: '#FF6B35', fontWeight: '600' }}>Privacy Policy</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading || googleLoading}>
+                    <LinearGradient
+                      colors={['#7C3AED', '#6D28D9']}
+                      style={[styles.button, loading && { opacity: 0.8 }]}
+                    >
+                      {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.buttonText}>Send OTP</Text>}
+                    </LinearGradient>
                   </TouchableOpacity>
-                  <Text style={{ fontSize: 11, color: '#9CA3AF' }}> & </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
-                    <Text style={{ fontSize: 11, color: '#FF6B35', fontWeight: '600' }}>Privacy Policy</Text>
+
+                  {/* Divider */}
+                  <View style={styles.dividerRow}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
+                  {/* Google Sign-In */}
+                  <GoogleSignInButton
+                    onPress={signInWithGoogle}
+                    loading={googleLoading}
+                    disabled={loading}
+                    title="Sign up with Google"
+                  />
+                </>
+              ) : (
+                <>
+                  <Text style={styles.label}>ENTER 6-DIGIT OTP</Text>
+                  <Text style={{fontSize: 13, color: '#6B7280', marginBottom: 10}}>
+                    Sent to {phone}
+                  </Text>
+                  <TextInput
+                    style={[styles.input, {fontSize: 24, textAlign: 'center', letterSpacing: 4}]}
+                    placeholder="------"
+                    placeholderTextColor="#9CA3AF"
+                    value={otp}
+                    onChangeText={setOtp}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                  />
+                  
+                  <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading} style={{marginTop: 10}}>
+                    <LinearGradient
+                      colors={['#7C3AED', '#6D28D9']}
+                      style={[styles.button, loading && { opacity: 0.8 }]}
+                    >
+                      {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.buttonText}>Verify & Sign Up</Text>}
+                    </LinearGradient>
                   </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading || googleLoading}>
-                  <LinearGradient
-                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']}
-                    style={styles.button}
-                  >
-                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                {/* Divider */}
-                <View style={styles.dividerRow}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>OR</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                {/* Google Sign-In */}
-                <GoogleSignInButton
-                  onPress={signInWithGoogle}
-                  loading={googleLoading}
-                  disabled={loading}
-                  title="Sign up with Google"
-                />
-              </>
-            ) : (
-              <>
-                <Text style={styles.label}>ENTER 6-DIGIT OTP</Text>
-                <Text style={{fontSize: 13, color: '#6B7280', marginBottom: 10}}>
-                  Sent to {phone}
-                </Text>
-                <TextInput
-                  style={[styles.input, {fontSize: 24, textAlign: 'center', letterSpacing: 4}]}
-                  placeholder="------"
-                  placeholderTextColor="#9CA3AF"
-                  value={otp}
-                  onChangeText={setOtp}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                />
-                
-                <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading} style={{marginTop: 10}}>
-                  <LinearGradient
-                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']}
-                    style={styles.button}
-                  >
-                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Verify & Sign Up</Text>}
-                  </LinearGradient>
-                </TouchableOpacity>
-                
-                <TouchableOpacity onPress={handleSendOTP} style={{alignItems: 'center', marginTop: 15}}>
-                  <Text style={styles.linkText}>Resend OTP</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-
-          {/* Footer */}
-          {step === 1 && (
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.replace('Login')}>
-                <Text style={styles.linkText}>Log in</Text>
-              </TouchableOpacity>
+                  
+                  <TouchableOpacity onPress={handleSendOTP} style={{alignItems: 'center', marginTop: 15}}>
+                    <Text style={styles.linkText}>Resend OTP</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
-          )}
 
+            {/* Footer */}
+            {step === 1 && (
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Already have an account? </Text>
+                <TouchableOpacity onPress={() => navigation.replace('Login')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Text style={styles.linkText}>Log in</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
@@ -353,11 +359,16 @@ export default function RegisterScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F7FB' },
-  safeArea: { flex: 1, paddingTop: Platform.OS === 'android' ? 30 : 0 },
-  keyboardView: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
+  safeArea: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'android' ? 20 : 12,
+    paddingBottom: Platform.OS === 'android' ? 36 : 24,
+  },
 
   backBtn: {
-    position: 'absolute', top: 10, left: 0, zIndex: 10,
+    position: 'absolute', top: Platform.OS === 'android' ? 14 : 10, left: 0, zIndex: 10,
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
@@ -365,8 +376,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
 
-  header: { alignItems: 'center', marginBottom: 28 },
-  logoSmall: { marginBottom: 14 },
+  header: { alignItems: 'center', marginBottom: 18, marginTop: 8 },
+  logoSmall: { marginBottom: 10 },
   title: { fontSize: 26, fontWeight: '900', color: '#111827', marginBottom: 4 },
   subtitle: { fontSize: 14, color: '#6B7280' },
 
@@ -416,7 +427,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 22 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, paddingBottom: 6 },
   footerText: { color: '#6B7280', fontSize: 14 },
   linkText: { color: '#FF6B35', fontSize: 14, fontWeight: 'bold' },
 });

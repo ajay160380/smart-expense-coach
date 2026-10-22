@@ -79,6 +79,7 @@ export default function DashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [username, setUsername] = useState('User');
+  const [fullName, setFullName] = useState('');
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
   const [newBudget, setNewBudget] = useState('');
   const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
@@ -402,6 +403,21 @@ export default function DashboardScreen({ navigation }) {
     try {
       const name = await getUsername();
       if (name) setUsername(name);
+
+      try {
+        const cachedProfile = await AsyncStorage.getItem('user_profile');
+        if (cachedProfile) {
+          const parsed = JSON.parse(cachedProfile);
+          if (parsed.full_name) setFullName(parsed.full_name);
+        }
+      } catch (e) {}
+
+      api.get('/profile/').then(res => {
+        if (res.data?.full_name) {
+          setFullName(res.data.full_name);
+          AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
+        }
+      }).catch(() => {});
       
       loadCustomShortcuts();
       loadCustomActionDock();
@@ -632,530 +648,458 @@ export default function DashboardScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={styles.container}>
+      <StatusBar style="light" />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── GREETING & HEADER (Target Design Style) ── */}
-        <Animated.View style={[styles.greetingSection, { opacity: animGreetingOpacity, transform: [{ translateX: animGreetingX }] }]}>
-          <View style={styles.greetingHeaderRow}>
-            <View>
-              <Text style={styles.greetText}>
-                {getGreeting()} ☀️
-              </Text>
-              <Text style={styles.greetSubtext}>
-                Today, {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </Text>
-            </View>
+        {/* ── LILAC PURPLE RADIANT HEADER (Direct Match to User Screenshot) ── */}
+        <LinearGradient
+          colors={['#8B5CF6', '#9333EA', '#A855F7']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroHeaderContainer}
+        >
+          {/* Subtle Ambient Radial Glows */}
+          <View style={styles.heroGlowCircle} />
+
+          {/* Top Bar: Avatar with Thumbs-up | Month Pill | Notification Bell */}
+          <Animated.View style={[styles.topHeaderRow, { opacity: animGreetingOpacity }]}>
+            {/* Left: Avatar with Badge */}
             <TouchableOpacity
               onPress={() => navigation.navigate('Profile')}
-              style={styles.avatarBtn}
+              style={styles.heroAvatarBtn}
+              activeOpacity={0.85}
+            >
+              <View style={styles.heroAvatarCircle}>
+                <Text style={styles.heroAvatarText}>
+                  {(fullName || username || 'A').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.heroAvatarThumbBadge}>
+                <Text style={{ fontSize: 9 }}>👍</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Center: Month Dropdown Pill (e.g. "November 2026 ⌵") */}
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setNewBudget(budget.toString());
+                setNewBudgetCycleDay(budgetCycleDay.toString());
+                setBudgetModalVisible(true);
+              }}
+              style={styles.heroMonthPill}
               activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={['#7C3AED', '#FF6B35']}
-                style={styles.avatarGradientRing}
-              >
-                <View style={styles.avatarInnerCircle}>
-                  <Text style={styles.avatarText}>
-                    {username ? username.charAt(0).toUpperCase() : 'A'}
-                  </Text>
-                </View>
-              </LinearGradient>
+              <Text style={styles.heroMonthPillText}>
+                {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color="#FFFFFF" style={{ marginLeft: 4 }} />
             </TouchableOpacity>
-          </View>
-        </Animated.View>
 
-        {/* ── ANOMALY SPENDING INSIGHT ── */}
-        {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
-          <Animated.View style={[styles.alertBanner, { opacity: animGreetingOpacity }]}>
-            {anomalies.map((alert, idx) => {
-              if (dismissedAnomalies[idx]) return null;
-              return (
-                <View
-                  key={idx}
-                  style={styles.alertItem}
-                >
-                  <View style={styles.alertIconBadge}>
-                    <Ionicons name="bulb" size={13} color="#FF6B35" />
-                  </View>
-                  <View style={{ flex: 1, paddingHorizontal: 8 }}>
-                    <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
-                    <Text style={styles.alertText} numberOfLines={2}>
-                      {alert.message}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setDismissedAnomalies(prev => ({ ...prev, [idx]: true }));
-                    }}
-                    style={styles.alertDismissBtn}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="close" size={13} color="#9CA3AF" />
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
+            {/* Right: Frosted Bell Icon with Red Dot */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('History')}
+              style={styles.heroNotificationBtn}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="notifications" size={17} color="#FFFFFF" />
+              <View style={styles.heroNotificationDot} />
+            </TouchableOpacity>
           </Animated.View>
-        )}
 
-        {/* ── BLUE GRADIENT HERO BALANCE CARD (Target Design Style) ── */}
-        <Animated.View style={{ opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }] }}>
-          <LinearGradient
-            colors={['#4F7CFF', '#3B5BDB']}
-            style={styles.mainCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            {/* Subtle circle decorations */}
-            <View style={styles.cardGlowCircle} />
-            <View style={styles.cardGlowCircleSmall} />
-
-            {/* Top row: Label & Chip Icon */}
-            <View style={styles.mainCardHeader}>
-              <View>
-                <Text style={styles.heroCardSubLabel}>Available Balance</Text>
-                <View style={styles.balanceContainer}>
-                  <Text style={styles.currencySymbol}>₹</Text>
-                  <AnimatedNumber
-                    value={spent}
-                    style={styles.balanceAmount}
-                  />
-                </View>
-              </View>
-
-              {/* Golden Credit Card Chip Icon Style */}
-              <View style={styles.cardChip}>
-                <View style={styles.cardChipInner} />
-              </View>
+          {/* Centered Balance Block (Direct Match to User Screenshot) */}
+          <Animated.View style={[styles.heroBalanceBlock, { opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }] }]}>
+            <Text style={styles.heroBalanceLabel}>Current Balance</Text>
+            <View style={styles.heroBalanceRow}>
+              <Text style={styles.heroCurrencySymbol}>₹</Text>
+              <AnimatedNumber
+                value={remaining}
+                style={styles.heroBalanceAmount}
+              />
+              <Text style={styles.heroBalanceCents}>.00</Text>
             </View>
 
-            {/* Card Mid: Card Number / Cycle Days */}
-            <View style={styles.cardMidRow}>
-              <Text style={styles.cardNumberText}>•••• •••• {daysLeft}d left</Text>
-              <TouchableOpacity 
-                style={styles.budgetPillBtn} 
+            {/* Sub-Pill below balance (Translucent Frosted Pill) */}
+            <TouchableOpacity 
+              style={styles.heroSubPill}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setNewBudget(budget.toString());
+                setNewBudgetCycleDay(budgetCycleDay.toString());
+                setBudgetModalVisible(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.heroSubPillText}>
+                {safeDailySpend > 0 
+                  ? `+₹${safeDailySpend.toLocaleString('en-IN')} safe per day  •  ${daysLeft}d left` 
+                  : `Budget Warning  •  ${daysLeft}d left`}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </LinearGradient>
+
+        {/* ── CURVED WHITE SHEET CONTAINER ── */}
+        <View style={styles.sheetContainer}>
+          {/* ── ANOMALY SPENDING INSIGHT (If Any) ── */}
+          {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
+            <Animated.View style={[styles.alertBanner, { opacity: animGreetingOpacity }]}>
+              {anomalies.map((alert, idx) => {
+                if (dismissedAnomalies[idx]) return null;
+                return (
+                  <View key={idx} style={styles.alertItem}>
+                    <View style={styles.alertIconBadge}>
+                      <Ionicons name="bulb" size={13} color="#F59E0B" />
+                    </View>
+                    <View style={{ flex: 1, paddingHorizontal: 8 }}>
+                      <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
+                      <Text style={styles.alertText} numberOfLines={2}>
+                        {alert.message}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setDismissedAnomalies(prev => ({ ...prev, [idx]: true }));
+                      }}
+                      style={styles.alertDismissBtn}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={13} color="#9CA3AF" />
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </Animated.View>
+          )}
+
+          {/* ── SECTION 1: YOUR MONEY (Header + Two Bento Cards) ── */}
+          <View style={styles.yourMoneyHeaderRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.yourMoneyTitle}>Your Money</Text>
+              <Ionicons name="information-circle-outline" size={15} color="#94A3B8" style={{ marginLeft: 5 }} />
+            </View>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('Analytics')}
+              style={styles.detailsBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.detailsBtnText}>Details</Text>
+              <Ionicons name="chevron-forward" size={13} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+
+          {/* ── TWO-COLUMN BENTO: SAFE LIMIT & EXPENSES ── */}
+          <View style={styles.twoBentoRow}>
+            {/* Left Bento: Safe Daily / Total Budget */}
+            <View style={styles.bentoMiniCard}>
+              <View style={[styles.bentoIconCircle, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="wallet-outline" size={20} color="#0284C7" />
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
+                <Text style={styles.bentoCardLabel}>Safe Limit</Text>
+                <Ionicons name="information-circle-outline" size={11} color="#94A3B8" style={{ marginLeft: 3 }} />
+              </View>
+              <Text style={styles.bentoCardAmount}>₹{safeDailySpend.toLocaleString('en-IN')}</Text>
+            </View>
+
+            {/* Right Bento: Expenses */}
+            <View style={styles.bentoMiniCard}>
+              <View style={[styles.bentoIconCircle, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="receipt-outline" size={20} color="#EF4444" />
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
+                <Text style={styles.bentoCardLabel}>Expenses</Text>
+                <Ionicons name="information-circle-outline" size={11} color="#94A3B8" style={{ marginLeft: 3 }} />
+              </View>
+              <Text style={styles.bentoCardAmount}>₹{spent.toLocaleString('en-IN')}</Text>
+            </View>
+          </View>
+
+          {/* ── SECTION 2: DARK INSIGHT PILL ("✨ Your insight is ready   Get Pro >") ── */}
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('AIChat');
+            }}
+            activeOpacity={0.88}
+            style={styles.darkInsightPill}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+              <Ionicons name="sparkles" size={15} color="#A78BFA" style={{ marginRight: 8 }} />
+              <Text style={styles.darkInsightText} numberOfLines={1}>
+                {cleanTipText(dailyTip) || 'Your daily financial insight is ready'}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.darkInsightActionText}>Get Pro</Text>
+              <Ionicons name="chevron-forward" size={12} color="#94A3B8" style={{ marginLeft: 2 }} />
+            </View>
+          </TouchableOpacity>
+
+          {/* ── SECTION 3: QUICK ACTION DOCK (Add, Voice, Split, History, More) ── */}
+          <Animated.View style={[styles.actionDockSection, { opacity: animDockOpacity, transform: [{ translateX: animDockX }] }]}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionDockScroll}>
+              {activeActions.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.actionDockItem}
+                  onPress={() => handleActionPress(item)}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={item.colors ? item.colors : ['#8B5CF6', '#7C3AED']}
+                    style={styles.actionDockIconBox}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name={item.icon} size={22} color="#FFFFFF" />
+                  </LinearGradient>
+                  <Text style={styles.actionDockLabel} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={styles.actionDockItem}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setNewBudget(budget.toString());
-                  setNewBudgetCycleDay(budgetCycleDay.toString());
-                  setBudgetModalVisible(true);
+                  setTempActionDockKeys([...actionDockKeys]);
+                  setActionDockModalVisible(true);
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.budgetPillText}>of ₹{budget.toLocaleString('en-IN')} budget ✎</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Card Bottom Row: Holder + Mastercard Circles */}
-            <View style={styles.cardFooterRow}>
-              <View>
-                <Text style={styles.cardHolderLabel}>Card Holder</Text>
-                <Text style={styles.cardHolderName} numberOfLines={1}>
-                  {username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Ajay'}
-                </Text>
-              </View>
-
-              <View style={styles.mastercardContainer}>
-                <View style={[styles.mcCircle, { backgroundColor: '#EF4444' }]} />
-                <View style={[styles.mcCircle, { backgroundColor: '#F59E0B', marginLeft: -12 }]} />
-              </View>
-            </View>
-
-            {/* Connected 3-Metric Strip */}
-            <View style={styles.metricsStrip}>
-              <View style={styles.metricColumn}>
-                <Text style={styles.metricLabel}>USED</Text>
-                <Text style={styles.metricVal}>{Math.round(usedPercent)}%</Text>
-              </View>
-              <View style={styles.metricDivider} />
-              <View style={styles.metricColumn}>
-                <Text style={styles.metricLabel}>REMAINING</Text>
-                <Text style={styles.metricVal}>
-                  ₹{remaining.toLocaleString('en-IN')}
-                </Text>
-              </View>
-              <View style={styles.metricDivider} />
-              <View style={styles.metricColumn}>
-                <Text style={styles.metricLabel}>TXNS</Text>
-                <Text style={styles.metricVal}>{txCount}</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* ── QUICK ACTION PILL CHIPS (Horizontally Scrollable) ── */}
-        <Animated.View style={[styles.actionDockSection, { opacity: animDockOpacity, transform: [{ translateX: animDockX }] }]}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPillsScroll}>
-            {activeActions.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.whitePillChip}
-                onPress={() => handleActionPress(item)}
-                activeOpacity={0.75}
-              >
-                <View style={[styles.pillIconBox, { backgroundColor: (item.colors ? item.colors[0] : '#7C3AED') + '15' }]}>
-                  <Ionicons name={item.icon} size={15} color={item.colors ? item.colors[0] : '#7C3AED'} />
+                <View style={styles.actionDockCustomizeBox}>
+                  <Ionicons name="options-outline" size={20} color="#7C3AED" />
                 </View>
-                <Text style={styles.whitePillLabel}>{item.label}</Text>
-                <Text style={[styles.whitePillPlus, { color: item.colors ? item.colors[0] : '#FF6B35' }]}>+</Text>
+                <Text style={styles.actionDockCustomizeLabel}>More</Text>
               </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={styles.customizePillChip}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setTempActionDockKeys([...actionDockKeys]);
-                setActionDockModalVisible(true);
-              }}
-              activeOpacity={0.75}
-            >
-              <Ionicons name="create-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
-              <Text style={styles.customizePillText}>Customize</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </Animated.View>
+            </ScrollView>
+          </Animated.View>
 
-        {/* ── 1-TAP QUICK LOG (Dynamic & Customizable) ── */}
-        <Animated.View style={[styles.quickSection, { opacity: animListsOpacity, transform: [{ translateY: animListsY }] }]}>
-          <View style={styles.quickHeaderRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="flash" size={13} color="#F59E0B" style={{ marginRight: 5 }} />
-              <Text style={styles.quickSectionTitle}>1-TAP LOG</Text>
-            </View>
-            <TouchableOpacity 
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShortcutsModalVisible(true);
-              }}
-              style={styles.quickCustomizeBtn}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="create-outline" size={12} color="#06B6D4" style={{ marginRight: 4 }} />
-              <Text style={styles.quickCustomizeText}>Edit & Add</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8, paddingVertical: 2 }}>
-            {quickShortcuts.map((item, i) => (
-              <TouchableOpacity
-                key={item.id || i}
-                style={[styles.quickChip, { borderColor: (item.color || '#06B6D4') + '40' }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  navigation.navigate('AddExpense', {
-                    prefillAmount: item.amount,
-                    prefillCategory: item.category,
-                    prefillDescription: item.label,
-                  });
-                }}
-                activeOpacity={0.75}
-              >
-                <Text style={{ fontSize: 16, marginRight: 6 }}>{item.icon}</Text>
-                <Text style={styles.quickChipAmount}>₹{item.amount}</Text>
-                <Text style={styles.quickChipLabel}>{item.label.split('/')[0].trim()}</Text>
-              </TouchableOpacity>
-            ))}
-
-            {/* Quick Add Pill */}
-            <TouchableOpacity
-              style={styles.quickAddChip}
-              onPress={handleOpenAddShortcut}
-              activeOpacity={0.75}
-            >
-              <Ionicons name="add" size={15} color="#06B6D4" style={{ marginRight: 4 }} />
-              <Text style={styles.quickAddChipText}>New</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </Animated.View>
-
-        {/* ── FINANCIAL PULSE (CONSOLIDATED HEALTH & SAFE SPEND CARD) ── */}
-        <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }] }}>
-
-        <LinearGradient
-          colors={['#131B2E', '#0D1424']}
-          style={styles.financialPulseCard}
-        >
-          {/* Top Half: Safe Limit & Fin-Score */}
-          <View style={styles.pulseTopRow}>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                <View style={[styles.statusDot, { backgroundColor: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} />
-                <Text style={styles.pulseCardLabel}>TODAY'S SAFE LIMIT</Text>
-              </View>
-              <Text style={[styles.pulseSafeAmount, { color: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]}>
-                ₹{safeDailySpend.toLocaleString('en-IN')}<Text style={styles.pulsePerDay}> / day</Text>
-              </Text>
-              <Text style={styles.pulseSubtext}>
-                {spentToday > 0 ? `Spent today: ₹${spentToday.toLocaleString('en-IN')}` : 'No expenses logged today • Safe!'}
-              </Text>
-            </View>
-
-            <View style={[styles.pulseHealthBadge, { borderColor: healthColor + '60' }]}>
-              <Text style={[styles.pulseHealthScore, { color: healthColor }]}>{healthScore}</Text>
-              <Text style={styles.pulseHealthSub}>FIN-SCORE</Text>
-              <Text style={[styles.pulseHealthTier, { color: healthColor }]} numberOfLines={1}>{healthLabel}</Text>
-            </View>
-          </View>
-
-          {/* Bottom Half: 3 Micro-Glance Metrics Strip */}
-          <View style={styles.pulseMetricsStrip}>
-            <View style={styles.pulseMetricItem}>
-              <Text style={styles.pulseMetricLabel}>DAILY AVG</Text>
-              <Text style={styles.pulseMetricVal}>₹{Math.round(avgDay).toLocaleString('en-IN')}</Text>
-            </View>
-            <View style={styles.pulseMetricDivider} />
-            <View style={styles.pulseMetricItem}>
-              <Text style={styles.pulseMetricLabel}>SAVINGS RATE</Text>
-              <Text style={[styles.pulseMetricVal, { color: savingsRate > 50 ? '#10B981' : '#EF4444' }]}>
-                {Math.round(savingsRate)}%
-              </Text>
-            </View>
-            <View style={styles.pulseMetricDivider} />
-            <View style={styles.pulseMetricItem}>
-              <Text style={styles.pulseMetricLabel}>VS LAST MO</Text>
-              <Text style={[styles.pulseMetricVal, { color: compMore ? '#EF4444' : '#10B981' }]}>
-                {compMore ? '↑' : '↓'} {Math.abs(Math.round(compDiff))}%
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
-
-        {/* ── MAGIC SHAKE INTERACTIVE CARD (if active) ── */}
-        {shakeBannerVisible && (
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              navigation.navigate('AddExpense');
-            }}
-            activeOpacity={0.8}
-            style={{ marginVertical: 6 }}
-          >
-            <LinearGradient
-              colors={['rgba(139, 92, 246, 0.22)', 'rgba(79, 70, 229, 0.08)']}
-              style={styles.shakeBanner}
-            >
-              <View style={styles.shakeIconBox}>
-                <Text style={{ fontSize: 20 }}>📱</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Magic Shake</Text>
-                  <View style={styles.livePill}>
-                    <View style={styles.liveDot} />
-                    <Text style={{ color: '#10B981', fontSize: 9, fontWeight: '800' }}>ACTIVE</Text>
-                  </View>
+          {/* ── SECTION 4: 1-TAP QUICK LOG ── */}
+          <Animated.View style={[styles.quickSection, { opacity: animListsOpacity, transform: [{ translateY: animListsY }] }]}>
+            <View style={styles.quickHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={styles.flashIconBox}>
+                  <Ionicons name="flash" size={12} color="#7C3AED" />
                 </View>
-                <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 1 }}>Shake phone to quick-log an expense!</Text>
+                <Text style={styles.quickSectionTitle}>1-TAP QUICK LOG</Text>
               </View>
               <TouchableOpacity 
-                onPress={async (e) => {
-                  e.stopPropagation();
-                  setShakeBannerVisible(false);
-                  await AsyncStorage.setItem('shake_banner_dismissed', 'true');
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShortcutsModalVisible(true);
                 }}
-                style={{ padding: 5 }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.quickCustomizeBtn}
+                activeOpacity={0.7}
               >
-                <Ionicons name="close" size={18} color="#A78BFA" />
-              </TouchableOpacity>
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-
-        {/* ── SPENDING BREAKDOWN (Donut Chart + Legend) ── */}
-        {recentExpenses.length > 0 && (
-          <View style={{ marginTop: 14 }}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Spending Breakdown</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Analytics')} activeOpacity={0.7}>
-                <Text style={styles.viewAllLink}>View All &gt;</Text>
+                <Ionicons name="create-outline" size={12} color="#7C3AED" style={{ marginRight: 4 }} />
+                <Text style={styles.quickCustomizeText}>Edit & Add</Text>
               </TouchableOpacity>
             </View>
-
-            <View style={styles.whiteCardBox}>
-              <View style={styles.breakdownRow}>
-                {/* Left Legend */}
-                <View style={styles.breakdownLegend}>
-                  <View style={styles.legendHeaderRow}>
-                    <Text style={styles.legendColTitle}>Label</Text>
-                    <Text style={styles.legendColTitle}>Amount</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickLogScroll}>
+              {quickShortcuts.map((item, i) => (
+                <TouchableOpacity
+                  key={item.id || i}
+                  style={styles.quickLogCard}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    navigation.navigate('AddExpense', {
+                      prefillAmount: item.amount,
+                      prefillCategory: item.category,
+                      prefillDescription: item.label,
+                    });
+                  }}
+                  activeOpacity={0.75}
+                >
+                  <View style={[styles.quickEmojiBubble, { backgroundColor: (item.color || '#7C3AED') + '15' }]}>
+                    <Text style={{ fontSize: 16 }}>{item.icon}</Text>
                   </View>
-                  {getCategoryBreakdown(recentExpenses).slice(0, 5).map((cat, idx) => (
-                    <View key={idx} style={styles.legendItem}>
-                      <View style={[styles.legendDot, { backgroundColor: cat.color || '#7C3AED' }]} />
-                      <Text style={styles.legendName} numberOfLines={1}>{cat.name}</Text>
-                      <Text style={styles.legendAmount}>₹{cat.total.toLocaleString('en-IN')}</Text>
+                  <View style={{ marginLeft: 8 }}>
+                    <Text style={styles.quickCardAmount}>₹{item.amount}</Text>
+                    <Text style={styles.quickCardLabel} numberOfLines={1}>{item.label.split('/')[0].trim()}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+
+              {/* Quick Add Card */}
+              <TouchableOpacity
+                style={styles.quickAddCard}
+                onPress={handleOpenAddShortcut}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="add" size={18} color="#7C3AED" />
+                <Text style={styles.quickAddCardText}>Add New</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </Animated.View>
+
+          {/* ── SECTION 5: TRANSACTIONS SECTION (Direct Match to User Screenshot) ── */}
+          <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }], marginTop: 14 }}>
+            {/* Header: Transactions | Clock | Lavender Pill "For the Period" */}
+            <View style={styles.txHeaderRow}>
+              <Text style={styles.txHeaderTitle}>Transactions</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('History')} activeOpacity={0.7}>
+                  <Ionicons name="time-outline" size={18} color="#64748B" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate('Analytics')}
+                  style={styles.forThePeriodPill}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.forThePeriodText}>For the Period</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Date line: "Monday, 22 October, 2026" • Total ₹900 */}
+            <View style={styles.txDateSubRow}>
+              <Text style={styles.txDateText}>
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </Text>
+              <Text style={styles.txTotalSpentText}>
+                Total <Text style={{ fontWeight: '800', color: '#0F172A' }}>₹{spentToday.toLocaleString('en-IN')}</Text>
+              </Text>
+            </View>
+
+            {/* Transaction Cards */}
+            {recentExpenses.length > 0 ? (
+              <View style={{ marginTop: 8 }}>
+                {recentExpenses.slice(0, 6).map((exp, idx) => {
+                  const catKey = (exp.category || 'other').toLowerCase();
+                  const catColor = CAT_COLORS[catKey] || '#7C3AED';
+                  const catIcon = CAT_ICONS[catKey] || 'pricetag';
+
+                  return (
+                    <TouchableOpacity
+                      key={exp.id || idx}
+                      style={styles.txCard}
+                      onPress={() => navigation.navigate('AddExpense', { expense: exp })}
+                      activeOpacity={0.8}
+                    >
+                      {/* Left: Soft colored rounded-square icon box */}
+                      <View style={[styles.txIconBox, { backgroundColor: catColor + '18' }]}>
+                        <Ionicons name={catIcon} size={20} color={catColor} />
+                      </View>
+
+                      {/* Middle: Title & Tag pill subtext */}
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={styles.txTitleText} numberOfLines={1}>
+                          {exp.description
+                            ? exp.description.charAt(0).toUpperCase() + exp.description.slice(1)
+                            : catKey.charAt(0).toUpperCase() + catKey.slice(1)}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
+                          <Ionicons name="pricetag-outline" size={10} color="#94A3B8" style={{ marginRight: 3 }} />
+                          <Text style={styles.txSubtagText}>{catKey.charAt(0).toUpperCase() + catKey.slice(1)}</Text>
+                          <Text style={styles.txDotSeparator}>•</Text>
+                          <Text style={styles.txSubtagText}>{formatDate(exp.date)}</Text>
+                        </View>
+                      </View>
+
+                      {/* Right: Red Bold Amount & Safe Balance */}
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={styles.txAmountNegative}>-₹{Number(exp.amount).toLocaleString('en-IN')}</Text>
+                        <Text style={styles.txSubBalance}>₹{remaining.toLocaleString('en-IN')}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : (
+              <EmptyState
+                icon="📝"
+                title="No expenses yet"
+                message="Start tracking your expenses to see transactions"
+                actionText="Add First Expense"
+                onAction={() => navigation.navigate('AddExpense')}
+              />
+            )}
+          </Animated.View>
+
+          {/* ── SECTION 6: SPENDING BREAKDOWN & BENTO TOOLS ── */}
+          {recentExpenses.length > 0 && (
+            <View style={{ marginTop: 18 }}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Spending Breakdown</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Analytics')} activeOpacity={0.7}>
+                  <Text style={styles.viewAllLink}>View All &gt;</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.whiteCardBox}>
+                <View style={styles.breakdownRow}>
+                  {/* Left Legend */}
+                  <View style={styles.breakdownLegend}>
+                    <View style={styles.legendHeaderRow}>
+                      <Text style={styles.legendColTitle}>Label</Text>
+                      <Text style={styles.legendColTitle}>Amount</Text>
                     </View>
-                  ))}
+                    {getCategoryBreakdown(recentExpenses).slice(0, 5).map((cat, idx) => (
+                      <View key={idx} style={styles.legendItem}>
+                        <View style={[styles.legendDot, { backgroundColor: cat.color || '#7C3AED' }]} />
+                        <Text style={styles.legendName} numberOfLines={1}>{cat.name}</Text>
+                        <Text style={styles.legendAmount}>₹{cat.total.toLocaleString('en-IN')}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Right Donut Chart */}
+                  <View style={styles.donutWrapper}>
+                    <DonutChart data={getCategoryBreakdown(recentExpenses)} size={118} />
+                  </View>
                 </View>
-
-                {/* Right Donut Chart */}
-                <View style={styles.donutWrapper}>
-                  <DonutChart data={getCategoryBreakdown(recentExpenses)} size={118} />
-                </View>
               </View>
             </View>
-          </View>
-        )}
-        
-        {/* ── AI FINANCIAL COACH & DAILY MONEY TIP ── */}
-        <TouchableOpacity 
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('AIChat');
-          }} 
-          activeOpacity={0.85}
-          style={{ marginTop: 14 }}
-        >
-          <View style={styles.aiLightCard}>
-            <View style={styles.aiUnifiedHeader}>
-              <View style={styles.aiUnifiedBadge}>
-                <Ionicons name="sparkles" size={13} color="#7C3AED" style={{ marginRight: 5 }} />
-                <Text style={styles.aiUnifiedBadgeText}>AI COACH & DAILY TIP</Text>
-              </View>
-              <View style={styles.aiUnifiedChatBtn}>
-                <Text style={styles.aiUnifiedChatText}>Chat</Text>
-                <Ionicons name="arrow-forward" size={11} color="#FF6B35" />
-              </View>
-            </View>
-            <Text style={styles.aiUnifiedBody}>
-              {cleanTipText(dailyTip) || (overspent
-                ? `Budget exceeded! You've spent ₹${spent.toLocaleString('en-IN')}. Tap to get advice.`
-                : `Great job! You used ${Math.round(usedPercent)}% of your budget. Tap to chat!`)}
-            </Text>
-          </View>
-        </TouchableOpacity>
+          )}
 
-        {/* ── QUICK TOOLS ROW (2-Column Bento: Notepad & Analytics) ── */}
-        <View style={styles.toolsBentoRow}>
-          <TouchableOpacity 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('Notepad');
-            }}
-            activeOpacity={0.8}
-            style={styles.toolBentoCard}
-          >
-            <View style={styles.toolBentoInner}>
-              <View style={[styles.toolBentoIconBox, { backgroundColor: '#FDF2F8' }]}>
-                <MaterialCommunityIcons name="notebook-outline" size={18} color="#EC4899" />
-              </View>
-              <Text style={styles.toolBentoTitle}>Notepad</Text>
-              <Text style={styles.toolBentoSub}>Memos & lists</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('Analytics');
-            }}
-            activeOpacity={0.8}
-            style={styles.toolBentoCard}
-          >
-            <View style={styles.toolBentoInner}>
-              <View style={[styles.toolBentoIconBox, { backgroundColor: '#EFF6FF' }]}>
-                <Ionicons name="pie-chart-outline" size={18} color="#3B82F6" />
-              </View>
-              <Text style={styles.toolBentoTitle}>Analytics</Text>
-              <Text style={styles.toolBentoSub}>Trends & charts</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── RECENT EXPENSES (White Card with Target Icons & "View All >") ── */}
-        <View style={{ marginTop: 16 }}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>
-              Recent Expenses {recentExpenses.length > 0 ? `(${recentExpenses.length})` : ''}
-            </Text>
+          {/* ── BENTO QUICK TOOLS ── */}
+          <View style={styles.toolsBentoRow}>
             <TouchableOpacity 
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate('History');
-              }} 
-              activeOpacity={0.7}
+                navigation.navigate('Notepad');
+              }}
+              activeOpacity={0.8}
+              style={styles.toolBentoCard}
             >
-              <Text style={styles.viewAllLink}>View All &gt;</Text>
+              <View style={styles.toolBentoInner}>
+                <View style={[styles.toolBentoIconBox, { backgroundColor: '#FDF2F8' }]}>
+                  <MaterialCommunityIcons name="notebook-outline" size={18} color="#EC4899" />
+                </View>
+                <Text style={styles.toolBentoTitle}>Notepad</Text>
+                <Text style={styles.toolBentoSub}>Memos & lists</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('Analytics');
+              }}
+              activeOpacity={0.8}
+              style={styles.toolBentoCard}
+            >
+              <View style={styles.toolBentoInner}>
+                <View style={[styles.toolBentoIconBox, { backgroundColor: '#F3E8FF' }]}>
+                  <Ionicons name="pie-chart-outline" size={18} color="#7C3AED" />
+                </View>
+                <Text style={styles.toolBentoTitle}>Analytics</Text>
+                <Text style={styles.toolBentoSub}>Trends & charts</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 10, gap: 8 }}>
-            <TouchableOpacity onPress={() => exportData('pdf')} style={styles.exportPill}>
-              <Text style={styles.exportPillText}>📄 PDF</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => exportData('csv')} style={styles.exportPill}>
-              <Text style={styles.exportPillText}>📊 CSV</Text>
-            </TouchableOpacity>
-          </View>
-
-          {recentExpenses.length > 0 ? (
-            <View style={styles.whiteCardBox}>
-              {recentExpenses.slice(0, 6).map((exp, idx) => {
-                const catKey = (exp.category || 'other').toLowerCase();
-                const catColor = CAT_COLORS[catKey] || '#7C3AED';
-                const catIcon = CAT_ICONS[catKey] || 'pricetag';
-
-                return (
-                  <TouchableOpacity 
-                    key={exp.id || idx} 
-                    style={[styles.expenseItemRow, idx < Math.min(recentExpenses.length, 6) - 1 && styles.expenseItemBorder]}
-                    onPress={() => navigation.navigate('AddExpense', { expense: exp })}
-                    activeOpacity={0.75}
-                  >
-                    {/* Colored rounded-square icon on left */}
-                    <View style={[styles.catSquareIcon, { backgroundColor: catColor }]}>
-                      <Ionicons name={catIcon} size={18} color="#FFFFFF" />
-                    </View>
-
-                    {/* Title + Time below */}
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={styles.expTitle} numberOfLines={1}>
-                        {exp.description 
-                          ? exp.description.charAt(0).toUpperCase() + exp.description.slice(1) 
-                          : catKey.charAt(0).toUpperCase() + catKey.slice(1)}
-                      </Text>
-                      <Text style={styles.expSubTime}>{formatDate(exp.date)}</Text>
-                    </View>
-
-                    {/* Amount bold on right */}
-                    <Text style={styles.expAmountBold}>₹{Number(exp.amount).toLocaleString('en-IN')}</Text>
-
-                    <TouchableOpacity 
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        handleDeleteExpense(exp.id);
-                      }}
-                      style={{ padding: 6, marginLeft: 6 }}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : (
-            <EmptyState
-              icon="📝"
-              title="No expenses yet"
-              message="Start tracking your expenses to see insights"
-              actionText="Add First Expense"
-              onAction={() => navigation.navigate('AddExpense')}
-            />
-          )}
+          <View style={{ height: 110 }} />
         </View>
-
-        </Animated.View>
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
 
@@ -1595,7 +1539,7 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1660,354 +1604,398 @@ function getCategoryBreakdown(expenses) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7FB',
-    paddingTop: Platform.OS === 'android' ? 30 : 0,
+    backgroundColor: '#8B5CF6',
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   center: {
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  // ── Greeting & Header ──
-  greetingSection: {
-    marginBottom: 16,
-    paddingTop: 4,
+  // ── Lilac Purple Radiant Header (Screenshot Style) ──
+  heroHeaderContainer: {
+    paddingTop: Platform.OS === 'ios' ? 54 : 44,
+    paddingBottom: 36,
+    paddingHorizontal: 20,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  greetingHeaderRow: {
+  heroGlowCircle: {
+    position: 'absolute',
+    top: -50,
+    right: -40,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  topHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 2,
+    marginBottom: 20,
   },
-  greetText: {
-    color: '#1F2937',
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+  heroAvatarBtn: {
+    position: 'relative',
   },
-  greetSubtext: {
-    color: '#6B7280',
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  avatarBtn: {
-    borderRadius: 22,
-  },
-  avatarGradientRing: {
+  heroAvatarCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    padding: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOW.sm,
-  },
-  avatarInnerCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  avatarText: {
-    color: '#7C3AED',
-    fontWeight: '800',
-    fontSize: 16,
-  },
-
-  // ── Smart Alert Banner ──
-  alertBanner: {
-    marginBottom: 12,
-  },
-  alertItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF7ED',
-    borderRadius: 14,
-    padding: 10,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: '#FED7AA',
-  },
-  alertIconBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    backgroundColor: '#FFEDD5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  alertCategoryTitle: {
-    color: '#EA580C',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  alertText: {
-    color: '#9A3412',
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 1,
-  },
-  alertDismissBtn: {
-    padding: 4,
-  },
-
-  // ── WhatsApp ──
-  waBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.lg,
-    padding: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    ...SHADOW.sm,
-  },
-  waIconContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: COLORS.whatsapp,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  waTextContainer: { flex: 1 },
-  waTitle: { color: '#1F2937', fontWeight: 'bold', fontSize: 14, marginBottom: 2 },
-  waSubtitle: { color: COLORS.textSecondary, fontSize: 11 },
-  waButton: {
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  waButtonText: { color: '#16A34A', fontWeight: '700', fontSize: 12 },
-
-  // ── Blue Gradient Hero Balance Card ──
-  mainCard: { 
-    borderRadius: 24, 
-    padding: 22, 
-    marginBottom: 16, 
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#3B5BDB',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  cardGlowCircle: {
-    position: 'absolute',
-    top: -40,
-    right: -40,
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  cardGlowCircleSmall: {
-    position: 'absolute',
-    bottom: -30,
-    left: -30,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  mainCardHeader: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between',
-    alignItems: 'flex-start', 
-    marginBottom: 6,
-  },
-  heroCardSubLabel: {
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-  cardChip: {
-    width: 38,
-    height: 26,
-    borderRadius: 6,
-    backgroundColor: '#FDE047',
-    borderWidth: 1,
-    borderColor: '#EAB308',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  cardChipInner: {
-    width: 24,
-    height: 14,
-    borderRadius: 3,
+  heroAvatarText: {
+    color: '#7C3AED',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  heroAvatarThumbBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#CA8A04',
+    borderColor: '#E2E8F0',
   },
-  balanceContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'baseline', 
+  heroMonthPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+  },
+  heroMonthPillText: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  heroNotificationBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    position: 'relative',
+  },
+  heroNotificationDot: {
+    position: 'absolute',
+    top: 9,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#8B5CF6',
+  },
+
+  // ── Hero Centered Balance Block ──
+  heroBalanceBlock: {
+    alignItems: 'center',
     marginTop: 4,
+    marginBottom: 8,
   },
-  currencySymbol: { 
-    color: 'rgba(255, 255, 255, 0.9)', 
-    fontSize: 28, 
-    fontWeight: '700', 
+  heroBalanceLabel: {
+    color: 'rgba(255, 255, 255, 0.88)',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  heroBalanceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+  },
+  heroCurrencySymbol: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '700',
     marginRight: 4,
   },
-  balanceAmount: { 
-    color: '#FFFFFF', 
-    fontSize: 38, 
-    fontWeight: '900', 
+  heroBalanceAmount: {
+    color: '#FFFFFF',
+    fontSize: 42,
+    fontWeight: '900',
     letterSpacing: -1,
   },
-  cardMidRow: {
+  heroBalanceCents: {
+    color: 'rgba(255, 255, 255, 0.65)',
+    fontSize: 26,
+    fontWeight: '700',
+  },
+  heroSubPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 16,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  heroSubPillText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
+  // ── Curved White Sheet Container (Screenshot Style) ──
+  sheetContainer: {
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    backgroundColor: '#FFFFFF',
+    marginTop: -20,
+    paddingTop: 24,
+    paddingHorizontal: 18,
+    minHeight: 600,
+  },
+
+  // ── Your Money Section ──
+  yourMoneyHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 8,
+    marginBottom: 12,
+    paddingHorizontal: 2,
   },
-  cardNumberText: {
-    color: 'rgba(255, 255, 255, 0.8)',
+  yourMoneyTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  detailsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailsBtnText: {
     fontSize: 12.5,
     fontWeight: '600',
-    letterSpacing: 1.5,
+    color: '#64748B',
+    marginRight: 2,
   },
-  budgetPillBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  budgetPillText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  cardFooterRow: {
+
+  // ── Two Bento Metric Cards ──
+  twoBentoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 2,
+    gap: 12,
     marginBottom: 14,
   },
-  cardHolderLabel: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 9.5,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  bentoMiniCard: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  cardHolderName: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    marginTop: 1,
-  },
-  mastercardContainer: {
-    flexDirection: 'row',
+  bentoIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  mcCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    opacity: 0.9,
+  bentoCardLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  bentoCardAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 4,
+    letterSpacing: -0.3,
   },
 
-  // ── Connected 3-Metric Strip ──
-  metricsStrip: {
+  // ── Dark Insight Banner ──
+  darkInsightPill: {
+    backgroundColor: '#0F172A',
+    borderRadius: 26,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  darkInsightText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  darkInsightActionText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // ── Transactions Section (Screenshot Style) ──
+  txHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
+    marginBottom: 8,
+    paddingHorizontal: 2,
   },
-  metricColumn: {
-    flex: 1,
+  txHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  forThePeriodPill: {
+    backgroundColor: '#F3E8FF',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  forThePeriodText: {
+    color: '#7C3AED',
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  txDateSubRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  txDateText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  txTotalSpentText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  txCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  txIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  metricDivider: {
-    width: 1,
-    height: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  metricLabel: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 9.5,
+  txTitleText: {
+    fontSize: 14.5,
     fontWeight: '700',
-    letterSpacing: 0.6,
-    marginBottom: 2,
+    color: '#0F172A',
   },
-  metricVal: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  txSubtagText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  txDotSeparator: {
+    fontSize: 11,
+    color: '#CBD5E1',
+    marginHorizontal: 5,
+  },
+  txAmountNegative: {
+    fontSize: 15.5,
     fontWeight: '800',
+    color: '#EF4444',
+  },
+  txSubBalance: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '500',
+    marginTop: 2,
   },
 
-  // ── Quick Action Pill Chips (Horizontal) ──
+  // ── Quick Action Dock (Vertical Cards with Gradient Icons) ──
   actionDockSection: {
-    marginVertical: 8,
+    marginVertical: 10,
   },
-  quickPillsScroll: {
+  actionDockScroll: {
     paddingVertical: 4,
     paddingHorizontal: 2,
   },
-  whitePillChip: {
-    flexDirection: 'row',
+  actionDockItem: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginRight: 8,
-    ...SHADOW.sm,
+    marginRight: 14,
+    width: 64,
   },
-  pillIconBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  actionDockIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 6,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  whitePillLabel: {
-    color: '#1F2937',
-    fontSize: 13,
+  actionDockLabel: {
+    marginTop: 6,
+    fontSize: 12,
     fontWeight: '700',
-    marginRight: 4,
+    color: '#1E293B',
+    textAlign: 'center',
   },
-  whitePillPlus: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  customizePillChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  actionDockCustomizeBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    ...SHADOW.sm,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  customizePillText: {
-    color: '#6B7280',
+  actionDockCustomizeLabel: {
+    marginTop: 6,
     fontSize: 12,
     fontWeight: '600',
+    color: '#64748B',
+    textAlign: 'center',
   },
 
   // ── Section Header Row ──
@@ -2024,7 +2012,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   viewAllLink: {
-    color: '#FF6B35',
+    color: '#2563EB',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -2121,21 +2109,21 @@ const styles = StyleSheet.create({
   aiUnifiedChatBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
   },
   aiUnifiedChatText: {
-    color: '#FF6B35',
+    color: '#2563EB',
     fontSize: 11,
     fontWeight: '700',
     marginRight: 3,
   },
   aiUnifiedBody: {
-    color: '#4B5563',
+    color: '#1E293B',
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
     fontWeight: '500',
   },
 
@@ -2357,95 +2345,78 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  // ── Financial Pulse Card ──
-  financialPulseCard: {
-    borderRadius: 20,
+  // ── Financial Pulse Card (Clean Light Executive Card) ──
+  pulseLightCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: '#E2E8F0',
     padding: 16,
     marginVertical: 10,
-    ...SHADOW.md,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  pulseTopRow: {
+  pulseLightTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  pulseCardLabel: {
-    fontSize: 10.5,
-    color: '#94A3B8',
+  pulseLightHeaderTitle: {
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.6,
-    marginLeft: 6,
-  },
-  pulseSafeAmount: {
-    fontSize: 26,
-    fontWeight: '900',
-    marginTop: 2,
-    letterSpacing: -0.5,
-  },
-  pulsePerDay: {
-    fontSize: 13,
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  pulseSubtext: {
-    fontSize: 11.5,
     color: '#64748B',
+    letterSpacing: 0.8,
+  },
+  pulseLightStatusText: {
+    fontSize: 12.5,
+    color: '#334155',
+    fontWeight: '600',
     marginTop: 2,
+    lineHeight: 18,
   },
-  pulseHealthBadge: {
+  pulsePaceBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginLeft: 10,
   },
-  pulseHealthScore: {
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  pulseHealthSub: {
-    color: '#94A3B8',
-    fontSize: 8.5,
+  pulsePaceBadgeText: {
+    fontSize: 11.5,
     fontWeight: '800',
-    letterSpacing: 0.6,
-    marginTop: 1,
   },
-  pulseHealthTier: {
-    fontSize: 9.5,
-    fontWeight: '700',
-    marginTop: 1,
-  },
-  pulseMetricsStrip: {
+  pulseLightMetricsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
-  pulseMetricItem: {
+  pulseLightMetricCol: {
     flex: 1,
     alignItems: 'center',
   },
-  pulseMetricDivider: {
+  pulseLightDivider: {
     width: 1,
     height: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#E2E8F0',
   },
-  pulseMetricLabel: {
-    color: '#64748B',
-    fontSize: 9,
+  pulseLightMetricLabel: {
+    color: '#94A3B8',
+    fontSize: 9.5,
     fontWeight: '700',
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: 3,
   },
-  pulseMetricVal: {
-    color: '#FFFFFF',
-    fontSize: 13,
+  pulseLightMetricVal: {
+    color: '#0F172A',
+    fontSize: 14,
     fontWeight: '800',
   },
 
@@ -2467,100 +2438,6 @@ const styles = StyleSheet.create({
   catBarFill: { height: '100%', borderRadius: 2 },
   catAmount: { color: COLORS.textPrimary, fontSize: 14, fontWeight: 'bold' },
 
-  // ── AI Unified Card ──
-  aiUnifiedCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
-    padding: 16,
-    ...SHADOW.md,
-  },
-  aiUnifiedHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  aiUnifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  aiUnifiedBadgeText: {
-    color: '#A5B4FC',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  aiUnifiedChatBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  aiUnifiedChatText: {
-    color: COLORS.cyan,
-    fontSize: 11,
-    fontWeight: '700',
-    marginRight: 4,
-  },
-  aiUnifiedBody: {
-    color: '#E2E8F0',
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: '500',
-  },
-
-  // ── Bento Tools Row ──
-  toolsBentoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  toolBentoCard: {
-    flex: 1,
-    marginHorizontal: 3,
-  },
-  toolBentoInner: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: 14,
-  },
-  toolBentoIconBoxPink: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(236, 72, 153, 0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  toolBentoIconBoxCyan: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(6, 182, 212, 0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  toolBentoTitle: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  toolBentoSub: {
-    color: '#64748B',
-    fontSize: 10.5,
-    fontWeight: '500',
-  },
 
   // ── Expense Item ──
   expenseItem: {
@@ -2585,58 +2462,98 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
     paddingHorizontal: 2,
+  },
+  flashIconBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
   },
   quickSectionTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#CBD5E1',
+    color: '#64748B',
     letterSpacing: 0.8,
   },
-  fastPill: {
-    backgroundColor: 'rgba(6, 182, 212, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginLeft: 6,
-  },
-  fastPillText: {
-    color: '#06B6D4',
-    fontSize: 9,
-    fontWeight: '800',
-  },
-  quickSectionSub: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  quickChip: {
+  quickCustomizeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#131A2A',
-    borderRadius: 20,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    marginRight: 8,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  quickCustomizeText: {
+    color: '#2563EB',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  quickLogScroll: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  quickLogCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 13,
+    marginRight: 10,
     borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  quickChipAmount: {
-    color: '#FFFFFF',
-    fontSize: 13,
+  quickEmojiBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickCardAmount: {
+    color: '#0F172A',
+    fontSize: 14,
     fontWeight: '800',
-    marginRight: 5,
   },
-  quickChipLabel: {
-    color: '#94A3B8',
+  quickCardLabel: {
+    color: '#64748B',
     fontSize: 11,
     fontWeight: '600',
+    marginTop: 1,
+  },
+  quickAddCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    borderStyle: 'dashed',
+    marginRight: 10,
+  },
+  quickAddCardText: {
+    color: '#2563EB',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginLeft: 6,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    marginRight: 6,
   },
 
   // ── Magic Shake Card ──

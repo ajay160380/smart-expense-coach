@@ -54,10 +54,9 @@ const SLIDES = [
   },
   {
     id: '2',
-    titleMain: 'Chat on ',
-    titleBold: 'WhatsApp\n',
-    titleNormal: 'To Keep Budgets\n',
-    titleLastBold: 'Updated',
+    titleHeader: 'Chat on ',
+    titleHighlight: 'WhatsApp\n',
+    titleBody: 'To Keep Budgets\nUpdated',
     subtitle: 'Send a quick message anytime, anywhere. We will log it directly into your Expense Tracker dashboard.',
     layout: 'art-top',
     artType: 'chat',
@@ -108,33 +107,39 @@ const ElegantArt = ({ type }) => {
           </View>
         </Float>
 
-        {/* Floating Transaction Card */}
-        <Float delay={0} duration={3500} range={-15}>
-          <View style={[styles.mockCard, { bottom: 220, left: 10 }]}>
-            <View style={[styles.iconBox, { backgroundColor: '#FCE7F3' }]}>
-              <Ionicons name="fast-food" size={20} color="#EC4899" />
+        {/* Floating Transaction Card - Safely bounded inside screen */}
+        <View style={styles.voiceCardWrapper}>
+          <Float delay={0} duration={3500} range={-12}>
+            <View style={styles.voiceMockCard}>
+              <View style={[styles.iconBox, { backgroundColor: '#FCE7F3' }]}>
+                <Ionicons name="fast-food" size={20} color="#EC4899" />
+              </View>
+              <View style={{ marginLeft: 10, marginRight: 10 }}>
+                <Text style={styles.cardTitle}>Dinner at Taj</Text>
+                <Text style={styles.cardSub}>Just now</Text>
+              </View>
+              <Text style={styles.cardAmt}>- ₹4,500</Text>
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.cardTitle}>Dinner at Taj</Text>
-              <Text style={styles.cardSub}>Just now</Text>
-            </View>
-            <Text style={styles.cardAmt}>- ₹4,500</Text>
-          </View>
-        </Float>
+          </Float>
+        </View>
 
         {/* Floating Category Pill */}
-        <Float delay={1000} duration={4500} range={-10}>
-          <View style={[styles.floatingPill, { bottom: 120, right: 30, backgroundColor: '#FEF3C7' }]}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: '#B45309' }}>🍔 Food & Dining</Text>
-          </View>
-        </Float>
+        <View style={styles.voicePillWrapperLeft}>
+          <Float delay={1000} duration={4500} range={-10}>
+            <View style={[styles.floatingPill, { backgroundColor: '#FEF3C7' }]}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#B45309' }}>🍔 Food & Dining</Text>
+            </View>
+          </Float>
+        </View>
 
         {/* Floating Income Tag */}
-        <Float delay={1500} duration={3800} range={10}>
-          <View style={[styles.floatingPill, { bottom: 70, left: 20, backgroundColor: '#D1FAE5' }]}>
-            <Text style={{ fontSize: 14, fontWeight: '800', color: '#047857' }}>+ ₹15,000</Text>
-          </View>
-        </Float>
+        <View style={styles.voicePillWrapperRight}>
+          <Float delay={1500} duration={3800} range={10}>
+            <View style={[styles.floatingPill, { backgroundColor: '#D1FAE5' }]}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#047857' }}>+ ₹15,000</Text>
+            </View>
+          </Float>
+        </View>
       </View>
     );
   }
@@ -279,25 +284,25 @@ export default function WelcomeScreen({ navigation, route }) {
   const renderSlide = ({ item }) => {
     if (item.layout === 'auth-final') {
       return (
-        <View style={[styles.slide, { paddingHorizontal: 32, justifyContent: 'center', alignItems: 'center' }]}>
-          <View style={{ marginBottom: 32 }}>
+        <View style={[styles.slide, styles.authFinalSlide]}>
+          <View style={{ marginBottom: 20 }}>
             <ElegantArt type={item.artType} />
           </View>
 
-          <View style={{ alignItems: 'center', marginBottom: 36 }}>
+          <View style={{ alignItems: 'center', marginBottom: 28 }}>
             <Text style={[styles.titleText, { textAlign: 'center', fontSize: 32, lineHeight: 40 }]}>
               {isTourMode ? "You're All Set!\n" : item.titleMain}
               <Text style={{ color: THEME.primary, fontWeight: '800' }}>{item.titleBold}</Text>
             </Text>
             
-            <Text style={[styles.subtitleText, { textAlign: 'center', marginTop: 12, paddingHorizontal: 10 }]}>
+            <Text style={[styles.subtitleText, { textAlign: 'center', marginTop: 10, paddingHorizontal: 16 }]}>
               {isTourMode
                 ? "You are logged in and ready to track your expenses effortlessly with AI voice and WhatsApp logging."
                 : item.subtitle}
             </Text>
           </View>
 
-          <View style={{ width: '100%' }}>
+          <View style={{ width: '100%', paddingHorizontal: 32 }}>
             {isTourMode ? (
               <>
                 {/* Back to App Primary Button */}
@@ -329,19 +334,28 @@ export default function WelcomeScreen({ navigation, route }) {
               </>
             ) : (
               <>
-                {/* Massive Wide Gradient Button */}
-                <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('Register')} style={{ shadowColor: '#1A73E8', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 15, marginBottom: 30 }}>
-                  <View style={{ backgroundColor: '#1A73E8', height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-                    <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700', marginRight: 8 }}>Register</Text>
+                {/* Luxury Royal Gradient Register Button */}
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('Register')}
+                  style={styles.registerBtnShadow}
+                >
+                  <LinearGradient
+                    colors={['#2563EB', '#1D4ED8']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.registerBtnGradient}
+                  >
+                    <Text style={styles.registerBtnText}>Register</Text>
                     <Ionicons name="arrow-forward" size={20} color="#FFF" />
-                  </View>
+                  </LinearGradient>
                 </TouchableOpacity>
 
-                {/* Login Link */}
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ color: THEME.textSub, fontSize: 15, marginBottom: 8 }}>Already have account?</Text>
-                  <TouchableOpacity activeOpacity={0.6} onPress={() => navigation.navigate('Login')}>
-                    <Text style={{ color: '#1A73E8', fontSize: 17, fontWeight: '700' }}>Login</Text>
+                {/* Login Link with safe spacing above Android gesture pill */}
+                <View style={styles.loginLinkRow}>
+                  <Text style={{ color: THEME.textSub, fontSize: 15 }}>Already have account? </Text>
+                  <TouchableOpacity activeOpacity={0.6} onPress={() => navigation.navigate('Login')} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                    <Text style={{ color: '#2563EB', fontSize: 16, fontWeight: '800' }}>Login</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -372,10 +386,11 @@ export default function WelcomeScreen({ navigation, route }) {
         <ElegantArt type={item.artType} />
         <View style={styles.textBottomContainer}>
           <Text style={[styles.titleText, { fontSize: 36, lineHeight: 44 }]}>
-            <Text style={{ fontWeight: '800' }}>{item.titleMain}</Text>
-            <Text style={{ fontWeight: '400' }}>{item.titleNormal}</Text>
-            <Text style={{ fontWeight: '800' }}>{item.titleBold}</Text>
-            {item.titleLastBold && <Text style={{ fontWeight: '800' }}>{item.titleLastBold}</Text>}
+            <Text style={{ fontWeight: '800' }}>{item.titleHeader || item.titleMain}</Text>
+            {item.titleHighlight && (
+              <Text style={{ fontWeight: '900', color: '#22C55E' }}>{item.titleHighlight}</Text>
+            )}
+            <Text style={{ fontWeight: '800' }}>{item.titleBody || item.titleBold}</Text>
           </Text>
           {item.subtitle && <Text style={styles.subtitleText}>{item.subtitle}</Text>}
         </View>
@@ -455,14 +470,20 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   slide: { width, height: '100%' },
 
-  textTopContainer: { paddingTop: height * 0.12, paddingHorizontal: 32, zIndex: 10 },
-  textBottomContainer: { flex: 1, paddingHorizontal: 32, paddingTop: 10 },
+  textTopContainer: { paddingTop: Platform.OS === 'android' ? height * 0.08 : height * 0.10, paddingHorizontal: 32, zIndex: 10 },
+  textBottomContainer: {
+    flex: 1,
+    paddingHorizontal: 32,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 120 : 105,
+    justifyContent: 'flex-start',
+  },
 
   titleText: { fontSize: 44, color: THEME.textMain, lineHeight: 50, letterSpacing: -1 },
-  subtitleText: { marginTop: 16, fontSize: 16, color: THEME.textSub, lineHeight: 24, paddingRight: 10 },
+  subtitleText: { marginTop: 14, fontSize: 16, color: THEME.textSub, lineHeight: 24, paddingRight: 10 },
 
   // Abstract Containers
-  artContainerBottom: { position: 'absolute', bottom: 50, right: 0, width: width, height: height * 0.45, alignItems: 'center', justifyContent: 'center' },
+  artContainerBottom: { position: 'absolute', bottom: 40, left: 0, right: 0, width: width, height: height * 0.46, alignItems: 'center', justifyContent: 'center' },
   artContainerTop: { height: height * 0.55, width: '100%', justifyContent: 'center', alignItems: 'center', paddingTop: 20 },
 
   // Elements
@@ -473,13 +494,18 @@ const styles = StyleSheet.create({
   soundwaves: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: -1 },
   waveBar: { width: 8, backgroundColor: 'rgba(139, 92, 246, 0.2)', borderRadius: 4 },
   
-  // Mock Card
+  // Voice Mock Card & Floating Pills (Safely Positioned)
+  voiceCardWrapper: { position: 'absolute', top: 10, right: 18, zIndex: 10 },
+  voiceMockCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 8 },
+  voicePillWrapperLeft: { position: 'absolute', top: 96, left: 20, zIndex: 10 },
+  voicePillWrapperRight: { position: 'absolute', bottom: 85, right: 24, zIndex: 10 },
+
   mockCard: { position: 'absolute', flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 16, borderRadius: 20, width: width * 0.75, shadowColor: '#000', shadowOffset: { width: 0, height: 15 }, shadowOpacity: 0.08, shadowRadius: 25, elevation: 10 },
   iconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   cardTitle: { fontSize: 16, fontWeight: '700', color: THEME.textMain, marginBottom: 2 },
   cardSub: { fontSize: 13, color: THEME.textSub },
   cardAmt: { fontSize: 17, fontWeight: '800', color: THEME.textMain },
-  floatingPill: { position: 'absolute', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 8 },
+  floatingPill: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 8 },
 
   // Chat Art
   chatBubbleRight: { position: 'absolute', backgroundColor: THEME.primary, paddingVertical: 14, paddingHorizontal: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 4, shadowColor: THEME.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 10 },
@@ -499,8 +525,42 @@ const styles = StyleSheet.create({
   // Abstract Cards Art (Slide 3)
   bookCard: { position: 'absolute', width: 180, height: 240, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 15 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10, justifyContent: 'center', alignItems: 'center', padding: 20 },
 
+  // Slide 3 Final Auth Styling
+  authFinalSlide: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: Platform.OS === 'android' ? 44 : 28,
+  },
+  registerBtnShadow: {
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+    marginBottom: 18,
+  },
+  registerBtnGradient: {
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  registerBtnText: {
+    color: '#FFF',
+    fontSize: 17,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  loginLinkRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+
   // Absolute Footer
-  footerAbsolute: { position: 'absolute', bottom: Platform.OS === 'ios' ? 40 : 30, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerAbsolute: { position: 'absolute', bottom: Platform.OS === 'ios' ? 36 : 24, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 20 },
   skipWrapper: { padding: 10, paddingLeft: 0 },
   skipText: { fontSize: 16, fontWeight: '700', color: THEME.textMain },
   nextBtnRing: { width: 70, height: 70, borderRadius: 35, borderWidth: 1.5, borderColor: 'rgba(139, 92, 246, 0.4)', justifyContent: 'center', alignItems: 'center' },

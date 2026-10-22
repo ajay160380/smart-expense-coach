@@ -817,9 +817,13 @@
             alertBox.style.display = 'block';
         }
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         try {
             const res = await fetch('/api/auth/google/', {
                 method: 'POST',
+                signal: controller.signal,
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
@@ -830,14 +834,22 @@
                 })
             });
 
-            const data = await res.json();
+            clearTimeout(timeoutId);
+
+            let data = {};
+            try {
+                data = await res.json();
+            } catch (_) {
+                data = {};
+            }
+
             if (res.ok && (data.status === 'success' || data.token)) {
                 if (alertBox) {
                     alertBox.innerText = 'Account ready! Redirecting to Dashboard...';
                 }
                 setTimeout(() => {
-                    window.location.href = '/dashboard/';
-                }, 600);
+                    window.location.replace('/dashboard/');
+                }, 400);
             } else {
                 if (alertBox) {
                     alertBox.className = 'auth-alert auth-alert-error';
@@ -847,7 +859,14 @@
                 }
             }
         } catch (e) {
-            alert('Network error during Google sign up.');
+            clearTimeout(timeoutId);
+            const msg = (e && e.name === 'AbortError') ? 'Request timed out. Please try again.' : 'Network error during Google sign up.';
+            if (alertBox) {
+                alertBox.className = 'auth-alert auth-alert-error';
+                alertBox.innerText = msg;
+            } else {
+                alert(msg);
+            }
         }
     }
 </script>

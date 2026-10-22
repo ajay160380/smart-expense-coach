@@ -201,62 +201,65 @@ export default function LoginScreen({ navigation }) {
       
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
         >
-          {/* Back Button */}
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={24} color="#111827" />
-          </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+              <Ionicons name="chevron-back" size={24} color="#111827" />
+            </TouchableOpacity>
 
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoSmall}>
-              <Logo size={0.7} circle={true} showText={false} />
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.logoSmall}>
+                <Logo size={0.65} circle={true} showText={false} />
+              </View>
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>Sign in to your account</Text>
             </View>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to your account</Text>
-          </View>
 
-          {/* Form */}
-          <View style={styles.formSection}>
-            {/* Login Method Toggle */}
-            <View style={styles.methodToggleWrap}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={[styles.methodTab, loginMethod === 'password' && styles.methodTabActive]}
-                onPress={() => { setLoginMethod('password'); setOtpSent(false); }}
-              >
-                <Ionicons
-                  name="key-outline"
-                  size={15}
-                  color={loginMethod === 'password' ? '#7C3AED' : '#6B7280'}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={[styles.methodTabText, loginMethod === 'password' && styles.methodTabTextActive]}>
-                  Password
-                </Text>
-              </TouchableOpacity>
+            {/* Form */}
+            <View style={styles.formSection}>
+              {/* Login Method Toggle - Sleek & Symmetrical */}
+              <View style={styles.methodToggleWrap}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[styles.methodTab, loginMethod === 'password' && styles.methodTabActive]}
+                  onPress={() => { setLoginMethod('password'); setOtpSent(false); }}
+                >
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={15}
+                    color={loginMethod === 'password' ? '#7C3AED' : '#6B7280'}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.methodTabText, loginMethod === 'password' && styles.methodTabTextActive]}>
+                    Password
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={[styles.methodTab, loginMethod === 'otp' && styles.methodTabActive]}
-                onPress={() => setLoginMethod('otp')}
-              >
-                <Ionicons
-                  name="shield-checkmark"
-                  size={15}
-                  color={loginMethod === 'otp' ? '#10B981' : '#6B7280'}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={[styles.methodTabText, loginMethod === 'otp' && { color: '#10B981', fontWeight: '700' }]}>
-                  Verify with OTP
-                </Text>
-                <View style={styles.secureBadge}>
-                  <Text style={styles.secureBadgeText}>VERIFY</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[styles.methodTab, loginMethod === 'otp' && [styles.methodTabActive, styles.methodTabActiveOtp]]}
+                  onPress={() => setLoginMethod('otp')}
+                >
+                  <Ionicons
+                    name="chatbubble-ellipses-outline"
+                    size={15}
+                    color={loginMethod === 'otp' ? '#059669' : '#6B7280'}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.methodTabText, loginMethod === 'otp' && { color: '#059669', fontWeight: '700' }]}>
+                    Instant OTP
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
             {loginMethod === 'otp' ? (
               <>
@@ -317,11 +320,11 @@ export default function LoginScreen({ navigation }) {
                       disabled={loading || googleLoading}
                     >
                       <LinearGradient
-                        colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#10B981', '#059669']}
-                        style={styles.button}
+                        colors={['#10B981', '#059669']}
+                        style={[styles.button, loading && { opacity: 0.8 }]}
                       >
                         {loading ? (
-                          <ActivityIndicator color="#fff" />
+                          <ActivityIndicator color="#fff" size="small" />
                         ) : (
                           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Ionicons name="shield-checkmark" size={18} color="#fff" style={{ marginRight: 8 }} />
@@ -346,11 +349,11 @@ export default function LoginScreen({ navigation }) {
                       disabled={loading || googleLoading}
                     >
                       <LinearGradient
-                        colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#10B981', '#059669']}
-                        style={styles.button}
+                        colors={['#10B981', '#059669']}
+                        style={[styles.button, loading && { opacity: 0.8 }]}
                       >
                         {loading ? (
-                          <ActivityIndicator color="#fff" />
+                          <ActivityIndicator color="#fff" size="small" />
                         ) : (
                           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Ionicons name="send" size={16} color="#fff" style={{ marginRight: 8 }} />
@@ -403,11 +406,11 @@ export default function LoginScreen({ navigation }) {
                   disabled={loading || googleLoading}
                 >
                   <LinearGradient
-                    colors={loading ? ['#E5E7EB', '#E5E7EB'] : ['#7C3AED', '#6D28D9']}
-                    style={styles.button}
+                    colors={['#7C3AED', '#6D28D9']}
+                    style={[styles.button, loading && { opacity: 0.8 }]}
                   >
                     {loading ? (
-                      <ActivityIndicator color="#fff" />
+                      <ActivityIndicator color="#fff" size="small" />
                     ) : (
                       <Text style={styles.buttonText}>Sign In</Text>
                     )}
@@ -435,11 +438,11 @@ export default function LoginScreen({ navigation }) {
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don&apos;t have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.replace('Register')}>
+            <TouchableOpacity onPress={() => navigation.replace('Register')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.linkText}>Create one</Text>
             </TouchableOpacity>
           </View>
-
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
@@ -459,11 +462,17 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F7FB' },
-  safeArea: { flex: 1, paddingTop: Platform.OS === 'android' ? 30 : 0 },
-  keyboardView: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
+  safeArea: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'android' ? 24 : 12,
+    paddingBottom: Platform.OS === 'android' ? 36 : 24,
+  },
 
   backBtn: {
-    position: 'absolute', top: 10, left: 0, zIndex: 10,
+    position: 'absolute', top: Platform.OS === 'android' ? 14 : 10, left: 0, zIndex: 10,
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
@@ -471,8 +480,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
 
-  header: { alignItems: 'center', marginBottom: 36 },
-  logoSmall: { marginBottom: 16 },
+  header: { alignItems: 'center', marginBottom: 28, marginTop: 10 },
+  logoSmall: { marginBottom: 12 },
   title: { fontSize: 28, fontWeight: '900', color: '#111827', marginBottom: 6 },
   subtitle: { fontSize: 15, color: '#6B7280' },
 
@@ -521,7 +530,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24, paddingBottom: 6 },
   footerText: { color: '#6B7280', fontSize: 14 },
   linkText: { color: '#FF6B35', fontSize: 14, fontWeight: 'bold' },
 
@@ -548,8 +557,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  methodTabActiveOtp: {
+    shadowColor: '#10B981',
+    shadowOpacity: 0.12,
+  },
   methodTabText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#6B7280',
   },

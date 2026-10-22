@@ -12,6 +12,7 @@ import calendar
 import logging
 import re
 import hashlib
+import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from collections import defaultdict
@@ -110,19 +111,28 @@ CAT_ICONS = {
 CAT_KEYWORDS = {
     "food":          ["khana", "lunch", "dinner", "breakfast", "chai", "pizza", "zomato",
                       "swiggy", "restaurant", "dhaba", "grocery", "sabzi", "fruit", "snack",
-                      "bhojan", "roti", "dal", "paneer", "biryani", "café", "cafe"],
+                      "bhojan", "roti", "dal", "paneer", "biryani", "café", "cafe", "dosa",
+                      "milk", "doodh", "tea", "coffee", "burger", "momo", "maggi", "samosa",
+                      "chips", "ice cream", "juice", "biscuit", "egg", "ande", "chicken",
+                      "mutton", "fish", "sweets", "mithai"],
     "transport":     ["petrol", "diesel", "auto", "cab", "uber", "ola", "metro", "bus",
-                      "taxi", "parking", "toll", "train", "flight", "rickshaw", "fuel"],
+                      "taxi", "parking", "toll", "train", "flight", "rickshaw", "fuel",
+                      "cng", "rapido", "bike"],
     "shopping":      ["kapde", "clothes", "shoes", "mall", "amazon", "flipkart", "online",
-                      "shirt", "jeans", "dress", "bag", "watch", "gadget", "mobile", "laptop"],
+                      "shirt", "jeans", "dress", "bag", "watch", "gadget", "mobile", "laptop",
+                      "tshirt", "pant", "chappal", "meesho"],
     "health":        ["dawai", "medicine", "doctor", "hospital", "chemist", "pharmacy",
-                      "gym", "clinic", "test", "pathlab", "dawa", "injection", "checkup"],
+                      "gym", "clinic", "test", "pathlab", "dawa", "injection", "checkup",
+                      "tablet", "syrup"],
     "entertainment": ["movie", "netflix", "ott", "game", "concert", "sports", "match",
-                      "hotstar", "prime", "spotify", "youtube", "ticket", "fun", "outing"],
+                      "hotstar", "prime", "spotify", "youtube", "ticket", "fun", "outing",
+                      "cinema", "reels"],
     "education":     ["book", "course", "fees", "tuition", "stationery", "school",
-                      "college", "udemy", "coaching", "class", "pen", "notebook"],
+                      "college", "udemy", "coaching", "class", "pen", "notebook", "xerox",
+                      "printout", "form"],
     "utilities":     ["light bill", "bijli", "gas", "water", "recharge", "mobile bill",
-                      "internet", "broadband", "wifi", "electricity", "maintenance", "rent"],
+                      "internet", "broadband", "wifi", "electricity", "maintenance", "rent",
+                      "cylinder", "room rent"],
 }
 VALID_CATEGORIES = set(CAT_COLORS.keys())
 VALID_FILTERS    = {"week", "month", "all"}
@@ -1617,6 +1627,55 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 import tempfile
 import os
 
+def _check_greeting(text: str) -> bool:
+    clean = re.sub(r'[^\w\s]', '', text.strip().lower())
+    if not clean:
+        return False
+    greeting_words = {
+        'hi', 'hello', 'hlo', 'hey', 'helo', 'hii', 'hiii', 'namaste', 'kaise ho',
+        'kya hal hai', 'kya haal hai', 'good morning', 'good night', 'gm', 'gn', 'yo', 'sup'
+    }
+    if clean in greeting_words:
+        return True
+    if any(clean.startswith(g + ' ') for g in ['hi', 'hello', 'hlo', 'hey', 'namaste']):
+        return True
+    return False
+
+def _extract_single_expense(text: str):
+    clean = text.strip()
+    clean = re.sub(r'^[₹\s]+', '', clean, flags=re.IGNORECASE)
+    clean = re.sub(r'^(?:rs\.?|inr)\s*', '', clean, flags=re.IGNORECASE).strip()
+    
+    # 1. Pattern: [Amount] [optional currency] [optional prep] [Description]
+    m1 = re.match(r'^(\d+(?:\.\d+)?)\s*(?:rs\.?|rupaye?|inr|/-)?\s*(?:for|ka|on|ke\s*liye|mein)?\s+(.+)$', clean, flags=re.IGNORECASE)
+    if m1:
+        try:
+            amt = Decimal(m1.group(1))
+            desc = m1.group(2).strip()
+            desc = re.sub(r'^(?:for|ka|on|ke\s*liye|mein)\s+', '', desc, flags=re.IGNORECASE)
+            desc = re.sub(r'\s+(?:de\s*diya|diya|paid|spent)$', '', desc, flags=re.IGNORECASE)
+            if amt > 0 and len(desc) >= 2:
+                return amt, desc
+        except Exception:
+            pass
+            
+    # 2. Pattern: [Description] [optional prep] [Amount] [optional currency]
+    m2 = re.match(r'^(.+?)\s+(?:for|ka|on|ke\s*liye|mein)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|rupaye?|inr|/-)?$', clean, flags=re.IGNORECASE)
+    if m2:
+        try:
+            desc = m2.group(1).strip()
+            amt = Decimal(m2.group(2))
+            desc = re.sub(r'^(?:paid|spent|de\s*diya)\s+', '', desc, flags=re.IGNORECASE)
+            desc = re.sub(r'\s+(?:for|ka|on|ke\s*liye|mein)$', '', desc, flags=re.IGNORECASE)
+            desc = re.sub(r'^(?:rs\.?|inr)\s*', '', desc, flags=re.IGNORECASE).strip()
+            if amt > 0 and len(desc) >= 2 and not any(kw in desc.lower() for kw in ['trip', 'split', 'note', 'link', 'summary', 'kharcha', 'report', 'budget']):
+                return amt, desc
+        except Exception:
+            pass
+
+    return None, None
+
+
 @csrf_exempt
 @ai_rate_limited
 def voice_expense(request: HttpRequest) -> JsonResponse:
@@ -1867,6 +1926,101 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     try:
         normalized_text = normalize_hinglish_numbers(spoken_text)
         lower_text = normalized_text.lower().strip()
+
+        # ── 1. HYPER-FAST GREETING (0.001s) ──
+        if _check_greeting(normalized_text) and not any(c.isdigit() for c in normalized_text):
+            return JsonResponse({
+                "status": "success",
+                "message": (
+                    f"Hello *{user_name}*! 👋\n\n"
+                    f"Main aapka Expense Coach hoon. Aap yahan direct kharche record kar sakte hain:\n\n"
+                    f"• *500 petrol* ya *chai 20* ➔ Kharcha save ho jayega\n"
+                    f"• *Aaj ka kharcha* ➔ Daily total summary\n"
+                    f"• *Budget* ➔ Remaining balance check karne ke liye\n\n"
+                    f"Bataiye, abhi kya kharcha add karein? 🚀"
+                )
+            })
+
+        # ── 2. HYPER-FAST SINGLE EXPENSE LOGGING (0.015s) ──
+        quick_amt, quick_desc = _extract_single_expense(normalized_text)
+        if quick_amt and quick_desc and not any(kw in lower_text for kw in ["trip", "split", "note", "notpad", "notepad"]):
+            category = _keyword_category_fallback(quick_desc)
+            
+            expense = Expense.objects.create(
+                user=target_user,
+                amount=quick_amt,
+                category=category,
+                date=today,
+                description=quick_desc[:100],
+            )
+
+            icon = CAT_ICONS.get(category, "📦")
+            new_spent = float(spent) + float(quick_amt)
+            new_rem = max(0, budget - new_spent)
+            month_name = today.strftime("%B")
+            
+            msg_lines = [
+                f"✅ *Hi {user_name}, Expense Logged (⚡ Instant)*",
+                f"━━━━━━━━━━━━━━━━━━",
+                f"{icon} *Amount:* ₹{quick_amt:,}",
+                f"🏷️ *Category:* {category.title()}",
+                f"📝 *Note:* {expense.description or 'None'}",
+                f"━━━━━━━━━━━━━━━━━━",
+                f"💰 *Total Spent ({month_name}):* ₹{new_spent:,.0f}",
+                f"🎯 *Remaining Budget:* ₹{new_rem:,.0f}"
+            ]
+            
+            if new_rem == 0:
+                msg_lines.append("⚠️ *Warning:* You have exceeded your monthly budget! 🛑")
+
+            smart_alert = check_and_generate_alert(target_user, expense)
+            if smart_alert:
+                msg_lines.append("")
+                msg_lines.append(smart_alert)
+                
+            return JsonResponse({
+                "status": "success",
+                "message": "\n".join(msg_lines),
+                "expense_id": expense.pk,
+            })
+
+        # ── 3. HYPER-FAST TODAY SUMMARY (0.01s) ──
+        today_triggers = ['aaj ka kharcha', 'aaj kitna', 'today expense', 'today spent', 'today summary', 'aaj ka summary', 'aaj ka total']
+        if any(trg in lower_text for trg in today_triggers):
+            today_qs = Expense.objects.filter(user=target_user, date=today).order_by('-id')
+            today_total = today_qs.aggregate(Sum('amount'))['amount__sum'] or 0
+            rem = max(0, budget - float(spent))
+            
+            lines = [
+                f"📅 *Aaj ka Kharcha ({today.strftime('%d %b %Y')}):* ₹{today_total:,.0f}",
+                f"━━━━━━━━━━━━━━━━━━"
+            ]
+            if today_qs.exists():
+                for exp in today_qs[:8]:
+                    icon = CAT_ICONS.get(exp.category, "📦")
+                    lines.append(f"• {icon} *₹{exp.amount:,.0f}* - {exp.description or exp.category.title()}")
+            else:
+                lines.append("Aaj abhi tak koi kharcha add nahi kiya gaya hai. 👍")
+                
+            lines.append(f"━━━━━━━━━━━━━━━━━━")
+            lines.append(f"🎯 *Remaining Budget:* ₹{rem:,.0f}")
+            return JsonResponse({"status": "success", "message": "\n".join(lines)})
+
+        # ── 4. HYPER-FAST BUDGET STATUS (0.005s) ──
+        if lower_text in ['budget', 'balance', 'kitna bacha', 'mera budget', 'check budget', '/budget']:
+            rem = max(0, budget - float(spent))
+            return JsonResponse({
+                "status": "success",
+                "message": (
+                    f"🎯 *Monthly Budget Status ({today.strftime('%B %Y')})*\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"💼 *Total Budget:* ₹{budget:,.0f}\n"
+                    f"💰 *Total Spent:* ₹{float(spent):,.0f}\n"
+                    f"💸 *Remaining Balance:* ₹{rem:,.0f}\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"{'⚠️ Budget limit reached! 🛑' if rem == 0 else '✅ Budget control me hai! 👍'}"
+                )
+            })
 
         # ── WhatsApp Session / Feedback Flow ──
         session_id_str = incoming_phone if incoming_phone else str(target_user.id)
@@ -2291,7 +2445,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             messages=messages,
             model="qwen/qwen3.8-27b",
             temperature=0.2,
-            max_tokens=1000,
+            max_tokens=300,
         )
         ai_time = time.time() - ai_start_time
         
@@ -2421,12 +2575,6 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             if new_rem == 0:
                 msg_lines.append("⚠️ *Warning:* You have exceeded your monthly budget! 🛑")
 
-            # 🔔 Smart Spending Alert (only run on the first expense or largest for now to avoid spam)
-            smart_alert = check_and_generate_alert(target_user, created_expenses[0])
-            if smart_alert:
-                msg_lines.append("")
-                msg_lines.append(smart_alert)
-                
             # 🔔 Smart Spending Alert (only run on the first expense or largest for now to avoid spam)
             smart_alert = check_and_generate_alert(target_user, created_expenses[0])
             if smart_alert:
@@ -5105,10 +5253,10 @@ def api_google_login(request):
 
         # Also establish Django session for web browser logins
         try:
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             request.session['show_wa_banner'] = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Session login failed in api_google_login: %s", e)
             
         has_real_phone = bool(profile.phone_number and not str(profile.phone_number).startswith('g_'))
         user_display_name = f"{user.first_name} {user.last_name}".strip() or name or given_name or user.username
@@ -5536,32 +5684,39 @@ def api_login_otp(request):
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
 
     matched = False
+    matched_record = None
     for r in records:
         if r.attempts >= r.max_attempts:
             continue
         r.attempts += 1
         if _verify_otp_record(r, str(otp).strip(), 'login'):
             matched = True
+            matched_record = r
             r.is_verified = True
             r.save()
-            try:
-                r.delete()
-            except Exception:
-                pass
             break
         r.save()
 
     if not matched:
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
-        
-    phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
-    while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+
+    if matched_record:
+        try:
+            matched_record.delete()
+        except Exception:
+            pass
+
+    if hasattr(user, 'profile') and user.profile:
+        profile = user.profile
+    else:
         phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
-        
-    profile, _ = UserProfile.objects.get_or_create(
-        user=user,
-        defaults={'phone_number': phone_dummy, 'email_verified': True}
-    )
+        while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+            phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+            
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={'phone_number': phone_dummy, 'email_verified': True}
+        )
     profile.email_verified = True
     profile.save()
         
@@ -5576,10 +5731,10 @@ def api_login_otp(request):
 
     # Also establish Django session for web browser logins
     try:
-        login(request, user)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         request.session['show_wa_banner'] = True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Session login failed in api_login_otp: %s", e)
         
     return Response({
         'status': 'success',

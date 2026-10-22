@@ -57,18 +57,35 @@ async function getNextAvailableSession(failedSessionName = null) {
     return null;
 }
 
+// ── Helper: Normalize JID ──
+function normalizeJid(jid) {
+    if (!jid) return '';
+    const s = String(jid).trim();
+    if (s.includes('@')) {
+        const [userPart, serverPart] = s.split('@');
+        const cleanUser = userPart.split(':')[0].replace(/[^0-9]/g, '');
+        return `${cleanUser}@${serverPart}`;
+    }
+    const clean = s.split(':')[0].replace(/[^0-9]/g, '');
+    return `${clean}@s.whatsapp.net`;
+}
+
 // ── Helper: Safe Reply ──
 async function safeReply(jid, text, quotedMsg = null) {
     if (!globalSock) throw new Error("WhatsApp socket not ready");
+    const targetJid = normalizeJid(jid) || jid;
+    try {
+        await globalSock.sendPresenceUpdate('paused', targetJid);
+    } catch (e) {}
     try {
         const options = quotedMsg ? { quoted: quotedMsg } : undefined;
-        await globalSock.sendMessage(jid, { text }, options);
+        await globalSock.sendMessage(targetJid, { text }, options);
     } catch (e) {
         console.warn('⚠️ Failed to send message (possibly invalid quote), retrying without quote:', e.message);
         try {
-            await globalSock.sendMessage(jid, { text });
+            await globalSock.sendMessage(targetJid, { text });
         } catch (e2) {
-            console.error('❌ Failed to send message entirely:', e2.message);
+            console.error(`❌ Failed to send message to ${targetJid}:`, e2.message);
             throw e2;
         }
     }
@@ -191,11 +208,12 @@ async function startBot(sessionName = null) {
         const maskedPhone = phone.length >= 7 ? `${phone.slice(0, 3)}***${phone.slice(-3)}` : '***';
         console.log(`📩 Received message from ${maskedPhone} (${pushName})`);
 
-        // ── Send Blue Tick (Read Receipt) ──
+        // ── Send Blue Tick (Read Receipt) & Instant Typing Indicator ──
         try {
             await sock.readMessages([msg.key]);
+            await sock.sendPresenceUpdate('composing', remoteJid);
         } catch (e) {
-            console.warn('⚠️ Could not send read receipt:', e.message);
+            console.warn('⚠️ Could not send read receipt or typing presence:', e.message);
         }
 
         const lowerBody = text.toLowerCase();
@@ -358,41 +376,60 @@ async function startBot(sessionName = null) {
         // ── PROCESS EXPENSE ──
         try {
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 120000);
+            const timeout = setTimeout(() => controller.abort(), 30000);
 
-            const response = await fetch(`${INTERNAL_API_URL}/api/voice-expense/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone,
-                    text,
-                    name: pushName,
-                    message_id: msg.key?.id || '',
-                    sender_id: remoteJid || phone
-                }),
-                signal: controller.signal
-            });
+            let response;
+            try {
+                response = await fetch(`${INTERNAL_API_URL}/api/voice-expense/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone,
+                        text,
+                        name: pushName,
+                        message_id: msg.key?.id || '',
+                        sender_id: remoteJid || phone
+                    }),
+                    signal: controller.signal
+                });
+            } catch (fetchErr) {
+                console.warn(`⚠️ Internal API fetch error (${fetchErr.message}), falling back to public endpoint...`);
+                response = await fetch('https://smart-expense-coach.onrender.com/api/voice-expense/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone,
+                        text,
+                        name: pushName,
+                        message_id: msg.key?.id || '',
+                        sender_id: remoteJid || phone
+                    }),
+                    signal: controller.signal
+                });
+            }
             clearTimeout(timeout);
 
             const data = await response.json();
             
             if (data.media) {
-                // Buffer to base64
                 const mediaBuffer = Buffer.from(data.media.base64, 'base64');
                 const mimetype = data.media.mimetype || 'application/pdf';
-                await sock.sendMessage(remoteJid, { 
+                const targetJid = normalizeJid(remoteJid);
+                await globalSock.sendMessage(targetJid, { 
                     document: mediaBuffer, 
                     mimetype: mimetype, 
                     fileName: data.media.filename,
                     caption: data.message
                 });
             } else if (data.message) {
-                await safeReply(remoteJid, data.message);
+                await safeReply(remoteJid, data.message, msg);
             }
 
         } catch (err) {
-            console.error('❌ Error processing message:', err.message);
-            // No technical error message as per user request
+            console.error('❌ Error processing message:', err.message || err);
+            try {
+                await safeReply(remoteJid, "⚠️ Server busy tha, kripya 5 second baad dobara text bhejein.");
+            } catch (replyErr) {}
         }
     });
 

@@ -711,9 +711,13 @@ async function handleGoogleCredentialResponse(response) {
     hideAuthAlert();
     showAuthAlert("Signing in with Google...", false);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
         const res = await fetch('/api/auth/google/', {
             method: 'POST',
+            signal: controller.signal,
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCsrfToken()
@@ -724,17 +728,30 @@ async function handleGoogleCredentialResponse(response) {
             })
         });
 
-        const data = await res.json();
+        clearTimeout(timeoutId);
+
+        let data = {};
+        try {
+            data = await res.json();
+        } catch (_) {
+            data = {};
+        }
+
         if (res.ok && (data.status === 'success' || data.token)) {
             showAuthAlert("Welcome! Redirecting to Dashboard...", false);
             setTimeout(() => {
-                window.location.href = '/dashboard/';
-            }, 600);
+                window.location.replace('/dashboard/');
+            }, 400);
         } else {
             showAuthAlert(data.error || 'Google login failed. Please try again.');
         }
     } catch (e) {
-        showAuthAlert('Network error during Google sign in.');
+        clearTimeout(timeoutId);
+        if (e && e.name === 'AbortError') {
+            showAuthAlert('Request timed out. Please try again.');
+        } else {
+            showAuthAlert('Network error during Google sign in.');
+        }
     }
 }
 
