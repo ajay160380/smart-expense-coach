@@ -5105,10 +5105,10 @@ def api_google_login(request):
 
         # Also establish Django session for web browser logins
         try:
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             request.session['show_wa_banner'] = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Session login failed in api_google_login: %s", e)
             
         has_real_phone = bool(profile.phone_number and not str(profile.phone_number).startswith('g_'))
         user_display_name = f"{user.first_name} {user.last_name}".strip() or name or given_name or user.username
@@ -5576,10 +5576,10 @@ def api_login_otp(request):
 
     # Also establish Django session for web browser logins
     try:
-        login(request, user)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         request.session['show_wa_banner'] = True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Session login failed in api_login_otp: %s", e)
         
     return Response({
         'status': 'success',
