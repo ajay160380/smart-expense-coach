@@ -12,6 +12,7 @@ import calendar
 import logging
 import re
 import hashlib
+import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from collections import defaultdict
@@ -5536,32 +5537,39 @@ def api_login_otp(request):
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
 
     matched = False
+    matched_record = None
     for r in records:
         if r.attempts >= r.max_attempts:
             continue
         r.attempts += 1
         if _verify_otp_record(r, str(otp).strip(), 'login'):
             matched = True
+            matched_record = r
             r.is_verified = True
             r.save()
-            try:
-                r.delete()
-            except Exception:
-                pass
             break
         r.save()
 
     if not matched:
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
-        
-    phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
-    while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+
+    if matched_record:
+        try:
+            matched_record.delete()
+        except Exception:
+            pass
+
+    if hasattr(user, 'profile') and user.profile:
+        profile = user.profile
+    else:
         phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
-        
-    profile, _ = UserProfile.objects.get_or_create(
-        user=user,
-        defaults={'phone_number': phone_dummy, 'email_verified': True}
-    )
+        while UserProfile.objects.filter(phone_number=phone_dummy).exists():
+            phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
+            
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={'phone_number': phone_dummy, 'email_verified': True}
+        )
     profile.email_verified = True
     profile.save()
         
