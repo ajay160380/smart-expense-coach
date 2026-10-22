@@ -6505,7 +6505,7 @@ def api_send_admin_push(request):
 
 def download_apk(request):
     from django.http import HttpResponseRedirect
-    LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/8Fsk5cNqW_VlG-T8ymlSvz30rNYJhmB5t28wsYtINyk.apk"
+    LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/lkOyrCIa2oMeJqeW0pIUlV0HZO-xWeTltMH85XW3xN4.apk"
     # Direct high-speed CDN redirect prevents Render free-tier proxy/Gunicorn timeouts that corrupt large 120MB APK downloads
     return HttpResponseRedirect(LATEST_EXPO_APK_URL)
 
