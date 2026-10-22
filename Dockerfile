@@ -48,6 +48,7 @@ RUN cd whatsapp_bot && npm install
 # Copy the rest of the application
 COPY --chown=user . .
 RUN chmod +x start.sh
+RUN cd backend && python manage.py collectstatic --noinput
 
 # Expose port (Render sets PORT env var)
 EXPOSE 7860
