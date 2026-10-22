@@ -1020,9 +1020,11 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         )}
 
-        {/* ── SPENDING BREAKDOWN (Donut Chart + Legend) ── */}
-        {recentExpenses.length > 0 && (
-          <View style={{ marginTop: 14 }}>
+        {/* ── LOWER DASHBOARD CONTENT ── */}
+        <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }] }}>
+          {/* ── SPENDING BREAKDOWN (Donut Chart + Legend) ── */}
+          {recentExpenses.length > 0 && (
+            <View style={{ marginTop: 14 }}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionTitle}>Spending Breakdown</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Analytics')} activeOpacity={0.7}>
