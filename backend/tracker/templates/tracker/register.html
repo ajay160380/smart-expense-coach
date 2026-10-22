@@ -728,10 +728,14 @@
         const oldText = btn.innerText;
         btn.innerText = 'Sending...';
         btn.disabled = true;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         try {
             const res = await fetch('/api/auth/send-otp/', {
                 method: 'POST',
+                signal: controller.signal,
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
@@ -741,9 +745,17 @@
                     action: 'register'
                 })
             });
-            const data = await res.json();
+
+            clearTimeout(timeoutId);
+
+            let data = {};
+            try {
+                data = await res.json();
+            } catch (_) {
+                data = {};
+            }
             
-            if (res.ok) {
+            if (res.ok && data.status === 'success') {
                 document.getElementById('step1').style.display = 'none';
                 document.getElementById('step2').style.display = 'block';
                 // Remove required from step1 fields so form can submit if hidden (browsers block submit if hidden fields are required)
@@ -754,7 +766,12 @@
                 alert(data.error || 'Failed to send OTP.');
             }
         } catch (e) {
-            alert('Network error. Please try again.');
+            clearTimeout(timeoutId);
+            if (e && e.name === 'AbortError') {
+                alert('Request timed out. Please try again.');
+            } else {
+                alert('Network error. Please try again.');
+            }
         } finally {
             btn.innerText = oldText;
             btn.disabled = false;

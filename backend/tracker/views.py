@@ -5397,22 +5397,32 @@ def api_send_otp(request):
         t.start()
         wa_dispatched = True
 
-    # 4. Dispatch Email OTP
+    # 4. Dispatch Email OTP in background thread (non-blocking)
     email_dispatched = False
     if email_target:
-        from .email_service import send_transactional_email
-        subject = f"Expense Tracker OTP: {otp_code}"
-        body = (
-            f"Your Expense Tracker verification OTP is: {otp_code}\n\n"
-            f"Valid for 5 minutes. Do not share this code."
-        )
-        html_body = generate_expense_tracker_email_html(
-            otp_code,
-            title="Account Verification",
-            subtitle="Please use the one-time code below to verify your account on Expense Tracker:"
-        )
-        success, info = send_transactional_email(email_target, subject, body, html_body=html_body)
-        email_dispatched = success
+        import threading
+
+        def send_email_thread(target_email, code):
+            try:
+                from .email_service import send_transactional_email
+                subject = f"Expense Tracker OTP: {code}"
+                body = (
+                    f"Your Expense Tracker verification OTP is: {code}\n\n"
+                    f"Valid for 5 minutes. Do not share this code."
+                )
+                html_body = generate_expense_tracker_email_html(
+                    code,
+                    title="Account Verification",
+                    subtitle="Please use the one-time code below to verify your account on Expense Tracker:"
+                )
+                send_transactional_email(target_email, subject, body, html_body=html_body)
+            except Exception as e:
+                logger.warning("Could not dispatch Email OTP: %s", e)
+
+        et = threading.Thread(target=send_email_thread, args=(email_target, otp_code))
+        et.daemon = True
+        et.start()
+        email_dispatched = True
 
     channels = []
     if wa_dispatched and phone_target:
