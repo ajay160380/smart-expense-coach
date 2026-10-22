@@ -137,10 +137,10 @@ function AddButton({ onPress }) {
     <View style={styles.addBtnContainer}>
       <View style={styles.addBtnWhiteRing}>
         <LinearGradient
-          colors={['#7C3AED', '#6D28D9']}
+          colors={['#2563EB', '#1D4ED8']}
           style={styles.addBtnGradient}
         >
-          <Ionicons name="add" size={32} color="#FFFFFF" />
+          <Ionicons name="add" size={30} color="#FFFFFF" />
         </LinearGradient>
       </View>
     </View>
@@ -166,7 +166,7 @@ const HIDE_TAB_BAR_SCREENS = [
 ];
 
 // ═══════════════════════════════════════════════
-// MAIN TAB NAVIGATOR (Dark Floating Bar)
+// MAIN TAB NAVIGATOR (Luxury Light Floating Bar)
 // ═══════════════════════════════════════════════
 function MainTabNavigator() {
   const insets = useSafeAreaInsets();
@@ -188,21 +188,22 @@ function MainTabNavigator() {
           tabBarStyle: shouldHideTab
             ? { display: 'none' }
             : {
-                backgroundColor: '#111827',
-                borderTopWidth: 0,
-                borderTopLeftRadius: 24,
-                borderTopRightRadius: 24,
+                backgroundColor: '#FFFFFF',
+                borderTopWidth: 1,
+                borderTopColor: '#F1F5F9',
+                borderTopLeftRadius: 28,
+                borderTopRightRadius: 28,
                 height: tabHeight,
                 paddingBottom: bottomPadding,
                 paddingTop: 8,
-                elevation: 20,
-                shadowColor: '#000',
+                elevation: 16,
+                shadowColor: '#0F172A',
                 shadowOffset: { width: 0, height: -4 },
-                shadowOpacity: 0.25,
+                shadowOpacity: 0.08,
                 shadowRadius: 14,
               },
-          tabBarActiveTintColor: '#FF6B35',
-          tabBarInactiveTintColor: '#9CA3AF',
+          tabBarActiveTintColor: '#2563EB',
+          tabBarInactiveTintColor: '#94A3B8',
           tabBarLabelStyle: {
             fontSize: 10,
             fontWeight: '700',
@@ -706,23 +707,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addBtnWhiteRing: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     backgroundColor: '#FFFFFF',
     padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#7C3AED',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 8,
   },
   addBtnGradient: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
   },

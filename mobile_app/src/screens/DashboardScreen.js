@@ -657,38 +657,47 @@ export default function DashboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── GREETING & HEADER (Target Design Style) ── */}
+        {/* ── GREETING & HEADER (Clean Executive Luxury) ── */}
         <Animated.View style={[styles.greetingSection, { opacity: animGreetingOpacity, transform: [{ translateX: animGreetingX }] }]}>
           <View style={styles.greetingHeaderRow}>
             <View>
-              <Text style={styles.greetText}>
-                {getGreeting()}
-              </Text>
               <Text style={styles.greetSubtext}>
-                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}  •  FINANCIAL OVERVIEW
+              </Text>
+              <Text style={styles.greetText}>
+                {getGreeting()}, {fullName ? fullName.split(' ')[0] : (username ? username.replace(/\d+$/, '') : 'Ajay')} 👋
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Profile')}
-              style={styles.avatarBtn}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#7C3AED', '#FF6B35']}
-                style={styles.avatarGradientRing}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('History')}
+                style={styles.headerIconBtn}
+                activeOpacity={0.8}
               >
-                <View style={styles.avatarInnerCircle}>
-                  <Text style={styles.avatarText}>
-                    {(fullName || username || 'A').charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              </LinearGradient>
-              <View style={styles.avatarOnlineDot} />
-            </TouchableOpacity>
+                <Ionicons name="notifications-outline" size={20} color="#1E293B" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Profile')}
+                style={styles.avatarBtn}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#2563EB', '#1D4ED8']}
+                  style={styles.avatarGradientRing}
+                >
+                  <View style={styles.avatarInnerCircle}>
+                    <Text style={styles.avatarText}>
+                      {(fullName || username || 'A').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                </LinearGradient>
+                <View style={styles.avatarOnlineDot} />
+              </TouchableOpacity>
+            </View>
           </View>
         </Animated.View>
 
-        {/* ── ANOMALY SPENDING INSIGHT ── */}
+        {/* ── ANOMALY SPENDING INSIGHT (If Any) ── */}
         {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
           <Animated.View style={[styles.alertBanner, { opacity: animGreetingOpacity }]}>
             {anomalies.map((alert, idx) => {
@@ -699,7 +708,7 @@ export default function DashboardScreen({ navigation }) {
                   style={styles.alertItem}
                 >
                   <View style={styles.alertIconBadge}>
-                    <Ionicons name="bulb" size={13} color="#FF6B35" />
+                    <Ionicons name="bulb" size={13} color="#F59E0B" />
                   </View>
                   <View style={{ flex: 1, paddingHorizontal: 8 }}>
                     <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
@@ -723,65 +732,26 @@ export default function DashboardScreen({ navigation }) {
           </Animated.View>
         )}
 
-        {/* ── BLUE GRADIENT HERO BALANCE CARD (Target Design Style) ── */}
+        {/* ── LUXURY OBSIDIAN SAPPHIRE WEALTH HERO CARD ── */}
         <Animated.View style={{ opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }] }}>
           <LinearGradient
-            colors={['#2563EB', '#1D4ED8', '#1E40AF']}
+            colors={['#172554', '#1E3A8A', '#1E40AF']}
             style={styles.mainCard}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            {/* Subtle frosted glass reflections */}
+            {/* Ambient Frosted Reflections */}
             <View style={styles.cardGlowCircle} />
             <View style={styles.cardGlowCircleSmall} />
             <View style={styles.cardSheenStripe} />
 
-            {/* Top row: Label & Realistic Metallic EMV Chip */}
+            {/* Top row: Status Tag & Days Left / Budget Edit */}
             <View style={styles.mainCardHeader}>
-              <View>
-                <Text style={styles.heroCardSubLabel}>AVAILABLE BUDGET</Text>
-                <View style={styles.balanceContainer}>
-                  <Text style={styles.currencySymbol}>₹</Text>
-                  <AnimatedNumber
-                    value={remaining}
-                    style={styles.balanceAmount}
-                  />
-                </View>
-              </View>
-
-              {/* Realistic Gold Metallic EMV Smart Chip */}
-              <View style={styles.cardChip}>
-                <LinearGradient
-                  colors={['#FDE68A', '#F59E0B', '#B45309']}
-                  style={styles.cardChipGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={styles.chipLineHoriz} />
-                  <View style={styles.chipLineVert} />
-                  <View style={styles.chipCenterPad} />
-                </LinearGradient>
-              </View>
-            </View>
-
-            {/* Slim Glowing Budget Progress Track */}
-            <View style={styles.budgetTrackBg}>
-              <LinearGradient
-                colors={usedPercent > 85 ? ['#EF4444', '#DC2626'] : ['#34D399', '#10B981']}
-                style={[styles.budgetTrackFill, { width: `${Math.min(100, Math.max(4, 100 - usedPercent))}%` }]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              />
-            </View>
-
-            {/* Card Mid: Card Number / Cycle Days / Budget Pill */}
-            <View style={styles.cardMidRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.cardNumberText}>•••• 2026</Text>
-                <View style={styles.daysLeftPill}>
-                  <Ionicons name="time-outline" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
-                  <Text style={styles.daysLeftText}>{daysLeft}d left</Text>
-                </View>
+              <View style={styles.safeTagPill}>
+                <View style={[styles.statusDotLive, { backgroundColor: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} />
+                <Text style={styles.safeTagText}>
+                  {safeDailySpend > 0 ? 'Safe to Spend' : 'Budget Warning'}
+                </Text>
               </View>
 
               <TouchableOpacity 
@@ -794,85 +764,116 @@ export default function DashboardScreen({ navigation }) {
                 }}
                 activeOpacity={0.8}
               >
-                <Ionicons name="pencil" size={10} color="#FFFFFF" style={{ marginRight: 4 }} />
-                <Text style={styles.budgetPillText}>of ₹{budget.toLocaleString('en-IN')}</Text>
+                <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.9)" style={{ marginRight: 4 }} />
+                <Text style={styles.budgetPillText}>{daysLeft}d left  •  ₹{budget.toLocaleString('en-IN')}</Text>
+                <Ionicons name="pencil" size={10} color="rgba(255,255,255,0.7)" style={{ marginLeft: 5 }} />
               </TouchableOpacity>
             </View>
 
-            {/* Card Bottom Row: Holder + Mastercard Circles */}
-            <View style={styles.cardFooterRow}>
-              <View>
-                <Text style={styles.cardHolderLabel}>CARD HOLDER</Text>
-                <Text style={styles.cardHolderName} numberOfLines={1}>
-                  {fullName ? fullName.toUpperCase() : (username ? username.replace(/\d+$/, '').toUpperCase() : 'AJAY VISHWAKARMA')}
-                </Text>
+            {/* Middle: Available Balance Display */}
+            <View style={{ marginVertical: 10 }}>
+              <Text style={styles.heroCardSubLabel}>AVAILABLE TO SPEND</Text>
+              <View style={styles.balanceContainer}>
+                <Text style={styles.currencySymbol}>₹</Text>
+                <AnimatedNumber
+                  value={remaining}
+                  style={styles.balanceAmount}
+                />
               </View>
+            </View>
 
-              <View style={styles.mastercardContainer}>
-                <View style={[styles.mcCircle, { backgroundColor: '#EB001B' }]} />
-                <View style={[styles.mcCircle, { backgroundColor: '#F79E1B', marginLeft: -9 }]} />
-              </View>
+            {/* High-Tech Glowing Progress Bar */}
+            <View style={styles.budgetTrackBg}>
+              <LinearGradient
+                colors={usedPercent > 85 ? ['#EF4444', '#DC2626'] : ['#34D399', '#10B981']}
+                style={[styles.budgetTrackFill, { width: `${Math.min(100, Math.max(4, 100 - usedPercent))}%` }]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              />
+            </View>
+
+            {/* Progress Subtitle */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 }}>
+              <Text style={styles.progressSubtitle}>
+                Spent ₹{spent.toLocaleString('en-IN')} of ₹{budget.toLocaleString('en-IN')}
+              </Text>
+              <Text style={styles.progressSubtitleHighlight}>
+                {Math.round(usedPercent)}% used
+              </Text>
             </View>
 
             {/* Connected 3-Metric Frosted Glass Strip */}
             <View style={styles.metricsStrip}>
               <View style={styles.metricColumn}>
-                <Text style={styles.metricLabel}>USED</Text>
-                <Text style={styles.metricVal}>{Math.round(usedPercent)}%</Text>
+                <Text style={styles.metricLabel}>SPENT TODAY</Text>
+                <Text style={styles.metricVal}>₹{spentToday.toLocaleString('en-IN')}</Text>
               </View>
               <View style={styles.metricDivider} />
               <View style={styles.metricColumn}>
-                <Text style={styles.metricLabel}>SPENT</Text>
-                <Text style={styles.metricVal}>
-                  ₹{spent.toLocaleString('en-IN')}
+                <Text style={styles.metricLabel}>SAFE / DAY</Text>
+                <Text style={[styles.metricVal, { color: '#34D399' }]}>
+                  ₹{safeDailySpend.toLocaleString('en-IN')}
                 </Text>
               </View>
               <View style={styles.metricDivider} />
               <View style={styles.metricColumn}>
-                <Text style={styles.metricLabel}>TXNS</Text>
-                <Text style={styles.metricVal}>{txCount}</Text>
+                <Text style={styles.metricLabel}>FIN-SCORE</Text>
+                <Text style={[styles.metricVal, { color: '#FCD34D' }]}>
+                  {healthScore} • {healthLabel}
+                </Text>
               </View>
             </View>
           </LinearGradient>
         </Animated.View>
 
-        {/* ── QUICK ACTION PILL CHIPS (Horizontally Scrollable) ── */}
+        {/* ── QUICK ACTION DOCK (Executive Vertical Action Cards) ── */}
         <Animated.View style={[styles.actionDockSection, { opacity: animDockOpacity, transform: [{ translateX: animDockX }] }]}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPillsScroll}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionDockScroll}>
             {activeActions.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={styles.whitePillChip}
+                style={styles.actionDockItem}
                 onPress={() => handleActionPress(item)}
-                activeOpacity={0.75}
+                activeOpacity={0.8}
               >
-                <View style={[styles.pillIconBox, { backgroundColor: (item.colors ? item.colors[0] : '#7C3AED') + '15' }]}>
-                  <Ionicons name={item.icon} size={15} color={item.colors ? item.colors[0] : '#7C3AED'} />
-                </View>
-                <Text style={styles.whitePillLabel}>{item.label}</Text>
+                <LinearGradient
+                  colors={item.colors ? item.colors : ['#2563EB', '#1D4ED8']}
+                  style={styles.actionDockIconBox}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name={item.icon} size={22} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={styles.actionDockLabel} numberOfLines={1}>
+                  {item.label}
+                </Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
-              style={styles.customizePillChip}
+              style={styles.actionDockItem}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setTempActionDockKeys([...actionDockKeys]);
                 setActionDockModalVisible(true);
               }}
-              activeOpacity={0.75}
+              activeOpacity={0.8}
             >
-              <Ionicons name="create-outline" size={14} color="#6B7280" style={{ marginRight: 4 }} />
-              <Text style={styles.customizePillText}>Customize</Text>
+              <View style={styles.actionDockCustomizeBox}>
+                <Ionicons name="options-outline" size={20} color="#64748B" />
+              </View>
+              <Text style={styles.actionDockCustomizeLabel}>More</Text>
             </TouchableOpacity>
           </ScrollView>
         </Animated.View>
 
-        {/* ── 1-TAP QUICK LOG (Dynamic & Customizable) ── */}
+        {/* ── 1-TAP QUICK LOG (Luxury Elevated Micro-Cards) ── */}
         <Animated.View style={[styles.quickSection, { opacity: animListsOpacity, transform: [{ translateY: animListsY }] }]}>
           <View style={styles.quickHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="flash" size={13} color="#F59E0B" style={{ marginRight: 5 }} />
-              <Text style={styles.quickSectionTitle}>1-TAP LOG</Text>
+              <View style={styles.flashIconBox}>
+                <Ionicons name="flash" size={12} color="#F59E0B" />
+              </View>
+              <Text style={styles.quickSectionTitle}>1-TAP QUICK LOG</Text>
             </View>
             <TouchableOpacity 
               onPress={() => {
@@ -882,15 +883,15 @@ export default function DashboardScreen({ navigation }) {
               style={styles.quickCustomizeBtn}
               activeOpacity={0.7}
             >
-              <Ionicons name="create-outline" size={12} color="#06B6D4" style={{ marginRight: 4 }} />
+              <Ionicons name="create-outline" size={12} color="#2563EB" style={{ marginRight: 4 }} />
               <Text style={styles.quickCustomizeText}>Edit & Add</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8, paddingVertical: 4 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickLogScroll}>
             {quickShortcuts.map((item, i) => (
               <TouchableOpacity
                 key={item.id || i}
-                style={[styles.quickChip, { borderColor: (item.color || '#06B6D4') + '35' }]}
+                style={styles.quickLogCard}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   navigation.navigate('AddExpense', {
@@ -901,84 +902,81 @@ export default function DashboardScreen({ navigation }) {
                 }}
                 activeOpacity={0.75}
               >
-                <View style={styles.quickChipEmojiBox}>
-                  <Text style={{ fontSize: 15 }}>{item.icon}</Text>
+                <View style={[styles.quickEmojiBubble, { backgroundColor: (item.color || '#2563EB') + '15' }]}>
+                  <Text style={{ fontSize: 16 }}>{item.icon}</Text>
                 </View>
-                <Text style={styles.quickChipAmount}>₹{item.amount}</Text>
-                <Text style={styles.quickChipLabel}>{item.label.split('/')[0].trim()}</Text>
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.quickCardAmount}>₹{item.amount}</Text>
+                  <Text style={styles.quickCardLabel} numberOfLines={1}>{item.label.split('/')[0].trim()}</Text>
+                </View>
               </TouchableOpacity>
             ))}
 
-            {/* Quick Add Pill */}
+            {/* Quick Add Card */}
             <TouchableOpacity
-              style={styles.quickAddChip}
+              style={styles.quickAddCard}
               onPress={handleOpenAddShortcut}
               activeOpacity={0.75}
             >
-              <Ionicons name="add" size={15} color="#0D9488" style={{ marginRight: 3 }} />
-              <Text style={styles.quickAddChipText}>New</Text>
+              <Ionicons name="add" size={18} color="#2563EB" />
+              <Text style={styles.quickAddCardText}>Add New</Text>
             </TouchableOpacity>
           </ScrollView>
         </Animated.View>
 
-        {/* ── FINANCIAL PULSE (CONSOLIDATED HEALTH & SAFE SPEND CARD) ── */}
-        <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }] }}>
-
-        <LinearGradient
-          colors={['#0F172A', '#1E293B']}
-          style={styles.financialPulseCard}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {/* Subtle Emerald Glow Aura */}
-          <View style={styles.pulseGlowAura} />
-
-          {/* Top Half: Safe Limit & Fin-Score */}
-          <View style={styles.pulseTopRow}>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
-                <View style={[styles.statusDot, { backgroundColor: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} />
-                <Text style={styles.pulseCardLabel}>TODAY'S SAFE LIMIT</Text>
+        {/* ── FINANCIAL PULSE (CLEAN LIGHT EXECUTIVE INSIGHT CARD) ── */}
+        <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }], marginTop: 4 }}>
+          <View style={styles.pulseLightCard}>
+            {/* Top Row: Daily Spending Pace & Health Tier */}
+            <View style={styles.pulseLightTopRow}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <View style={[styles.statusDotLive, { backgroundColor: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} />
+                  <Text style={styles.pulseLightHeaderTitle}>DAILY SPENDING PACE</Text>
+                </View>
+                <Text style={styles.pulseLightStatusText}>
+                  {spentToday > 0 
+                    ? `Spent ₹${spentToday.toLocaleString('en-IN')} today  •  Safe limit is ₹${safeDailySpend.toLocaleString('en-IN')}/day`
+                    : `No expenses logged today  •  Full ₹${safeDailySpend.toLocaleString('en-IN')} available!`}
+                </Text>
               </View>
-              <Text style={[styles.pulseSafeAmount, { color: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]}>
-                ₹{safeDailySpend.toLocaleString('en-IN')}<Text style={styles.pulsePerDay}> / day</Text>
-              </Text>
-              <Text style={styles.pulseSubtext}>
-                {spentToday > 0 ? `Spent today: ₹${spentToday.toLocaleString('en-IN')}` : 'No expenses logged today • Safe!'}
-              </Text>
+
+              <View style={[styles.pulsePaceBadge, { backgroundColor: safeDailySpend > 0 ? '#ECFDF5' : '#FEF2F2' }]}>
+                <Ionicons 
+                  name={safeDailySpend > 0 ? 'checkmark-circle' : 'alert-circle'} 
+                  size={14} 
+                  color={safeDailySpend > 0 ? '#059669' : '#DC2626'} 
+                  style={{ marginRight: 4 }} 
+                />
+                <Text style={[styles.pulsePaceBadgeText, { color: safeDailySpend > 0 ? '#059669' : '#DC2626' }]}>
+                  {safeDailySpend > 0 ? 'On Track' : 'Over Limit'}
+                </Text>
+              </View>
             </View>
 
-            <View style={[styles.pulseHealthBadge, { borderColor: healthColor + '60' }]}>
-              <Text style={[styles.pulseHealthScore, { color: healthColor }]}>{healthScore}</Text>
-              <Text style={styles.pulseHealthSub}>FIN-SCORE</Text>
-              <View style={[styles.pulseHealthTierPill, { backgroundColor: healthColor + '20' }]}>
-                <Text style={[styles.pulseHealthTier, { color: healthColor }]} numberOfLines={1}>{healthLabel}</Text>
+            {/* Micro-Metrics Row */}
+            <View style={styles.pulseLightMetricsRow}>
+              <View style={styles.pulseLightMetricCol}>
+                <Text style={styles.pulseLightMetricLabel}>DAILY AVG</Text>
+                <Text style={styles.pulseLightMetricVal}>₹{Math.round(avgDay).toLocaleString('en-IN')}</Text>
+              </View>
+              <View style={styles.pulseLightDivider} />
+              <View style={styles.pulseLightMetricCol}>
+                <Text style={styles.pulseLightMetricLabel}>SAVINGS RATE</Text>
+                <Text style={[styles.pulseLightMetricVal, { color: savingsRate > 50 ? '#059669' : '#DC2626' }]}>
+                  {Math.round(savingsRate)}%
+                </Text>
+              </View>
+              <View style={styles.pulseLightDivider} />
+              <View style={styles.pulseLightMetricCol}>
+                <Text style={styles.pulseLightMetricLabel}>VS LAST MO</Text>
+                <Text style={[styles.pulseLightMetricVal, { color: compMore ? '#DC2626' : '#059669' }]}>
+                  {compMore ? '↑' : '↓'} {Math.abs(Math.round(compDiff))}%
+                </Text>
               </View>
             </View>
           </View>
-
-          {/* Bottom Half: 3 Micro-Glance Metrics Strip */}
-          <View style={styles.pulseMetricsStrip}>
-            <View style={styles.pulseMetricItem}>
-              <Text style={styles.pulseMetricLabel}>DAILY AVG</Text>
-              <Text style={styles.pulseMetricVal}>₹{Math.round(avgDay).toLocaleString('en-IN')}</Text>
-            </View>
-            <View style={styles.pulseMetricDivider} />
-            <View style={styles.pulseMetricItem}>
-              <Text style={styles.pulseMetricLabel}>SAVINGS RATE</Text>
-              <Text style={[styles.pulseMetricVal, { color: savingsRate > 50 ? '#10B981' : '#EF4444' }]}>
-                {Math.round(savingsRate)}%
-              </Text>
-            </View>
-            <View style={styles.pulseMetricDivider} />
-            <View style={styles.pulseMetricItem}>
-              <Text style={styles.pulseMetricLabel}>VS LAST MO</Text>
-              <Text style={[styles.pulseMetricVal, { color: compMore ? '#EF4444' : '#10B981' }]}>
-                {compMore ? '↑' : '↓'} {Math.abs(Math.round(compDiff))}%
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
+        </Animated.View>
 
         {/* ── MAGIC SHAKE INTERACTIVE CARD (if active) ── */}
         {shakeBannerVisible && (
@@ -1075,7 +1073,7 @@ export default function DashboardScreen({ navigation }) {
               </View>
               <View style={styles.aiUnifiedChatBtn}>
                 <Text style={styles.aiUnifiedChatText}>Chat</Text>
-                <Ionicons name="arrow-forward" size={11} color="#FF6B35" />
+                <Ionicons name="arrow-forward" size={11} color="#2563EB" />
               </View>
             </View>
             <Text style={styles.aiUnifiedBody}>
@@ -1885,59 +1883,56 @@ const styles = StyleSheet.create({
   mainCardHeader: {
     flexDirection: 'row', 
     justifyContent: 'space-between',
-    alignItems: 'flex-start', 
+    alignItems: 'center', 
     marginBottom: 6,
   },
+  safeTagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+  },
+  safeTagText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  statusDotLive: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  headerIconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
   heroCardSubLabel: {
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255, 255, 255, 0.75)',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
-  cardChip: {
-    width: 38,
-    height: 27,
-    borderRadius: 6,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#CA8A04',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  cardChipGradient: {
-    flex: 1,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chipLineHoriz: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(180, 83, 9, 0.45)',
-  },
-  chipLineVert: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 1,
-    backgroundColor: 'rgba(180, 83, 9, 0.45)',
-  },
-  chipCenterPad: {
-    width: 15,
-    height: 11,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(180, 83, 9, 0.5)',
-  },
   balanceContainer: { 
     flexDirection: 'row', 
     alignItems: 'baseline', 
-    marginTop: 4,
+    marginTop: 2,
   },
   currencySymbol: { 
     color: 'rgba(255, 255, 255, 0.9)', 
@@ -1952,50 +1947,35 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   budgetTrackBg: {
-    height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 3,
     overflow: 'hidden',
-    marginVertical: 8,
+    marginTop: 4,
+    marginBottom: 8,
   },
   budgetTrackFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
   },
-  cardMidRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 4,
+  progressSubtitle: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 12,
+    fontWeight: '600',
   },
-  cardNumberText: {
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 12.5,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-  },
-  daysLeftPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  daysLeftText: {
-    color: '#FFFFFF',
-    fontSize: 10.5,
-    fontWeight: '700',
+  progressSubtitleHighlight: {
+    color: '#34D399',
+    fontSize: 12,
+    fontWeight: '800',
   },
   budgetPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 12,
   },
   budgetPillText: {
@@ -2003,47 +1983,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  cardFooterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  cardHolderLabel: {
-    color: 'rgba(255, 255, 255, 0.75)',
-    fontSize: 9.5,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  cardHolderName: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    marginTop: 2,
-  },
-  mastercardContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  mcCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    opacity: 0.95,
-  },
 
-  // ── Connected 3-Metric Strip ──
+  // ── Connected 3-Metric Frosted Glass Strip ──
   metricsStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     paddingVertical: 10,
     paddingHorizontal: 6,
   },
@@ -2054,7 +2003,7 @@ const styles = StyleSheet.create({
   metricDivider: {
     width: 1,
     height: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
   },
   metricLabel: {
     color: 'rgba(255, 255, 255, 0.8)',
@@ -2065,7 +2014,7 @@ const styles = StyleSheet.create({
   },
   metricVal: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
   },
   avatarOnlineDot: {
@@ -2080,62 +2029,55 @@ const styles = StyleSheet.create({
     borderColor: '#F7F7FB',
   },
 
-  // ── Quick Action Pill Chips (Horizontal) ──
+  // ── Quick Action Dock (Vertical Cards with Gradient Icons) ──
   actionDockSection: {
-    marginVertical: 8,
+    marginVertical: 10,
   },
-  quickPillsScroll: {
+  actionDockScroll: {
     paddingVertical: 4,
     paddingHorizontal: 2,
   },
-  whitePillChip: {
-    flexDirection: 'row',
+  actionDockItem: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginRight: 8,
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    marginRight: 14,
+    width: 64,
   },
-  pillIconBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  actionDockIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 6,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  whitePillLabel: {
-    color: '#0F172A',
-    fontSize: 13,
+  actionDockLabel: {
+    marginTop: 6,
+    fontSize: 12,
     fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
   },
-  customizePillChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  actionDockCustomizeBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  customizePillText: {
-    color: '#6B7280',
+  actionDockCustomizeLabel: {
+    marginTop: 6,
     fontSize: 12,
     fontWeight: '600',
+    color: '#64748B',
+    textAlign: 'center',
   },
 
   // ── Section Header Row ──
@@ -2152,7 +2094,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   viewAllLink: {
-    color: '#FF6B35',
+    color: '#2563EB',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -2249,13 +2191,13 @@ const styles = StyleSheet.create({
   aiUnifiedChatBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
   },
   aiUnifiedChatText: {
-    color: '#FF6B35',
+    color: '#2563EB',
     fontSize: 11,
     fontWeight: '700',
     marginRight: 3,
@@ -2485,116 +2427,78 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  // ── Financial Pulse Card ──
-  financialPulseCard: {
+  // ── Financial Pulse Card (Clean Light Executive Card) ──
+  pulseLightCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.22)',
-    padding: 18,
+    borderColor: '#E2E8F0',
+    padding: 16,
     marginVertical: 10,
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  pulseGlowAura: {
-    position: 'absolute',
-    top: -50,
-    right: -50,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
-  },
-  pulseTopRow: {
+  pulseLightTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  pulseCardLabel: {
-    fontSize: 10.5,
-    color: '#A7F3D0',
+  pulseLightHeaderTitle: {
+    fontSize: 11,
     fontWeight: '800',
+    color: '#64748B',
     letterSpacing: 0.8,
-    marginLeft: 6,
   },
-  pulseSafeAmount: {
-    fontSize: 27,
-    fontWeight: '900',
-    marginTop: 3,
-    letterSpacing: -0.6,
-  },
-  pulsePerDay: {
-    fontSize: 13,
-    color: '#94A3B8',
+  pulseLightStatusText: {
+    fontSize: 12.5,
+    color: '#334155',
     fontWeight: '600',
+    marginTop: 2,
+    lineHeight: 18,
   },
-  pulseSubtext: {
-    fontSize: 11.5,
-    color: '#94A3B8',
-    marginTop: 3,
-    fontWeight: '500',
-  },
-  pulseHealthBadge: {
+  pulsePaceBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginLeft: 10,
   },
-  pulseHealthScore: {
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  pulseHealthSub: {
-    color: '#94A3B8',
-    fontSize: 8.5,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    marginTop: 1,
-  },
-  pulseHealthTierPill: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginTop: 3,
-  },
-  pulseHealthTier: {
-    fontSize: 9.5,
+  pulsePaceBadgeText: {
+    fontSize: 11.5,
     fontWeight: '800',
   },
-  pulseMetricsStrip: {
+  pulseLightMetricsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
-  pulseMetricItem: {
+  pulseLightMetricCol: {
     flex: 1,
     alignItems: 'center',
   },
-  pulseMetricDivider: {
+  pulseLightDivider: {
     width: 1,
     height: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#E2E8F0',
   },
-  pulseMetricLabel: {
-    color: '#64748B',
-    fontSize: 9,
+  pulseLightMetricLabel: {
+    color: '#94A3B8',
+    fontSize: 9.5,
     fontWeight: '700',
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: 3,
   },
-  pulseMetricVal: {
-    color: '#FFFFFF',
-    fontSize: 13,
+  pulseLightMetricVal: {
+    color: '#0F172A',
+    fontSize: 14,
     fontWeight: '800',
   },
 
@@ -2640,8 +2544,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
     paddingHorizontal: 2,
+  },
+  flashIconBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
   },
   quickSectionTitle: {
     fontSize: 12,
@@ -2649,31 +2562,31 @@ const styles = StyleSheet.create({
     color: '#64748B',
     letterSpacing: 0.8,
   },
-  fastPill: {
-    backgroundColor: 'rgba(6, 182, 212, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginLeft: 6,
+  quickCustomizeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
-  fastPillText: {
-    color: '#06B6D4',
-    fontSize: 9,
-    fontWeight: '800',
-  },
-  quickSectionSub: {
+  quickCustomizeText: {
+    color: '#2563EB',
     fontSize: 11,
-    color: '#64748B',
-    fontWeight: '500',
+    fontWeight: '700',
   },
-  quickChip: {
+  quickLogScroll: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  quickLogCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingVertical: 7,
-    paddingHorizontal: 11,
-    marginRight: 8,
+    borderRadius: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 13,
+    marginRight: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#64748B',
@@ -2682,40 +2595,41 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  quickChipEmojiBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#F8FAFC',
+  quickEmojiBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 6,
   },
-  quickChipAmount: {
+  quickCardAmount: {
     color: '#0F172A',
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '800',
-    marginRight: 4,
   },
-  quickChipLabel: {
+  quickCardLabel: {
     color: '#64748B',
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '600',
+    marginTop: 1,
   },
-  quickAddChip: {
+  quickAddCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDFA',
-    borderRadius: 18,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#99F6E4',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    borderStyle: 'dashed',
+    marginRight: 10,
   },
-  quickAddChipText: {
-    color: '#0D9488',
+  quickAddCardText: {
+    color: '#2563EB',
     fontSize: 12,
     fontWeight: '700',
+    marginLeft: 4,
   },
   statusDot: {
     width: 7,
