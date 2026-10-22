@@ -79,6 +79,7 @@ export default function DashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [username, setUsername] = useState('User');
+  const [fullName, setFullName] = useState('');
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
   const [newBudget, setNewBudget] = useState('');
   const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
@@ -402,6 +403,21 @@ export default function DashboardScreen({ navigation }) {
     try {
       const name = await getUsername();
       if (name) setUsername(name);
+
+      try {
+        const cachedProfile = await AsyncStorage.getItem('user_profile');
+        if (cachedProfile) {
+          const parsed = JSON.parse(cachedProfile);
+          if (parsed.full_name) setFullName(parsed.full_name);
+        }
+      } catch (e) {}
+
+      api.get('/profile/').then(res => {
+        if (res.data?.full_name) {
+          setFullName(res.data.full_name);
+          AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
+        }
+      }).catch(() => {});
       
       loadCustomShortcuts();
       loadCustomActionDock();
@@ -646,10 +662,10 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.greetingHeaderRow}>
             <View>
               <Text style={styles.greetText}>
-                {getGreeting()} ☀️
+                {getGreeting()}
               </Text>
               <Text style={styles.greetSubtext}>
-                Today, {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
               </Text>
             </View>
             <TouchableOpacity
@@ -663,10 +679,11 @@ export default function DashboardScreen({ navigation }) {
               >
                 <View style={styles.avatarInnerCircle}>
                   <Text style={styles.avatarText}>
-                    {username ? username.charAt(0).toUpperCase() : 'A'}
+                    {(fullName || username || 'A').charAt(0).toUpperCase()}
                   </Text>
                 </View>
               </LinearGradient>
+              <View style={styles.avatarOnlineDot} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -709,19 +726,20 @@ export default function DashboardScreen({ navigation }) {
         {/* ── BLUE GRADIENT HERO BALANCE CARD (Target Design Style) ── */}
         <Animated.View style={{ opacity: animCardOpacity, transform: [{ translateY: animCardY }, { scale: animCardScale }] }}>
           <LinearGradient
-            colors={['#4F7CFF', '#3B5BDB']}
+            colors={['#2563EB', '#1D4ED8', '#1E40AF']}
             style={styles.mainCard}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            {/* Subtle circle decorations */}
+            {/* Subtle frosted glass reflections */}
             <View style={styles.cardGlowCircle} />
             <View style={styles.cardGlowCircleSmall} />
+            <View style={styles.cardSheenStripe} />
 
-            {/* Top row: Label & Chip Icon */}
+            {/* Top row: Label & Realistic Metallic EMV Chip */}
             <View style={styles.mainCardHeader}>
               <View>
-                <Text style={styles.heroCardSubLabel}>Available Budget</Text>
+                <Text style={styles.heroCardSubLabel}>AVAILABLE BUDGET</Text>
                 <View style={styles.balanceContainer}>
                   <Text style={styles.currencySymbol}>₹</Text>
                   <AnimatedNumber
@@ -731,15 +749,41 @@ export default function DashboardScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Golden Credit Card Chip Icon Style */}
+              {/* Realistic Gold Metallic EMV Smart Chip */}
               <View style={styles.cardChip}>
-                <View style={styles.cardChipInner} />
+                <LinearGradient
+                  colors={['#FDE68A', '#F59E0B', '#B45309']}
+                  style={styles.cardChipGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.chipLineHoriz} />
+                  <View style={styles.chipLineVert} />
+                  <View style={styles.chipCenterPad} />
+                </LinearGradient>
               </View>
             </View>
 
-            {/* Card Mid: Card Number / Cycle Days */}
+            {/* Slim Glowing Budget Progress Track */}
+            <View style={styles.budgetTrackBg}>
+              <LinearGradient
+                colors={usedPercent > 85 ? ['#EF4444', '#DC2626'] : ['#34D399', '#10B981']}
+                style={[styles.budgetTrackFill, { width: `${Math.min(100, Math.max(4, 100 - usedPercent))}%` }]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              />
+            </View>
+
+            {/* Card Mid: Card Number / Cycle Days / Budget Pill */}
             <View style={styles.cardMidRow}>
-              <Text style={styles.cardNumberText}>•••• •••• {daysLeft}d left</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.cardNumberText}>•••• 2026</Text>
+                <View style={styles.daysLeftPill}>
+                  <Ionicons name="time-outline" size={10} color="#FFFFFF" style={{ marginRight: 3 }} />
+                  <Text style={styles.daysLeftText}>{daysLeft}d left</Text>
+                </View>
+              </View>
+
               <TouchableOpacity 
                 style={styles.budgetPillBtn} 
                 onPress={() => {
@@ -750,26 +794,27 @@ export default function DashboardScreen({ navigation }) {
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.budgetPillText}>of ₹{budget.toLocaleString('en-IN')} budget ✎</Text>
+                <Ionicons name="pencil" size={10} color="#FFFFFF" style={{ marginRight: 4 }} />
+                <Text style={styles.budgetPillText}>of ₹{budget.toLocaleString('en-IN')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Card Bottom Row: Holder + Mastercard Circles */}
             <View style={styles.cardFooterRow}>
               <View>
-                <Text style={styles.cardHolderLabel}>Card Holder</Text>
+                <Text style={styles.cardHolderLabel}>CARD HOLDER</Text>
                 <Text style={styles.cardHolderName} numberOfLines={1}>
-                  {username ? (username.charAt(0).toUpperCase() + username.slice(1)) : 'Ajay'}
+                  {fullName ? fullName.toUpperCase() : (username ? username.replace(/\d+$/, '').toUpperCase() : 'AJAY VISHWAKARMA')}
                 </Text>
               </View>
 
               <View style={styles.mastercardContainer}>
-                <View style={[styles.mcCircle, { backgroundColor: '#EF4444' }]} />
-                <View style={[styles.mcCircle, { backgroundColor: '#F59E0B', marginLeft: -12 }]} />
+                <View style={[styles.mcCircle, { backgroundColor: '#EB001B' }]} />
+                <View style={[styles.mcCircle, { backgroundColor: '#F79E1B', marginLeft: -9 }]} />
               </View>
             </View>
 
-            {/* Connected 3-Metric Strip */}
+            {/* Connected 3-Metric Frosted Glass Strip */}
             <View style={styles.metricsStrip}>
               <View style={styles.metricColumn}>
                 <Text style={styles.metricLabel}>USED</Text>
@@ -841,11 +886,11 @@ export default function DashboardScreen({ navigation }) {
               <Text style={styles.quickCustomizeText}>Edit & Add</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8, paddingVertical: 2 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8, paddingVertical: 4 }}>
             {quickShortcuts.map((item, i) => (
               <TouchableOpacity
                 key={item.id || i}
-                style={[styles.quickChip, { borderColor: (item.color || '#06B6D4') + '40' }]}
+                style={[styles.quickChip, { borderColor: (item.color || '#06B6D4') + '35' }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   navigation.navigate('AddExpense', {
@@ -856,7 +901,9 @@ export default function DashboardScreen({ navigation }) {
                 }}
                 activeOpacity={0.75}
               >
-                <Text style={{ fontSize: 16, marginRight: 6 }}>{item.icon}</Text>
+                <View style={styles.quickChipEmojiBox}>
+                  <Text style={{ fontSize: 15 }}>{item.icon}</Text>
+                </View>
                 <Text style={styles.quickChipAmount}>₹{item.amount}</Text>
                 <Text style={styles.quickChipLabel}>{item.label.split('/')[0].trim()}</Text>
               </TouchableOpacity>
@@ -868,7 +915,7 @@ export default function DashboardScreen({ navigation }) {
               onPress={handleOpenAddShortcut}
               activeOpacity={0.75}
             >
-              <Ionicons name="add" size={15} color="#06B6D4" style={{ marginRight: 4 }} />
+              <Ionicons name="add" size={15} color="#0D9488" style={{ marginRight: 3 }} />
               <Text style={styles.quickAddChipText}>New</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -878,13 +925,18 @@ export default function DashboardScreen({ navigation }) {
         <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }] }}>
 
         <LinearGradient
-          colors={['#131B2E', '#0D1424']}
+          colors={['#0F172A', '#1E293B']}
           style={styles.financialPulseCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
+          {/* Subtle Emerald Glow Aura */}
+          <View style={styles.pulseGlowAura} />
+
           {/* Top Half: Safe Limit & Fin-Score */}
           <View style={styles.pulseTopRow}>
             <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
                 <View style={[styles.statusDot, { backgroundColor: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} />
                 <Text style={styles.pulseCardLabel}>TODAY'S SAFE LIMIT</Text>
               </View>
@@ -899,7 +951,9 @@ export default function DashboardScreen({ navigation }) {
             <View style={[styles.pulseHealthBadge, { borderColor: healthColor + '60' }]}>
               <Text style={[styles.pulseHealthScore, { color: healthColor }]}>{healthScore}</Text>
               <Text style={styles.pulseHealthSub}>FIN-SCORE</Text>
-              <Text style={[styles.pulseHealthTier, { color: healthColor }]} numberOfLines={1}>{healthLabel}</Text>
+              <View style={[styles.pulseHealthTierPill, { backgroundColor: healthColor + '20' }]}>
+                <Text style={[styles.pulseHealthTier, { color: healthColor }]} numberOfLines={1}>{healthLabel}</Text>
+              </View>
             </View>
           </View>
 
@@ -1789,15 +1843,17 @@ const styles = StyleSheet.create({
   // ── Blue Gradient Hero Balance Card ──
   mainCard: { 
     borderRadius: 24, 
-    padding: 22, 
+    padding: 20, 
     marginBottom: 16, 
     position: 'relative',
     overflow: 'hidden',
-    shadowColor: '#3B5BDB',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowColor: '#1D4ED8',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.32,
+    shadowRadius: 22,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
   },
   cardGlowCircle: {
     position: 'absolute',
@@ -1817,6 +1873,15 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
+  cardSheenStripe: {
+    position: 'absolute',
+    top: -60,
+    left: 30,
+    width: 90,
+    height: 280,
+    transform: [{ rotate: '25deg' }],
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
   mainCardHeader: {
     flexDirection: 'row', 
     justifyContent: 'space-between',
@@ -1825,31 +1890,49 @@ const styles = StyleSheet.create({
   },
   heroCardSubLabel: {
     color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
   cardChip: {
     width: 38,
-    height: 26,
+    height: 27,
     borderRadius: 6,
-    backgroundColor: '#FDE047',
-    borderWidth: 1,
-    borderColor: '#EAB308',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  cardChipInner: {
-    width: 24,
-    height: 14,
-    borderRadius: 3,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#CA8A04',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  cardChipGradient: {
+    flex: 1,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipLineHoriz: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(180, 83, 9, 0.45)',
+  },
+  chipLineVert: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: 'rgba(180, 83, 9, 0.45)',
+  },
+  chipCenterPad: {
+    width: 15,
+    height: 11,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(180, 83, 9, 0.5)',
   },
   balanceContainer: { 
     flexDirection: 'row', 
@@ -1868,21 +1951,50 @@ const styles = StyleSheet.create({
     fontWeight: '900', 
     letterSpacing: -1,
   },
+  budgetTrackBg: {
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginVertical: 8,
+  },
+  budgetTrackFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
   cardMidRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: 4,
   },
   cardNumberText: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.85)',
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 1.5,
   },
-  budgetPillBtn: {
+  daysLeftPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    paddingHorizontal: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  daysLeftText: {
+    color: '#FFFFFF',
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  budgetPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 12,
   },
@@ -1895,21 +2007,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 2,
-    marginBottom: 14,
+    marginTop: 4,
+    marginBottom: 12,
   },
   cardHolderLabel: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.75)',
     fontSize: 9.5,
-    fontWeight: '700',
+    fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   cardHolderName: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
-    marginTop: 1,
+    letterSpacing: 1.2,
+    marginTop: 2,
   },
   mastercardContainer: {
     flexDirection: 'row',
@@ -1919,7 +2032,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    opacity: 0.9,
+    opacity: 0.95,
   },
 
   // ── Connected 3-Metric Strip ──
@@ -1927,8 +2040,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
     paddingVertical: 10,
     paddingHorizontal: 6,
   },
@@ -1953,6 +2068,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
+  avatarOnlineDot: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#10B981',
+    borderWidth: 2,
+    borderColor: '#F7F7FB',
+  },
 
   // ── Quick Action Pill Chips (Horizontal) ──
   actionDockSection: {
@@ -1966,42 +2092,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E2E8F0',
     marginRight: 8,
-    ...SHADOW.sm,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   pillIconBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 6,
   },
   whitePillLabel: {
-    color: '#1F2937',
+    color: '#0F172A',
     fontSize: 13,
     fontWeight: '700',
-    marginRight: 4,
-  },
-  whitePillPlus: {
-    fontSize: 14,
-    fontWeight: '800',
   },
   customizePillChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    ...SHADOW.sm,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   customizePillText: {
     color: '#6B7280',
@@ -2358,12 +2487,27 @@ const styles = StyleSheet.create({
 
   // ── Financial Pulse Card ──
   financialPulseCard: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: 16,
+    borderColor: 'rgba(16, 185, 129, 0.22)',
+    padding: 18,
     marginVertical: 10,
-    ...SHADOW.md,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  pulseGlowAura: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
   },
   pulseTopRow: {
     flexDirection: 'row',
@@ -2373,16 +2517,16 @@ const styles = StyleSheet.create({
   },
   pulseCardLabel: {
     fontSize: 10.5,
-    color: '#94A3B8',
+    color: '#A7F3D0',
     fontWeight: '800',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
     marginLeft: 6,
   },
   pulseSafeAmount: {
-    fontSize: 26,
+    fontSize: 27,
     fontWeight: '900',
-    marginTop: 2,
-    letterSpacing: -0.5,
+    marginTop: 3,
+    letterSpacing: -0.6,
   },
   pulsePerDay: {
     fontSize: 13,
@@ -2391,19 +2535,20 @@ const styles = StyleSheet.create({
   },
   pulseSubtext: {
     fontSize: 11.5,
-    color: '#64748B',
-    marginTop: 2,
+    color: '#94A3B8',
+    marginTop: 3,
+    fontWeight: '500',
   },
   pulseHealthBadge: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
     borderWidth: 1,
   },
   pulseHealthScore: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
   },
   pulseHealthSub: {
@@ -2413,10 +2558,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginTop: 1,
   },
+  pulseHealthTierPill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 3,
+  },
   pulseHealthTier: {
     fontSize: 9.5,
-    fontWeight: '700',
-    marginTop: 1,
+    fontWeight: '800',
   },
   pulseMetricsStrip: {
     flexDirection: 'row',
@@ -2496,11 +2646,11 @@ const styles = StyleSheet.create({
   quickSectionTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#CBD5E1',
+    color: '#64748B',
     letterSpacing: 0.8,
   },
   fastPill: {
-    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -2519,29 +2669,59 @@ const styles = StyleSheet.create({
   quickChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#131A2A',
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
     paddingVertical: 7,
-    paddingHorizontal: 12,
+    paddingHorizontal: 11,
     marginRight: 8,
     borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  quickChipEmojiBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
   },
   quickChipAmount: {
-    color: '#FFFFFF',
-    fontSize: 13,
+    color: '#0F172A',
+    fontSize: 13.5,
     fontWeight: '800',
-    marginRight: 5,
+    marginRight: 4,
   },
   quickChipLabel: {
-    color: '#94A3B8',
-    fontSize: 11,
+    color: '#64748B',
+    fontSize: 11.5,
     fontWeight: '600',
   },
+  quickAddChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDFA',
+    borderRadius: 18,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#99F6E4',
+  },
+  quickAddChipText: {
+    color: '#0D9488',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginLeft: 6,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    marginRight: 6,
   },
 
   // ── Magic Shake Card ──
