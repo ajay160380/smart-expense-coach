@@ -390,8 +390,101 @@
     font-weight: 500;
     transition: color 0.2s;
 }
-.footer-links a:hover { color: var(--primary-light); }
+/* Google Sign-In Button */
+.btn-google {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-card);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+.btn-google:hover {
+    background: var(--bg-base);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+/* OR Divider */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-light);
+}
+.auth-divider span {
+    padding: 0 12px;
+}
+
+/* Auth Tabs */
+.auth-tab-group {
+    display: flex;
+    background: var(--bg-base);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-light);
+}
+.auth-tab {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+.auth-tab.active {
+    background: var(--bg-card);
+    color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* Alert Notification */
+.auth-alert {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    display: none;
+}
+.auth-alert-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+.auth-alert-success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+}
 </style>
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 {% endblock %}
 
 {% block content %}
@@ -429,29 +522,97 @@
                 <p class="auth-subtitle">Sign in to continue your journey to financial freedom.</p>
             </div>
 
-            <form method="POST">
-                {% csrf_token %}
-                
-                <div class="form-group">
-                    <label class="form-label">Email, Phone Number or Username</label>
-                    <input type="text" name="username" class="form-input" placeholder="Enter your email, phone or username" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" id="id_password" name="password" class="form-input" placeholder="••••••••" required>
-                    <button type="button" class="pwd-toggle" onclick="togglePwd('id_password', this)">👁️</button>
+            <!-- Google One-Tap & Sign-In Wrapper -->
+            <div id="g_id_onload"
+                 data-client_id="600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com"
+                 data-callback="handleGoogleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+
+            <button type="button" class="btn-google" onclick="triggerGoogleSignIn()">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                Continue with Google
+            </button>
+
+            <div class="auth-divider">
+                <span>OR SIGN IN WITH</span>
+            </div>
+
+            <!-- Login Mode Tabs -->
+            <div class="auth-tab-group">
+                <button type="button" class="auth-tab active" id="tabPassword" onclick="switchLoginMode('password')">
+                    🔑 Password
+                </button>
+                <button type="button" class="auth-tab" id="tabOtp" onclick="switchLoginMode('otp')">
+                    💬 WhatsApp OTP
+                </button>
+            </div>
+
+            <!-- Alert Notification Banner -->
+            <div id="authAlert" class="auth-alert"></div>
+
+            <!-- 1. Password Section -->
+            <div id="passwordSection">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label">Email, Phone Number or Username</label>
+                        <input type="text" name="username" class="form-input" placeholder="Enter your email, phone or username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="id_password" name="password" class="form-input" placeholder="••••••••" required>
+                        <button type="button" class="pwd-toggle" onclick="togglePwd('id_password', this)">👁️</button>
+                    </div>
+
+                    <div class="auth-actions">
+                        <label class="checkbox-wrap">
+                            <input type="checkbox"> Remember me
+                        </label>
+                        <a href="{% url 'forgot_password' %}" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Sign In to Dashboard</button>
+                </form>
+            </div>
+
+            <!-- 2. WhatsApp OTP Section -->
+            <div id="otpSection" style="display: none;">
+                <div id="otpStep1">
+                    <div class="form-group">
+                        <label class="form-label">WhatsApp Mobile Number</label>
+                        <input type="text" id="login_phone_input" class="form-input" placeholder="e.g. 9876543210" maxlength="15">
+                    </div>
+                    <button type="button" class="btn-submit" id="btnSendLoginOtp" onclick="sendLoginOTP()">
+                        📲 Send OTP to WhatsApp
+                    </button>
                 </div>
 
-                <div class="auth-actions">
-                    <label class="checkbox-wrap">
-                        <input type="checkbox"> Remember me
-                    </label>
-                    <a href="{% url 'forgot_password' %}" class="forgot-link">Forgot password?</a>
+                <div id="otpStep2" style="display: none; margin-top: 10px;">
+                    <div style="background: rgba(37, 211, 102, 0.1); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: center;">
+                        <p style="margin: 0; font-size: 0.9rem; color: #25D366; font-weight: 500;">
+                            💬 We've sent a 6-digit OTP code to your WhatsApp!
+                        </p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="text-align: center;">Enter 6-Digit OTP</label>
+                        <input type="text" id="login_otp_input" class="form-input" placeholder="------" maxlength="6" style="text-align:center; font-size: 1.6rem; letter-spacing: 10px; font-weight: 700;">
+                    </div>
+                    <button type="button" class="btn-submit" id="btnVerifyLoginOtp" onclick="verifyLoginOTP()">
+                        🚀 Verify & Open Dashboard
+                    </button>
+                    <div style="text-align:center; margin-top:15px;">
+                        <a href="javascript:void(0)" onclick="goBackToPhoneStep()" style="color:var(--text-muted); font-size:0.85rem; text-decoration: underline;">Change Phone Number</a>
+                    </div>
                 </div>
-
-                <button type="submit" class="btn-submit">Sign In to Dashboard</button>
-            </form>
+            </div>
 
             <div class="auth-footer">
                 Don't have an account? <a href="{% url 'register' %}">Create one now</a>
@@ -474,6 +635,44 @@
 </footer>
 
 <script>
+function getCsrfToken() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '';
+}
+
+function showAuthAlert(msg, isError = true) {
+    const el = document.getElementById('authAlert');
+    if (!el) return;
+    el.className = `auth-alert ${isError ? 'auth-alert-error' : 'auth-alert-success'}`;
+    el.innerText = msg;
+    el.style.display = 'block';
+}
+
+function hideAuthAlert() {
+    const el = document.getElementById('authAlert');
+    if (el) el.style.display = 'none';
+}
+
+function switchLoginMode(mode) {
+    hideAuthAlert();
+    const tabPwd = document.getElementById('tabPassword');
+    const tabOtp = document.getElementById('tabOtp');
+    const secPwd = document.getElementById('passwordSection');
+    const secOtp = document.getElementById('otpSection');
+
+    if (mode === 'otp') {
+        tabPwd.classList.remove('active');
+        tabOtp.classList.add('active');
+        secPwd.style.display = 'none';
+        secOtp.style.display = 'block';
+    } else {
+        tabOtp.classList.remove('active');
+        tabPwd.classList.add('active');
+        secOtp.style.display = 'none';
+        secPwd.style.display = 'block';
+    }
+}
+
 function togglePwd(id, btn) {
     const input = document.getElementById(id);
     if(input.type === 'password') {
@@ -483,6 +682,153 @@ function togglePwd(id, btn) {
         input.type = 'password';
         btn.innerText = '👁️';
     }
+}
+
+// ── Google OAuth Handlers ──
+function triggerGoogleSignIn() {
+    hideAuthAlert();
+    if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                // If One Tap was dismissed, open the standard Google prompt
+                google.accounts.id.renderButton(
+                    document.getElementById("g_id_onload"),
+                    { theme: "outline", size: "large" }
+                );
+            }
+        });
+    } else {
+        showAuthAlert("Google Sign-In is initializing. Please try again in a moment.");
+    }
+}
+
+async function handleGoogleCredentialResponse(response) {
+    if (!response || !response.credential) return;
+    hideAuthAlert();
+    showAuthAlert("Signing in with Google...", false);
+
+    try {
+        const res = await fetch('/api/auth/google/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                id_token: response.credential,
+                mode: 'login'
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && (data.status === 'success' || data.token)) {
+            showAuthAlert("Welcome! Redirecting to Dashboard...", false);
+            setTimeout(() => {
+                window.location.href = '/dashboard/';
+            }, 600);
+        } else {
+            showAuthAlert(data.error || 'Google login failed. Please try again.');
+        }
+    } catch (e) {
+        showAuthAlert('Network error during Google sign in.');
+    }
+}
+
+// ── WhatsApp OTP Login Handlers ──
+let loginIdentifier = '';
+
+async function sendLoginOTP() {
+    hideAuthAlert();
+    const phoneInput = document.getElementById('login_phone_input');
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+
+    if (!phone) {
+        showAuthAlert('Please enter your WhatsApp mobile number.');
+        return;
+    }
+
+    loginIdentifier = phone;
+    const btn = document.getElementById('btnSendLoginOtp');
+    btn.disabled = true;
+    btn.innerText = 'Sending OTP...';
+
+    try {
+        const res = await fetch('/api/auth/send-otp/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                identifier: phone,
+                action: 'login'
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            document.getElementById('otpStep1').style.display = 'none';
+            document.getElementById('otpStep2').style.display = 'block';
+            document.getElementById('login_otp_input').focus();
+        } else {
+            showAuthAlert(data.error || 'Failed to send OTP. Please try again.');
+        }
+    } catch (e) {
+        showAuthAlert('Network error. Please check your connection.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = '📲 Send OTP to WhatsApp';
+    }
+}
+
+async function verifyLoginOTP() {
+    hideAuthAlert();
+    const otpInput = document.getElementById('login_otp_input');
+    const otp = otpInput ? otpInput.value.trim() : '';
+
+    if (!otp || otp.length !== 6) {
+        showAuthAlert('Please enter the 6-digit OTP code sent to your WhatsApp.');
+        return;
+    }
+
+    const btn = document.getElementById('btnVerifyLoginOtp');
+    btn.disabled = true;
+    btn.innerText = 'Verifying...';
+
+    try {
+        const res = await fetch('/api/auth/login-otp/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                identifier: loginIdentifier,
+                otp: otp
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && (data.status === 'success' || data.token)) {
+            showAuthAlert("Login successful! Redirecting...", false);
+            setTimeout(() => {
+                window.location.href = '/dashboard/';
+            }, 600);
+        } else {
+            showAuthAlert(data.error || 'Invalid or expired OTP code.');
+        }
+    } catch (e) {
+        showAuthAlert('Network error during verification.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 Verify & Open Dashboard';
+    }
+}
+
+function goBackToPhoneStep() {
+    hideAuthAlert();
+    document.getElementById('otpStep2').style.display = 'none';
+    document.getElementById('otpStep1').style.display = 'block';
 }
 </script>
 {% endblock %}

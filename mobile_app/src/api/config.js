@@ -6,11 +6,10 @@
  */
 
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getToken, clearAuthData } from '../utils/auth';
 
-// ── Base URL — change for production ──
-export const BASE_URL = 'https://smart-expense-coach.onrender.com';
-console.log('🔴🔴🔴 CURRENT API URL IS:', BASE_URL);
+// ── Base URL — configurable for environment ──
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://smart-expense-coach.onrender.com';
 
 // ── Axios Instance ──
 const api = axios.create({
@@ -45,7 +44,7 @@ api.interceptors.request.use(
     }
 
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await getToken();
       if (token) {
         config.headers.Authorization = `Token ${token}`;
       }
@@ -59,6 +58,7 @@ api.interceptors.request.use(
 
 // ── Response Interceptor ──
 let onUnauthorized = null;
+let isHandling401 = false;
 
 export function setUnauthorizedHandler(handler) {
   onUnauthorized = handler;
@@ -70,11 +70,15 @@ api.interceptors.response.use(
     if (error.response) {
       const { status } = error.response;
 
-      // ── 401: Token expired / invalid ──
+      // ── 401: Token expired / invalid (AUTH-002: handled once without duplicate alerts) ──
       if (status === 401) {
-        await AsyncStorage.multiRemove(['userToken', 'userId', 'username', 'loginTime']);
-        if (onUnauthorized) {
-          onUnauthorized();
+        if (!isHandling401) {
+          isHandling401 = true;
+          await clearAuthData();
+          if (onUnauthorized) {
+            onUnauthorized();
+          }
+          setTimeout(() => { isHandling401 = false; }, 3000);
         }
       }
 

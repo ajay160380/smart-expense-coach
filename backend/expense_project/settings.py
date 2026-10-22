@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 import dj_database_url
 
@@ -24,18 +25,47 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-fallback-key-change-this-in-prod')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = ['*']
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-local-secret-key-change-me'
+    else:
+        raise RuntimeError("DJANGO_SECRET_KEY environment variable is required in production.")
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.hf.space',
-    'https://huggingface.co',
-]
+# SEC-003: Explicit allowed hosts
+raw_allowed_hosts = os.getenv('ALLOWED_HOSTS', '').strip()
+if raw_allowed_hosts:
+    ALLOWED_HOSTS = [h.strip() for h in raw_allowed_hosts.split(',') if h.strip()]
+elif DEBUG:
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = [
+        'localhost',
+        '127.0.0.1',
+        'smart-expense-coach.onrender.com',
+        '.onrender.com',
+        '.hf.space',
+    ]
+
+# SEC-001: Required internal secrets (no insecure fallbacks)
+DAILY_TIP_SECRET = os.getenv('DAILY_TIP_SECRET')
+ADMIN_PUSH_SECRET = os.getenv('ADMIN_PUSH_SECRET')
+INTERNAL_BOT_SECRET = os.getenv('INTERNAL_BOT_SECRET')
+
+raw_csrf_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '').strip()
+if raw_csrf_origins:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in raw_csrf_origins.split(',') if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        'https://smart-expense-coach.onrender.com',
+        'https://*.onrender.com',
+        'https://*.hf.space',
+        'https://huggingface.co',
+    ]
 USE_X_FORWARDED_HOST = True
 
 
@@ -50,6 +80,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders',
     'tracker',
     'mathfilters',
 ]
@@ -58,13 +89,14 @@ MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'tracker.middleware.TokenAuthMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'expense_project.urls'
@@ -91,18 +123,26 @@ WSGI_APPLICATION = 'expense_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
-if not DATABASES['default']:
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
     }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+    if not DATABASES['default']:
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
 
 
 # Password validation
@@ -141,17 +181,32 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-CSRF_TRUSTED_ORIGINS = ['https://smart-expense-coach.onrender.com', 'https://*.hf.space', 'https://huggingface.co']
-
-# Hugging Face iframe cookie settings (Required for cross-origin embedding)
+# SEC-003: Security headers, cookies & HTTPS redirect
 import sys
 is_hf = any('7860' in arg for arg in sys.argv)
-if is_hf or not DEBUG:
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+
+if is_hf:
+    X_FRAME_OPTIONS = 'ALLOWALL'
     SESSION_COOKIE_SAMESITE = 'None'
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SAMESITE = 'None'
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+elif not DEBUG:
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_SSL_REDIRECT = (os.getenv('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 't')) if 'test' not in sys.argv else False
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    X_FRAME_OPTIONS = 'DENY'
 
 AUTHENTICATION_BACKENDS = [
     'tracker.backends.PhoneAuthBackend',
@@ -178,7 +233,20 @@ EMAIL_TIMEOUT = 5
 RESEND_API_KEY = (os.getenv('RESEND_API_KEY') or '').strip()
 RESEND_FROM_EMAIL = (os.getenv('RESEND_FROM_EMAIL') or 'Expense Tracker <onboarding@resend.dev>').strip()
 
-CORS_ALLOW_ALL_ORIGINS = True
+# SEC-003: Explicit CORS origins (No wildcard in production)
+CORS_ALLOW_ALL_ORIGINS = False
+raw_cors = os.getenv('CORS_ALLOWED_ORIGINS', '').strip()
+if raw_cors:
+    CORS_ALLOWED_ORIGINS = [c.strip() for c in raw_cors.split(',') if c.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        'https://smart-expense-coach.onrender.com',
+        'http://localhost:8081',
+        'http://localhost:19006',
+        'http://localhost:3000',
+        'http://127.0.0.1:8081',
+        'http://127.0.0.1:19006',
+    ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

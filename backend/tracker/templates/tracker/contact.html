@@ -211,20 +211,48 @@
     
     <!-- Right Form -->
     <div class="contact-form-wrapper" data-aos="fade-left" data-aos-delay="100">
-        <form onsubmit="event.preventDefault(); alert('Message sent successfully! We will get back to you soon.'); this.reset();">
+        {% if success %}
+            <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #22c55e; padding: 20px; border-radius: 16px; margin-bottom: 24px; text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 8px;">✅</div>
+                <h3 style="margin: 0 0 6px 0; font-family: 'Outfit', sans-serif;">Message Sent!</h3>
+                <p style="margin: 0; font-size: 0.95rem; color: var(--text-main);">Thank you for reaching out. Our support team will review your message and reply via email within 24 hours.</p>
+            </div>
+        {% endif %}
+
+        {% if errors %}
+            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 16px 20px; border-radius: 14px; margin-bottom: 24px;">
+                <h4 style="margin: 0 0 8px 0; font-family: 'Outfit', sans-serif;">Please correct the following:</h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
+                    {% for err in errors %}
+                        <li>{{ err }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'contact' %}">
+            {% csrf_token %}
+            <!-- Honeypot spam trap -->
+            <input type="text" name="website" style="display:none;" tabindex="-1" autocomplete="off">
+
             <div class="cf-group">
                 <label class="cf-label">Full Name</label>
-                <input type="text" class="cf-input" placeholder="John Doe" required>
+                <input type="text" name="name" class="cf-input" placeholder="John Doe" value="{{ form_data.name|default:'' }}" required maxlength="150">
             </div>
             
             <div class="cf-group">
                 <label class="cf-label">Email Address</label>
-                <input type="email" class="cf-input" placeholder="john@example.com" required>
+                <input type="email" name="email" class="cf-input" placeholder="john@example.com" value="{{ form_data.email|default:'' }}" required maxlength="254">
+            </div>
+
+            <div class="cf-group">
+                <label class="cf-label">Subject</label>
+                <input type="text" name="subject" class="cf-input" placeholder="How can we help?" value="{{ form_data.subject|default:'' }}" maxlength="200">
             </div>
             
             <div class="cf-group">
                 <label class="cf-label">Message</label>
-                <textarea class="cf-textarea" placeholder="How can we help you?" required></textarea>
+                <textarea name="message" class="cf-textarea" placeholder="Describe your question or issue in detail..." required maxlength="5000">{{ form_data.message|default:'' }}</textarea>
             </div>
             
             <button type="submit" class="btn-send">Send Message</button>

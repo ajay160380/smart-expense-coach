@@ -30,3 +30,4 @@ psycopg2-binary
 django-cors-headers==4.6.0
 reportlab==4.0.0
 firebase-admin==6.6.0
+gunicorn>=21.2.0

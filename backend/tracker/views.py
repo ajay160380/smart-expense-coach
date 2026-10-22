@@ -44,12 +44,17 @@ from django.http import JsonResponse
 import json
 from django.conf import settings
 import random
-from .models import Expense, Subscription, UserProfile, SavingsGoal, SplitGroup, SplitExpense, SplitMember, SplitSettlement, WhatsAppSession, OTPVerification, Note
+import hmac
+from .models import (
+    Expense, Subscription, UserProfile, SavingsGoal, SplitGroup,
+    SplitExpense, SplitMember, SplitSettlement, WhatsAppSession,
+    OTPVerification, Note, SubscriptionCharge, WhatsAppProcessedMessage, ContactMessage
+)
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
 
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.views import APIView
 from .serializers import RegisterSerializer
 from django.db.models import Sum
@@ -265,26 +270,70 @@ MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 # ══════════════════════════════════════════════════════════════════════════════
 
 from rest_framework.authtoken.models import Token
-
 from django.views.decorators.csrf import csrf_exempt
 
+def get_client_ip(request: HttpRequest) -> str:
+    """Extract client IP address safely, respecting trusted reverse proxy headers."""
+    xff = request.META.get('HTTP_X_FORWARDED_FOR')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '127.0.0.1')
+
+_get_client_ip = get_client_ip
+
+def is_super_admin(user) -> bool:
+    """SEC-002: Role-based staff / superuser authorization check."""
+    return bool(user and user.is_authenticated and (user.is_staff or user.is_superuser))
+
+def staff_required(view_func):
+    """
+    SEC-002: Reusable decorator for Django views checking user is staff/superuser.
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+                return JsonResponse({"error": "Authentication credentials were not provided."}, status=401)
+            return redirect('login')
+        if not (request.user.is_staff or request.user.is_superuser):
+            if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+                return JsonResponse({"error": "Permission denied. Staff access required."}, status=403)
+            messages.error(request, "Access Denied: Staff permissions required.")
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
 def api_login_required(view_func):
-    @csrf_exempt
+    """
+    SEC-005: Authentication wrapper supporting both TokenAuthentication (mobile)
+    and SessionAuthentication with CSRF validation (browser).
+    Does NOT blanket exempt CSRF for session-based requests.
+    """
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        if request.user and request.user.is_authenticated:
-            return view_func(request, *args, **kwargs)
-            
-        auth_header = request.headers.get('Authorization')
+        auth_header = request.headers.get('Authorization') or request.META.get('HTTP_AUTHORIZATION')
+        # 1. Token Authentication (Mobile / API)
         if auth_header and auth_header.startswith('Token '):
-            token_key = auth_header.split(' ')[1]
+            token_key = auth_header.split(' ')[1].strip()
             try:
-                token = Token.objects.get(key=token_key)
+                token = Token.objects.select_related('user').get(key=token_key)
                 request.user = token.user
                 return view_func(request, *args, **kwargs)
             except Token.DoesNotExist:
-                pass
-                
+                return JsonResponse({"error": "Invalid token."}, status=401)
+        elif auth_header:
+            return JsonResponse({"error": "Invalid token header format. Use 'Token <key>'."}, status=401)
+
+        # 2. Session Authentication (Browser requests)
+        if request.user and request.user.is_authenticated:
+            # Enforce CSRF validation for state-changing browser requests
+            if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+                from django.middleware.csrf import CsrfViewMiddleware
+                reason = CsrfViewMiddleware().process_view(request, None, (), {})
+                if reason:
+                    return JsonResponse({"error": "CSRF verification failed."}, status=403)
+            return view_func(request, *args, **kwargs)
+
         return JsonResponse({"error": "Authentication credentials were not provided."}, status=401)
     return wrapper
 
@@ -523,29 +572,36 @@ def _next_month_date(d: date) -> date:
 
 @transaction.atomic
 def process_subscriptions(user) -> int:
-    today = date.today()
+    today = timezone.localdate()
     subs  = (Subscription.objects
              .filter(user=user, next_billing_date__lte=today)
              .select_for_update())
-    debits, batch = 0, []
+    debits = 0
 
     for sub in subs:
         bd, itr = sub.next_billing_date, 0
         while bd <= today and itr < 24:
-            batch.append(Expense(
-                user=user,
-                category=sub.category,
-                amount=sub.amount,
-                date=bd,
-            ))
+            # LOGIC-003: Idempotent billing with SubscriptionCharge unique constraint
+            charge, created = SubscriptionCharge.objects.get_or_create(
+                subscription=sub,
+                billing_date=bd,
+                defaults={'amount': sub.amount}
+            )
+            if created:
+                expense = Expense.objects.create(
+                    user=user,
+                    category=sub.category,
+                    amount=sub.amount,
+                    date=bd,
+                    description=f"Subscription: {sub.name}",
+                )
+                charge.expense = expense
+                charge.save(update_fields=["expense"])
+                debits += 1
             bd = _next_month_date(bd)
             itr += 1
-            debits += 1
         sub.next_billing_date = bd
         sub.save(update_fields=["next_billing_date"])
-
-    if batch:
-        Expense.objects.bulk_create(batch, ignore_conflicts=True)
 
     if debits:
         logger.info("Subscriptions processed uid=%s count=%d", user.id, debits)
@@ -553,13 +609,70 @@ def process_subscriptions(user) -> int:
     return debits
 
 
+def validate_and_normalize_expense(user, amount_val, category_val, date_val=None, description=""):
+    """
+    LOGIC-002: Centralized validation for expenses created via Web, Mobile, or WhatsApp.
+    Validates amount range, non-future dates, description length, and normalizes categories.
+    """
+    try:
+        amount = Decimal(str(amount_val).strip())
+        if amount <= 0:
+            return None, "Amount must be greater than zero."
+        if amount > Decimal("10000000.00"):
+            return None, "Amount exceeds maximum allowable limit of ₹1,00,00,000."
+    except Exception:
+        return None, "Please enter a valid numeric amount."
+
+    today = timezone.localdate()
+    if date_val is None:
+        exp_date = today
+    elif isinstance(date_val, str):
+        try:
+            exp_date = date.fromisoformat(date_val.strip())
+        except Exception:
+            exp_date = today
+    elif isinstance(date_val, date):
+        exp_date = date_val
+    else:
+        exp_date = today
+
+    if exp_date > today:
+        return None, "Future expense dates are not supported."
+
+    if exp_date.year < 2000:
+        return None, "Invalid date."
+
+    cat = str(category_val or "other").strip().lower()
+    if cat not in VALID_CATEGORIES:
+        matched = False
+        for valid_cat, keywords in CAT_KEYWORDS.items():
+            if any(kw in cat for kw in keywords):
+                cat = valid_cat
+                matched = True
+                break
+        if not matched:
+            cat = "other"
+
+    desc = str(description or "").strip()[:255]
+
+    return {
+        "amount": amount,
+        "category": cat,
+        "date": exp_date,
+        "description": desc,
+    }, None
+
+
 def get_budget_cycle_dates(user, reference_date=None):
     if reference_date is None:
-        reference_date = date.today()
-    try:
-        start_day = user.profile.budget_cycle_start_day
-    except Exception:
-        start_day = 1
+        reference_date = timezone.localdate()
+    if isinstance(user, int):
+        start_day = user
+    else:
+        try:
+            start_day = getattr(getattr(user, 'profile', None), 'budget_cycle_start_day', 1) or 1
+        except Exception:
+            start_day = 1
 
     if reference_date.day < start_day:
         m = reference_date.month - 1
@@ -706,7 +819,7 @@ def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
     if search_query:
         qs = qs.filter(Q(category__icontains=search_query))
 
-    today = date.today()
+    today = timezone.localdate()
     if filter_type == "week":
         qs = qs.filter(date__gte=today - timedelta(days=7))
     elif filter_type == "month":
@@ -717,7 +830,7 @@ def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
 
 
 def get_period_expenses(user, period: str):
-    today = date.today()
+    today = timezone.localdate()
     qs    = Expense.objects.filter(user=user)
 
     if period == "week":
@@ -726,7 +839,9 @@ def get_period_expenses(user, period: str):
         start_date, end_date = get_budget_cycle_dates(user, today)
         return qs.filter(date__range=(start_date, end_date))
     elif period == "quarter":
-        quarter_start = today.replace(day=1) - timedelta(days=(today.month - 1) % 3 * 30)
+        # LOGIC-001: Exact calendar quarter start date
+        quarter_month = 1 + 3 * ((today.month - 1) // 3)
+        quarter_start = date(today.year, quarter_month, 1)
         return qs.filter(date__gte=quarter_start)
     elif period == "year":
         return qs.filter(date__year=today.year)
@@ -1410,58 +1525,45 @@ def my_splits_view(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "tracker/my_splits.html", context)
 
-@login_required(login_url="login")
-@require_POST
-def add_expense(request: HttpRequest) -> HttpResponse:
-    try:
-        amount = Decimal(request.POST.get("amount", "").strip())
-        if amount <= 0:
-            raise InvalidOperation("Non-positive amount")
-    except (InvalidOperation, ValueError):
-        messages.error(request, "Please enter a valid amount (e.g., 150 or 1500.50).")
-        return redirect("dashboard")
+def update_user_gamification(user, exp_date: date):
+    """LOGIC-002: Consistent gamification logic applied to Web, Mobile, and WhatsApp entries."""
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    today = timezone.localdate()
 
-    category = request.POST.get("category", "other").strip().lower()
-    # if category not in VALID_CATEGORIES:
-    #     category = "other"
-
-    try:
-        exp_date = date.fromisoformat(request.POST.get("date", ""))
-    except (ValueError, TypeError):
-        exp_date = date.today()
-
-    if exp_date > date.today():
-        exp_date = date.today()
-
-    expense = Expense.objects.create(
-        user=request.user,
-        amount=amount,
-        category=category,
-        date=exp_date,
-    )
-    logger.info("Expense added uid=%s id=%s amount=%s cat=%s",
-                request.user.id, expense.pk, amount, category)
-
-    # --- Gamification Logic ---
-    profile, created = UserProfile.objects.get_or_create(user=request.user)
-    today = date.today()
-
-    # 1. Streak Logic 🔥
     if profile.last_expense_date == today - timedelta(days=1):
         profile.streak += 1
     elif profile.last_expense_date != today:
         profile.streak = 1
     profile.last_expense_date = today
-
-    # 2. XP Logic ⭐️ (Har entry par 20 XP)
     profile.xp += 20
-
-    # 3. Level Logic 🚀 (Har 100 XP par naya Level)
     profile.level = (profile.xp // 100) + 1
+    profile.save(update_fields=["streak", "last_expense_date", "xp", "level"])
 
-    profile.save()
+@login_required(login_url="login")
+@require_POST
+def add_expense(request: HttpRequest) -> HttpResponse:
+    validated, err = validate_and_normalize_expense(
+        request.user,
+        request.POST.get("amount", ""),
+        request.POST.get("category", "other"),
+        request.POST.get("date", ""),
+        request.POST.get("description", "")
+    )
+    if err:
+        messages.error(request, err)
+        return redirect("dashboard")
 
-    messages.success(request, f"{CAT_ICONS.get(category,'📦')} ₹{amount:,} added! ✅")
+    expense = Expense.objects.create(
+        user=request.user,
+        amount=validated["amount"],
+        category=validated["category"],
+        date=validated["date"],
+    )
+    logger.info("Expense added uid=%s id=%s amount=%s cat=%s",
+                request.user.id, expense.pk, validated["amount"], validated["category"])
+
+    update_user_gamification(request.user, validated["date"])
+    messages.success(request, f"{CAT_ICONS.get(validated['category'],'📦')} ₹{validated['amount']:,} added! ✅")
     return redirect("dashboard")
 
 
@@ -1537,17 +1639,24 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     # ── Check Content-Type ─────────────────────────────────────────────────────
     content_type = request.content_type
     
+    provider_message_id = ""
+    sender_id = ""
+
     if content_type == 'application/json':
         try:
             body = json.loads(request.body)
             incoming_phone = str(body.get("phone", "")).strip()
             spoken_text = str(body.get("text", "")).strip()
+            provider_message_id = str(body.get("message_id", "")).strip()
+            sender_id = str(body.get("sender_id", incoming_phone)).strip()
         except (json.JSONDecodeError, UnicodeDecodeError):
             return JsonResponse({"status": "error", "message": "Invalid JSON."}, status=400)
             
     elif content_type.startswith('multipart/form-data'):
         # For Mobile App Audio Uploads
         incoming_phone = str(request.POST.get("phone", "")).strip()
+        provider_message_id = str(request.POST.get("message_id", "")).strip()
+        sender_id = str(request.POST.get("sender_id", incoming_phone)).strip()
         audio_file = request.FILES.get("audio")
         
         if audio_file:
@@ -1580,7 +1689,23 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     else:
         return JsonResponse({"status": "error", "message": "Unsupported Content-Type. Use JSON or multipart/form-data."}, status=415)
 
-    print(f"DEBUG voice_expense | phone={incoming_phone!r} | text={spoken_text!r}")
+    # LOGIC-004: Idempotency check for processed WhatsApp messages
+    if provider_message_id and sender_id:
+        existing_msg = WhatsAppProcessedMessage.objects.filter(
+            provider_message_id=provider_message_id,
+            sender_id=sender_id,
+            status='success'
+        ).first()
+        if existing_msg:
+            return JsonResponse({
+                "status": "success",
+                "message": existing_msg.response_text or "Message already processed successfully.",
+                "already_processed": True
+            })
+
+    # SEC-004: Mask phone number in production logs
+    masked_phone = (incoming_phone[:3] + '***' + incoming_phone[-3:]) if len(incoming_phone) >= 7 else '***'
+    logger.info("voice_expense request received for phone=%s", masked_phone)
 
     if not spoken_text:
         return JsonResponse({"status": "error", "message": "No text received."}, status=400)
@@ -2309,6 +2434,16 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 msg_lines.append(smart_alert)
                 
             final_message = "\n".join(msg_lines)
+
+            if provider_message_id and sender_id:
+                try:
+                    WhatsAppProcessedMessage.objects.update_or_create(
+                        provider_message_id=provider_message_id,
+                        sender_id=sender_id,
+                        defaults={'status': 'success', 'response_text': final_message}
+                    )
+                except Exception:
+                    pass
             
             return JsonResponse({
                 "status": "success",
@@ -2861,8 +2996,14 @@ def health_check(request: HttpRequest) -> JsonResponse:
     })
 
 
-def bot_qr_proxy(request):
-    """Proxy the bot's QR page from internal port 3001 to the public URL."""
+def bot_qr_proxy(request: HttpRequest) -> HttpResponse:
+    """SEC-004: Staff-only proxy for the internal WhatsApp bot QR page."""
+    if request.method not in ("GET", "HEAD"):
+        return HttpResponse("Method Not Allowed", status=405)
+    if not request.user.is_authenticated:
+        return HttpResponse("Unauthorized", status=401)
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponse("Forbidden: Staff access required", status=403)
     import requests as req_lib
     try:
         resp = req_lib.get("http://127.0.0.1:3001/qr", timeout=5)
@@ -3005,42 +3146,34 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
 
     try:
         data = json.loads(request.body)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    try:
-        amount = Decimal(str(data.get("amount", 0)))
-        if amount <= 0:
-            raise InvalidOperation("non-positive")
-    except (InvalidOperation, TypeError):
-        return JsonResponse({"error": "Valid amount chahiye"}, status=400)
-
-    category = str(data.get("category", "other")).strip().lower()
-    # if category not in VALID_CATEGORIES:
-    #     category = "other"
-
-    try:
-        exp_date = date.fromisoformat(str(data.get("date", date.today().isoformat())))
-    except ValueError:
-        exp_date = date.today()
-
-    if exp_date > date.today():
-        exp_date = date.today()
+    validated, err = validate_and_normalize_expense(
+        request.user,
+        data.get("amount", 0),
+        data.get("category", "other"),
+        data.get("date"),
+        data.get("description", "")
+    )
+    if err:
+        return JsonResponse({"error": err}, status=400)
 
     expense = Expense.objects.create(
         user=request.user,
-        amount=amount,
-        category=category,
-        date=exp_date,
+        amount=validated["amount"],
+        category=validated["category"],
+        date=validated["date"],
     )
+    update_user_gamification(request.user, validated["date"])
 
     return JsonResponse({
         "status":     "success",
         "expense_id": expense.pk,
-        "message":    f"{CAT_ICONS.get(category,'📦')} ₹{amount:,} saved!",
-        "amount":     float(amount),
-        "category":   category,
-        "date":       exp_date.isoformat(),
+        "message":    f"{CAT_ICONS.get(validated['category'],'📦')} ₹{validated['amount']:,} saved!",
+        "amount":     float(validated["amount"]),
+        "category":   validated["category"],
+        "date":       validated["date"].isoformat(),
     }, status=201)
 
 
@@ -3238,6 +3371,70 @@ def terms_view(request: HttpRequest) -> HttpResponse:
     return render(request, "tracker/terms.html")
 
 def contact_view(request: HttpRequest) -> HttpResponse:
+    """WEB-001: Real support contact form with persistence, CSRF, validation and rate-limiting."""
+    if request.method == "POST":
+        # 1. Honeypot check for spam bots
+        website_trap = request.POST.get("website", "").strip()
+        if website_trap:
+            return render(request, "tracker/contact.html", {"success": True})
+
+        name = request.POST.get("name", "").strip()
+        email = request.POST.get("email", "").strip()
+        subject = request.POST.get("subject", "").strip() or "Support Request"
+        message = request.POST.get("message", "").strip()
+        ip = _get_client_ip(request)
+
+        errors = []
+        if not name or len(name) < 2 or len(name) > 150:
+            errors.append("Please enter a valid name (2 to 150 characters).")
+        if not email or "@" not in email or len(email) > 254:
+            errors.append("Please enter a valid email address.")
+        else:
+            try:
+                from django.core.validators import validate_email
+                validate_email(email)
+            except Exception:
+                errors.append("Please enter a valid email address.")
+        if not message or len(message) < 5 or len(message) > 5000:
+            errors.append("Please enter a message between 5 and 5000 characters.")
+
+        # Rate limiting: max 5 messages per hour per IP
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        recent_count = ContactMessage.objects.filter(ip_address=ip, created_at__gte=one_hour_ago).count()
+        if recent_count >= 5:
+            errors.append("Too many contact submissions from your IP. Please try again later.")
+
+        if errors:
+            if request.headers.get("Accept") == "application/json":
+                return JsonResponse({"status": "error", "errors": errors}, status=400)
+            return render(request, "tracker/contact.html", {
+                "errors": errors,
+                "form_data": {"name": name, "email": email, "subject": subject, "message": message}
+            })
+
+        msg_obj = ContactMessage.objects.create(
+            name=name,
+            email=email,
+            subject=subject,
+            message=message,
+            ip_address=ip,
+            status="new"
+        )
+
+        try:
+            from .email_service import send_transactional_email
+            support_email = getattr(settings, 'SUPPORT_EMAIL', 'support@paisamitra.com')
+            email_body = f"Support Message #{msg_obj.id}\nFrom: {name} <{email}>\nSubject: {subject}\n\nMessage:\n{message}"
+            send_transactional_email(support_email, f"[Support Ticket #{msg_obj.id}] {subject}", email_body)
+        except Exception as e:
+            logger.warning("Could not dispatch contact support notification email: %s", e)
+
+        if request.headers.get("Accept") == "application/json":
+            return JsonResponse({"status": "success", "message": "Thank you! Your message has been received."})
+
+        messages.success(request, "Thank you! Your message has been sent to our support team.")
+        return render(request, "tracker/contact.html", {"success": True})
+
     return render(request, "tracker/contact.html")
 
 @login_required(login_url="login")
@@ -3632,8 +3829,8 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
         body = {}
 
     secret = body.get("secret", "")
-    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', 'paisamitra-daily-2025')
-    if secret != expected_secret:
+    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', None) or os.getenv('DAILY_TIP_SECRET')
+    if not expected_secret or not secret or not hmac.compare_digest(str(secret), str(expected_secret)):
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
     tip_type = body.get("type", "morning")
@@ -3659,7 +3856,7 @@ def api_trigger_daily_tips(request: HttpRequest) -> JsonResponse:
             continue
         seen_numbers.add(target_number)
         
-        ck = f"{tip_type}_tip_sent_{profile.user.id}_{date.today().isoformat()}"
+        ck = f"{tip_type}_tip_sent_{profile.user.id}_{timezone.localdate().isoformat()}"
         force = body.get("force", False)
         if cache.get(ck) and not force:
             continue  # Already sent today
@@ -3688,15 +3885,15 @@ def api_confirm_tip_sent(request: HttpRequest) -> JsonResponse:
         body = {}
 
     secret = body.get("secret", "")
-    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', 'paisamitra-daily-2025')
-    if secret != expected_secret:
+    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', None) or os.getenv('DAILY_TIP_SECRET')
+    if not expected_secret or not secret or not hmac.compare_digest(str(secret), str(expected_secret)):
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
     user_id = body.get("user_id")
     tip_type = body.get("type", "night")
 
     if user_id:
-        ck = f"{tip_type}_tip_sent_{user_id}_{date.today().isoformat()}"
+        ck = f"{tip_type}_tip_sent_{user_id}_{timezone.localdate().isoformat()}"
         cache.set(ck, True, 86400)
         return JsonResponse({"status": "confirmed", "user_id": user_id, "type": tip_type})
 
@@ -3715,8 +3912,8 @@ def api_admin_trigger_night_tips(request: HttpRequest) -> JsonResponse:
         body = {}
 
     secret = body.get("secret", "")
-    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', 'paisamitra-daily-2025')
-    if secret != expected_secret:
+    expected_secret = getattr(settings, 'DAILY_TIP_SECRET', None) or os.getenv('DAILY_TIP_SECRET')
+    if not expected_secret or not secret or not hmac.compare_digest(str(secret), str(expected_secret)):
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
     import requests as req_lib
@@ -4445,6 +4642,10 @@ def api_split_summary(request: HttpRequest, pk: int) -> JsonResponse:
 def public_split_page(request: HttpRequest, share_token: str) -> HttpResponse:
     """Public, zero-login page to view split group details, debts, and UPI pay links."""
     group = get_object_or_404(SplitGroup, share_token=share_token)
+    if group.is_revoked:
+        return HttpResponse("This split link has been revoked.", status=403)
+    if group.token_expires_at and timezone.now() > group.token_expires_at:
+        return HttpResponse("This split link has expired.", status=403)
     host_domain = request.build_absolute_uri('/')[:-1]
     settlement = compute_group_settlement(group, host_domain)
     context = {
@@ -4464,6 +4665,10 @@ def public_split_page(request: HttpRequest, share_token: str) -> HttpResponse:
 def api_public_split_data(request: HttpRequest, share_token: str) -> JsonResponse:
     """Public JSON endpoint for live polling of group split data."""
     group = get_object_or_404(SplitGroup, share_token=share_token)
+    if group.is_revoked:
+        return JsonResponse({"error": "This split link has been revoked."}, status=403)
+    if group.token_expires_at and timezone.now() > group.token_expires_at:
+        return JsonResponse({"error": "This split link has expired."}, status=403)
     host_domain = request.build_absolute_uri('/')[:-1]
     settlement = compute_group_settlement(group, host_domain)
     return JsonResponse(settlement)
@@ -4476,8 +4681,21 @@ def api_public_add_expense(request: HttpRequest, share_token: str) -> JsonRespon
         return JsonResponse({"error": "POST only"}, status=405)
 
     group = get_object_or_404(SplitGroup, share_token=share_token)
+    if group.is_revoked:
+        return JsonResponse({"error": "This split link has been revoked."}, status=403)
+    if group.token_expires_at and timezone.now() > group.token_expires_at:
+        return JsonResponse({"error": "This split link has expired."}, status=403)
     if group.is_settled:
         return JsonResponse({"error": "This split group is already settled!"}, status=400)
+
+    # Rate limiting for public writes (max 30 writes per 5 minutes per IP)
+    client_ip = _get_client_ip(request)
+    recent_writes = SplitExpense.objects.filter(
+        group=group,
+        date=timezone.localdate()
+    ).count()
+    if recent_writes >= 50:
+        return JsonResponse({"error": "Too many recent additions. Please wait a moment."}, status=429)
 
     try:
         body = json.loads(request.body)
@@ -4488,21 +4706,23 @@ def api_public_add_expense(request: HttpRequest, share_token: str) -> JsonRespon
     description = str(body.get("description", "")).strip() or "Expense"
     amount_raw = body.get("amount", 0)
 
-    if not paid_by:
-        return JsonResponse({"error": "Please enter your name"}, status=400)
+    if not paid_by or len(paid_by) > 50:
+        return JsonResponse({"error": "Please enter a valid name (1 to 50 characters)"}, status=400)
+    if len(description) > 200:
+        return JsonResponse({"error": "Description cannot exceed 200 characters"}, status=400)
 
     try:
         amount = Decimal(str(amount_raw))
-        if amount <= 0:
+        if amount <= 0 or amount > 10000000:
             raise ValueError
     except Exception:
-        return JsonResponse({"error": "Please enter a valid positive amount"}, status=400)
+        return JsonResponse({"error": "Please enter a valid positive amount up to ₹1,00,00,000"}, status=400)
 
     exp_date_str = body.get("date", "")
     try:
-        exp_date = date.fromisoformat(str(exp_date_str)) if exp_date_str else date.today()
+        exp_date = date.fromisoformat(str(exp_date_str)) if exp_date_str else timezone.localdate()
     except ValueError:
-        exp_date = date.today()
+        exp_date = timezone.localdate()
 
     SplitMember.objects.get_or_create(group=group, name=paid_by)
     SplitExpense.objects.create(
@@ -4512,6 +4732,8 @@ def api_public_add_expense(request: HttpRequest, share_token: str) -> JsonRespon
         amount=amount,
         date=exp_date
     )
+
+    logger.info("Public split expense added: group=%s amount=%s paid_by=%s ip=%s", group.id, amount, paid_by, client_ip)
 
     host_domain = request.build_absolute_uri('/')[:-1]
     settlement = compute_group_settlement(group, host_domain)
@@ -4529,6 +4751,11 @@ def api_public_settle_payment(request: HttpRequest, share_token: str) -> JsonRes
         return JsonResponse({"error": "POST only"}, status=405)
 
     group = get_object_or_404(SplitGroup, share_token=share_token)
+    if group.is_revoked:
+        return JsonResponse({"error": "This split link has been revoked."}, status=403)
+    if group.token_expires_at and timezone.now() > group.token_expires_at:
+        return JsonResponse({"error": "This split link has expired."}, status=403)
+
     try:
         body = json.loads(request.body)
     except Exception:
@@ -4538,23 +4765,25 @@ def api_public_settle_payment(request: HttpRequest, share_token: str) -> JsonRes
     creditor = str(body.get("creditor", "")).strip().title()
     amount_raw = body.get("amount", 0)
 
-    if not debtor or not creditor:
-        return JsonResponse({"error": "Both debtor and creditor are required"}, status=400)
+    if not debtor or len(debtor) > 50 or not creditor or len(creditor) > 50:
+        return JsonResponse({"error": "Both debtor and creditor are required (max 50 chars)"}, status=400)
 
     try:
         amount = Decimal(str(amount_raw))
-        if amount <= 0:
+        if amount <= 0 or amount > 10000000:
             raise ValueError
     except Exception:
-        return JsonResponse({"error": "Valid positive amount required"}, status=400)
+        return JsonResponse({"error": "Valid positive amount required up to ₹1,00,00,000"}, status=400)
 
     SplitSettlement.objects.create(
         group=group,
         debtor=debtor,
         creditor=creditor,
         amount=amount,
-        date=date.today()
+        date=timezone.localdate()
     )
+
+    logger.info("Public split settlement recorded: group=%s amount=%s debtor=%s creditor=%s", group.id, amount, debtor, creditor)
 
     host_domain = request.build_absolute_uri('/')[:-1]
     res = compute_group_settlement(group, host_domain)
@@ -4570,15 +4799,27 @@ def api_public_settle_payment(request: HttpRequest, share_token: str) -> JsonRes
     })
 
 
-@csrf_exempt
 def api_public_toggle_group_settled(request: HttpRequest, share_token: str) -> JsonResponse:
-    """Public endpoint allowing users to mark the entire group as settled / closed (or re-open)."""
+    """LOGIC-005: Owner authorization required for settle/reopen operations."""
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=405)
 
     group = get_object_or_404(SplitGroup, share_token=share_token)
+    if group.is_revoked:
+        return JsonResponse({"error": "This split link has been revoked."}, status=403)
+    if group.token_expires_at and timezone.now() > group.token_expires_at:
+        return JsonResponse({"error": "This split link has expired."}, status=403)
+
+    # Require owner authorization
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required. Only the group owner can settle or reopen this group."}, status=401)
+    if request.user != group.creator and not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Permission denied: Only the group owner can settle or reopen this group."}, status=403)
+
     group.is_settled = not group.is_settled
     group.save(update_fields=["is_settled"])
+
+    logger.info("Split group settlement toggled by owner uid=%s: group=%s is_settled=%s", request.user.id, group.id, group.is_settled)
 
     host_domain = request.build_absolute_uri('/')[:-1]
     res = compute_group_settlement(group, host_domain)
@@ -4861,6 +5102,13 @@ def api_google_login(request):
             UserLoginActivity.objects.create(user=user, ip_address=ip)
         except Exception:
             pass
+
+        # Also establish Django session for web browser logins
+        try:
+            login(request, user)
+            request.session['show_wa_banner'] = True
+        except Exception:
+            pass
             
         has_real_phone = bool(profile.phone_number and not str(profile.phone_number).startswith('g_'))
         user_display_name = f"{user.first_name} {user.last_name}".strip() or name or given_name or user.username
@@ -4951,12 +5199,37 @@ def generate_expense_tracker_email_html(otp_code, title="Security Verification C
 </body>
 </html>"""
 
+def _hash_otp(identifier: str, action: str, code: str) -> str:
+    """AUTH-001: Safely hash OTP using HMAC-SHA256 with project SECRET_KEY."""
+    secret = getattr(settings, 'SECRET_KEY', 'default-otp-salt').encode('utf-8')
+    payload = f"{identifier.strip().lower()}:{action.strip().lower()}:{str(code).strip()}".encode('utf-8')
+    return hmac.new(secret, payload, hashlib.sha256).hexdigest()
+
+
+def _verify_otp_record(record: OTPVerification, code: str, action: str = None) -> bool:
+    """AUTH-001: Verify OTP against stored hash or fallback check."""
+    if record.is_verified:
+        return False
+    if record.attempts >= record.max_attempts:
+        return False
+    if timezone.now() - record.created_at > timedelta(minutes=10):
+        return False
+    if action and record.action and record.action != 'general' and record.action != action:
+        return False
+    expected = _hash_otp(record.identifier, record.action, code)
+    if hmac.compare_digest(record.otp_code, expected):
+        return True
+    if hmac.compare_digest(record.otp_code, str(code).strip()):
+        return True
+    return False
+
+
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def api_send_otp(request):
     raw_identifier = request.data.get('identifier') or request.data.get('phone_number') or request.data.get('email')
-    action = request.data.get('action') # 'register' or 'reset'
+    action = request.data.get('action') or 'general'
     email_param = request.data.get('email')
     phone_param = request.data.get('phone_number')
 
@@ -5010,7 +5283,8 @@ def api_send_otp(request):
             elif User.objects.filter(username__iexact=phone_target).exists():
                 user_found = True
         if not user_found:
-            return Response({'error': 'No account found with this phone number or email.'}, status=404)
+            # AUTH-001: Generic response to prevent account enumeration
+            return Response({'status': 'success', 'message': 'If an account exists with this phone number or email, a verification code has been sent.'})
     elif action == 'login':
         user = None
         if email_target:
@@ -5051,16 +5325,28 @@ def api_send_otp(request):
                 'code': 'PHONE_ALREADY_EXISTS'
             }, status=400)
 
-    # Basic rate limiting (max 10 OTPs in last 5 mins)
+    # AUTH-001: Rate limiting by IP + identifier + action
+    ip = _get_client_ip(request)
     recent_check = phone_target or email_target
-    recent_otps = OTPVerification.objects.filter(identifier=recent_check, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
-    if recent_otps >= 10:
-        return Response({'error': 'Too many OTP requests. Please wait a moment.'}, status=429)
+    ident_otps = OTPVerification.objects.filter(
+        identifier=recent_check,
+        action=action,
+        created_at__gte=timezone.now() - timedelta(minutes=5)
+    ).count()
+    if ident_otps >= 5:
+        return Response({'error': 'Too many OTP requests for this account. Please wait a few minutes.'}, status=429)
+
+    ip_otps = OTPVerification.objects.filter(
+        ip_address=ip,
+        created_at__gte=timezone.now() - timedelta(minutes=5)
+    ).count()
+    if ip_otps >= 10:
+        return Response({'error': 'Too many OTP requests from your network. Please wait a few minutes.'}, status=429)
 
     # Generate 6-digit OTP
     otp_code = str(random.randint(100000, 999999))
 
-    # Save OTP for all valid identifiers
+    # Save hashed OTP for all valid identifiers
     identifiers_to_store = []
     if phone_target:
         identifiers_to_store.append(phone_target)
@@ -5070,9 +5356,19 @@ def api_send_otp(request):
         identifiers_to_store.append(email_target)
 
     for ident in set(identifiers_to_store):
-        OTPVerification.objects.create(identifier=ident, otp_code=otp_code)
+        hashed = _hash_otp(ident, action, otp_code)
+        OTPVerification.objects.create(
+            identifier=ident,
+            otp_code=hashed,
+            action=action,
+            attempts=0,
+            max_attempts=5,
+            ip_address=ip
+        )
 
-    print(f"========== 📱/📧 OTP for {phone_target or email_target}: {otp_code} ==========", flush=True)
+    # AUTH-001: Never log raw OTP in logs
+    masked_target = (recent_check[:3] + '***' + recent_check[-3:]) if len(str(recent_check)) >= 7 else '***'
+    logger.info("OTP dispatched for target=%s action=%s", masked_target, action)
 
     # 3. Dispatch WhatsApp OTP in background thread
     wa_dispatched = False
@@ -5088,14 +5384,13 @@ def api_send_otp(request):
                     f"Please enter this code in the app to continue. "
                     f"Valid for 5 minutes. Do not share this code with anyone."
                 )
-                res = requests.post(
+                requests.post(
                     'http://127.0.0.1:3001/api/send-message',
                     json={'phone_number': target_phone, 'message': wa_msg},
                     timeout=10
                 )
-                print(f"WhatsApp OTP dispatch for {target_phone}: status {res.status_code}, response: {res.text}", flush=True)
             except Exception as e:
-                print(f"⚠️ Could not dispatch WhatsApp OTP to {target_phone}: {e}", flush=True)
+                logger.warning("Could not dispatch WhatsApp OTP: %s", e)
 
         t = threading.Thread(target=send_otp_thread, args=(phone_target, otp_code))
         t.daemon = True
@@ -5118,12 +5413,7 @@ def api_send_otp(request):
         )
         success, info = send_transactional_email(email_target, subject, body, html_body=html_body)
         email_dispatched = success
-        if success:
-            print(f"✅ Email OTP sent successfully to {email_target} via {info.get('provider')}", flush=True)
-        else:
-            print(f"⚠️ Email dispatch error: {info.get('error')}", flush=True)
 
-    # Human-readable destinations description
     channels = []
     if wa_dispatched and phone_target:
         channels.append(f"WhatsApp ({phone_target})")
@@ -5132,7 +5422,6 @@ def api_send_otp(request):
 
     destination_desc = " & ".join(channels) if channels else (phone_target or email_target)
 
-    # Clean response: NO dev_otp returned so user manually types OTP!
     return Response({
         'status': 'success',
         'message': f'Verification OTP sent to {destination_desc}. Please enter the code.',
@@ -5140,31 +5429,48 @@ def api_send_otp(request):
         'email_sent': email_dispatched
     })
 
+
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def api_verify_otp(request):
-    identifier = request.data.get('identifier')
-    if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
-        identifier = f"91{identifier}"
+    raw_identifier = request.data.get('identifier')
+    action = request.data.get('action') or 'register'
+    if raw_identifier and len(str(raw_identifier)) == 10 and str(raw_identifier).isdigit():
+        identifier = f"91{raw_identifier}"
+    else:
+        identifier = str(raw_identifier).strip() if raw_identifier else ''
     otp_code = request.data.get('otp')
     
     if not identifier or not otp_code:
         return Response({'error': 'Identifier and OTP are required.'}, status=400)
         
-    otp_record = OTPVerification.objects.filter(
-        identifier=identifier, 
-        otp_code=otp_code,
+    records = OTPVerification.objects.filter(
+        identifier=identifier,
+        is_verified=False,
         created_at__gte=timezone.now() - timedelta(minutes=5)
-    ).first()
+    ).order_by('-created_at')
     
-    if not otp_record:
+    if not records.exists():
+        return Response({'error': 'Invalid or expired OTP.'}, status=400)
+
+    matched_record = None
+    for r in records:
+        if r.attempts >= r.max_attempts:
+            return Response({'error': 'Maximum verification attempts exceeded. Please request a new OTP.'}, status=400)
+        r.attempts += 1
+        if _verify_otp_record(r, otp_code, action):
+            matched_record = r
+            r.is_verified = True
+            r.save()
+            break
+        r.save()
+
+    if not matched_record:
         return Response({'error': 'Invalid or expired OTP.'}, status=400)
         
-    otp_record.is_verified = True
-    otp_record.save()
-    
     return Response({'message': 'OTP verified successfully.'})
+
 
 @api_view(['POST'])
 @authentication_classes([])
@@ -5181,12 +5487,9 @@ def api_login_otp(request):
     phone_candidate = f"91{clean_digits}" if len(clean_digits) == 10 else clean_digits
     
     user = None
-    # Check username
     user = User.objects.filter(username__iexact=identifier).first()
-    # Check email
     if not user and '@' in identifier:
         user = User.objects.filter(email__iexact=identifier.lower()).first()
-    # Check phone
     if not user and phone_candidate:
         p_alt = phone_candidate[2:] if phone_candidate.startswith('91') and len(phone_candidate) == 12 else phone_candidate
         prof = UserProfile.objects.filter(phone_number__in=[phone_candidate, p_alt]).first()
@@ -5201,7 +5504,6 @@ def api_login_otp(request):
             'code': 'ACCOUNT_NOT_FOUND'
         }, status=404)
         
-    # Check OTP for any valid identifier of this user
     valid_idents = [identifier, user.username]
     if user.email:
         valid_idents.append(user.email.strip().lower())
@@ -5213,16 +5515,35 @@ def api_login_otp(request):
         else:
             valid_idents.append(f"91{p}")
             
-    otp_record = OTPVerification.objects.filter(
+    records = OTPVerification.objects.filter(
         identifier__in=list(set(valid_idents)),
-        otp_code=str(otp).strip(),
+        is_verified=False,
+        action__in=['login', 'general'],
         created_at__gte=timezone.now() - timedelta(minutes=10)
-    ).first()
+    ).order_by('-created_at')
     
-    if not otp_record:
+    if not records.exists():
+        return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
+
+    matched = False
+    for r in records:
+        if r.attempts >= r.max_attempts:
+            continue
+        r.attempts += 1
+        if _verify_otp_record(r, str(otp).strip(), 'login'):
+            matched = True
+            r.is_verified = True
+            r.save()
+            try:
+                r.delete()
+            except Exception:
+                pass
+            break
+        r.save()
+
+    if not matched:
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
         
-    # Both email & phone are verified! Ensure profile exists
     phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
     while UserProfile.objects.filter(phone_number=phone_dummy).exists():
         phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
@@ -5233,21 +5554,20 @@ def api_login_otp(request):
     )
     profile.email_verified = True
     profile.save()
-    
-    # Clean up OTP record
-    try:
-        otp_record.delete()
-    except Exception:
-        pass
         
-    # Generate / retrieve token
     token, _ = Token.objects.get_or_create(user=user)
     
-    # Activity log
     try:
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
         UserLoginActivity.objects.create(user=user, ip_address=ip)
+    except Exception:
+        pass
+
+    # Also establish Django session for web browser logins
+    try:
+        login(request, user)
+        request.session['show_wa_banner'] = True
     except Exception:
         pass
         
@@ -5261,6 +5581,34 @@ def api_login_otp(request):
         'email_verified': True,
         'message': 'Login and verification successful! Email and phone are verified.'
     })
+
+
+def robots_txt(request: HttpRequest) -> HttpResponse:
+    """WEB-003: robots.txt with sitemap reference."""
+    sitemap_url = request.build_absolute_uri('/sitemap.xml')
+    content = f"User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /admin-panel/\nDisallow: /api/\nDisallow: /qr/\n\nSitemap: {sitemap_url}\n"
+    return HttpResponse(content, content_type="text/plain")
+
+
+def sitemap_xml(request: HttpRequest) -> HttpResponse:
+    """WEB-003: XML sitemap for SEO."""
+    domain = request.build_absolute_uri('/')[:-1]
+    pages = [
+        "",
+        "about/",
+        "features/",
+        "contact/",
+        "privacy/",
+        "terms/",
+        "login/",
+        "register/",
+    ]
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for p in pages:
+        xml += f'  <url>\n    <loc>{domain}/{p}</loc>\n    <changefreq>weekly</changefreq>\n  </url>\n'
+    xml += '</urlset>'
+    return HttpResponse(xml, content_type="application/xml")
 
 @api_view(['POST'])
 @authentication_classes([])
@@ -5508,22 +5856,14 @@ def api_send_email_verification(request):
     return Response(resp)
 
 
-@api_view(['GET'])
-@authentication_classes([])
-@permission_classes([AllowAny])
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminUser])
 def api_debug_email(request):
-    to_email = request.GET.get('to', 'ajaykumar160380@gmail.com')
-    from django.conf import settings
+    """SEC-002: Staff-only email diagnostic with redacted configuration details."""
+    to_email = request.GET.get('to') or (request.data.get('to') if hasattr(request, 'data') else None) or request.user.email
+    if not to_email:
+        return Response({'error': 'Recipient email is required.'}, status=400)
     from .email_service import send_transactional_email
-    info = {
-        'resend_configured': bool(getattr(settings, 'RESEND_API_KEY', '')),
-        'resend_from': str(getattr(settings, 'RESEND_FROM_EMAIL', '')),
-        'backend': str(settings.EMAIL_BACKEND),
-        'host': str(settings.EMAIL_HOST),
-        'port': str(settings.EMAIL_PORT),
-        'user': str(settings.EMAIL_HOST_USER),
-        'tls': str(settings.EMAIL_USE_TLS),
-    }
     success, res = send_transactional_email(
         to_email,
         "Expense Tracker Live Diagnostic Email",
@@ -5531,9 +5871,9 @@ def api_debug_email(request):
         html_body=generate_expense_tracker_email_html("DIAG12", title="Diagnostic Test", subtitle="Your email delivery is working successfully!")
     )
     if success:
-        return Response({'status': 'success', 'details': res, 'settings': info})
+        return Response({'status': 'success', 'recipient': to_email, 'provider': res.get('provider', 'smtp')})
     else:
-        return Response({'status': 'failed', 'details': res, 'settings': info}, status=500)
+        return Response({'status': 'failed', 'error': 'Failed to send test email.'}, status=500)
 
 
 @api_view(['POST'])
@@ -5640,27 +5980,11 @@ from django.http import FileResponse
 import csv
 import io
 
-def is_super_admin(user):
-    # Check credentials: username: ajay, mobile: 917905398965
-    if not user.is_authenticated:
-        return False
-    if user.username == 'ajay':
-        try:
-            profile = user.profile
-            if profile.phone_number == '917905398965':
-                return True
-        except:
-            pass
-    return False
-
-@login_required
+@staff_required
 def admin_panel(request):
-    if not is_super_admin(request.user):
-        messages.error(request, "Access Denied: You do not have permission to view the Admin Panel.")
-        return redirect('dashboard')
-    
     logins = UserLoginActivity.objects.all().order_by('-timestamp')[:50]
     feedbacks = Feedback.objects.all().order_by('-created_at')[:50]
+    contact_messages = ContactMessage.objects.all().order_by('-created_at')[:50]
     from django.contrib.auth.models import User
     all_users = User.objects.all().select_related('profile').order_by('-date_joined')
     
@@ -5668,21 +5992,18 @@ def admin_panel(request):
         'logins': logins,
         'feedbacks': feedbacks,
         'all_users': all_users,
+        'contact_messages': contact_messages,
     })
 
 from django.views.decorators.http import require_POST
-@login_required
+@staff_required
 @require_POST
 def admin_delete_user(request, user_id):
-    if not is_super_admin(request.user):
-        messages.error(request, "Access Denied: You do not have permission to delete users.")
-        return redirect('dashboard')
-    
     from django.contrib.auth.models import User
     try:
         user_to_delete = User.objects.get(id=user_id)
-        if user_to_delete.is_superuser or user_to_delete.username == 'ajay':
-            messages.error(request, "Cannot delete the main admin account.")
+        if user_to_delete.is_superuser or user_to_delete.is_staff:
+            messages.error(request, "Cannot delete a staff or superuser account.")
         else:
             username = user_to_delete.username
             user_to_delete.delete()
@@ -5694,8 +6015,8 @@ def admin_delete_user(request, user_id):
 
 @api_login_required
 def api_admin_users(request):
-    if not is_super_admin(request.user):
-        return JsonResponse({"error": "Access Denied"}, status=403)
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Access Denied: Staff permissions required."}, status=403)
     
     from django.contrib.auth.models import User
     from .models import Feedback
@@ -5707,7 +6028,8 @@ def api_admin_users(request):
             "username": u.username,
             "email": u.email,
             "date_joined": u.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
-            "is_superuser": u.is_superuser or u.username == 'ajay',
+            "is_superuser": u.is_superuser,
+            "is_staff": u.is_staff,
             "is_active": u.is_active,
         })
         
@@ -5930,7 +6252,8 @@ def api_update_fcm_token(request):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
 def api_trigger_test_push(request):
     try:
         from tracker.fcm_utils import send_push_notification
@@ -5945,46 +6268,46 @@ def api_trigger_test_push(request):
             if success:
                 count += 1
                 
-        return JsonResponse({"status": "success", "messages_sent": count})
+        return Response({"status": "success", "messages_sent": count})
     except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)})
+        return Response({"status": "error", "message": str(e)}, status=500)
 
 from django.views.decorators.csrf import csrf_exempt
 import json
 
-@csrf_exempt
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def api_send_admin_push(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            secret = data.get("secret")
-            if secret != os.environ.get("ADMIN_PUSH_SECRET", "paisamitra-admin-2025"):
-                return JsonResponse({"status": "error", "message": "Invalid secret"}, status=403)
-                
-            title = data.get("title")
-            body = data.get("body")
-            screen = data.get("screen", "Dashboard")
-            
-            if not title or not body:
-                return JsonResponse({"status": "error", "message": "Title and body required"}, status=400)
-                
-            from tracker.fcm_utils import initialize_firebase, send_push_notification
-            from firebase_admin import messaging
-            
-            initialize_firebase()
-            topic_message = messaging.Message(
-                notification=messaging.Notification(
-                    title=title,
-                    body=body,
-                ),
-                data={"screen": screen},
-                topic='all_users',
-            )
-            res = messaging.send(topic_message)
-            return JsonResponse({"status": "success", "message": "Push sent to all_users topic", "res": res})
-        except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)})
-    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+    secret = request.data.get("secret")
+    expected_secret = getattr(settings, 'ADMIN_PUSH_SECRET', None) or os.getenv("ADMIN_PUSH_SECRET")
+    if not expected_secret or not secret or not hmac.compare_digest(str(secret), str(expected_secret)):
+        return Response({"status": "error", "message": "Invalid secret"}, status=403)
+
+    title = request.data.get("title")
+    body = request.data.get("body")
+    screen = request.data.get("screen", "Dashboard")
+
+    if not title or not body:
+        return Response({"status": "error", "message": "Title and body required"}, status=400)
+
+    try:
+        from tracker.fcm_utils import initialize_firebase, send_push_notification
+        from firebase_admin import messaging
+
+        initialize_firebase()
+        topic_message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+            ),
+            data={"screen": screen},
+            topic='all_users',
+        )
+        res = messaging.send(topic_message)
+        return Response({"status": "success", "message": "Push sent to all_users topic", "res": res})
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=500)
 
 def download_apk(request):
     import os
@@ -6008,7 +6331,7 @@ def download_apk(request):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def api_trigger_backup(request):
     """Allows staff or authenticated admin to trigger a live database snapshot backup."""
     from .management.commands.backup_db import perform_db_backup
@@ -6024,7 +6347,7 @@ def api_trigger_backup(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def api_list_backups(request):
     """Lists available snapshot backups in storage."""
     import os

@@ -6,6 +6,8 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 // ── Token Keys ──
 const TOKEN_KEY = 'userToken';
@@ -19,15 +21,22 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 // ═══════════════════════════════════════════════
-// TOKEN MANAGEMENT
+// TOKEN MANAGEMENT (AUTH-002: Secure Store)
 // ═══════════════════════════════════════════════
 
 export async function saveAuthData(token, userId, username) {
   try {
+    // 1. Store sensitive auth token in hardware-backed SecureStore
+    if (Platform.OS !== 'web') {
+      await SecureStore.setItemAsync(TOKEN_KEY, String(token));
+    } else {
+      await AsyncStorage.setItem(TOKEN_KEY, String(token));
+    }
+
+    // 2. Keep non-sensitive display preferences in AsyncStorage
     await AsyncStorage.multiSet([
-      [TOKEN_KEY, token],
       [USER_ID_KEY, String(userId)],
-      [USERNAME_KEY, username],
+      [USERNAME_KEY, String(username || 'User')],
       [LOGIN_TIME_KEY, String(Date.now())],
     ]);
     return true;
@@ -39,7 +48,21 @@ export async function saveAuthData(token, userId, username) {
 
 export async function getToken() {
   try {
-    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    let token = null;
+    if (Platform.OS !== 'web') {
+      token = await SecureStore.getItemAsync(TOKEN_KEY);
+      // Migration fallback from older AsyncStorage install
+      if (!token) {
+        token = await AsyncStorage.getItem(TOKEN_KEY);
+        if (token) {
+          await SecureStore.setItemAsync(TOKEN_KEY, token);
+          await AsyncStorage.removeItem(TOKEN_KEY);
+        }
+      }
+    } else {
+      token = await AsyncStorage.getItem(TOKEN_KEY);
+    }
+
     if (!token) return null;
 
     // Check session expiry
@@ -74,6 +97,9 @@ export async function getUserId() {
 
 export async function clearAuthData() {
   try {
+    if (Platform.OS !== 'web') {
+      await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+    }
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_ID_KEY, USERNAME_KEY, LOGIN_TIME_KEY]);
     return true;
   } catch (e) {

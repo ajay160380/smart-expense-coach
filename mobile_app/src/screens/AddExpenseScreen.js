@@ -32,7 +32,7 @@ import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { validateAmount } from '../utils/validation';
 import { formatApiError } from '../utils/errors';
 import analytics from '../utils/analytics';
-import { COLORS, RADIUS } from '../utils/theme';
+import { COLORS, RADIUS, SHADOW } from '../utils/theme';
 
 const CATEGORIES = [
   { key: 'food', label: 'Food', icon: '🍜', color: '#6c5ce7' },

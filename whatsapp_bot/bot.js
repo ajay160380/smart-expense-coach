@@ -127,18 +127,8 @@ async function startBot(sessionName = null) {
                 startBot(nextSession);
             } else {
                 console.log(`\n\n🚨 CRITICAL: No valid backup sessions available!`);
-                console.log(`📌 SCAN THIS QR CODE WITH WHATSAPP TO LOGIN 📌\n`);
-                console.log(`🌐 Or visit: https://smart-expense-coach.onrender.com/qr\n`);
-                console.log('Agar upar wala QR code scan nahi ho raha, toh is RAW code ko copy karke kisi bhi QR Generator website (jaise the-qrcode-generator.com) par paste karein aur wahan se scan karein:');
-                console.log('\n=========================================\nRAW_QR_CODE_START\n' + qr + '\nRAW_QR_CODE_END\n=========================================\n');
-                
-                latestQR = qr; // Store for web endpoint
-                
-                try {
-                    qrcode.generate(qr, { small: true });
-                } catch (e) {
-                    console.log("Could not print terminal QR, please use the RAW_QR_CODE_START string above.");
-                }
+                console.log(`📌 Scan QR Code securely via authenticated staff panel: /qr/ \n`);
+                latestQR = qr; // Store in-memory for authenticated /qr/ endpoint
             }
             return;
         }
@@ -198,8 +188,8 @@ async function startBot(sessionName = null) {
         const remoteJid = msg.key.remoteJid;
         const phone = remoteJid.split('@')[0];
         const pushName = msg.pushName || "User";
-
-        console.log(`📩 Received message from ${phone} (${pushName}): ${text}`);
+        const maskedPhone = phone.length >= 7 ? `${phone.slice(0, 3)}***${phone.slice(-3)}` : '***';
+        console.log(`📩 Received message from ${maskedPhone} (${pushName})`);
 
         // ── Send Blue Tick (Read Receipt) ──
         try {
@@ -351,7 +341,7 @@ async function startBot(sessionName = null) {
                 const response = await fetch(`${INTERNAL_API_URL}/api/send-admin-push/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: "paisamitra-admin-2025", title, body })
+                    body: JSON.stringify({ secret: process.env.ADMIN_PUSH_SECRET || "", title, body })
                 });
                 const data = await response.json();
                 if (data.status === 'success') {
@@ -373,7 +363,13 @@ async function startBot(sessionName = null) {
             const response = await fetch(`${INTERNAL_API_URL}/api/voice-expense/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, text, name: pushName }),
+                body: JSON.stringify({
+                    phone,
+                    text,
+                    name: pushName,
+                    message_id: msg.key?.id || '',
+                    sender_id: remoteJid || phone
+                }),
                 signal: controller.signal
             });
             clearTimeout(timeout);
@@ -505,6 +501,13 @@ const app = express();
 app.use(express.json());
 
 app.post('/api/send-message', async (req, res) => {
+    // SEC-004: Validate caller is localhost (127.0.0.1 or ::1)
+    const remote = req.socket?.remoteAddress || req.ip || '';
+    const isLocalhost = remote.includes('127.0.0.1') || remote === '::1' || remote.includes('::ffff:127.0.0.1');
+    if (!isLocalhost) {
+        return res.status(403).json({ error: "Access denied. Internal API is restricted to localhost." });
+    }
+
     const to = req.body.to || req.body.phone_number;
     const message = req.body.message;
     
@@ -517,10 +520,11 @@ app.post('/api/send-message', async (req, res) => {
         }
         
         await globalSock.sendMessage(`${cleanPhone}@s.whatsapp.net`, { text: message });
-        console.log(`✅ API successfully sent message to ${cleanPhone}`);
+        const masked = cleanPhone.length >= 7 ? `${cleanPhone.slice(0, 3)}***${cleanPhone.slice(-3)}` : '***';
+        console.log(`✅ API successfully sent message to ${masked}`);
         res.json({ success: true, message: `Message sent` });
     } catch (err) {
-        console.error('API Send Error:', err);
+        console.error('API Send Error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });

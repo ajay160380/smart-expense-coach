@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import date
+from django.utils import timezone
 import uuid
+import secrets
 
 # ─── NAYA FEATURE: User Profile (Phone Number ke liye) ───
 class UserProfile(models.Model):
@@ -79,10 +81,14 @@ class WhatsAppSession(models.Model):
     def __str__(self):
         return f"Session for {self.phone_number} - State: {self.state}"
 
-# ─── NAYA FEATURE: OTP Verification ───
+# ─── NAYA FEATURE: OTP Verification (Hardened) ───
 class OTPVerification(models.Model):
-    identifier = models.CharField(max_length=100) # Phone number or Email
-    otp_code = models.CharField(max_length=6)
+    identifier = models.CharField(max_length=100, db_index=True) # Phone number or Email
+    otp_code = models.CharField(max_length=128) # Stores hashed OTP or code
+    action = models.CharField(max_length=50, default='general', db_index=True)
+    attempts = models.IntegerField(default=0)
+    max_attempts = models.IntegerField(default=5)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_verified = models.BooleanField(default=False)
     
@@ -90,7 +96,7 @@ class OTPVerification(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"OTP for {self.identifier} (Verified: {self.is_verified})"
+        return f"OTP for {self.identifier} ({self.action}, Verified: {self.is_verified})"
 
 # ─── NAYA FEATURE: AI Notepad ───
 class Note(models.Model):
@@ -160,7 +166,9 @@ class SavingsGoal(models.Model):
 class SplitGroup(models.Model):
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='split_groups')
     name = models.CharField(max_length=100)           # "Goa Trip", "Office Lunch"
-    share_token = models.CharField(max_length=32, unique=True, blank=True, null=True, db_index=True)
+    share_token = models.CharField(max_length=64, unique=True, blank=True, null=True, db_index=True)
+    token_expires_at = models.DateTimeField(blank=True, null=True)
+    is_revoked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     is_settled = models.BooleanField(default=False)
 
@@ -169,7 +177,7 @@ class SplitGroup(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.share_token:
-            self.share_token = uuid.uuid4().hex[:10]
+            self.share_token = secrets.token_urlsafe(24)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -243,3 +251,62 @@ class AppErrorLog(models.Model):
 
     def __str__(self):
         return f"Error at {self.created_at.strftime('%Y-%m-%d %H:%M')}: {self.error_message[:50]}"
+
+
+# ─── IDEMPOTENCY: Subscription Charge Model (LOGIC-003) ───
+class SubscriptionCharge(models.Model):
+    subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name='charges')
+    billing_date = models.DateField(db_index=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    expense = models.ForeignKey(Expense, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['subscription', 'billing_date'], name='unique_subscription_billing_charge')
+        ]
+        ordering = ['-billing_date']
+
+    def __str__(self):
+        return f"Charge for {self.subscription.name} on {self.billing_date} - ₹{self.amount}"
+
+
+# ─── IDEMPOTENCY: WhatsApp Processed Message Model (LOGIC-004) ───
+class WhatsAppProcessedMessage(models.Model):
+    provider_message_id = models.CharField(max_length=128, db_index=True)
+    sender_id = models.CharField(max_length=100, db_index=True)
+    status = models.CharField(max_length=20, default='success')
+    response_text = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['provider_message_id', 'sender_id'], name='unique_whatsapp_message')
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Msg {self.provider_message_id} from {self.sender_id} ({self.status})"
+
+
+# ─── SUPPORT: Contact Form Message Model (WEB-001) ───
+class ContactMessage(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'New'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+    ]
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    subject = models.CharField(max_length=200, blank=True, default='')
+    message = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    replied_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Message from {self.name} <{self.email}> at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
