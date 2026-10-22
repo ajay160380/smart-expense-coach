@@ -75,6 +75,9 @@ async function safeReply(jid, text, quotedMsg = null) {
     if (!globalSock) throw new Error("WhatsApp socket not ready");
     const targetJid = normalizeJid(jid) || jid;
     try {
+        await globalSock.sendPresenceUpdate('paused', targetJid);
+    } catch (e) {}
+    try {
         const options = quotedMsg ? { quoted: quotedMsg } : undefined;
         await globalSock.sendMessage(targetJid, { text }, options);
     } catch (e) {
@@ -205,11 +208,12 @@ async function startBot(sessionName = null) {
         const maskedPhone = phone.length >= 7 ? `${phone.slice(0, 3)}***${phone.slice(-3)}` : '***';
         console.log(`📩 Received message from ${maskedPhone} (${pushName})`);
 
-        // ── Send Blue Tick (Read Receipt) ──
+        // ── Send Blue Tick (Read Receipt) & Instant Typing Indicator ──
         try {
             await sock.readMessages([msg.key]);
+            await sock.sendPresenceUpdate('composing', remoteJid);
         } catch (e) {
-            console.warn('⚠️ Could not send read receipt:', e.message);
+            console.warn('⚠️ Could not send read receipt or typing presence:', e.message);
         }
 
         const lowerBody = text.toLowerCase();
