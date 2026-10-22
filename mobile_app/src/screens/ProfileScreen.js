@@ -878,7 +878,7 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="warning-outline" size={13} color="#EF4444" style={{ marginRight: 6 }} />
           <Text style={[styles.sectionHeaderTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
         </View>
-        <View style={[styles.menuGroupCard, { borderColor: '#FECACA', backgroundColor: '#FEF2F2' }]}>
+        <View style={[styles.menuGroupCard, { borderColor: '#FECACA', backgroundColor: '#FFFFFF', elevation: 0 }]}>
           <MenuItem
             ionIcon="trash-bin-outline"
             iconColor="#EF4444"

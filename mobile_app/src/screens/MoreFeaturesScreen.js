@@ -608,7 +608,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
         </View>
 
-        <View style={[styles.listCard, { borderColor: 'rgba(239, 68, 68, 0.3)', backgroundColor: 'rgba(239, 68, 68, 0.04)' }]}>
+        <View style={[styles.listCard, { borderColor: '#FECACA', backgroundColor: '#FFFFFF', elevation: 0 }]}>
           <ListItem
             icon="trash-bin-outline"
             iconColor="#EF4444"
