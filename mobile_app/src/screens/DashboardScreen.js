@@ -55,18 +55,18 @@ const AVAILABLE_SHORTCUT_CATEGORIES = [
 const DEFAULT_ACTION_DOCK_KEYS = ['add', 'voice', 'split', 'history'];
 
 const ALL_ACTION_SHORTCUTS = [
-  { id: 'add', label: 'Add', icon: 'add', colors: ['#6366F1', '#4F46E5'], screen: 'AddExpense', iconSize: 24, desc: 'Quickly log new expense' },
-  { id: 'voice', label: 'Voice', icon: 'mic', colors: ['#F43F5E', '#E11D48'], screen: 'VoiceExpense', iconSize: 20, desc: 'Speak to record spend' },
-  { id: 'split', label: 'Split', icon: 'people', colors: ['#8B5CF6', '#7C3AED'], screen: 'ExpenseSplit', iconSize: 20, desc: 'Split bills with friends' },
-  { id: 'history', label: 'History', icon: 'receipt', colors: ['#06B6D4', '#0891B2'], screen: 'History', iconSize: 19, desc: 'All transactions log' },
-  { id: 'ai', label: 'AI Coach', icon: 'sparkles', colors: ['#818CF8', '#6366F1'], screen: 'AIChat', iconSize: 20, desc: 'Financial intelligence AI' },
-  { id: 'goals', label: 'Goals', icon: 'flag', colors: ['#F59E0B', '#D97706'], screen: 'SavingsGoals', iconSize: 20, desc: 'Savings & milestone targets' },
-  { id: 'subs', label: 'Subs', icon: 'repeat', colors: ['#38BDF8', '#0284C7'], screen: 'Subscriptions', iconSize: 20, desc: 'Monthly subscriptions' },
-  { id: 'notes', label: 'Notepad', icon: 'document-text', colors: ['#EC4899', '#DB2777'], screen: 'Notepad', iconSize: 20, desc: 'Personal finance notes' },
-  { id: 'analytics', label: 'Analytics', icon: 'bar-chart', colors: ['#10B981', '#059669'], screen: 'Analytics', iconSize: 20, desc: 'Spending trend charts' },
-  { id: 'scan', label: 'Scan QR', icon: 'qr-code', colors: ['#A855F7', '#9333EA'], screen: 'UPIPayment', iconSize: 20, desc: 'UPI pay & scan QR' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', colors: ['#25D366', '#16A34A'], isWhatsApp: true, iconSize: 20, desc: 'Track via WhatsApp bot' },
-  { id: 'budget', label: 'Budget', icon: 'wallet', colors: ['#F97316', '#EA580C'], isBudget: true, iconSize: 20, desc: 'Update monthly limit' },
+  { id: 'add', label: 'Add', icon: 'add', colors: ['#0F172A', '#1E293B'], screen: 'AddExpense', iconSize: 24, desc: 'Quickly log new expense' },
+  { id: 'voice', label: 'Voice', icon: 'mic', colors: ['#0F172A', '#1E293B'], screen: 'VoiceExpense', iconSize: 20, desc: 'Speak to record spend' },
+  { id: 'split', label: 'Split', icon: 'people', colors: ['#0F172A', '#1E293B'], screen: 'ExpenseSplit', iconSize: 20, desc: 'Split bills with friends' },
+  { id: 'history', label: 'History', icon: 'receipt', colors: ['#0F172A', '#1E293B'], screen: 'History', iconSize: 19, desc: 'All transactions log' },
+  { id: 'ai', label: 'AI Coach', icon: 'sparkles', colors: ['#0F172A', '#1E293B'], screen: 'AIChat', iconSize: 20, desc: 'Financial intelligence AI' },
+  { id: 'goals', label: 'Goals', icon: 'flag', colors: ['#0F172A', '#1E293B'], screen: 'SavingsGoals', iconSize: 20, desc: 'Savings & milestone targets' },
+  { id: 'subs', label: 'Subs', icon: 'repeat', colors: ['#0F172A', '#1E293B'], screen: 'Subscriptions', iconSize: 20, desc: 'Monthly subscriptions' },
+  { id: 'notes', label: 'Notepad', icon: 'document-text', colors: ['#0F172A', '#1E293B'], screen: 'Notepad', iconSize: 20, desc: 'Personal finance notes' },
+  { id: 'analytics', label: 'Analytics', icon: 'bar-chart', colors: ['#0F172A', '#1E293B'], screen: 'Analytics', iconSize: 20, desc: 'Spending trend charts' },
+  { id: 'scan', label: 'Scan QR', icon: 'qr-code', colors: ['#0F172A', '#1E293B'], screen: 'UPIPayment', iconSize: 20, desc: 'UPI pay & scan QR' },
+  { id: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', colors: ['#0F172A', '#1E293B'], isWhatsApp: true, iconSize: 20, desc: 'Track via WhatsApp bot' },
+  { id: 'budget', label: 'Budget', icon: 'wallet', colors: ['#0F172A', '#1E293B'], isBudget: true, iconSize: 20, desc: 'Update monthly limit' },
 ];
 
 
@@ -804,7 +804,7 @@ export default function DashboardScreen({ navigation }) {
             </Animated.View>
           )}
 
-          {/* ── SECTION 1: YOUR MONEY (Header + Two Bento Cards) ── */}
+          {/* ── SECTION 1: YOUR MONEY (Header + 4 Bento Cards + Budget Health) ── */}
           <View style={styles.yourMoneyHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={styles.yourMoneyTitle}>Your Money</Text>
@@ -820,34 +820,125 @@ export default function DashboardScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* ── TWO-COLUMN BENTO: SAFE LIMIT & EXPENSES ── */}
+          {/* Row 1: Safe Daily & Total Spent */}
           <View style={styles.twoBentoRow}>
-            {/* Left Bento: Safe Daily / Total Budget */}
+            {/* Card 1: Safe Daily Limit */}
             <View style={styles.bentoMiniCard}>
-              <View style={[styles.bentoIconCircle, { backgroundColor: '#E0F2FE' }]}>
-                <Ionicons name="wallet-outline" size={20} color="#0284C7" />
+              <View style={styles.bentoCardTopRow}>
+                <View style={[styles.bentoIconCircle, { backgroundColor: '#E0F2FE' }]}>
+                  <Ionicons name="wallet-outline" size={19} color="#0284C7" />
+                </View>
+                <View style={[styles.bentoBadge, { backgroundColor: '#E0F2FE' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: '#0284C7' }]}>{daysLeft}d left</Text>
+                </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
-                <Text style={styles.bentoCardLabel}>Safe Limit</Text>
-                <Ionicons name="information-circle-outline" size={11} color="#94A3B8" style={{ marginLeft: 3 }} />
-              </View>
+              <Text style={styles.bentoCardLabel}>Safe Daily</Text>
               <Text style={styles.bentoCardAmount}>₹{safeDailySpend.toLocaleString('en-IN')}</Text>
+              <Text style={styles.bentoCardSub}>Target per day</Text>
             </View>
 
-            {/* Right Bento: Expenses */}
+            {/* Card 2: Total Spent */}
             <View style={styles.bentoMiniCard}>
-              <View style={[styles.bentoIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                <Ionicons name="receipt-outline" size={20} color="#EF4444" />
+              <View style={styles.bentoCardTopRow}>
+                <View style={[styles.bentoIconCircle, { backgroundColor: '#FEE2E2' }]}>
+                  <Ionicons name="receipt-outline" size={19} color="#EF4444" />
+                </View>
+                <View style={[styles.bentoBadge, { backgroundColor: '#FEE2E2' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: '#EF4444' }]}>{usedPercent.toFixed(0)}% used</Text>
+                </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
-                <Text style={styles.bentoCardLabel}>Expenses</Text>
-                <Ionicons name="information-circle-outline" size={11} color="#94A3B8" style={{ marginLeft: 3 }} />
-              </View>
+              <Text style={styles.bentoCardLabel}>Total Spent</Text>
               <Text style={styles.bentoCardAmount}>₹{spent.toLocaleString('en-IN')}</Text>
+              <Text style={styles.bentoCardSub}>This month</Text>
             </View>
           </View>
 
-          {/* ── SECTION 2: DARK INSIGHT PILL ("✨ Your insight is ready   Get Pro >") ── */}
+          {/* Row 2: Remaining Balance & Monthly Budget */}
+          <View style={styles.twoBentoRow}>
+            {/* Card 3: Remaining Balance */}
+            <View style={styles.bentoMiniCard}>
+              <View style={styles.bentoCardTopRow}>
+                <View style={[styles.bentoIconCircle, { backgroundColor: '#DCFCE7' }]}>
+                  <Ionicons name="shield-checkmark-outline" size={19} color="#10B981" />
+                </View>
+                <View style={[styles.bentoBadge, { backgroundColor: '#DCFCE7' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: '#10B981' }]}>{(100 - usedPercent).toFixed(0)}% left</Text>
+                </View>
+              </View>
+              <Text style={styles.bentoCardLabel}>Remaining</Text>
+              <Text style={styles.bentoCardAmount}>₹{remaining.toLocaleString('en-IN')}</Text>
+              <Text style={styles.bentoCardSub}>Available to spend</Text>
+            </View>
+
+            {/* Card 4: Monthly Budget */}
+            <TouchableOpacity 
+              style={styles.bentoMiniCard}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setNewBudget(budget.toString());
+                setNewBudgetCycleDay(budgetCycleDay.toString());
+                setBudgetModalVisible(true);
+              }}
+              activeOpacity={0.75}
+            >
+              <View style={styles.bentoCardTopRow}>
+                <View style={[styles.bentoIconCircle, { backgroundColor: '#EDE9FE' }]}>
+                  <Ionicons name="pie-chart-outline" size={19} color="#7C3AED" />
+                </View>
+                <View style={[styles.bentoBadge, { backgroundColor: '#EDE9FE' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: '#7C3AED' }]}>Edit Plan</Text>
+                </View>
+              </View>
+              <Text style={styles.bentoCardLabel}>Budget Limit</Text>
+              <Text style={styles.bentoCardAmount}>₹{budget.toLocaleString('en-IN')}</Text>
+              <Text style={styles.bentoCardSub}>Tap to update</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Budget Health & Utilization Card */}
+          <View style={styles.budgetHealthCard}>
+            <View style={styles.budgetHealthHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="speedometer-outline" size={15} color="#475569" style={{ marginRight: 6 }} />
+                <Text style={styles.budgetHealthTitle}>Monthly Pace & Health</Text>
+              </View>
+              <View style={[styles.budgetHealthPill, { backgroundColor: `${healthColor}15`, borderColor: `${healthColor}40` }]}>
+                <View style={[styles.budgetHealthDot, { backgroundColor: healthColor }]} />
+                <Text style={[styles.budgetHealthScoreText, { color: healthColor }]}>{healthLabel} • {healthScore}/100</Text>
+              </View>
+            </View>
+
+            <View style={styles.budgetHealthTrack}>
+              <View 
+                style={[
+                  styles.budgetHealthFill, 
+                  { 
+                    width: `${Math.min(100, Math.max(4, usedPercent))}%`,
+                    backgroundColor: overspent ? '#EF4444' : usedPercent > 80 ? '#F59E0B' : '#7C3AED'
+                  }
+                ]} 
+              />
+            </View>
+
+            <View style={styles.budgetHealthStatsRow}>
+              <View style={styles.budgetHealthStat}>
+                <Text style={styles.budgetHealthStatLabel}>Spent Today</Text>
+                <Text style={styles.budgetHealthStatVal}>₹{spentToday.toLocaleString('en-IN')}</Text>
+              </View>
+              <View style={styles.budgetHealthDivider} />
+              <View style={styles.budgetHealthStat}>
+                <Text style={styles.budgetHealthStatLabel}>Used</Text>
+                <Text style={styles.budgetHealthStatVal}>{usedPercent.toFixed(1)}%</Text>
+              </View>
+              <View style={styles.budgetHealthDivider} />
+              <View style={styles.budgetHealthStat}>
+                <Text style={styles.budgetHealthStatLabel}>Days Left</Text>
+                <Text style={styles.budgetHealthStatVal}>{daysLeft} days</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* ── SECTION 2: DARK INSIGHT PILL ("Ask AI / AI Coach") ── */}
           <TouchableOpacity
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -856,15 +947,15 @@ export default function DashboardScreen({ navigation }) {
             activeOpacity={0.88}
             style={styles.darkInsightPill}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 }}>
               <Ionicons name="sparkles" size={15} color="#A78BFA" style={{ marginRight: 8 }} />
               <Text style={styles.darkInsightText} numberOfLines={1}>
                 {cleanTipText(dailyTip) || 'Your daily financial insight is ready'}
               </Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.darkInsightActionText}>Get Pro</Text>
-              <Ionicons name="chevron-forward" size={12} color="#94A3B8" style={{ marginLeft: 2 }} />
+            <View style={styles.darkInsightBadge}>
+              <Text style={styles.darkInsightActionText}>Ask AI</Text>
+              <Ionicons name="chevron-forward" size={11} color="#C084FC" style={{ marginLeft: 3 }} />
             </View>
           </TouchableOpacity>
 
@@ -879,7 +970,7 @@ export default function DashboardScreen({ navigation }) {
                   activeOpacity={0.8}
                 >
                   <LinearGradient
-                    colors={item.colors ? item.colors : ['#8B5CF6', '#7C3AED']}
+                    colors={item.colors ? item.colors : ['#0F172A', '#1E293B']}
                     style={styles.actionDockIconBox}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -901,7 +992,7 @@ export default function DashboardScreen({ navigation }) {
                 activeOpacity={0.8}
               >
                 <View style={styles.actionDockCustomizeBox}>
-                  <Ionicons name="options-outline" size={20} color="#7C3AED" />
+                  <Ionicons name="options-outline" size={20} color="#E2E8F0" />
                 </View>
                 <Text style={styles.actionDockCustomizeLabel}>More</Text>
               </TouchableOpacity>
@@ -1865,26 +1956,46 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
 
-  // ── Two Bento Metric Cards ──
+  // ── Bento Metric Cards (Your Money Section) ──
   twoBentoRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   bentoMiniCard: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-    borderRadius: 22,
-    padding: 16,
+    borderRadius: 20,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  bentoCardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   bentoIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  bentoBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  bentoBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
   },
   bentoCardLabel: {
     fontSize: 12,
@@ -1892,18 +2003,104 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   bentoCardAmount: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: '#0F172A',
-    marginTop: 4,
+    marginTop: 2,
     letterSpacing: -0.3,
+  },
+  bentoCardSub: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+
+  // ── Budget Health & Utilization Card ──
+  budgetHealthCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: 14,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  budgetHealthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  budgetHealthTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  budgetHealthPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  budgetHealthDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+  budgetHealthScoreText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  budgetHealthTrack: {
+    height: 8,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  budgetHealthFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  budgetHealthStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  budgetHealthStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  budgetHealthStatLabel: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  budgetHealthStatVal: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: 1,
+  },
+  budgetHealthDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#E2E8F0',
   },
 
   // ── Dark Insight Banner ──
   darkInsightPill: {
     backgroundColor: '#0F172A',
-    borderRadius: 26,
-    paddingVertical: 13,
+    borderRadius: 24,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1917,12 +2114,22 @@ const styles = StyleSheet.create({
   },
   darkInsightText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
   },
+  darkInsightBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(167, 139, 250, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.35)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
   darkInsightActionText: {
-    color: '#94A3B8',
-    fontSize: 12,
+    color: '#C084FC',
+    fontSize: 11.5,
     fontWeight: '700',
   },
 
@@ -2035,9 +2242,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // ── Quick Action Dock (Vertical Cards with Gradient Icons) ──
+  // ── Quick Action Dock (Sleek Black Aesthetic) ──
   actionDockSection: {
-    marginVertical: 10,
+    marginVertical: 12,
   },
   actionDockScroll: {
     paddingVertical: 4,
@@ -2045,44 +2252,50 @@ const styles = StyleSheet.create({
   },
   actionDockItem: {
     alignItems: 'center',
-    marginRight: 14,
-    width: 64,
+    marginRight: 16,
+    width: 62,
   },
   actionDockIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
+    width: 54,
+    height: 54,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0.28,
     shadowRadius: 8,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   actionDockLabel: {
-    marginTop: 6,
+    marginTop: 7,
     fontSize: 12,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#0F172A',
     textAlign: 'center',
   },
   actionDockCustomizeBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    borderStyle: 'dashed',
+    width: 54,
+    height: 54,
+    borderRadius: 20,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4,
   },
   actionDockCustomizeLabel: {
-    marginTop: 6,
+    marginTop: 7,
     fontSize: 12,
-    fontWeight: '600',
-    color: '#64748B',
+    fontWeight: '700',
+    color: '#0F172A',
     textAlign: 'center',
   },
 
