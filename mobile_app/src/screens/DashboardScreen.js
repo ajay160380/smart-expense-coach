@@ -721,11 +721,11 @@ export default function DashboardScreen({ navigation }) {
             {/* Top row: Label & Chip Icon */}
             <View style={styles.mainCardHeader}>
               <View>
-                <Text style={styles.heroCardSubLabel}>Available Balance</Text>
+                <Text style={styles.heroCardSubLabel}>Available Budget</Text>
                 <View style={styles.balanceContainer}>
                   <Text style={styles.currencySymbol}>₹</Text>
                   <AnimatedNumber
-                    value={spent}
+                    value={remaining}
                     style={styles.balanceAmount}
                   />
                 </View>
@@ -777,9 +777,9 @@ export default function DashboardScreen({ navigation }) {
               </View>
               <View style={styles.metricDivider} />
               <View style={styles.metricColumn}>
-                <Text style={styles.metricLabel}>REMAINING</Text>
+                <Text style={styles.metricLabel}>SPENT</Text>
                 <Text style={styles.metricVal}>
-                  ₹{remaining.toLocaleString('en-IN')}
+                  ₹{spent.toLocaleString('en-IN')}
                 </Text>
               </View>
               <View style={styles.metricDivider} />
@@ -805,7 +805,6 @@ export default function DashboardScreen({ navigation }) {
                   <Ionicons name={item.icon} size={15} color={item.colors ? item.colors[0] : '#7C3AED'} />
                 </View>
                 <Text style={styles.whitePillLabel}>{item.label}</Text>
-                <Text style={[styles.whitePillPlus, { color: item.colors ? item.colors[0] : '#FF6B35' }]}>+</Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
@@ -2133,9 +2132,9 @@ const styles = StyleSheet.create({
     marginRight: 3,
   },
   aiUnifiedBody: {
-    color: '#4B5563',
+    color: '#1E293B',
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
     fontWeight: '500',
   },
 
@@ -2467,100 +2466,6 @@ const styles = StyleSheet.create({
   catBarFill: { height: '100%', borderRadius: 2 },
   catAmount: { color: COLORS.textPrimary, fontSize: 14, fontWeight: 'bold' },
 
-  // ── AI Unified Card ──
-  aiUnifiedCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
-    padding: 16,
-    ...SHADOW.md,
-  },
-  aiUnifiedHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  aiUnifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  aiUnifiedBadgeText: {
-    color: '#A5B4FC',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  aiUnifiedChatBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  aiUnifiedChatText: {
-    color: COLORS.cyan,
-    fontSize: 11,
-    fontWeight: '700',
-    marginRight: 4,
-  },
-  aiUnifiedBody: {
-    color: '#E2E8F0',
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: '500',
-  },
-
-  // ── Bento Tools Row ──
-  toolsBentoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  toolBentoCard: {
-    flex: 1,
-    marginHorizontal: 3,
-  },
-  toolBentoInner: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: 14,
-  },
-  toolBentoIconBoxPink: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(236, 72, 153, 0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  toolBentoIconBoxCyan: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(6, 182, 212, 0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  toolBentoTitle: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  toolBentoSub: {
-    color: '#64748B',
-    fontSize: 10.5,
-    fontWeight: '500',
-  },
 
   // ── Expense Item ──
   expenseItem: {

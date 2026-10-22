@@ -383,7 +383,7 @@ export default function ProfileScreen({ navigation }) {
             </View>
             <View style={styles.streakBadge}>
               <Ionicons name="flame" size={13} color="#F59E0B" style={{ marginRight: 4 }} />
-              <Text style={styles.streakBadgeText}>{memberDays} Days Active</Text>
+              <Text style={styles.streakBadgeText}>{memberDays} {memberDays === 1 ? 'Day' : 'Days'} Active</Text>
             </View>
           </View>
         </LinearGradient>
@@ -417,8 +417,8 @@ export default function ProfileScreen({ navigation }) {
               <>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Registered Mobile</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', maxWidth: '65%', justifyContent: 'flex-end' }}>
-                    <Text style={styles.detailValue}>
+                  <View style={styles.detailValueContainer}>
+                    <Text style={styles.detailValue} numberOfLines={1}>
                       {profile.phone_number.startsWith('91') && profile.phone_number.length === 12
                         ? `+91 ${profile.phone_number.slice(2)}`
                         : profile.phone_number}
@@ -466,14 +466,15 @@ export default function ProfileScreen({ navigation }) {
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.detailLabel}>Email Address</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', maxWidth: '65%', justifyContent: 'flex-end' }}>
+              <Text style={styles.detailLabel}>Email</Text>
+              <View style={styles.detailValueContainer}>
                 <Text
                   style={[
                     styles.detailValue,
                     !profile?.email && { color: '#94A3B8', fontWeight: '500' }
                   ]}
                   numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   {profile?.email || 'Add Email'}
                 </Text>
@@ -865,7 +866,7 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="warning-outline" size={13} color="#EF4444" style={{ marginRight: 6 }} />
           <Text style={[styles.sectionHeaderTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
         </View>
-        <View style={[styles.menuGroupCard, { borderColor: 'rgba(239, 68, 68, 0.25)', backgroundColor: 'rgba(239, 68, 68, 0.04)' }]}>
+        <View style={[styles.menuGroupCard, { borderColor: '#FECACA', backgroundColor: '#FEF2F2' }]}>
           <MenuItem
             ionIcon="trash-bin-outline"
             iconColor="#EF4444"
@@ -873,6 +874,7 @@ export default function ProfileScreen({ navigation }) {
             sub="Permanently delete all expenses, goals & personal data"
             onPress={handleDeleteAccount}
             showArrow
+            danger
             isLast
           />
         </View>
@@ -1022,7 +1024,7 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast }) {
+function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast, danger = false }) {
   return (
     <>
       <TouchableOpacity
@@ -1039,8 +1041,8 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
         </View>
 
         <View style={{ flex: 1, paddingRight: 8 }}>
-          <Text style={styles.menuLabel}>{label}</Text>
-          {Boolean(sub) && <Text style={styles.menuSub} numberOfLines={1}>{sub}</Text>}
+          <Text style={[styles.menuLabel, danger && { color: '#DC2626' }]}>{label}</Text>
+          {Boolean(sub) && <Text style={[styles.menuSub, danger && { color: '#EF4444' }]} numberOfLines={1}>{sub}</Text>}
         </View>
 
         {Boolean(badge) && (
@@ -1050,7 +1052,7 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
         )}
 
         {(onPress || showArrow) && (
-          <Ionicons name="chevron-forward" size={16} color="#475569" style={{ marginLeft: 6 }} />
+          <Ionicons name="chevron-forward" size={16} color={danger ? '#EF4444' : '#475569'} style={{ marginLeft: 6 }} />
         )}
       </TouchableOpacity>
       {!isLast && <View style={styles.itemDivider} />}
@@ -1265,17 +1267,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 7,
+    paddingVertical: 9,
   },
   detailLabel: {
     color: '#6B7280',
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '500',
+    flexShrink: 0,
+    marginRight: 10,
+  },
+  detailValueContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   detailValue: {
     color: '#1F2937',
     fontSize: 13,
     fontWeight: '700',
+    flexShrink: 1,
+    textAlign: 'right',
   },
   detailDivider: {
     height: 1,
@@ -1288,6 +1300,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 8,
     marginLeft: 8,
+    flexShrink: 0,
   },
   emailChipText: {
     fontSize: 10.5,
@@ -1473,13 +1486,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    marginTop: 24,
+    marginTop: 20,
     paddingVertical: 14,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    borderWidth: 1.5,
+    borderColor: '#FEE2E2',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 2,
   },
   logoutText: {
     color: '#EF4444',

@@ -10,7 +10,7 @@ if (__DEV__) {
   require('./src/reticle-dev');
 }
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef, getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState, Modal } from 'react-native';
@@ -147,6 +147,24 @@ function AddButton({ onPress }) {
   );
 }
 
+const HIDE_TAB_BAR_SCREENS = [
+  'Profile',
+  'AIChat',
+  'VoiceExpense',
+  'AddExpense',
+  'ExpenseSplit',
+  'Subscriptions',
+  'Notifications',
+  'Notepad',
+  'History',
+  'PrivacyPolicy',
+  'Terms',
+  'NotFound',
+  'AdminPanel',
+  'SavingsGoals',
+  'Welcome',
+];
+
 // ═══════════════════════════════════════════════
 // MAIN TAB NAVIGATOR (Dark Floating Bar)
 // ═══════════════════════════════════════════════
@@ -161,39 +179,46 @@ function MainTabNavigator() {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#111827',
-          borderTopWidth: 0,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          height: tabHeight,
-          paddingBottom: bottomPadding,
-          paddingTop: 8,
-          elevation: 20,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 14,
-        },
-        tabBarActiveTintColor: '#FF6B35',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '700',
-          letterSpacing: 0.3,
-        },
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-          if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === 'Analytics') iconName = focused ? 'analytics' : 'analytics-outline';
-          else if (route.name === 'Add') iconName = 'add';
-          else if (route.name === 'Goals') iconName = focused ? 'flag' : 'flag-outline';
-          else if (route.name === 'More') iconName = focused ? 'grid' : 'grid-outline';
-          return <Ionicons name={iconName} size={route.name === 'Add' ? 28 : 22} color={color} />;
-        },
-      })}
+      screenOptions={({ route }) => {
+        const routeName = getFocusedRouteNameFromRoute(route);
+        const shouldHideTab = Boolean(routeName && HIDE_TAB_BAR_SCREENS.includes(routeName));
+
+        return {
+          headerShown: false,
+          tabBarStyle: shouldHideTab
+            ? { display: 'none' }
+            : {
+                backgroundColor: '#111827',
+                borderTopWidth: 0,
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                height: tabHeight,
+                paddingBottom: bottomPadding,
+                paddingTop: 8,
+                elevation: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.25,
+                shadowRadius: 14,
+              },
+          tabBarActiveTintColor: '#FF6B35',
+          tabBarInactiveTintColor: '#9CA3AF',
+          tabBarLabelStyle: {
+            fontSize: 10,
+            fontWeight: '700',
+            letterSpacing: 0.3,
+          },
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
+            else if (route.name === 'Analytics') iconName = focused ? 'analytics' : 'analytics-outline';
+            else if (route.name === 'Add') iconName = 'add';
+            else if (route.name === 'Goals') iconName = focused ? 'flag' : 'flag-outline';
+            else if (route.name === 'More') iconName = focused ? 'grid' : 'grid-outline';
+            return <Ionicons name={iconName} size={route.name === 'Add' ? 28 : 22} color={color} />;
+          },
+        };
+      }}
     >
       <Tab.Screen 
         name="Home" 
