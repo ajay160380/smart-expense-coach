@@ -46,6 +46,10 @@ export default function MoreFeaturesScreen({ navigation }) {
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
+  const adminCheckPhone = profile?.phone_number || profile?.whatsapp_number || '';
+  const cleanAdminPhone = String(adminCheckPhone).replace(/\D/g, '');
+  const isAdmin = cleanAdminPhone.endsWith('7905398965') || profile?.is_admin === true;
+
   const handleLogout = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert('Sign Out', 'Are you sure you want to sign out of your account?', [
@@ -523,9 +527,9 @@ export default function MoreFeaturesScreen({ navigation }) {
                 Alert.alert('App Up to Date', 'You are running the latest version.');
               }
             }}
-            isLast={profile?.username !== 'ajay'}
+            isLast={!isAdmin}
           />
-          {profile?.username === 'ajay' && (
+          {isAdmin && (
             <ListItem
               icon="shield-checkmark-outline"
               iconColor="#EAB308"

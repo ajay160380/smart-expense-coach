@@ -55,8 +55,11 @@ export default function ProfileScreen({ navigation }) {
   const [editEmail, setEditEmail] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
   const [shakeLevel, setShakeLevel] = useState('3.5');
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const userPhone = profile?.phone_number || profile?.whatsapp_number || '';
+  const cleanPhone = String(userPhone).replace(/\D/g, '');
+  const isAdmin = cleanPhone.endsWith('7905398965') || profile?.is_admin === true;
 
   // Email verification modal states
   const [verifyModalVisible, setVerifyModalVisible] = useState(false);
@@ -743,7 +746,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* ── ADMIN PANEL ── */}
-        {profile?.username === 'ajay' && (
+        {isAdmin && (
           <>
             <View style={styles.sectionHeaderWrap}>
               <Ionicons name="key-outline" size={13} color="#EAB308" style={{ marginRight: 6 }} />

@@ -23,8 +23,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
-import api from '../api/config';
-import { getUsername, clearAuthData } from '../utils/auth';
+import api, { BASE_URL } from '../api/config';
+import { getUsername, clearAuthData, getToken } from '../utils/auth';
 import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
 
 const { width } = Dimensions.get('window');
@@ -533,30 +533,33 @@ export default function DashboardScreen({ navigation }) {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Alert.alert('Exporting', `Preparing your ${format.toUpperCase()} export...`);
-      // Use standard fetch here to download file
-      const url = `${api.defaults.baseURL}/api/export/${format}/`;
-      const tokenStr = await AsyncStorage.getItem('userToken');
-      const token = tokenStr ? `Token ${tokenStr}` : '';
-      
-      const fileUri = FileSystem.cacheDirectory + `ExpenseTracker_History.${format}`;
+      const token = await getToken();
+      const authHeader = token ? `Token ${token}` : '';
+      const url = `${BASE_URL}/api/export/${format}/`;
+      const fileUri = `${FileSystem.cacheDirectory}ExpenseTracker_Report_${Date.now()}.${format}`;
       
       const downloadRes = await FileSystem.downloadAsync(url, fileUri, {
-        headers: { Authorization: token }
+        headers: authHeader ? { Authorization: authHeader } : {}
       });
       
       if (downloadRes.status === 200) {
-        const mimeType = format === 'pdf' ? 'application/pdf' : 'text/csv';
-        const uti = format === 'pdf' ? 'com.adobe.pdf' : 'public.comma-separated-values-text';
-        await Sharing.shareAsync(downloadRes.uri, {
-          mimeType: mimeType,
-          dialogTitle: `Download Expense ${format.toUpperCase()}`,
-          UTI: uti
-        });
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          const mimeType = format === 'pdf' ? 'application/pdf' : 'text/csv';
+          const uti = format === 'pdf' ? 'com.adobe.pdf' : 'public.comma-separated-values-text';
+          await Sharing.shareAsync(downloadRes.uri, {
+            mimeType: mimeType,
+            dialogTitle: `Download Expense ${format.toUpperCase()}`,
+            UTI: uti
+          });
+        } else {
+          Alert.alert('Export Complete', `Saved to ${downloadRes.uri}`);
+        }
       } else {
-        Alert.alert('Export Error', 'Failed to export data.');
+        Alert.alert('Export Error', `Export failed with status ${downloadRes.status}. Please check your connection.`);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Export error:', e);
       Alert.alert('Export Error', 'An error occurred during export.');
     }
   };
@@ -723,6 +726,20 @@ export default function DashboardScreen({ navigation }) {
                 style={styles.heroBalanceAmount}
               />
               <Text style={styles.heroBalanceCents}>.00</Text>
+            </View>
+
+            {/* Spent & Budget Overview Badge */}
+            <View style={styles.heroSpentBadgeRow}>
+              <View style={styles.heroSpentBadge}>
+                <Ionicons name="trending-up" size={13} color="#FCA5A5" style={{ marginRight: 5 }} />
+                <Text style={styles.heroSpentBadgeText}>
+                  Spent: <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>₹{spent.toLocaleString('en-IN')}</Text>
+                </Text>
+                <Text style={styles.heroSpentBudgetDivider}>•</Text>
+                <Text style={styles.heroSpentBudgetText}>
+                  Limit: ₹{budget.toLocaleString('en-IN')}
+                </Text>
+              </View>
             </View>
 
             {/* Sub-Pill below balance (Translucent Frosted Pill) */}
@@ -941,21 +958,107 @@ export default function DashboardScreen({ navigation }) {
             </ScrollView>
           </Animated.View>
 
-          {/* ── SECTION 5: TRANSACTIONS SECTION (Direct Match to User Screenshot) ── */}
-          <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }], marginTop: 14 }}>
-            {/* Header: Transactions | Clock | Lavender Pill "For the Period" */}
+          {/* ── SECTION 5: SPENDING BREAKDOWN ── */}
+          {recentExpenses.length > 0 && (
+            <View style={{ marginTop: 18 }}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Spending Breakdown</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Analytics')} activeOpacity={0.7}>
+                  <Text style={styles.viewAllLink}>View All &gt;</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.whiteCardBox}>
+                <View style={styles.breakdownRow}>
+                  {/* Left Legend */}
+                  <View style={styles.breakdownLegend}>
+                    <View style={styles.legendHeaderRow}>
+                      <Text style={styles.legendColTitle}>Label</Text>
+                      <Text style={styles.legendColTitle}>Amount</Text>
+                    </View>
+                    {getCategoryBreakdown(recentExpenses).slice(0, 5).map((cat, idx) => (
+                      <View key={idx} style={styles.legendItem}>
+                        <View style={[styles.legendDot, { backgroundColor: cat.color || '#7C3AED' }]} />
+                        <Text style={styles.legendName} numberOfLines={1}>{cat.name}</Text>
+                        <Text style={styles.legendAmount}>₹{cat.total.toLocaleString('en-IN')}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Right Donut Chart */}
+                  <View style={styles.donutWrapper}>
+                    <DonutChart data={getCategoryBreakdown(recentExpenses)} size={118} />
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* ── SECTION 6: BENTO QUICK TOOLS ── */}
+          <View style={styles.toolsBentoRow}>
+            <TouchableOpacity 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('Notepad');
+              }}
+              activeOpacity={0.8}
+              style={styles.toolBentoCard}
+            >
+              <View style={styles.toolBentoInner}>
+                <View style={[styles.toolBentoIconBox, { backgroundColor: '#FDF2F8' }]}>
+                  <MaterialCommunityIcons name="notebook-outline" size={18} color="#EC4899" />
+                </View>
+                <Text style={styles.toolBentoTitle}>Notepad</Text>
+                <Text style={styles.toolBentoSub}>Memos & lists</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('Analytics');
+              }}
+              activeOpacity={0.8}
+              style={styles.toolBentoCard}
+            >
+              <View style={styles.toolBentoInner}>
+                <View style={[styles.toolBentoIconBox, { backgroundColor: '#F3E8FF' }]}>
+                  <Ionicons name="pie-chart-outline" size={18} color="#7C3AED" />
+                </View>
+                <Text style={styles.toolBentoTitle}>Analytics</Text>
+                <Text style={styles.toolBentoSub}>Trends & charts</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── SECTION 7: TRANSACTIONS SECTION (At Bottom, with Download PDF / CSV) ── */}
+          <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }], marginTop: 18 }}>
+            {/* Header: Transactions | PDF ↓ | CSV ↓ | All > */}
             <View style={styles.txHeaderRow}>
               <Text style={styles.txHeaderTitle}>Transactions</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <TouchableOpacity onPress={() => navigation.navigate('History')} activeOpacity={0.7}>
-                  <Ionicons name="time-outline" size={18} color="#64748B" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <TouchableOpacity 
+                  onPress={() => exportData('pdf')} 
+                  style={styles.txExportBtn}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="document-text-outline" size={12} color="#7C3AED" style={{ marginRight: 3 }} />
+                  <Text style={styles.txExportBtnText}>PDF</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  onPress={() => navigation.navigate('Analytics')}
+                  onPress={() => exportData('csv')} 
+                  style={styles.txExportBtn}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="download-outline" size={12} color="#7C3AED" style={{ marginRight: 3 }} />
+                  <Text style={styles.txExportBtnText}>CSV</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate('History')}
                   style={styles.forThePeriodPill}
                   activeOpacity={0.75}
                 >
-                  <Text style={styles.forThePeriodText}>For the Period</Text>
+                  <Text style={styles.forThePeriodText}>All &gt;</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1024,79 +1127,6 @@ export default function DashboardScreen({ navigation }) {
               />
             )}
           </Animated.View>
-
-          {/* ── SECTION 6: SPENDING BREAKDOWN & BENTO TOOLS ── */}
-          {recentExpenses.length > 0 && (
-            <View style={{ marginTop: 18 }}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Spending Breakdown</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Analytics')} activeOpacity={0.7}>
-                  <Text style={styles.viewAllLink}>View All &gt;</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.whiteCardBox}>
-                <View style={styles.breakdownRow}>
-                  {/* Left Legend */}
-                  <View style={styles.breakdownLegend}>
-                    <View style={styles.legendHeaderRow}>
-                      <Text style={styles.legendColTitle}>Label</Text>
-                      <Text style={styles.legendColTitle}>Amount</Text>
-                    </View>
-                    {getCategoryBreakdown(recentExpenses).slice(0, 5).map((cat, idx) => (
-                      <View key={idx} style={styles.legendItem}>
-                        <View style={[styles.legendDot, { backgroundColor: cat.color || '#7C3AED' }]} />
-                        <Text style={styles.legendName} numberOfLines={1}>{cat.name}</Text>
-                        <Text style={styles.legendAmount}>₹{cat.total.toLocaleString('en-IN')}</Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  {/* Right Donut Chart */}
-                  <View style={styles.donutWrapper}>
-                    <DonutChart data={getCategoryBreakdown(recentExpenses)} size={118} />
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* ── BENTO QUICK TOOLS ── */}
-          <View style={styles.toolsBentoRow}>
-            <TouchableOpacity 
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate('Notepad');
-              }}
-              activeOpacity={0.8}
-              style={styles.toolBentoCard}
-            >
-              <View style={styles.toolBentoInner}>
-                <View style={[styles.toolBentoIconBox, { backgroundColor: '#FDF2F8' }]}>
-                  <MaterialCommunityIcons name="notebook-outline" size={18} color="#EC4899" />
-                </View>
-                <Text style={styles.toolBentoTitle}>Notepad</Text>
-                <Text style={styles.toolBentoSub}>Memos & lists</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate('Analytics');
-              }}
-              activeOpacity={0.8}
-              style={styles.toolBentoCard}
-            >
-              <View style={styles.toolBentoInner}>
-                <View style={[styles.toolBentoIconBox, { backgroundColor: '#F3E8FF' }]}>
-                  <Ionicons name="pie-chart-outline" size={18} color="#7C3AED" />
-                </View>
-                <Text style={styles.toolBentoTitle}>Analytics</Text>
-                <Text style={styles.toolBentoSub}>Trends & charts</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
 
           <View style={{ height: 110 }} />
         </View>
@@ -1746,6 +1776,36 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
   },
+  heroSpentBadgeRow: {
+    marginTop: 8,
+    marginBottom: 2,
+    alignItems: 'center',
+  },
+  heroSpentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.16)',
+    paddingHorizontal: 12,
+    paddingVertical: 4.5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+  },
+  heroSpentBadgeText: {
+    color: '#FEE2E2',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  heroSpentBudgetDivider: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginHorizontal: 7,
+    fontSize: 10,
+  },
+  heroSpentBudgetText: {
+    color: 'rgba(255, 255, 255, 0.92)',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   heroSubPill: {
     backgroundColor: 'rgba(255, 255, 255, 0.22)',
     paddingHorizontal: 14,
@@ -1880,6 +1940,26 @@ const styles = StyleSheet.create({
   forThePeriodText: {
     color: '#7C3AED',
     fontSize: 11.5,
+    fontWeight: '700',
+  },
+  txExportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  txExportBtnText: {
+    color: '#7C3AED',
+    fontSize: 11,
     fontWeight: '700',
   },
   txDateSubRow: {

@@ -95,12 +95,13 @@ export default function AIChatScreen({ navigation }) {
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (error) {
+      console.log('AI Chat Error:', error?.response?.status, error?.response?.data || error?.message);
       const errMsg = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
         text: error.response?.status === 429
           ? '⏰ Rate limit reached! Thoda wait karo, phir try karo.'
-          : '😅 Network issue. Please check your connection and try again.',
+          : (error.response?.data?.reply || error.response?.data?.error || '😅 Network issue. Please check your connection and try again.'),
         time: new Date(),
       };
       setMessages((prev) => [...prev, errMsg]);

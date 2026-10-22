@@ -52,7 +52,7 @@ export default function AdminPanelScreen({ navigation }) {
   const onRefresh = () => { setRefreshing(true); fetchUsers(); };
 
   const confirmDeleteUser = (user) => {
-    if (user.is_superuser || user.username === 'ajay') {
+    if (user.is_superuser || user.username === 'ajay' || user.username === 'ajaykumar160380' || (user.phone && user.phone.includes('7905398965'))) {
       Alert.alert('Protected', 'You cannot delete the main admin account.');
       return;
     }
