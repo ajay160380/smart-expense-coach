@@ -714,14 +714,13 @@ export default function DashboardScreen({ navigation }) {
               <Ionicons name="chevron-down" size={12} color="#FFFFFF" style={{ marginLeft: 4 }} />
             </TouchableOpacity>
 
-            {/* Right: Frosted Bell Icon with Red Dot */}
+            {/* Right: Expense List / History Button */}
             <TouchableOpacity
               onPress={() => navigation.navigate('History')}
               style={styles.heroNotificationBtn}
               activeOpacity={0.8}
             >
-              <Ionicons name="notifications" size={17} color="#FFFFFF" />
-              <View style={styles.heroNotificationDot} />
+              <Ionicons name="receipt-outline" size={19} color="#FFFFFF" />
             </TouchableOpacity>
           </Animated.View>
 
