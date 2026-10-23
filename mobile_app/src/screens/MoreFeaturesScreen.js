@@ -42,7 +42,7 @@ import { useTheme } from '../theme/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 
 export default function MoreFeaturesScreen({ navigation }) {
-  const { isDark, colors } = useTheme();
+  const { isDark, colors, toggleTheme } = useTheme();
   const [profile, setProfile] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
@@ -208,7 +208,7 @@ export default function MoreFeaturesScreen({ navigation }) {
       {/* ── Top Bar ── */}
       <View style={[styles.topBar, isDark && { borderBottomColor: colors.border }]}>
         <View>
-          <Text style={[styles.topBarTitle, isDark && { color: colors.textPrimary }]}>More Features</Text>
+          <Text style={[styles.topBarTitle, isDark && { color: colors.textPrimary }]}>Menu & Features</Text>
           <Text style={[styles.topBarSub, isDark && { color: colors.textSecondary }]}>Explore tools, AI & utilities</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -560,6 +560,26 @@ export default function MoreFeaturesScreen({ navigation }) {
           )}
         </View>
 
+        {/* ── SECTION: PREFERENCES & DISPLAY ── */}
+        <View style={styles.sectionHeader}>
+          <Ionicons name="color-palette-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
+          <Text style={styles.sectionTitle}>PREFERENCES & DISPLAY</Text>
+        </View>
+
+        <View style={[styles.listCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <ListItem
+            icon={isDark ? "moon" : "sunny-outline"}
+            iconColor="#818CF8"
+            title="Night Mode (Dark Theme)"
+            desc={isDark ? "Slate night theme active • Tap to switch" : "Clean light theme active • Tap to switch"}
+            badge={isDark ? "Dark ON" : "Light"}
+            badgeColor={isDark ? "#818CF8" : "#94A3B8"}
+            rightComponent={<ThemeToggle size="small" />}
+            onPress={toggleTheme}
+            isLast
+          />
+        </View>
+
         {/* ── SECTION: ACCOUNT & SECURITY ── */}
         <View style={styles.sectionHeader}>
           <Ionicons name="person-circle-outline" size={13} color="#06B6D4" style={{ marginRight: 6 }} />
@@ -779,7 +799,7 @@ function FeatureCard({ icon, iconColor, bgGrad, borderColor, title, desc, badge,
   );
 }
 
-function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, onPress, isLast }) {
+function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, onPress, isLast, rightComponent }) {
   const { isDark, colors } = useTheme();
   return (
     <>
@@ -787,9 +807,9 @@ function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, 
         style={styles.listItem}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onPress();
+          if (onPress) onPress();
         }}
-        activeOpacity={0.7}
+        activeOpacity={onPress ? 0.7 : 1}
       >
         <View style={[styles.listIconBox, { backgroundColor: iconColor + '18' }]}>
           <Ionicons name={icon} size={18} color={iconColor} />
@@ -803,8 +823,12 @@ function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, 
             <Text style={[styles.listBadgeText, { color: badgeColor }]}>{badge}</Text>
           </View>
         )}
-        {(showArrow || !badge) && (
-          <Ionicons name="chevron-forward" size={15} color={isDark ? colors.textMuted : "#9CA3AF"} style={{ marginLeft: 6 }} />
+        {rightComponent ? (
+          rightComponent
+        ) : (
+          (showArrow || !badge) && (
+            <Ionicons name="chevron-forward" size={15} color={isDark ? colors.textMuted : "#9CA3AF"} style={{ marginLeft: 6 }} />
+          )
         )}
       </TouchableOpacity>
       {!isLast && <View style={[styles.listDivider, isDark && { backgroundColor: colors.border }]} />}

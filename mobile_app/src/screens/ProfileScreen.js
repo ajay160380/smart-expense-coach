@@ -44,7 +44,7 @@ import { formatApiError } from '../utils/errors';
 import { validateEmail } from '../utils/validation';
 
 export default function ProfileScreen({ navigation }) {
-  const { isDark, colors } = useTheme();
+  const { isDark, colors, toggleTheme } = useTheme();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -608,8 +608,11 @@ export default function ProfileScreen({ navigation }) {
             ionIcon={isDark ? "moon" : "sunny-outline"}
             iconColor="#818CF8"
             label="Night Theme (Dark Mode)"
-            sub={isDark ? "Layered dark slate active" : "Clean light theme active"}
+            sub={isDark ? "Layered dark slate active • Tap to switch" : "Clean light theme active • Tap to switch"}
+            badge={isDark ? "Dark ON" : "Light"}
+            badgeColor={isDark ? "#818CF8" : "#94A3B8"}
             rightComponent={<ThemeToggle size="small" />}
+            onPress={toggleTheme}
           />
           <MenuItem
             ionIcon={biometricEnabled ? 'shield-checkmark' : 'shield-outline'}

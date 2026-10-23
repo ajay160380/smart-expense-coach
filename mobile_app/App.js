@@ -245,7 +245,7 @@ function MainTabNavigator() {
         }}
       />
       <Tab.Screen name="Goals" component={GoalsStackScreen} />
-      <Tab.Screen name="More" component={MoreStackScreen} />
+      <Tab.Screen name="More" component={MoreStackScreen} options={{ tabBarLabel: 'Menu' }} />
     </Tab.Navigator>
   );
 }
