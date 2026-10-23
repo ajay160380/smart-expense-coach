@@ -14,7 +14,6 @@ import { StatusBar } from 'expo-status-bar';
 import Logo from '../components/Logo';
 import { GlassCard, AnimatedNumber, EmptyState, StatCard, SectionHeader } from '../components/SharedComponents';
 import DonutChart from '../components/DonutChart';
-import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../theme/ThemeContext';
 
 import * as FileSystem from 'expo-file-system/legacy';
@@ -812,18 +811,15 @@ export default function DashboardScreen({ navigation }) {
               <Ionicons name="chevron-down" size={12} color="#FFFFFF" style={{ marginLeft: 4 }} />
             </TouchableOpacity>
 
-            {/* Right: Theme Toggle (1-Tap Switch) & Expense List / History Button */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <ThemeToggle size="small" />
-              <TouchableOpacity
-                onPress={() => navigation.navigate('History')}
-                style={styles.heroNotificationBtn}
-                activeOpacity={0.8}
-                accessibilityLabel="Transaction History"
-              >
-                <Ionicons name="receipt-outline" size={19} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+            {/* Right: Expense List / History Button */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('History')}
+              style={styles.heroNotificationBtn}
+              activeOpacity={0.8}
+              accessibilityLabel="Transaction History"
+            >
+              <Ionicons name="receipt-outline" size={19} color="#FFFFFF" />
+            </TouchableOpacity>
           </Animated.View>
 
           {/* Centered Balance Block (Direct Match to User Screenshot) */}
