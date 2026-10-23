@@ -20,6 +20,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
+import { requestWidgetUpdate } from 'react-native-android-widget';
+import { AddExpenseWidget } from '../widgets/AddExpenseWidget';
 import { useFocusEffect } from '@react-navigation/native';
 import api, { BASE_URL } from '../api/config';
 import { getUsername, clearAuthData, getToken } from '../utils/auth';
@@ -548,6 +550,17 @@ export default function DashboardScreen({ navigation }) {
         goals: newGoals.length > 0 ? newGoals : goals,
         subs: newSubs || subsData,
       }));
+
+      // ── 4. UPDATE ANDROID HOME SCREEN WIDGET ──
+      try {
+        if (newStats || stats) {
+          requestWidgetUpdate({
+            widgetName: 'AddExpenseWidget',
+            renderWidget: () => <AddExpenseWidget stats={newStats || stats} />,
+            widgetNotFound: () => {},
+          });
+        }
+      } catch (e) {}
 
     } catch (error) {
       console.error('Dashboard fetch error:', error);

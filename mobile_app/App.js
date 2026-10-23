@@ -587,6 +587,8 @@ export default function App() {
             Home: {
               screens: {
                 AddExpense: 'add',
+                VoiceExpense: 'voice',
+                History: 'history',
               },
             },
           },
