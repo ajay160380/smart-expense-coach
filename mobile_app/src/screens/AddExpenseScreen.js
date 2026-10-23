@@ -33,6 +33,7 @@ import { validateAmount } from '../utils/validation';
 import { formatApiError } from '../utils/errors';
 import analytics from '../utils/analytics';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const CATEGORIES = [
   { key: 'food', label: 'Food', icon: '🍜', color: '#6c5ce7' },
@@ -55,6 +56,7 @@ const TODAY = getLocalDate(0);
 const YESTERDAY = getLocalDate(-1);
 
 export default function AddExpenseScreen({ route, navigation }) {
+  const { isDark, colors } = useTheme();
   const isEdit = route?.params?.expense ? true : false;
   const expense = route?.params?.expense || {};
 
@@ -196,11 +198,11 @@ export default function AddExpenseScreen({ route, navigation }) {
                 if (navigation.canGoBack()) navigation.goBack();
                 else navigation.replace('DashboardMain');
               }} 
-              style={styles.backBtn}
+              style={[styles.backBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
-              <Ionicons name="close" size={28} color={COLORS.textPrimary} />
+              <Ionicons name="close" size={28} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>New Expense</Text>
+            <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>New Expense</Text>
             <View style={{ width: 36 }} />
           </View>
 
@@ -208,9 +210,9 @@ export default function AddExpenseScreen({ route, navigation }) {
             <View style={styles.amountContainer}>
               <Text style={[styles.rupee, { color: selectedCat.color }]}>₹</Text>
               <TextInput
-                style={styles.amountInput}
+                style={[styles.amountInput, isDark && { color: colors.textPrimary }]}
                 placeholder="0"
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor={isDark ? colors.textSecondary : COLORS.textSecondary}
                 value={amount}
                 onChangeText={(v) => setAmount(sanitizeAmount(v))}
                 keyboardType="numeric"
@@ -240,24 +242,25 @@ export default function AddExpenseScreen({ route, navigation }) {
 
       {/* ── BOTTOM HALF: OVERLAPPING SHEET ── */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <Animated.View style={[styles.bottomSheet, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <Animated.View style={[styles.bottomSheet, isDark && { backgroundColor: colors.surface }, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
             
             {/* ── Category Horizontal Scroll ── */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CATEGORY</Text>
+              <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>CATEGORY</Text>
               <View style={styles.categoryGrid}>
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity
                     key={cat.key}
                     style={[
                       styles.categoryCard,
+                      isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border },
                       category === cat.key && { backgroundColor: cat.color + '20', borderColor: cat.color, borderWidth: 1.5, shadowColor: cat.color, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }
                     ]}
                     onPress={() => setCategory(cat.key)}
                   >
                     <Text style={styles.catEmoji}>{cat.icon}</Text>
-                    <Text style={[styles.catLabel, category === cat.key && { color: cat.color, fontWeight: '700' }]} numberOfLines={1} adjustsFontSizeToFit>
+                    <Text style={[styles.catLabel, isDark && { color: colors.textSecondary }, category === cat.key && { color: cat.color, fontWeight: '700' }]} numberOfLines={1} adjustsFontSizeToFit>
                       {cat.label}
                     </Text>
                   </TouchableOpacity>
@@ -268,19 +271,23 @@ export default function AddExpenseScreen({ route, navigation }) {
             {/* ── Description ── */}
             <View style={styles.fieldGroup}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={styles.label}>DESCRIPTION</Text>
+                <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>DESCRIPTION</Text>
                 <TouchableOpacity onPress={handleTagLocation} disabled={locationLoading}>
                   {locationLoading ? (
-                    <ActivityIndicator size="small" color={COLORS.primary} style={{ marginBottom: 8 }} />
+                    <ActivityIndicator size="small" color={colors.primary} style={{ marginBottom: 8 }} />
                   ) : (
-                    <Text style={{ color: COLORS.primary, fontSize: 12, fontWeight: 'bold', marginBottom: 8 }}>📍 Tag Location</Text>
+                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold', marginBottom: 8 }}>📍 Tag Location</Text>
                   )}
                 </TouchableOpacity>
               </View>
               <TextInput
-                style={[styles.input, { borderColor: selectedCat.color + '40', backgroundColor: selectedCat.color + '05' }]}
+                style={[
+                  styles.input, 
+                  isDark && { color: colors.textPrimary },
+                  { borderColor: selectedCat.color + '40', backgroundColor: isDark ? colors.bgElevated : selectedCat.color + '05' }
+                ]}
                 placeholder="What did you buy?"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={isDark ? colors.textSecondary : COLORS.textMuted}
                 value={description}
                 onChangeText={setDescription}
                 maxLength={255}
@@ -291,29 +298,33 @@ export default function AddExpenseScreen({ route, navigation }) {
             {/* ── Date ── */}
             <View style={styles.fieldGroup}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <Text style={[styles.label, { marginBottom: 0 }]}>DATE</Text>
+                <Text style={[styles.label, isDark && { color: colors.textSecondary }, { marginBottom: 0 }]}>DATE</Text>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   <TouchableOpacity 
                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setExpDate(TODAY); }}
-                    style={[styles.dateChip, expDate === TODAY && { backgroundColor: selectedCat.color + '33', borderColor: selectedCat.color }]}
+                    style={[styles.dateChip, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }, expDate === TODAY && { backgroundColor: selectedCat.color + '33', borderColor: selectedCat.color }]}
                   >
-                    <Text style={[styles.dateChipText, expDate === TODAY && { color: selectedCat.color, fontWeight: '700' }]}>Today</Text>
+                    <Text style={[styles.dateChipText, isDark && { color: colors.textSecondary }, expDate === TODAY && { color: selectedCat.color, fontWeight: '700' }]}>Today</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setExpDate(YESTERDAY);
                     }}
-                    style={[styles.dateChip, expDate === YESTERDAY && { backgroundColor: selectedCat.color + '33', borderColor: selectedCat.color }]}
+                    style={[styles.dateChip, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }, expDate === YESTERDAY && { backgroundColor: selectedCat.color + '33', borderColor: selectedCat.color }]}
                   >
-                    <Text style={[styles.dateChipText, expDate === YESTERDAY && { color: selectedCat.color, fontWeight: '700' }]}>Yesterday</Text>
+                    <Text style={[styles.dateChipText, isDark && { color: colors.textSecondary }, expDate === YESTERDAY && { color: selectedCat.color, fontWeight: '700' }]}>Yesterday</Text>
                   </TouchableOpacity>
                 </View>
               </View>
               <TextInput
-                style={[styles.input, { borderColor: selectedCat.color + '40', backgroundColor: selectedCat.color + '05' }]}
+                style={[
+                  styles.input, 
+                  isDark && { color: colors.textPrimary },
+                  { borderColor: selectedCat.color + '40', backgroundColor: isDark ? colors.bgElevated : selectedCat.color + '05' }
+                ]}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={isDark ? colors.textSecondary : COLORS.textMuted}
                 value={expDate}
                 onChangeText={setExpDate}
                 selectionColor={selectedCat.color}

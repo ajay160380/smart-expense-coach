@@ -334,20 +334,20 @@ export default function ProfileScreen({ navigation }) {
   const email = profile?.email || `${username.toLowerCase()}@user.expensetracker`;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* ── Top Bar ── */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, isDark && { backgroundColor: colors.bg, borderBottomColor: colors.border }]}>
         <View style={styles.topBarLeft}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.topBackBtn}
+            style={[styles.topBackBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={20} color="#1F2937" />
+            <Ionicons name="arrow-back" size={20} color={isDark ? colors.textPrimary : "#1F2937"} />
           </TouchableOpacity>
-          <Text style={styles.topBarTitle}>User Profile</Text>
+          <Text style={[styles.topBarTitle, isDark && { color: colors.textPrimary }]}>User Profile</Text>
         </View>
         <TouchableOpacity onPress={openEditProfile} style={styles.topEditBtn} activeOpacity={0.7}>
           <Ionicons name="create-outline" size={17} color="#FF6B35" style={{ marginRight: 4 }} />
@@ -362,7 +362,7 @@ export default function ProfileScreen({ navigation }) {
       >
         {/* ── Profile Header Hero ── */}
         <LinearGradient
-          colors={['#F5F3FF', '#EDE9FE', '#F7F7FB']}
+          colors={isDark ? ['#1E1B4B', '#0F172A', '#0F172A'] : ['#F5F3FF', '#EDE9FE', '#F7F7FB']}
           style={styles.profileHeader}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -377,24 +377,24 @@ export default function ProfileScreen({ navigation }) {
               end={{ x: 1, y: 1 }}
               style={styles.avatarOuterRing}
             >
-              <View style={[styles.avatarInner, { backgroundColor: '#FFFFFF' }]}>
-                <Text style={[styles.avatarLetterText, { color: '#7C3AED' }]}>{initialLetter}</Text>
+              <View style={[styles.avatarInner, { backgroundColor: isDark ? colors.surface : '#FFFFFF' }]}>
+                <Text style={[styles.avatarLetterText, { color: isDark ? '#A78BFA' : '#7C3AED' }]}>{initialLetter}</Text>
               </View>
             </LinearGradient>
-            <View style={styles.avatarBadge}>
+            <View style={[styles.avatarBadge, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Ionicons name="shield-checkmark" size={13} color="#22C55E" />
             </View>
           </View>
 
-          <Text style={styles.profileName}>{fullName}</Text>
-          <View style={styles.usernameChip}>
-            <Text style={styles.usernameChipText}>@{username}</Text>
+          <Text style={[styles.profileName, isDark && { color: colors.textPrimary }]}>{fullName}</Text>
+          <View style={[styles.usernameChip, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}>
+            <Text style={[styles.usernameChipText, isDark && { color: colors.textSecondary }]}>@{username}</Text>
           </View>
 
           <View style={styles.profileMetaRow}>
-            <View style={styles.metaBadge}>
-              <Ionicons name="calendar-outline" size={12} color="#94A3B8" style={{ marginRight: 5 }} />
-              <Text style={styles.metaBadgeText}>Since {joined || '2026'}</Text>
+            <View style={[styles.metaBadge, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="calendar-outline" size={12} color={isDark ? colors.textSecondary : "#94A3B8"} style={{ marginRight: 5 }} />
+              <Text style={[styles.metaBadgeText, isDark && { color: colors.textSecondary }]}>Since {joined || '2026'}</Text>
             </View>
             <View style={styles.streakBadge}>
               <Ionicons name="flame" size={13} color="#F59E0B" style={{ marginRight: 4 }} />
@@ -405,11 +405,11 @@ export default function ProfileScreen({ navigation }) {
 
         {/* ── SECTION 1: PERSONAL DETAILS CARD ── */}
         <View style={{ marginTop: -16, paddingHorizontal: 16 }}>
-          <View style={styles.detailsCard}>
-            <View style={styles.cardHeaderRow}>
+          <View style={[styles.detailsCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.cardHeaderRow, isDark && { borderBottomColor: colors.border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="person-circle-outline" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
-                <Text style={styles.cardHeaderTitle}>PERSONAL DETAILS</Text>
+                <Text style={[styles.cardHeaderTitle, isDark && { color: colors.textPrimary }]}>PERSONAL DETAILS</Text>
               </View>
               <TouchableOpacity onPress={openEditProfile} activeOpacity={0.7}>
                 <Text style={styles.cardHeaderAction}>Update →</Text>
@@ -417,23 +417,23 @@ export default function ProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Full Name</Text>
-              <Text style={styles.detailValue}>{fullName}</Text>
+              <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Full Name</Text>
+              <Text style={[styles.detailValue, isDark && { color: colors.textPrimary }]}>{fullName}</Text>
             </View>
-            <View style={styles.detailDivider} />
+            <View style={[styles.detailDivider, isDark && { backgroundColor: colors.border }]} />
 
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Username</Text>
-              <Text style={styles.detailValue}>@{username}</Text>
+              <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Username</Text>
+              <Text style={[styles.detailValue, isDark && { color: colors.textPrimary }]}>@{username}</Text>
             </View>
-            <View style={styles.detailDivider} />
+            <View style={[styles.detailDivider, isDark && { backgroundColor: colors.border }]} />
 
             {Boolean(profile?.phone_number) && !String(profile.phone_number).startsWith('g_') && (
               <>
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Registered Mobile</Text>
+                  <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Registered Mobile</Text>
                   <View style={styles.detailValueContainer}>
-                    <Text style={styles.detailValue} numberOfLines={1}>
+                    <Text style={[styles.detailValue, isDark && { color: colors.textPrimary }]} numberOfLines={1}>
                       {profile.phone_number.startsWith('91') && profile.phone_number.length === 12
                         ? `+91 ${profile.phone_number.slice(2)}`
                         : profile.phone_number}
@@ -463,7 +463,7 @@ export default function ProfileScreen({ navigation }) {
                     </View>
                   </View>
                 </View>
-                <View style={styles.detailDivider} />
+                <View style={[styles.detailDivider, isDark && { backgroundColor: colors.border }]} />
               </>
             )}
 
@@ -481,12 +481,13 @@ export default function ProfileScreen({ navigation }) {
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.detailLabel}>Email</Text>
+              <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Email</Text>
               <View style={styles.detailValueContainer}>
                 <Text
                   style={[
                     styles.detailValue,
-                    !profile?.email && { color: '#94A3B8', fontWeight: '500' }
+                    isDark && { color: colors.textPrimary },
+                    !profile?.email && { color: isDark ? colors.textMuted : '#94A3B8', fontWeight: '500' }
                   ]}
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -522,10 +523,10 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
             </TouchableOpacity>
-            <View style={styles.detailDivider} />
+            <View style={[styles.detailDivider, isDark && { backgroundColor: colors.border }]} />
 
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Monthly Budget</Text>
+              <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Monthly Budget</Text>
               <Text style={[styles.detailValue, { color: '#10B981', fontWeight: '800' }]}>
                 ₹{Math.round(budget).toLocaleString('en-IN')}
               </Text>
@@ -536,41 +537,41 @@ export default function ProfileScreen({ navigation }) {
         {/* ── SECTION 2: LIFETIME STATS BENTO GRID ── */}
         <View style={styles.sectionHeaderWrap}>
           <Ionicons name="stats-chart-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
-          <Text style={styles.sectionHeaderTitle}>LIFETIME SNAPSHOT</Text>
+          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>LIFETIME SNAPSHOT</Text>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
-          <View style={styles.lifetimeCard}>
+          <View style={[styles.lifetimeCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <View style={[styles.statIconBox, { backgroundColor: 'rgba(244, 63, 94, 0.12)', borderColor: 'rgba(244, 63, 94, 0.25)' }]}>
                   <Ionicons name="wallet-outline" size={17} color="#F43F5E" />
                 </View>
-                <Text style={styles.statValue}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
-                <Text style={styles.statLabel}>LIFETIME SPENT</Text>
+                <Text style={[styles.statValue, isDark && { color: colors.textPrimary }]}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
+                <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>LIFETIME SPENT</Text>
               </View>
 
               <View style={styles.statItem}>
                 <View style={[styles.statIconBox, { backgroundColor: 'rgba(129, 140, 248, 0.12)', borderColor: 'rgba(129, 140, 248, 0.25)' }]}>
                   <Ionicons name="receipt-outline" size={17} color="#818CF8" />
                 </View>
-                <Text style={styles.statValue}>{totalTxns}</Text>
-                <Text style={styles.statLabel}>TRANSACTIONS</Text>
+                <Text style={[styles.statValue, isDark && { color: colors.textPrimary }]}>{totalTxns}</Text>
+                <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>TRANSACTIONS</Text>
               </View>
 
               <View style={styles.statItem}>
                 <View style={[styles.statIconBox, { backgroundColor: 'rgba(6, 182, 212, 0.12)', borderColor: 'rgba(6, 182, 212, 0.25)' }]}>
                   <Ionicons name="pie-chart-outline" size={17} color="#06B6D4" />
                 </View>
-                <Text style={styles.statValue}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
-                <Text style={styles.statLabel}>MONTHLY BUDGET</Text>
+                <Text style={[styles.statValue, isDark && { color: colors.textPrimary }]}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
+                <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>MONTHLY BUDGET</Text>
               </View>
 
               <View style={styles.statItem}>
                 <View style={[styles.statIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.12)', borderColor: 'rgba(245, 158, 11, 0.25)' }]}>
                   <Ionicons name="flame-outline" size={17} color="#F59E0B" />
                 </View>
-                <Text style={styles.statValue}>{memberDays}</Text>
-                <Text style={styles.statLabel}>DAYS ACTIVE</Text>
+                <Text style={[styles.statValue, isDark && { color: colors.textPrimary }]}>{memberDays}</Text>
+                <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>DAYS ACTIVE</Text>
               </View>
             </View>
           </View>
@@ -579,9 +580,9 @@ export default function ProfileScreen({ navigation }) {
         {/* ── SECTION 3: PREFERENCES & SECURITY ── */}
         <View style={styles.sectionHeaderWrap}>
           <Ionicons name="shield-checkmark-outline" size={13} color="#10B981" style={{ marginRight: 6 }} />
-          <Text style={styles.sectionHeaderTitle}>PREFERENCES & SECURITY</Text>
+          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>PREFERENCES & SECURITY</Text>
         </View>
-        <View style={styles.menuGroupCard}>
+        <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <MenuItem
             ionIcon={profile?.email_verified ? 'shield-checkmark' : 'mail-outline'}
             iconColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#94A3B8')}
@@ -769,9 +770,9 @@ export default function ProfileScreen({ navigation }) {
           <>
             <View style={styles.sectionHeaderWrap}>
               <Ionicons name="key-outline" size={13} color="#EAB308" style={{ marginRight: 6 }} />
-              <Text style={styles.sectionHeaderTitle}>ADMIN CONSOLE</Text>
+              <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>ADMIN CONSOLE</Text>
             </View>
-            <View style={styles.menuGroupCard}>
+            <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <MenuItem
                 ionIcon="shield-checkmark-outline"
                 iconColor="#EAB308"
@@ -788,10 +789,10 @@ export default function ProfileScreen({ navigation }) {
         {/* ── SECTION 4: ABOUT DEVELOPER ── */}
         <View style={styles.sectionHeaderWrap}>
           <Ionicons name="code-slash-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
-          <Text style={styles.sectionHeaderTitle}>ABOUT DEVELOPER</Text>
+          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>ABOUT DEVELOPER</Text>
         </View>
         <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-          <View style={styles.devCard}>
+          <View style={[styles.devCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.devTopRow}>
               <LinearGradient
                 colors={['#6366F1', '#EC4899']}
@@ -803,28 +804,28 @@ export default function ProfileScreen({ navigation }) {
               </LinearGradient>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={styles.devName}>Ajay Vishwakarma</Text>
+                  <Text style={[styles.devName, isDark && { color: colors.textPrimary }]}>Ajay Vishwakarma</Text>
                   <Ionicons name="checkmark-circle" size={15} color="#06B6D4" style={{ marginLeft: 5 }} />
                 </View>
-                <Text style={styles.devRole}>Creator & Lead Engineer</Text>
+                <Text style={[styles.devRole, isDark && { color: colors.textSecondary }]}>Creator & Lead Engineer</Text>
               </View>
             </View>
 
             <View style={styles.devLinksGrid}>
               <TouchableOpacity
-                style={styles.devLinkPill}
+                style={[styles.devLinkPill, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   Linking.openURL('https://github.com/ajay160380');
                 }}
                 activeOpacity={0.75}
               >
-                <Ionicons name="logo-github" size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={styles.devLinkText}>GitHub</Text>
+                <Ionicons name="logo-github" size={15} color={isDark ? colors.textPrimary : "#FFFFFF"} style={{ marginRight: 6 }} />
+                <Text style={[styles.devLinkText, isDark && { color: colors.textPrimary }]}>GitHub</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.devLinkPill}
+                style={[styles.devLinkPill, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   Linking.openURL('https://ajay-vishwakarmaa.netlify.app');
@@ -832,11 +833,11 @@ export default function ProfileScreen({ navigation }) {
                 activeOpacity={0.75}
               >
                 <Ionicons name="globe-outline" size={15} color="#38BDF8" style={{ marginRight: 6 }} />
-                <Text style={styles.devLinkText}>Portfolio</Text>
+                <Text style={[styles.devLinkText, isDark && { color: colors.textPrimary }]}>Portfolio</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.devLinkPill}
+                style={[styles.devLinkPill, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   Linking.openURL('https://www.linkedin.com/in/ajay-vishwakarma-71649129a/');
@@ -844,7 +845,7 @@ export default function ProfileScreen({ navigation }) {
                 activeOpacity={0.75}
               >
                 <Ionicons name="logo-linkedin" size={15} color="#0A66C2" style={{ marginRight: 6 }} />
-                <Text style={styles.devLinkText}>LinkedIn</Text>
+                <Text style={[styles.devLinkText, isDark && { color: colors.textPrimary }]}>LinkedIn</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -853,9 +854,9 @@ export default function ProfileScreen({ navigation }) {
         {/* ── SECTION 5: LEGAL & RESOURCES (Items 16, 17, 19) ── */}
         <View style={styles.sectionHeaderWrap}>
           <Ionicons name="document-text-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
-          <Text style={styles.sectionHeaderTitle}>LEGAL & POLICIES</Text>
+          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>LEGAL & POLICIES</Text>
         </View>
-        <View style={styles.menuGroupCard}>
+        <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <MenuItem
             ionIcon="shield-checkmark-outline"
             iconColor="#10B981"
@@ -888,7 +889,7 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="warning-outline" size={13} color="#EF4444" style={{ marginRight: 6 }} />
           <Text style={[styles.sectionHeaderTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
         </View>
-        <View style={[styles.menuGroupCard, { borderColor: '#FECACA', backgroundColor: '#FFFFFF', elevation: 0 }]}>
+        <View style={[styles.menuGroupCard, { borderColor: isDark ? '#7F1D1D' : '#FECACA', backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FFFFFF', elevation: 0 }]}>
           <MenuItem
             ionIcon="trash-bin-outline"
             iconColor="#EF4444"
@@ -902,7 +903,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* ── Logout Button (Item 1) ── */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.logoutBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: '#7F1D1D' }]} onPress={handleLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
@@ -913,17 +914,17 @@ export default function ProfileScreen({ navigation }) {
       {/* ── Feedback Modal ── */}
       <Modal visible={feedbackVisible} transparent animationType="slide" onRequestClose={() => setFeedbackVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Submit Feedback</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>Submit Feedback</Text>
               <TouchableOpacity onPress={() => setFeedbackVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
               </TouchableOpacity>
             </View>
             <TextInput
-              style={styles.feedbackInput}
+              style={[styles.feedbackInput, isDark && { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="Tell us how we can improve..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted}
               multiline
               numberOfLines={4}
               value={feedbackText}
@@ -947,46 +948,46 @@ export default function ProfileScreen({ navigation }) {
       {/* ── Edit Profile Modal ── */}
       <Modal visible={editProfileVisible} transparent animationType="slide" onRequestClose={() => setEditProfileVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>Edit Profile</Text>
               <TouchableOpacity onPress={() => setEditProfileVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
               </TouchableOpacity>
             </View>
             <View style={{ marginBottom: 15 }}>
-              <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>Username</Text>
+              <Text style={{ color: isDark ? colors.textSecondary : COLORS.textMuted, marginBottom: 5 }}>Username</Text>
               <TextInput
-                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
+                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }, isDark && { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary }]}
                 value={editUsername}
                 onChangeText={setEditUsername}
                 autoCapitalize="none"
               />
             </View>
             <View style={{ marginBottom: 15 }}>
-              <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>Email Address</Text>
+              <Text style={{ color: isDark ? colors.textSecondary : COLORS.textMuted, marginBottom: 5 }}>Email Address</Text>
               <TextInput
-                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
+                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }, isDark && { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary }]}
                 value={editEmail}
                 onChangeText={setEditEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 placeholder="name@example.com"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted}
               />
             </View>
             <View style={{ marginBottom: 15 }}>
-              <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>First Name</Text>
+              <Text style={{ color: isDark ? colors.textSecondary : COLORS.textMuted, marginBottom: 5 }}>First Name</Text>
               <TextInput
-                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
+                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }, isDark && { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary }]}
                 value={editFirstName}
                 onChangeText={setEditFirstName}
               />
             </View>
             <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: COLORS.textMuted, marginBottom: 5 }}>Last Name</Text>
+              <Text style={{ color: isDark ? colors.textSecondary : COLORS.textMuted, marginBottom: 5 }}>Last Name</Text>
               <TextInput
-                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }]}
+                style={[styles.feedbackInput, { minHeight: 50, padding: 12, marginBottom: 0 }, isDark && { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary }]}
                 value={editLastName}
                 onChangeText={setEditLastName}
               />
@@ -1009,24 +1010,24 @@ export default function ProfileScreen({ navigation }) {
       {/* ── Email Verification OTP Modal (Item 3) ── */}
       <Modal visible={verifyModalVisible} transparent animationType="slide" onRequestClose={() => setVerifyModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Verify Email Code</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>Verify Email Code</Text>
               <TouchableOpacity onPress={() => setVerifyModalVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
               </TouchableOpacity>
             </View>
-            <Text style={{ color: COLORS.textMuted, fontSize: 13, marginBottom: 16 }}>
+            <Text style={{ color: isDark ? colors.textSecondary : COLORS.textMuted, fontSize: 13, marginBottom: 16 }}>
               We sent a 6-digit confirmation code to {profile?.email}. Enter it below:
             </Text>
             <TextInput
-              style={[styles.feedbackInput, { minHeight: 54, fontSize: 22, letterSpacing: 6, textAlign: 'center', fontWeight: '800' }]}
+              style={[styles.feedbackInput, { minHeight: 54, fontSize: 22, letterSpacing: 6, textAlign: 'center', fontWeight: '800' }, isDark && { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary }]}
               value={verifyOtp}
               onChangeText={setVerifyOtp}
               keyboardType="number-pad"
               maxLength={6}
               placeholder="••••••"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted}
             />
             <TouchableOpacity
               style={[styles.submitFeedbackBtn, { backgroundColor: '#10B981', marginTop: 16 }, verifyingEmail && { opacity: 0.7 }]}
@@ -1047,6 +1048,7 @@ export default function ProfileScreen({ navigation }) {
 }
 
 function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast, danger = false, rightComponent }) {
+  const { isDark, colors } = useTheme();
   return (
     <>
       <TouchableOpacity
@@ -1063,8 +1065,8 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
         </View>
 
         <View style={{ flex: 1, paddingRight: 8 }}>
-          <Text style={[styles.menuLabel, danger && { color: '#DC2626' }]}>{label}</Text>
-          {Boolean(sub) && <Text style={[styles.menuSub, danger && { color: '#EF4444' }]} numberOfLines={1}>{sub}</Text>}
+          <Text style={[styles.menuLabel, isDark && { color: colors.textPrimary }, danger && { color: '#DC2626' }]}>{label}</Text>
+          {Boolean(sub) && <Text style={[styles.menuSub, isDark && { color: colors.textSecondary }, danger && { color: '#EF4444' }]} numberOfLines={1}>{sub}</Text>}
         </View>
 
         {Boolean(badge) && (
@@ -1077,11 +1079,11 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
           rightComponent
         ) : (
           (onPress || showArrow) && (
-            <Ionicons name="chevron-forward" size={16} color={danger ? '#EF4444' : '#475569'} style={{ marginLeft: 6 }} />
+            <Ionicons name="chevron-forward" size={16} color={danger ? '#EF4444' : (isDark ? colors.textMuted : '#475569')} style={{ marginLeft: 6 }} />
           )
         )}
       </TouchableOpacity>
-      {!isLast && <View style={styles.itemDivider} />}
+      {!isLast && <View style={[styles.itemDivider, isDark && { backgroundColor: colors.border }]} />}
     </>
   );
 }

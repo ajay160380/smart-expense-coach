@@ -9,6 +9,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const PALETTE = [
   '#FF6B35', // Orange (Shopping)
@@ -22,6 +23,7 @@ const PALETTE = [
 ];
 
 export default function DonutChart({ data = [], size = 130, holeRatio = 0.55 }) {
+  const { isDark, colors } = useTheme();
   const total = data.reduce((sum, item) => sum + (parseFloat(item.amount || item.total || 0) || 0), 0);
 
   if (total <= 0 || data.length === 0) {
@@ -35,6 +37,7 @@ export default function DonutChart({ data = [], size = 130, holeRatio = 0.55 }) 
               height: size,
               borderRadius: size / 2,
               borderWidth: size * ((1 - holeRatio) / 2),
+              borderColor: isDark ? colors.border : '#E5E7EB',
             },
           ]}
         />
@@ -45,10 +48,11 @@ export default function DonutChart({ data = [], size = 130, holeRatio = 0.55 }) 
               width: size * holeRatio,
               height: size * holeRatio,
               borderRadius: (size * holeRatio) / 2,
+              backgroundColor: isDark ? colors.surface : '#FFFFFF',
             },
           ]}
         >
-          <Text style={styles.emptyText}>No data</Text>
+          <Text style={[styles.emptyText, isDark && { color: colors.textSecondary }]}>No data</Text>
         </View>
       </View>
     );
@@ -116,7 +120,7 @@ export default function DonutChart({ data = [], size = 130, holeRatio = 0.55 }) 
         />
       ))}
 
-      {/* Central pure-white cutout mask */}
+      {/* Central cutout mask (Light: #FFFFFF, Dark: #1E293B) */}
       <View
         style={[
           styles.hole,
@@ -124,12 +128,12 @@ export default function DonutChart({ data = [], size = 130, holeRatio = 0.55 }) 
             width: size * holeRatio,
             height: size * holeRatio,
             borderRadius: (size * holeRatio) / 2,
-            backgroundColor: '#FFFFFF',
+            backgroundColor: isDark ? colors.surface : '#FFFFFF',
           },
         ]}
       >
-        <Text style={styles.holeCount}>{data.length}</Text>
-        <Text style={styles.holeLabel}>Cats</Text>
+        <Text style={[styles.holeCount, isDark && { color: colors.textPrimary }]}>{data.length}</Text>
+        <Text style={[styles.holeLabel, isDark && { color: colors.textSecondary }]}>Cats</Text>
       </View>
     </View>
   );

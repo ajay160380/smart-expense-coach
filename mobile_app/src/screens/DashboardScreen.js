@@ -14,9 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 import Logo from '../components/Logo';
 import { GlassCard, AnimatedNumber, EmptyState, StatCard, SectionHeader } from '../components/SharedComponents';
 import DonutChart from '../components/DonutChart';
-
-
-
+import ThemeToggle from '../components/ThemeToggle';
+import { useTheme } from '../theme/ThemeContext';
 
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -71,6 +70,7 @@ const ALL_ACTION_SHORTCUTS = [
 
 
 export default function DashboardScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [stats, setStats] = useState(null);
   const [dailyTip, setDailyTip] = useState(null);
   const [comparison, setComparison] = useState(null);
@@ -714,14 +714,18 @@ export default function DashboardScreen({ navigation }) {
               <Ionicons name="chevron-down" size={12} color="#FFFFFF" style={{ marginLeft: 4 }} />
             </TouchableOpacity>
 
-            {/* Right: Expense List / History Button */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('History')}
-              style={styles.heroNotificationBtn}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="receipt-outline" size={19} color="#FFFFFF" />
-            </TouchableOpacity>
+            {/* Right: Theme Toggle (1-Tap Switch) & Expense List / History Button */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ThemeToggle size="small" />
+              <TouchableOpacity
+                onPress={() => navigation.navigate('History')}
+                style={styles.heroNotificationBtn}
+                activeOpacity={0.8}
+                accessibilityLabel="Transaction History"
+              >
+                <Ionicons name="receipt-outline" size={19} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </Animated.View>
 
           {/* Centered Balance Block (Direct Match to User Screenshot) */}
@@ -771,20 +775,20 @@ export default function DashboardScreen({ navigation }) {
         </LinearGradient>
 
         {/* ── CURVED WHITE SHEET CONTAINER ── */}
-        <View style={styles.sheetContainer}>
+        <View style={[styles.sheetContainer, isDark && { backgroundColor: colors.bg }]}>
           {/* ── ANOMALY SPENDING INSIGHT (If Any) ── */}
           {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
             <Animated.View style={[styles.alertBanner, { opacity: animGreetingOpacity }]}>
               {anomalies.map((alert, idx) => {
                 if (dismissedAnomalies[idx]) return null;
                 return (
-                  <View key={idx} style={styles.alertItem}>
+                  <View key={idx} style={[styles.alertItem, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.alertIconBadge}>
                       <Ionicons name="bulb" size={13} color="#F59E0B" />
                     </View>
                     <View style={{ flex: 1, paddingHorizontal: 8 }}>
-                      <Text style={styles.alertCategoryTitle}>SPENDING INSIGHT</Text>
-                      <Text style={styles.alertText} numberOfLines={2}>
+                      <Text style={[styles.alertCategoryTitle, isDark && { color: '#FBBF24' }]}>SPENDING INSIGHT</Text>
+                      <Text style={[styles.alertText, isDark && { color: colors.textPrimary }]} numberOfLines={2}>
                         {alert.message}
                       </Text>
                     </View>
@@ -796,7 +800,7 @@ export default function DashboardScreen({ navigation }) {
                       style={styles.alertDismissBtn}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Ionicons name="close" size={13} color="#9CA3AF" />
+                      <Ionicons name="close" size={13} color={isDark ? colors.textSecondary : '#9CA3AF'} />
                     </TouchableOpacity>
                   </View>
                 );
@@ -807,72 +811,72 @@ export default function DashboardScreen({ navigation }) {
           {/* ── SECTION 1: YOUR MONEY (Header + 4 Bento Cards + Budget Health) ── */}
           <View style={styles.yourMoneyHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.yourMoneyTitle}>Your Money</Text>
-              <Ionicons name="information-circle-outline" size={15} color="#94A3B8" style={{ marginLeft: 5 }} />
+              <Text style={[styles.yourMoneyTitle, isDark && { color: colors.textPrimary }]}>Your Money</Text>
+              <Ionicons name="information-circle-outline" size={15} color={isDark ? colors.textSecondary : '#94A3B8'} style={{ marginLeft: 5 }} />
             </View>
             <TouchableOpacity 
               onPress={() => navigation.navigate('Analytics')}
               style={styles.detailsBtn}
               activeOpacity={0.7}
             >
-              <Text style={styles.detailsBtnText}>Details</Text>
-              <Ionicons name="chevron-forward" size={13} color="#64748B" />
+              <Text style={[styles.detailsBtnText, isDark && { color: colors.textSecondary }]}>Details</Text>
+              <Ionicons name="chevron-forward" size={13} color={isDark ? colors.textSecondary : '#64748B'} />
             </TouchableOpacity>
           </View>
 
           {/* Row 1: Safe Daily & Total Spent */}
           <View style={styles.twoBentoRow}>
             {/* Card 1: Safe Daily Limit */}
-            <View style={styles.bentoMiniCard}>
+            <View style={[styles.bentoMiniCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.bentoCardTopRow}>
-                <View style={[styles.bentoIconCircle, { backgroundColor: '#E0F2FE' }]}>
-                  <Ionicons name="wallet-outline" size={19} color="#0284C7" />
+                <View style={[styles.bentoIconCircle, { backgroundColor: isDark ? 'rgba(2, 132, 199, 0.2)' : '#E0F2FE' }]}>
+                  <Ionicons name="wallet-outline" size={19} color={isDark ? '#38BDF8' : '#0284C7'} />
                 </View>
-                <View style={[styles.bentoBadge, { backgroundColor: '#E0F2FE' }]}>
-                  <Text style={[styles.bentoBadgeText, { color: '#0284C7' }]}>{daysLeft}d left</Text>
+                <View style={[styles.bentoBadge, { backgroundColor: isDark ? 'rgba(2, 132, 199, 0.2)' : '#E0F2FE' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: isDark ? '#38BDF8' : '#0284C7' }]}>{daysLeft}d left</Text>
                 </View>
               </View>
-              <Text style={styles.bentoCardLabel}>Safe Daily</Text>
-              <Text style={styles.bentoCardAmount}>₹{safeDailySpend.toLocaleString('en-IN')}</Text>
-              <Text style={styles.bentoCardSub}>Target per day</Text>
+              <Text style={[styles.bentoCardLabel, isDark && { color: colors.textSecondary }]}>Safe Daily</Text>
+              <Text style={[styles.bentoCardAmount, isDark && { color: colors.textPrimary }]}>₹{safeDailySpend.toLocaleString('en-IN')}</Text>
+              <Text style={[styles.bentoCardSub, isDark && { color: colors.textSecondary }]}>Target per day</Text>
             </View>
 
             {/* Card 2: Total Spent */}
-            <View style={styles.bentoMiniCard}>
+            <View style={[styles.bentoMiniCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.bentoCardTopRow}>
-                <View style={[styles.bentoIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                  <Ionicons name="receipt-outline" size={19} color="#EF4444" />
+                <View style={[styles.bentoIconCircle, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2' }]}>
+                  <Ionicons name="receipt-outline" size={19} color={isDark ? '#F87171' : '#EF4444'} />
                 </View>
-                <View style={[styles.bentoBadge, { backgroundColor: '#FEE2E2' }]}>
-                  <Text style={[styles.bentoBadgeText, { color: '#EF4444' }]}>{usedPercent.toFixed(0)}% used</Text>
+                <View style={[styles.bentoBadge, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: isDark ? '#F87171' : '#EF4444' }]}>{usedPercent.toFixed(0)}% used</Text>
                 </View>
               </View>
-              <Text style={styles.bentoCardLabel}>Total Spent</Text>
-              <Text style={styles.bentoCardAmount}>₹{spent.toLocaleString('en-IN')}</Text>
-              <Text style={styles.bentoCardSub}>This month</Text>
+              <Text style={[styles.bentoCardLabel, isDark && { color: colors.textSecondary }]}>Total Spent</Text>
+              <Text style={[styles.bentoCardAmount, isDark && { color: colors.textPrimary }]}>₹{spent.toLocaleString('en-IN')}</Text>
+              <Text style={[styles.bentoCardSub, isDark && { color: colors.textSecondary }]}>This month</Text>
             </View>
           </View>
 
           {/* Row 2: Remaining Balance & Monthly Budget */}
           <View style={styles.twoBentoRow}>
             {/* Card 3: Remaining Balance */}
-            <View style={styles.bentoMiniCard}>
+            <View style={[styles.bentoMiniCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.bentoCardTopRow}>
-                <View style={[styles.bentoIconCircle, { backgroundColor: '#DCFCE7' }]}>
-                  <Ionicons name="shield-checkmark-outline" size={19} color="#10B981" />
+                <View style={[styles.bentoIconCircle, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#DCFCE7' }]}>
+                  <Ionicons name="shield-checkmark-outline" size={19} color={isDark ? '#34D399' : '#10B981'} />
                 </View>
-                <View style={[styles.bentoBadge, { backgroundColor: '#DCFCE7' }]}>
-                  <Text style={[styles.bentoBadgeText, { color: '#10B981' }]}>{(100 - usedPercent).toFixed(0)}% left</Text>
+                <View style={[styles.bentoBadge, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#DCFCE7' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: isDark ? '#34D399' : '#10B981' }]}>{(100 - usedPercent).toFixed(0)}% left</Text>
                 </View>
               </View>
-              <Text style={styles.bentoCardLabel}>Remaining</Text>
-              <Text style={styles.bentoCardAmount}>₹{remaining.toLocaleString('en-IN')}</Text>
-              <Text style={styles.bentoCardSub}>Available to spend</Text>
+              <Text style={[styles.bentoCardLabel, isDark && { color: colors.textSecondary }]}>Remaining</Text>
+              <Text style={[styles.bentoCardAmount, isDark && { color: colors.textPrimary }]}>₹{remaining.toLocaleString('en-IN')}</Text>
+              <Text style={[styles.bentoCardSub, isDark && { color: colors.textSecondary }]}>Available to spend</Text>
             </View>
 
             {/* Card 4: Monthly Budget */}
             <TouchableOpacity 
-              style={styles.bentoMiniCard}
+              style={[styles.bentoMiniCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setNewBudget(budget.toString());
@@ -882,25 +886,25 @@ export default function DashboardScreen({ navigation }) {
               activeOpacity={0.75}
             >
               <View style={styles.bentoCardTopRow}>
-                <View style={[styles.bentoIconCircle, { backgroundColor: '#EDE9FE' }]}>
-                  <Ionicons name="pie-chart-outline" size={19} color="#7C3AED" />
+                <View style={[styles.bentoIconCircle, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.2)' : '#EDE9FE' }]}>
+                  <Ionicons name="pie-chart-outline" size={19} color={isDark ? '#818CF8' : '#7C3AED'} />
                 </View>
-                <View style={[styles.bentoBadge, { backgroundColor: '#EDE9FE' }]}>
-                  <Text style={[styles.bentoBadgeText, { color: '#7C3AED' }]}>Edit Plan</Text>
+                <View style={[styles.bentoBadge, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.2)' : '#EDE9FE' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: isDark ? '#818CF8' : '#7C3AED' }]}>Edit Plan</Text>
                 </View>
               </View>
-              <Text style={styles.bentoCardLabel}>Budget Limit</Text>
-              <Text style={styles.bentoCardAmount}>₹{budget.toLocaleString('en-IN')}</Text>
-              <Text style={styles.bentoCardSub}>Tap to update</Text>
+              <Text style={[styles.bentoCardLabel, isDark && { color: colors.textSecondary }]}>Budget Limit</Text>
+              <Text style={[styles.bentoCardAmount, isDark && { color: colors.textPrimary }]}>₹{budget.toLocaleString('en-IN')}</Text>
+              <Text style={[styles.bentoCardSub, isDark && { color: colors.textSecondary }]}>Tap to update</Text>
             </TouchableOpacity>
           </View>
 
           {/* Budget Health & Utilization Card */}
-          <View style={styles.budgetHealthCard}>
+          <View style={[styles.budgetHealthCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.budgetHealthHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="speedometer-outline" size={15} color="#475569" style={{ marginRight: 6 }} />
-                <Text style={styles.budgetHealthTitle}>Monthly Pace & Health</Text>
+                <Ionicons name="speedometer-outline" size={15} color={isDark ? colors.textSecondary : '#475569'} style={{ marginRight: 6 }} />
+                <Text style={[styles.budgetHealthTitle, isDark && { color: colors.textPrimary }]}>Monthly Pace & Health</Text>
               </View>
               <View style={[styles.budgetHealthPill, { backgroundColor: `${healthColor}15`, borderColor: `${healthColor}40` }]}>
                 <View style={[styles.budgetHealthDot, { backgroundColor: healthColor }]} />
@@ -908,7 +912,7 @@ export default function DashboardScreen({ navigation }) {
               </View>
             </View>
 
-            <View style={styles.budgetHealthTrack}>
+            <View style={[styles.budgetHealthTrack, isDark && { backgroundColor: '#334155' }]}>
               <View 
                 style={[
                   styles.budgetHealthFill, 
@@ -922,18 +926,18 @@ export default function DashboardScreen({ navigation }) {
 
             <View style={styles.budgetHealthStatsRow}>
               <View style={styles.budgetHealthStat}>
-                <Text style={styles.budgetHealthStatLabel}>Spent Today</Text>
-                <Text style={styles.budgetHealthStatVal}>₹{spentToday.toLocaleString('en-IN')}</Text>
+                <Text style={[styles.budgetHealthStatLabel, isDark && { color: colors.textSecondary }]}>Spent Today</Text>
+                <Text style={[styles.budgetHealthStatVal, isDark && { color: colors.textPrimary }]}>₹{spentToday.toLocaleString('en-IN')}</Text>
               </View>
-              <View style={styles.budgetHealthDivider} />
+              <View style={[styles.budgetHealthDivider, isDark && { backgroundColor: colors.border }]} />
               <View style={styles.budgetHealthStat}>
-                <Text style={styles.budgetHealthStatLabel}>Used</Text>
-                <Text style={styles.budgetHealthStatVal}>{usedPercent.toFixed(1)}%</Text>
+                <Text style={[styles.budgetHealthStatLabel, isDark && { color: colors.textSecondary }]}>Used</Text>
+                <Text style={[styles.budgetHealthStatVal, isDark && { color: colors.textPrimary }]}>{usedPercent.toFixed(1)}%</Text>
               </View>
-              <View style={styles.budgetHealthDivider} />
+              <View style={[styles.budgetHealthDivider, isDark && { backgroundColor: colors.border }]} />
               <View style={styles.budgetHealthStat}>
-                <Text style={styles.budgetHealthStatLabel}>Days Left</Text>
-                <Text style={styles.budgetHealthStatVal}>{daysLeft} days</Text>
+                <Text style={[styles.budgetHealthStatLabel, isDark && { color: colors.textSecondary }]}>Days Left</Text>
+                <Text style={[styles.budgetHealthStatVal, isDark && { color: colors.textPrimary }]}>{daysLeft} days</Text>
               </View>
             </View>
           </View>
@@ -991,8 +995,8 @@ export default function DashboardScreen({ navigation }) {
                 }}
                 activeOpacity={0.8}
               >
-                <View style={styles.actionDockCustomizeBox}>
-                  <Ionicons name="options-outline" size={20} color="#E2E8F0" />
+                <View style={[styles.actionDockCustomizeBox, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
+                  <Ionicons name="options-outline" size={20} color={isDark ? colors.textPrimary : '#E2E8F0'} />
                 </View>
                 <Text style={styles.actionDockCustomizeLabel}>More</Text>
               </TouchableOpacity>
@@ -1003,28 +1007,28 @@ export default function DashboardScreen({ navigation }) {
           <Animated.View style={[styles.quickSection, { opacity: animListsOpacity, transform: [{ translateY: animListsY }] }]}>
             <View style={styles.quickHeaderRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={styles.flashIconBox}>
-                  <Ionicons name="flash" size={12} color="#7C3AED" />
+                <View style={[styles.flashIconBox, isDark && { backgroundColor: 'rgba(245, 158, 11, 0.2)' }]}>
+                  <Ionicons name="flash" size={12} color="#F59E0B" />
                 </View>
-                <Text style={styles.quickSectionTitle}>1-TAP QUICK LOG</Text>
+                <Text style={[styles.quickSectionTitle, isDark && { color: colors.textSecondary }]}>1-TAP QUICK LOG</Text>
               </View>
               <TouchableOpacity 
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShortcutsModalVisible(true);
                 }}
-                style={styles.quickCustomizeBtn}
+                style={[styles.quickCustomizeBtn, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}
                 activeOpacity={0.7}
               >
-                <Ionicons name="create-outline" size={12} color="#7C3AED" style={{ marginRight: 4 }} />
-                <Text style={styles.quickCustomizeText}>Edit & Add</Text>
+                <Ionicons name="create-outline" size={12} color={isDark ? '#818CF8' : '#7C3AED'} style={{ marginRight: 4 }} />
+                <Text style={[styles.quickCustomizeText, isDark && { color: '#818CF8' }]}>Edit & Add</Text>
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickLogScroll}>
               {quickShortcuts.map((item, i) => (
                 <TouchableOpacity
                   key={item.id || i}
-                  style={styles.quickLogCard}
+                  style={[styles.quickLogCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     navigation.navigate('AddExpense', {
@@ -1039,20 +1043,20 @@ export default function DashboardScreen({ navigation }) {
                     <Text style={{ fontSize: 16 }}>{item.icon}</Text>
                   </View>
                   <View style={{ marginLeft: 8 }}>
-                    <Text style={styles.quickCardAmount}>₹{item.amount}</Text>
-                    <Text style={styles.quickCardLabel} numberOfLines={1}>{item.label.split('/')[0].trim()}</Text>
+                    <Text style={[styles.quickCardAmount, isDark && { color: colors.textPrimary }]}>₹{item.amount}</Text>
+                    <Text style={[styles.quickCardLabel, isDark && { color: colors.textSecondary }]} numberOfLines={1}>{item.label.split('/')[0].trim()}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
 
               {/* Quick Add Card */}
               <TouchableOpacity
-                style={styles.quickAddCard}
+                style={[styles.quickAddCard, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.1)', borderColor: 'rgba(129, 140, 248, 0.3)' }]}
                 onPress={handleOpenAddShortcut}
                 activeOpacity={0.75}
               >
-                <Ionicons name="add" size={18} color="#7C3AED" />
-                <Text style={styles.quickAddCardText}>Add New</Text>
+                <Ionicons name="add" size={18} color={isDark ? '#818CF8' : '#7C3AED'} />
+                <Text style={[styles.quickAddCardText, isDark && { color: '#818CF8' }]}>Add New</Text>
               </TouchableOpacity>
             </ScrollView>
           </Animated.View>
@@ -1061,25 +1065,25 @@ export default function DashboardScreen({ navigation }) {
           {recentExpenses.length > 0 && (
             <View style={{ marginTop: 18 }}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Spending Breakdown</Text>
+                <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]}>Spending Breakdown</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Analytics')} activeOpacity={0.7}>
-                  <Text style={styles.viewAllLink}>View All &gt;</Text>
+                  <Text style={[styles.viewAllLink, isDark && { color: colors.primary }]}>View All &gt;</Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.whiteCardBox}>
+              <View style={[styles.whiteCardBox, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.breakdownRow}>
                   {/* Left Legend */}
                   <View style={styles.breakdownLegend}>
-                    <View style={styles.legendHeaderRow}>
-                      <Text style={styles.legendColTitle}>Label</Text>
-                      <Text style={styles.legendColTitle}>Amount</Text>
+                    <View style={[styles.legendHeaderRow, isDark && { borderBottomColor: colors.border }]}>
+                      <Text style={[styles.legendColTitle, isDark && { color: colors.textSecondary }]}>Label</Text>
+                      <Text style={[styles.legendColTitle, isDark && { color: colors.textSecondary }]}>Amount</Text>
                     </View>
                     {getCategoryBreakdown(recentExpenses).slice(0, 5).map((cat, idx) => (
                       <View key={idx} style={styles.legendItem}>
                         <View style={[styles.legendDot, { backgroundColor: cat.color || '#7C3AED' }]} />
-                        <Text style={styles.legendName} numberOfLines={1}>{cat.name}</Text>
-                        <Text style={styles.legendAmount}>₹{cat.total.toLocaleString('en-IN')}</Text>
+                        <Text style={[styles.legendName, isDark && { color: colors.textPrimary }]} numberOfLines={1}>{cat.name}</Text>
+                        <Text style={[styles.legendAmount, isDark && { color: colors.textPrimary }]}>₹{cat.total.toLocaleString('en-IN')}</Text>
                       </View>
                     ))}
                   </View>
@@ -1103,12 +1107,12 @@ export default function DashboardScreen({ navigation }) {
               activeOpacity={0.8}
               style={styles.toolBentoCard}
             >
-              <View style={styles.toolBentoInner}>
-                <View style={[styles.toolBentoIconBox, { backgroundColor: '#FDF2F8' }]}>
+              <View style={[styles.toolBentoInner, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.toolBentoIconBox, { backgroundColor: isDark ? 'rgba(236, 72, 153, 0.2)' : '#FDF2F8' }]}>
                   <MaterialCommunityIcons name="notebook-outline" size={18} color="#EC4899" />
                 </View>
-                <Text style={styles.toolBentoTitle}>Notepad</Text>
-                <Text style={styles.toolBentoSub}>Memos & lists</Text>
+                <Text style={[styles.toolBentoTitle, isDark && { color: colors.textPrimary }]}>Notepad</Text>
+                <Text style={[styles.toolBentoSub, isDark && { color: colors.textSecondary }]}>Memos & lists</Text>
               </View>
             </TouchableOpacity>
 
@@ -1120,12 +1124,12 @@ export default function DashboardScreen({ navigation }) {
               activeOpacity={0.8}
               style={styles.toolBentoCard}
             >
-              <View style={styles.toolBentoInner}>
-                <View style={[styles.toolBentoIconBox, { backgroundColor: '#F3E8FF' }]}>
-                  <Ionicons name="pie-chart-outline" size={18} color="#7C3AED" />
+              <View style={[styles.toolBentoInner, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.toolBentoIconBox, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.2)' : '#F3E8FF' }]}>
+                  <Ionicons name="pie-chart-outline" size={18} color={isDark ? '#818CF8' : '#7C3AED'} />
                 </View>
-                <Text style={styles.toolBentoTitle}>Analytics</Text>
-                <Text style={styles.toolBentoSub}>Trends & charts</Text>
+                <Text style={[styles.toolBentoTitle, isDark && { color: colors.textPrimary }]}>Analytics</Text>
+                <Text style={[styles.toolBentoSub, isDark && { color: colors.textSecondary }]}>Trends & charts</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -1134,41 +1138,41 @@ export default function DashboardScreen({ navigation }) {
           <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }], marginTop: 18 }}>
             {/* Header: Transactions | PDF ↓ | CSV ↓ | All > */}
             <View style={styles.txHeaderRow}>
-              <Text style={styles.txHeaderTitle}>Transactions</Text>
+              <Text style={[styles.txHeaderTitle, isDark && { color: colors.textPrimary }]}>Transactions</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <TouchableOpacity 
                   onPress={() => exportData('pdf')} 
-                  style={styles.txExportBtn}
+                  style={[styles.txExportBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="document-text-outline" size={12} color="#7C3AED" style={{ marginRight: 3 }} />
-                  <Text style={styles.txExportBtnText}>PDF</Text>
+                  <Ionicons name="document-text-outline" size={12} color={isDark ? colors.primary : '#7C3AED'} style={{ marginRight: 3 }} />
+                  <Text style={[styles.txExportBtnText, isDark && { color: colors.primary }]}>PDF</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => exportData('csv')} 
-                  style={styles.txExportBtn}
+                  style={[styles.txExportBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="download-outline" size={12} color="#7C3AED" style={{ marginRight: 3 }} />
-                  <Text style={styles.txExportBtnText}>CSV</Text>
+                  <Ionicons name="download-outline" size={12} color={isDark ? colors.primary : '#7C3AED'} style={{ marginRight: 3 }} />
+                  <Text style={[styles.txExportBtnText, isDark && { color: colors.primary }]}>CSV</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => navigation.navigate('History')}
-                  style={styles.forThePeriodPill}
+                  style={[styles.forThePeriodPill, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}
                   activeOpacity={0.75}
                 >
-                  <Text style={styles.forThePeriodText}>All &gt;</Text>
+                  <Text style={[styles.forThePeriodText, isDark && { color: colors.primary }]}>All &gt;</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Date line: "Monday, 22 October, 2026" • Total ₹900 */}
             <View style={styles.txDateSubRow}>
-              <Text style={styles.txDateText}>
+              <Text style={[styles.txDateText, isDark && { color: colors.textSecondary }]}>
                 {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </Text>
-              <Text style={styles.txTotalSpentText}>
-                Total <Text style={{ fontWeight: '800', color: '#0F172A' }}>₹{spentToday.toLocaleString('en-IN')}</Text>
+              <Text style={[styles.txTotalSpentText, isDark && { color: colors.textSecondary }]}>
+                Total <Text style={{ fontWeight: '800', color: isDark ? colors.textPrimary : '#0F172A' }}>₹{spentToday.toLocaleString('en-IN')}</Text>
               </Text>
             </View>
 
@@ -1183,7 +1187,7 @@ export default function DashboardScreen({ navigation }) {
                   return (
                     <TouchableOpacity
                       key={exp.id || idx}
-                      style={styles.txCard}
+                      style={[styles.txCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                       onPress={() => navigation.navigate('AddExpense', { expense: exp })}
                       activeOpacity={0.8}
                     >
@@ -1194,23 +1198,23 @@ export default function DashboardScreen({ navigation }) {
 
                       {/* Middle: Title & Tag pill subtext */}
                       <View style={{ flex: 1, marginLeft: 12 }}>
-                        <Text style={styles.txTitleText} numberOfLines={1}>
+                        <Text style={[styles.txTitleText, isDark && { color: colors.textPrimary }]} numberOfLines={1}>
                           {exp.description
                             ? exp.description.charAt(0).toUpperCase() + exp.description.slice(1)
                             : catKey.charAt(0).toUpperCase() + catKey.slice(1)}
                         </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
-                          <Ionicons name="pricetag-outline" size={10} color="#94A3B8" style={{ marginRight: 3 }} />
-                          <Text style={styles.txSubtagText}>{catKey.charAt(0).toUpperCase() + catKey.slice(1)}</Text>
-                          <Text style={styles.txDotSeparator}>•</Text>
-                          <Text style={styles.txSubtagText}>{formatDate(exp.date)}</Text>
+                          <Ionicons name="pricetag-outline" size={10} color={isDark ? colors.textSecondary : '#94A3B8'} style={{ marginRight: 3 }} />
+                          <Text style={[styles.txSubtagText, isDark && { color: colors.textSecondary }]}>{catKey.charAt(0).toUpperCase() + catKey.slice(1)}</Text>
+                          <Text style={[styles.txDotSeparator, isDark && { color: colors.textSecondary }]}>•</Text>
+                          <Text style={[styles.txSubtagText, isDark && { color: colors.textSecondary }]}>{formatDate(exp.date)}</Text>
                         </View>
                       </View>
 
                       {/* Right: Red Bold Amount & Safe Balance */}
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={styles.txAmountNegative}>-₹{Number(exp.amount).toLocaleString('en-IN')}</Text>
-                        <Text style={styles.txSubBalance}>₹{remaining.toLocaleString('en-IN')}</Text>
+                        <Text style={[styles.txSubBalance, isDark && { color: colors.textSecondary }]}>₹{remaining.toLocaleString('en-IN')}</Text>
                       </View>
                     </TouchableOpacity>
                   );
@@ -1244,44 +1248,44 @@ export default function DashboardScreen({ navigation }) {
           style={styles.modalOverlay} 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Set Monthly Budget</Text>
-            <Text style={styles.modalSubtitle}>Define your monthly spending limit to stay on track.</Text>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>Set Monthly Budget</Text>
+            <Text style={[styles.modalSubtitle, isDark && { color: colors.textSecondary }]}>Define your monthly spending limit to stay on track.</Text>
 
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
               <Text style={styles.inputPrefix}>₹</Text>
               <TextInput
-                style={styles.budgetInput}
+                style={[styles.budgetInput, isDark && { color: colors.textPrimary }]}
                 keyboardType="numeric"
                 value={newBudget}
                 onChangeText={setNewBudget}
                 placeholder="Enter budget amount"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={isDark ? colors.textSecondary : '#64748b'}
                 autoFocus={true}
                 maxLength={10}
               />
             </View>
             
-            <View style={[styles.inputContainer, { marginTop: 15 }]}>
+            <View style={[styles.inputContainer, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }, { marginTop: 15 }]}>
               <Text style={styles.inputPrefix}>📅</Text>
               <TextInput
-                style={styles.budgetInput}
+                style={[styles.budgetInput, isDark && { color: colors.textPrimary }]}
                 keyboardType="numeric"
                 value={newBudgetCycleDay}
                 onChangeText={setNewBudgetCycleDay}
                 placeholder="Cycle start day (1-28)"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={isDark ? colors.textSecondary : '#64748b'}
                 maxLength={2}
               />
             </View>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnCancel]}
+                style={[styles.modalBtn, styles.modalBtnCancel, isDark && { backgroundColor: colors.bgElevated }]}
                 onPress={() => setBudgetModalVisible(false)}
                 disabled={budgetSubmitting}
               >
-                <Text style={styles.modalBtnCancelText}>Cancel</Text>
+                <Text style={[styles.modalBtnCancelText, isDark && { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalBtn, styles.modalBtnSave]}

@@ -28,11 +28,13 @@ import DonutChart from '../components/DonutChart';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/config';
 import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const PERIODS = ['week', 'month', 'quarter', 'year'];
 const PERIOD_LABELS = { week: 'This Week', month: 'This Month', quarter: 'Quarter', year: 'This Year' };
 
 export default function AnalyticsScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [period, setPeriod] = useState('month');
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,19 +99,19 @@ export default function AnalyticsScreen({ navigation }) {
   const maxTrend = Math.max(...trend.map((t) => t.total), 1);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* ── Top Header with Back Button ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, isDark && { backgroundColor: colors.bg }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backBtn}
+          style={[styles.backBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={22} color="#1F2937" />
+          <Ionicons name="chevron-back" size={22} color={isDark ? colors.textPrimary : "#1F2937"} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Total Expenses</Text>
+        <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>Total Expenses</Text>
         <View style={{ width: 38 }} />
       </View>
 
@@ -117,7 +119,7 @@ export default function AnalyticsScreen({ navigation }) {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }
           showsVerticalScrollIndicator={false}
         >
@@ -128,11 +130,19 @@ export default function AnalyticsScreen({ navigation }) {
               return (
                 <TouchableOpacity
                   key={p}
-                  style={[styles.tab, isActive && styles.tabActive]}
+                  style={[
+                    styles.tab, 
+                    isDark && { backgroundColor: colors.surface, borderColor: colors.border },
+                    isActive && styles.tabActive
+                  ]}
                   onPress={() => setPeriod(p)}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                  <Text style={[
+                    styles.tabText, 
+                    isDark && { color: colors.textSecondary },
+                    isActive && styles.tabTextActive
+                  ]}>
                     {PERIOD_LABELS[p]}
                   </Text>
                 </TouchableOpacity>
@@ -182,10 +192,10 @@ export default function AnalyticsScreen({ navigation }) {
           </View>
 
           {/* ── Expense Breakdown Card with Donut Chart ── */}
-          <View style={styles.breakdownCard}>
+          <View style={[styles.breakdownCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.breakdownHeaderRow}>
-              <Text style={styles.cardHeading}>Expense Breakdown</Text>
-              <Text style={styles.subtleBadgeText}>{categories.length} Categories</Text>
+              <Text style={[styles.cardHeading, isDark && { color: colors.textPrimary }]}>Expense Breakdown</Text>
+              <Text style={[styles.subtleBadgeText, isDark && { color: colors.textSecondary }]}>{categories.length} Categories</Text>
             </View>
 
             {categories.length > 0 ? (
@@ -197,11 +207,11 @@ export default function AnalyticsScreen({ navigation }) {
                 {/* Categories Grid List */}
                 <View style={styles.catGrid}>
                   {categories.map((cat, idx) => (
-                    <View key={idx} style={styles.catGridItem}>
+                    <View key={idx} style={[styles.catGridItem, isDark && { borderBottomColor: colors.border }]}>
                       <View style={[styles.catGridDot, { backgroundColor: cat.color || '#7C3AED' }]} />
-                      <Text style={styles.catGridName} numberOfLines={1}>{cat.title || cat.name}</Text>
-                      <Text style={styles.catGridPercent}>{Math.round(cat.percent || 0)}%</Text>
-                      <Text style={styles.catGridAmount}>₹{Math.round(cat.total).toLocaleString('en-IN')}</Text>
+                      <Text style={[styles.catGridName, isDark && { color: colors.textPrimary }]} numberOfLines={1}>{cat.title || cat.name}</Text>
+                      <Text style={[styles.catGridPercent, isDark && { color: colors.textSecondary }]}>{Math.round(cat.percent || 0)}%</Text>
+                      <Text style={[styles.catGridAmount, isDark && { color: colors.textPrimary }]}>₹{Math.round(cat.total).toLocaleString('en-IN')}</Text>
                     </View>
                   ))}
                 </View>
@@ -219,11 +229,11 @@ export default function AnalyticsScreen({ navigation }) {
           {trend.length > 0 && (
             <View style={styles.trendSection}>
               <SectionHeader title="Spending Trend" />
-              <View style={styles.whiteCard}>
+              <View style={[styles.whiteCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.chartContainer}>
                   {trend.map((month, idx) => (
                     <View key={idx} style={styles.barCol}>
-                      <Text style={styles.barValue}>
+                      <Text style={[styles.barValue, isDark && { color: colors.textSecondary }]}>
                         {month.total >= 1000 ? `${Math.round(month.total / 1000)}k` : Math.round(month.total)}
                       </Text>
                       <View
@@ -231,11 +241,11 @@ export default function AnalyticsScreen({ navigation }) {
                           styles.bar,
                           {
                             height: Math.max((month.total / maxTrend) * 100, 6),
-                            backgroundColor: idx === trend.length - 1 ? '#7C3AED' : '#93C5FD',
+                            backgroundColor: idx === trend.length - 1 ? (isDark ? colors.primary : '#7C3AED') : (isDark ? '#334155' : '#93C5FD'),
                           },
                         ]}
                       />
-                      <Text style={styles.barLabel}>{month.label}</Text>
+                      <Text style={[styles.barLabel, isDark && { color: colors.textSecondary }]}>{month.label}</Text>
                     </View>
                   ))}
                 </View>
@@ -247,19 +257,19 @@ export default function AnalyticsScreen({ navigation }) {
           {topDay && (
             <View style={{ marginTop: 12 }}>
               <SectionHeader title="Peak Spending Day" />
-              <View style={[styles.whiteCard, { flexDirection: 'row', alignItems: 'center' }]}>
-                <View style={styles.topDayIcon}>
-                  <Ionicons name="calendar" size={22} color="#7C3AED" />
+              <View style={[styles.whiteCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { flexDirection: 'row', alignItems: 'center' }]}>
+                <View style={[styles.topDayIcon, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}>
+                  <Ionicons name="calendar" size={22} color={isDark ? colors.primary : "#7C3AED"} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.topDayDate}>
+                  <Text style={[styles.topDayDate, isDark && { color: colors.textSecondary }]}>
                     {new Date(topDay.date).toLocaleDateString('en-IN', {
                       weekday: 'long',
                       day: 'numeric',
                       month: 'short',
                     })}
                   </Text>
-                  <Text style={styles.topDayAmount}>₹{Math.round(topDay.total).toLocaleString('en-IN')}</Text>
+                  <Text style={[styles.topDayAmount, isDark && { color: colors.textPrimary }]}>₹{Math.round(topDay.total).toLocaleString('en-IN')}</Text>
                 </View>
               </View>
             </View>
@@ -269,12 +279,12 @@ export default function AnalyticsScreen({ navigation }) {
           {aiReport ? (
             <View style={{ marginTop: 14 }}>
               <SectionHeader title="AI Coach Financial Report" />
-              <View style={styles.aiReportCard}>
+              <View style={[styles.aiReportCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Ionicons name="sparkles" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
-                  <Text style={{ color: '#7C3AED', fontWeight: '800', fontSize: 13 }}>Smart AI Summary</Text>
+                  <Ionicons name="sparkles" size={16} color={isDark ? colors.primary : "#7C3AED"} style={{ marginRight: 6 }} />
+                  <Text style={{ color: isDark ? colors.primary : '#7C3AED', fontWeight: '800', fontSize: 13 }}>Smart AI Summary</Text>
                 </View>
-                <Text style={styles.aiReportText}>{aiReport}</Text>
+                <Text style={[styles.aiReportText, isDark && { color: colors.textPrimary }]}>{aiReport}</Text>
               </View>
             </View>
           ) : null}

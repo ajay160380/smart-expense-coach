@@ -29,13 +29,13 @@ export function GlassCard({ children, style, onPress }) {
     <Wrapper
       style={[
         styles.glassCard,
+        style,
         isDark && {
           backgroundColor: colors.surface,
           borderColor: colors.border,
           shadowColor: '#000',
           shadowOpacity: 0.35,
         },
-        style,
       ]}
       onPress={onPress}
       activeOpacity={onPress ? 0.75 : 1}
@@ -100,14 +100,19 @@ export function GradientButton({
 // CATEGORY BADGE — Pill style
 // ═══════════════════════════════════════════════
 export function CategoryBadge({ category, icon, color, selected, onPress, size = 'md' }) {
+  const { isDark, colors } = useTheme();
   const sizeMd = size === 'md';
   return (
     <TouchableOpacity
       style={[
         styles.catBadge,
         {
-          backgroundColor: selected ? (color || COLORS.primary) : '#FFFFFF',
-          borderColor: selected ? (color || COLORS.primary) : COLORS.border,
+          backgroundColor: selected 
+            ? (color || colors.primary) 
+            : (isDark ? colors.surface : '#FFFFFF'),
+          borderColor: selected 
+            ? (color || colors.primary) 
+            : (isDark ? colors.border : COLORS.border),
           paddingHorizontal: sizeMd ? 14 : 10,
           paddingVertical: sizeMd ? 8 : 6,
         },
@@ -120,7 +125,9 @@ export function CategoryBadge({ category, icon, color, selected, onPress, size =
         style={[
           styles.catBadgeText,
           {
-            color: selected ? '#FFFFFF' : COLORS.textPrimary,
+            color: selected 
+              ? '#FFFFFF' 
+              : (isDark ? colors.textPrimary : COLORS.textPrimary),
             fontSize: sizeMd ? 13 : 11,
           },
         ]}
@@ -166,14 +173,19 @@ export function AnimatedNumber({ value, prefix = '', suffix = '', style }) {
 // EMPTY STATE
 // ═══════════════════════════════════════════════
 export function EmptyState({ icon = '📭', title, message, actionText, onAction }) {
+  const { isDark, colors } = useTheme();
   return (
     <View style={styles.emptyState}>
       <Text style={styles.emptyIcon}>{icon}</Text>
-      <Text style={styles.emptyTitle}>{title}</Text>
-      {message && <Text style={styles.emptyMessage}>{message}</Text>}
+      <Text style={[styles.emptyTitle, isDark && { color: colors.textPrimary }]}>{title}</Text>
+      {message && <Text style={[styles.emptyMessage, isDark && { color: colors.textSecondary }]}>{message}</Text>}
       {actionText && onAction && (
-        <TouchableOpacity style={styles.emptyAction} onPress={onAction} activeOpacity={0.85}>
-          <Text style={styles.emptyActionText}>{actionText}</Text>
+        <TouchableOpacity 
+          style={[styles.emptyAction, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]} 
+          onPress={onAction} 
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.emptyActionText, isDark && { color: colors.primary }]}>{actionText}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -184,6 +196,7 @@ export function EmptyState({ icon = '📭', title, message, actionText, onAction
 // LOADING SCREEN
 // ═══════════════════════════════════════════════
 export function LoadingScreen({ message = 'Loading...' }) {
+  const { isDark, colors } = useTheme();
   const pulse = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
@@ -196,11 +209,11 @@ export function LoadingScreen({ message = 'Loading...' }) {
   }, []);
 
   return (
-    <View style={styles.loadingContainer}>
+    <View style={[styles.loadingContainer, isDark && { backgroundColor: colors.bg }]}>
       <Animated.Text style={[styles.loadingLogo, { opacity: pulse }]}>💳</Animated.Text>
-      <Text style={styles.loadingBrand}>ExpenseTracker</Text>
-      <ActivityIndicator color={COLORS.primary} size="small" style={{ marginTop: 16 }} />
-      <Text style={styles.loadingMsg}>{message}</Text>
+      <Text style={[styles.loadingBrand, isDark && { color: colors.textPrimary }]}>ExpenseTracker</Text>
+      <ActivityIndicator color={colors.primary} size="small" style={{ marginTop: 16 }} />
+      <Text style={[styles.loadingMsg, isDark && { color: colors.textSecondary }]}>{message}</Text>
     </View>
   );
 }

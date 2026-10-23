@@ -38,8 +38,11 @@ import { clearAuthData } from '../utils/auth';
 import { formatApiError } from '../utils/errors';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
 import { requestPinWidget } from 'react-native-android-widget';
+import { useTheme } from '../theme/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function MoreFeaturesScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [profile, setProfile] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
@@ -199,30 +202,33 @@ export default function MoreFeaturesScreen({ navigation }) {
   const initialLetter = (fullName ? fullName.charAt(0) : 'U').toUpperCase();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* ── Top Bar ── */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, isDark && { borderBottomColor: colors.border }]}>
         <View>
-          <Text style={styles.topBarTitle}>More Features</Text>
-          <Text style={styles.topBarSub}>Explore tools, AI & utilities</Text>
+          <Text style={[styles.topBarTitle, isDark && { color: colors.textPrimary }]}>More Features</Text>
+          <Text style={[styles.topBarSub, isDark && { color: colors.textSecondary }]}>Explore tools, AI & utilities</Text>
         </View>
-        <TouchableOpacity
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('Profile');
-          }}
-          style={styles.topProfileBtn}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={['#7C3AED', '#6D28D9']}
-            style={styles.topProfileGrad}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <ThemeToggle style={{ marginRight: 10 }} />
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('Profile');
+            }}
+            style={styles.topProfileBtn}
+            activeOpacity={0.8}
           >
-            <Text style={styles.topProfileInitial}>{initialLetter}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={['#7C3AED', '#6D28D9']}
+              style={styles.topProfileGrad}
+            >
+              <Text style={styles.topProfileInitial}>{initialLetter}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -361,14 +367,14 @@ export default function MoreFeaturesScreen({ navigation }) {
         </View>
 
         {/* ── WhatsApp Smart Card (Clean Fintech Layout) ── */}
-        <View style={styles.waCard}>
+        <View style={[styles.waCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.waHeader}>
             <View style={styles.waIconBox}>
               <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <View style={styles.waTitleRow}>
-                <Text style={styles.waTitle}>WhatsApp Assistant</Text>
+                <Text style={[styles.waTitle, isDark && { color: colors.textPrimary }]}>WhatsApp Assistant</Text>
                 <View
                   style={[
                     styles.waBadge,
@@ -394,19 +400,19 @@ export default function MoreFeaturesScreen({ navigation }) {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.waSub}>
+              <Text style={[styles.waSub, isDark && { color: colors.textSecondary }]}>
                 {isWaLinked ? 'Sync & record expenses in real-time' : 'Track expenses by sending quick texts'}
               </Text>
             </View>
           </View>
 
           {/* Quick info chip */}
-          <View style={styles.waInfoChip}>
+          <View style={[styles.waInfoChip, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
               <Ionicons name="chatbubbles-outline" size={13} color="#25D366" style={{ marginRight: 5 }} />
-              <Text style={styles.waInfoChipTitle}>Bot: +91 7379053923</Text>
+              <Text style={[styles.waInfoChipTitle, isDark && { color: colors.textPrimary }]}>Bot: +91 7379053923</Text>
             </View>
-            <Text style={styles.waInfoChipSub}>
+            <Text style={[styles.waInfoChipSub, isDark && { color: colors.textSecondary }]}>
               {isWaLinked
                 ? 'Try texting: "500 coffee" or "today summary"'
                 : 'Tap below to 1-tap link your registered phone number'}
@@ -445,19 +451,19 @@ export default function MoreFeaturesScreen({ navigation }) {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.waRelinkBtn}
+                style={[styles.waRelinkBtn, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}
                 onPress={handleLinkWhatsApp}
                 activeOpacity={0.7}
               >
-                <Ionicons name="sync-outline" size={14} color="#94A3B8" style={{ marginRight: 4 }} />
-                <Text style={styles.waRelinkText}>Re-link</Text>
+                <Ionicons name="sync-outline" size={14} color={isDark ? colors.textSecondary : "#94A3B8"} style={{ marginRight: 4 }} />
+                <Text style={[styles.waRelinkText, isDark && { color: colors.textSecondary }]}>Re-link</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
 
         {/* ── Secondary Productivity Utilities ── */}
-        <View style={styles.listCard}>
+        <View style={[styles.listCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ListItem
             icon="document-text-outline"
             iconColor="#F472B6"
@@ -508,7 +514,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={styles.sectionTitle}>SUPPORT & UPDATES</Text>
         </View>
 
-        <View style={styles.listCard}>
+        <View style={[styles.listCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ListItem
             icon="chatbubble-ellipses-outline"
             iconColor="#EC4899"
@@ -560,7 +566,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={styles.sectionTitle}>ACCOUNT & SECURITY</Text>
         </View>
 
-        <View style={styles.listCard}>
+        <View style={[styles.listCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ListItem
             icon="mail-outline"
             iconColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#06B6D4')}
@@ -608,7 +614,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
         </View>
 
-        <View style={[styles.listCard, { borderColor: '#FECACA', backgroundColor: '#FFFFFF', elevation: 0 }]}>
+        <View style={[styles.listCard, { borderColor: isDark ? '#7F1D1D' : '#FECACA', backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FFFFFF', elevation: 0 }]}>
           <ListItem
             icon="trash-bin-outline"
             iconColor="#EF4444"
@@ -623,7 +629,7 @@ export default function MoreFeaturesScreen({ navigation }) {
         </View>
 
         {/* ── Sign Out Button ── */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.logoutBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: '#7F1D1D' }]} onPress={handleLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
@@ -659,17 +665,17 @@ export default function MoreFeaturesScreen({ navigation }) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Submit Feedback</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>Submit Feedback</Text>
               <TouchableOpacity onPress={() => setFeedbackVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
               </TouchableOpacity>
             </View>
             <TextInput
-              style={styles.feedbackInput}
+              style={[styles.feedbackInput, isDark && { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="Tell us what you'd like to improve..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted}
               multiline
               numberOfLines={4}
               value={feedbackText}
@@ -701,23 +707,23 @@ export default function MoreFeaturesScreen({ navigation }) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="logo-whatsapp" size={20} color="#25D366" style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Link WhatsApp Bot</Text>
+                <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>Link WhatsApp Bot</Text>
               </View>
               <TouchableOpacity onPress={() => setPhoneModalVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
               </TouchableOpacity>
             </View>
-            <Text style={{ color: '#94A3B8', fontSize: 13, marginBottom: 14, lineHeight: 18 }}>
+            <Text style={{ color: isDark ? colors.textSecondary : '#94A3B8', fontSize: 13, marginBottom: 14, lineHeight: 18 }}>
               Enter your 10-digit mobile number. Tapping link will open WhatsApp with the verification text ready to send to +91 7379053923.
             </Text>
             <TextInput
-              style={[styles.feedbackInput, { minHeight: 48, paddingVertical: 10, fontSize: 16 }]}
+              style={[styles.feedbackInput, { minHeight: 48, paddingVertical: 10, fontSize: 16 }, isDark && { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="e.g. 9876543210"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted}
               keyboardType="phone-pad"
               value={inputPhone}
               onChangeText={setInputPhone}
@@ -745,6 +751,7 @@ export default function MoreFeaturesScreen({ navigation }) {
 }
 
 function FeatureCard({ icon, iconColor, bgGrad, borderColor, title, desc, badge, badgeColor, onPress }) {
+  const { isDark, colors } = useTheme();
   return (
     <TouchableOpacity
       style={styles.gridItemWrapper}
@@ -754,7 +761,7 @@ function FeatureCard({ icon, iconColor, bgGrad, borderColor, title, desc, badge,
       }}
       activeOpacity={0.8}
     >
-      <View style={styles.gridItemCard}>
+      <View style={[styles.gridItemCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.gridItemTop}>
           <View style={[styles.gridIconCircle, { backgroundColor: iconColor + '18' }]}>
             <Ionicons name={icon} size={20} color={iconColor} />
@@ -765,14 +772,15 @@ function FeatureCard({ icon, iconColor, bgGrad, borderColor, title, desc, badge,
             </View>
           )}
         </View>
-        <Text style={styles.gridItemTitle}>{title}</Text>
-        <Text style={styles.gridItemDesc} numberOfLines={2}>{desc}</Text>
+        <Text style={[styles.gridItemTitle, isDark && { color: colors.textPrimary }]}>{title}</Text>
+        <Text style={[styles.gridItemDesc, isDark && { color: colors.textSecondary }]} numberOfLines={2}>{desc}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
 function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, onPress, isLast }) {
+  const { isDark, colors } = useTheme();
   return (
     <>
       <TouchableOpacity
@@ -787,8 +795,8 @@ function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, 
           <Ionicons name={icon} size={18} color={iconColor} />
         </View>
         <View style={{ flex: 1, paddingRight: 8 }}>
-          <Text style={styles.listItemTitle}>{title}</Text>
-          <Text style={styles.listItemDesc} numberOfLines={1}>{desc}</Text>
+          <Text style={[styles.listItemTitle, isDark && { color: colors.textPrimary }]}>{title}</Text>
+          <Text style={[styles.listItemDesc, isDark && { color: colors.textSecondary }]} numberOfLines={1}>{desc}</Text>
         </View>
         {badge && (
           <View style={[styles.listBadge, { backgroundColor: badgeColor + '18', borderColor: badgeColor + '35' }]}>
@@ -796,10 +804,10 @@ function ListItem({ icon, iconColor, title, desc, badge, badgeColor, showArrow, 
           </View>
         )}
         {(showArrow || !badge) && (
-          <Ionicons name="chevron-forward" size={15} color="#9CA3AF" style={{ marginLeft: 6 }} />
+          <Ionicons name="chevron-forward" size={15} color={isDark ? colors.textMuted : "#9CA3AF"} style={{ marginLeft: 6 }} />
         )}
       </TouchableOpacity>
-      {!isLast && <View style={styles.listDivider} />}
+      {!isLast && <View style={[styles.listDivider, isDark && { backgroundColor: colors.border }]} />}
     </>
   );
 }

@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { COLORS, RADIUS } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const GOAL_ICONS = ['🎯', '📱', '🏖️', '🚗', '🏠', '💻', '👗', '✈️', '🎓', '💰', '🎮', '💍'];
 
@@ -38,6 +39,7 @@ const THEME = {
 };
 
 export default function SavingsGoalsScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -254,7 +256,7 @@ export default function SavingsGoalsScreen({ navigation }) {
       </LinearGradient>
 
       {/* ── BOTTOM: OVERLAPPING SHEET WITH GOAL CARDS ── */}
-      <Animated.View style={[styles.bottomSheet, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <Animated.View style={[styles.bottomSheet, isDark && { backgroundColor: colors.bg }, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={THEME.accentNeon} />}
@@ -263,19 +265,19 @@ export default function SavingsGoalsScreen({ navigation }) {
           {/* ── Active Goals ── */}
           {activeGoals.length > 0 ? (
             <>
-              <Text style={styles.sectionTitle}>🔥 Active Goals</Text>
+              <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]}>🔥 Active Goals</Text>
               {activeGoals.map((goal) => {
                 const pct = Math.min(Math.round(goal.progress_percent || 0), 100);
                 const remaining = Math.max(0, Math.round(goal.target_amount - goal.saved_amount));
                 return (
-                  <View key={goal.id} style={styles.goalCard}>
+                  <View key={goal.id} style={[styles.goalCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.goalHeader}>
-                      <View style={styles.goalIconWrap}>
+                      <View style={[styles.goalIconWrap, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
                         <Text style={styles.goalIconLarge}>{goal.icon}</Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.goalName}>{goal.name}</Text>
-                        <Text style={styles.goalRemaining}>₹{remaining.toLocaleString('en-IN')} remaining</Text>
+                        <Text style={[styles.goalName, isDark && { color: colors.textPrimary }]}>{goal.name}</Text>
+                        <Text style={[styles.goalRemaining, isDark && { color: colors.textSecondary }]}>₹{remaining.toLocaleString('en-IN')} remaining</Text>
                       </View>
                       <View style={styles.goalPercentBadge}>
                         <Text style={styles.goalPercentText}>{pct}%</Text>
@@ -283,7 +285,7 @@ export default function SavingsGoalsScreen({ navigation }) {
                     </View>
 
                     {/* Progress Bar */}
-                    <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarBg, isDark && { backgroundColor: '#334155' }]}>
                       <LinearGradient
                         colors={pct >= 100 ? THEME.gradGreen : THEME.gradNeon}
                         style={[styles.progressBarFill, { width: `${pct}%` }]}
@@ -293,21 +295,21 @@ export default function SavingsGoalsScreen({ navigation }) {
                     </View>
 
                     <View style={styles.goalFooter}>
-                      <Text style={styles.savedText}>₹{Math.round(goal.saved_amount).toLocaleString('en-IN')}</Text>
-                      <Text style={styles.targetText}>₹{Math.round(goal.target_amount).toLocaleString('en-IN')}</Text>
+                      <Text style={[styles.savedText, isDark && { color: colors.green }]}>₹{Math.round(goal.saved_amount).toLocaleString('en-IN')}</Text>
+                      <Text style={[styles.targetText, isDark && { color: colors.textPrimary }]}>₹{Math.round(goal.target_amount).toLocaleString('en-IN')}</Text>
                     </View>
 
                     {goal.deadline && (
-                      <View style={styles.deadlinePill}>
-                        <Ionicons name="time-outline" size={12} color={THEME.textMuted} />
-                        <Text style={styles.deadlineText}>
+                      <View style={[styles.deadlinePill, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
+                        <Ionicons name="time-outline" size={12} color={isDark ? colors.textSecondary : THEME.textMuted} />
+                        <Text style={[styles.deadlineText, isDark && { color: colors.textSecondary }]}>
                           {new Date(goal.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </Text>
                       </View>
                     )}
 
                     {goal.months_needed && (
-                      <Text style={styles.etaText}>~{goal.months_needed} months to go</Text>
+                      <Text style={[styles.etaText, isDark && { color: colors.textSecondary }]}>~{goal.months_needed} months to go</Text>
                     )}
 
                     {/* Action Buttons */}
@@ -322,7 +324,7 @@ export default function SavingsGoalsScreen({ navigation }) {
                         </LinearGradient>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={styles.deleteBtn}
+                        style={[styles.deleteBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.3)' }]}
                         onPress={() => handleDeleteGoal(goal.id, goal.name)}
                       >
                         <Ionicons name="trash-outline" size={16} color="#ff6b6b" />
@@ -333,9 +335,9 @@ export default function SavingsGoalsScreen({ navigation }) {
                     {showAddMoney === goal.id && (
                       <View style={styles.addMoneyInput}>
                         <TextInput
-                          style={styles.moneyInput}
+                          style={[styles.moneyInput, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
                           placeholder="₹ Enter amount"
-                          placeholderTextColor={THEME.textMuted}
+                          placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
                           keyboardType="numeric"
                           value={addMoneyAmount}
                           onChangeText={(v) => setAddMoneyAmount(sanitizeAmount(v))}
@@ -344,8 +346,8 @@ export default function SavingsGoalsScreen({ navigation }) {
                         <TouchableOpacity style={styles.moneyConfirm} onPress={() => handleAddMoney(goal.id)}>
                           <Ionicons name="checkmark" size={20} color="#fff" />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.moneyCancel} onPress={() => setShowAddMoney(null)}>
-                          <Ionicons name="close" size={20} color={THEME.textMuted} />
+                        <TouchableOpacity style={[styles.moneyCancel, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]} onPress={() => setShowAddMoney(null)}>
+                          <Ionicons name="close" size={20} color={isDark ? colors.textSecondary : THEME.textMuted} />
                         </TouchableOpacity>
                       </View>
                     )}
@@ -366,20 +368,20 @@ export default function SavingsGoalsScreen({ navigation }) {
           {/* ── Completed Goals ── */}
           {completedGoals.length > 0 && (
             <>
-              <Text style={[styles.sectionTitle, { marginTop: 24 }]}>✅ Completed</Text>
+              <Text style={[styles.sectionTitle, { marginTop: 24 }, isDark && { color: colors.textPrimary }]}>✅ Completed</Text>
               {completedGoals.map((goal) => (
-                <View key={goal.id} style={[styles.goalCard, styles.completedCard]}>
+                <View key={goal.id} style={[styles.goalCard, styles.completedCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.goalHeader}>
                     <View style={[styles.goalIconWrap, { backgroundColor: 'rgba(52, 211, 153, 0.16)', borderColor: 'rgba(52, 211, 153, 0.35)' }]}>
                       <Text style={styles.goalIconLarge}>{goal.icon}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.goalName}>{goal.name}</Text>
+                      <Text style={[styles.goalName, isDark && { color: colors.textPrimary }]}>{goal.name}</Text>
                       <Text style={[styles.goalRemaining, { color: THEME.green }]}>🎉 Goal reached!</Text>
                     </View>
                     <Text style={styles.completedAmount}>₹{Math.round(goal.target_amount).toLocaleString('en-IN')}</Text>
                   </View>
-                  <View style={styles.progressBarBg}>
+                  <View style={[styles.progressBarBg, isDark && { backgroundColor: '#334155' }]}>
                     <LinearGradient
                       colors={THEME.gradGreen}
                       style={[styles.progressBarFill, { width: '100%' }]}
@@ -402,46 +404,50 @@ export default function SavingsGoalsScreen({ navigation }) {
           style={styles.modalOverlay} 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {/* Modal handle */}
-            <View style={styles.modalHandle} />
+            <View style={[styles.modalHandle, isDark && { backgroundColor: colors.border }]} />
 
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Savings Goal</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>New Savings Goal</Text>
               <TouchableOpacity
-                style={styles.modalCloseBtn}
+                style={[styles.modalCloseBtn, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}
                 onPress={() => { setShowAddModal(false); resetForm(); }}
               >
-                <Ionicons name="close" size={20} color={THEME.textSecondary} />
+                <Ionicons name="close" size={20} color={isDark ? colors.textSecondary : THEME.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>GOAL NAME</Text>
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>GOAL NAME</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="e.g., iPhone 16 Pro"
-              placeholderTextColor={THEME.textMuted}
+              placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
               value={goalName}
               onChangeText={setGoalName}
               maxLength={100}
             />
 
-            <Text style={styles.label}>TARGET AMOUNT (₹)</Text>
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>TARGET AMOUNT (₹)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="e.g., 50000"
-              placeholderTextColor={THEME.textMuted}
+              placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
               keyboardType="numeric"
               value={goalTarget}
               onChangeText={(v) => setGoalTarget(sanitizeAmount(v))}
             />
 
-            <Text style={styles.label}>ICON</Text>
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>ICON</Text>
             <View style={styles.iconGrid}>
               {GOAL_ICONS.map((icon) => (
                 <TouchableOpacity
                   key={icon}
-                  style={[styles.iconOption, goalIcon === icon && styles.iconOptionSelected]}
+                  style={[
+                    styles.iconOption, 
+                    isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border },
+                    goalIcon === icon && styles.iconOptionSelected
+                  ]}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setGoalIcon(icon); }}
                 >
                   <Text style={{ fontSize: 24 }}>{icon}</Text>
@@ -449,11 +455,11 @@ export default function SavingsGoalsScreen({ navigation }) {
               ))}
             </View>
 
-            <Text style={styles.label}>DEADLINE (OPTIONAL)</Text>
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>DEADLINE (OPTIONAL)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={THEME.textMuted}
+              placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
               value={goalDeadline}
               onChangeText={setGoalDeadline}
             />
