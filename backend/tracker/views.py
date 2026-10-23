@@ -6505,21 +6505,49 @@ def api_send_admin_push(request):
 
 LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/lkOyrCIa2oMeJqeW0pIUlV0HZO-xWeTltMH85XW3xN4.apk"
 
+def ensure_apk_cached_on_disk():
+    import os
+    import urllib.request
+    from django.conf import settings
+
+    apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
+    os.makedirs(os.path.dirname(apk_path), exist_ok=True)
+
+    # 1. If file exists and is > 10MB, it is already cached
+    if os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
+        return apk_path
+
+    # 2. Check static_root as well
+    static_root = getattr(settings, 'STATIC_ROOT', None)
+    if static_root:
+        alt_path = os.path.join(static_root, 'downloads', 'ExpenseTracker.apk')
+        if os.path.exists(alt_path) and os.path.getsize(alt_path) > 10 * 1024 * 1024:
+            return alt_path
+
+    # 3. Otherwise download directly to disk so FileResponse serves with full Content-Length
+    temp_path = apk_path + ".tmp"
+    try:
+        urllib.request.urlretrieve(LATEST_EXPO_APK_URL, temp_path)
+        if os.path.exists(temp_path) and os.path.getsize(temp_path) > 10 * 1024 * 1024:
+            os.replace(temp_path, apk_path)
+            return apk_path
+    except Exception:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
+    return apk_path
+
 def get_apk_response():
     import os
     import requests
-    from django.conf import settings
     from django.http import FileResponse, StreamingHttpResponse, HttpResponseRedirect
 
-    apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
-    if not (os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024):
-        static_root = getattr(settings, 'STATIC_ROOT', None)
-        if static_root:
-            alt_path = os.path.join(static_root, 'downloads', 'ExpenseTracker.apk')
-            if os.path.exists(alt_path) and os.path.getsize(alt_path) > 10 * 1024 * 1024:
-                apk_path = alt_path
+    apk_path = ensure_apk_cached_on_disk()
 
-    # 1. First priority: Serve from local disk if 120MB binary exists
+    # 1. First priority: Serve from local disk if 120MB binary exists (guarantees Content-Length)
     if os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
         response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
         response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
