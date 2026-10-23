@@ -847,6 +847,50 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
+        {/* ── Developer Footer ── */}
+        <View style={styles.devFooterWrap}>
+          <TouchableOpacity
+            style={styles.devFooterRow}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Linking.openURL('https://github.com/ajay160380');
+            }}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="code-slash" size={13} color="#6366F1" style={{ marginRight: 6 }} />
+            <Text style={[styles.devFooterText, isDark && { color: colors.textSecondary }]}>
+              Crafted with ❤️ by <Text style={styles.devFooterLink}>Ajay Vishwakarma</Text>
+            </Text>
+            <Ionicons name="logo-github" size={13} color={isDark ? "#94A3B8" : "#4B5563"} style={{ marginLeft: 6 }} />
+          </TouchableOpacity>
+
+          <View style={styles.devMiniLinks}>
+            <TouchableOpacity
+              style={[styles.miniChip, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Linking.openURL('https://ajay-vishwakarmaa.netlify.app');
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="globe-outline" size={12} color="#0284C7" style={{ marginRight: 5 }} />
+              <Text style={[styles.miniChipText, isDark && { color: colors.textSecondary }]}>Portfolio</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.miniChip, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Linking.openURL('https://www.linkedin.com/in/ajay-vishwakarma-71649129a/');
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="logo-linkedin" size={12} color="#0A66C2" style={{ marginRight: 5 }} />
+              <Text style={[styles.miniChipText, isDark && { color: colors.textSecondary }]}>LinkedIn</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <View style={{ height: 110 }} />
       </ScrollView>
 
@@ -1464,5 +1508,50 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+
+  // ── Developer Footer ──
+  devFooterWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    marginBottom: 6,
+  },
+  devFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  devFooterText: {
+    color: '#6B7280',
+    fontSize: 12.5,
+    fontWeight: '500',
+  },
+  devFooterLink: {
+    color: '#7C3AED',
+    fontWeight: '700',
+  },
+  devMiniLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    gap: 10,
+  },
+  miniChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  miniChipText: {
+    color: '#4B5563',
+    fontSize: 11.5,
+    fontWeight: '600',
   },
 });

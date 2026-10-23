@@ -654,12 +654,21 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        {/* ── Version Footer ── */}
-        <View style={styles.devFooter}>
-          <Text style={[styles.devFooterText, isDark && { color: colors.textMuted }]}>
-            Paisamitra • v1.3.1
+        {/* ── Developer Footer ── */}
+        <TouchableOpacity
+          style={styles.devFooter}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Linking.openURL('https://github.com/ajay160380');
+          }}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="code-slash" size={13} color="#6366F1" style={{ marginRight: 6 }} />
+          <Text style={[styles.devFooterText, isDark && { color: colors.textSecondary }]}>
+            Crafted with ❤️ by <Text style={styles.devFooterLink}>Ajay Vishwakarma</Text>
           </Text>
-        </View>
+          <Ionicons name="logo-github" size={13} color={isDark ? "#94A3B8" : "#4B5563"} style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
 
         <View style={{ height: 100 }} />
       </ScrollView>
