@@ -744,17 +744,15 @@ export default function DashboardScreen({ navigation }) {
     velocityBadge = { label: 'Moderate ⚠️', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' };
   }
 
-  const activeGoal = useMemo(() => {
-    if (!goals || goals.length === 0) return null;
-    return goals.find(g => !g.is_completed) || goals[0];
-  }, [goals]);
+  const activeGoal = (!goals || goals.length === 0)
+    ? null
+    : (goals.find(g => !g.is_completed) || goals[0]);
 
-  const upcomingSubscriptions = useMemo(() => {
-    if (!subsData?.subscriptions || subsData.subscriptions.length === 0) return [];
-    return [...subsData.subscriptions]
-      .sort((a, b) => a.days_until - b.days_until)
-      .slice(0, 3);
-  }, [subsData]);
+  const upcomingSubscriptions = (!subsData?.subscriptions || subsData.subscriptions.length === 0)
+    ? []
+    : [...subsData.subscriptions]
+        .sort((a, b) => a.days_until - b.days_until)
+        .slice(0, 3);
 
   return (
     <View style={styles.container}>
