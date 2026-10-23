@@ -9,6 +9,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Updates from 'expo-updates';
 import { captureException } from '../utils/errorTracking';
 
 export default class ErrorBoundary extends React.Component {
@@ -25,7 +26,19 @@ export default class ErrorBoundary extends React.Component {
     captureException(error, { componentStack: errorInfo?.componentStack });
   }
 
-  handleRestart = () => {
+  handleRestart = async () => {
+    try {
+      if (!__DEV__ && Updates.reloadAsync) {
+        const check = await Updates.checkForUpdateAsync().catch(() => ({ isAvailable: false }));
+        if (check?.isAvailable) {
+          await Updates.fetchUpdateAsync().catch(() => {});
+        }
+        await Updates.reloadAsync();
+        return;
+      }
+    } catch (e) {
+      console.log('ErrorBoundary restart error:', e);
+    }
     this.setState({ hasError: false, error: null });
   };
 
