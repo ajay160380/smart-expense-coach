@@ -10,7 +10,7 @@ if (__DEV__) {
   require('./src/reticle-dev');
 }
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer, createNavigationContainerRef, getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef, getFocusedRouteNameFromRoute, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState, Modal } from 'react-native';
@@ -598,22 +598,27 @@ export default function App() {
 function AppNavigatorContent({ isAuthenticated, linking, showSplash, setShowSplash }) {
   const { isDark, colors } = useTheme();
 
+  const baseTheme = isDark ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...baseTheme,
+    dark: isDark,
+    colors: {
+      ...baseTheme.colors,
+      primary: colors.primary,
+      background: colors.bg,
+      card: colors.surface,
+      text: colors.textPrimary,
+      border: colors.border,
+      notification: colors.accent,
+    },
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <NavigationContainer
         ref={navigationRef}
         linking={linking}
-        theme={{
-          dark: isDark,
-          colors: {
-            primary: colors.primary,
-            background: colors.bg,
-            card: colors.surface,
-            text: colors.textPrimary,
-            border: colors.border,
-            notification: colors.accent,
-          },
-        }}
+        theme={navTheme}
         onStateChange={() => {
           const currentRouteName = navigationRef.getCurrentRoute()?.name;
           if (currentRouteName) {
