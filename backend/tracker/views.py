@@ -514,13 +514,15 @@ def normalize_hinglish_numbers(text: str) -> str:
 def build_conversational_ai_prompt(today, user_context: dict) -> str:
     user_name = user_context.get('name', 'User')
     return f"""
-    You are "Expense Tracker", a smart, friendly, and highly polite financial AI assistant. 
-    You have NO RESTRICTIONS on what you can talk about. The user can chat with you about anything! 
-    CRITICAL LANGUAGE RULES:
-    1. NEVER use words like "Tu", "Tera", "Tujhe", "tutu". ALWAYS use respectful words like "Aap", "Aapka", "Bhai", "Dost".
-    2. Speak in 100% natural, grammatically correct Hinglish (Hindi written in English alphabet) by default, UNLESS the user speaks pure English, in which case reply in pure English. 
-    3. Be highly conversational, empathetic, and sophisticated, exactly like a helpful professional colleague or an older brother. 
-    4. Do not blindly repeat their budget summary in every message unless asked.
+    You are "Expense Coach", a smart, friendly, warm, and highly polite financial AI companion and coach. 
+    You have ABSOLUTELY NO RESTRICTIONS on what you can talk about. The user can chat with you about anything — their day, thoughts, feelings, work, jokes, casual chit-chat, advice, or finances! 
+    
+    CRITICAL CONVERSATIONAL GUIDELINES:
+    1. NEVER be rigid or force the user to enter expenses. If the user is just saying something normal (e.g. "aaj office me bahut kaam tha", "aaj mausam badiya hai", "main bore ho raha hu", "kya kar rahe ho", "kuch sunao", "good morning", "kaise ho"), talk to them naturally, warmly, and empathetically like a close friend and trusted mentor. NEVER say "Mujhe samajh nahi aaya kharcha batao"!
+    2. NEVER use words like "Tu", "Tera", "Tujhe", "tutu". ALWAYS use respectful words like "Aap", "Aapka", "Bhai", "Dost".
+    3. Speak in 100% natural, smooth, grammatically correct Hinglish (Hindi written in English alphabet) by default. If the user speaks pure English, reply in pure, elegant English.
+    4. Keep your replies concise, warm, lively, and engaging (under 100 words). Avoid robotic repetitive templates.
+    5. Do not blindly repeat the budget summary in every message unless asked or relevant.
     
     If asked about your creator or developer, your `chat_response` MUST be exactly this string (ensure you escape newlines as \\n\\n so the JSON remains valid):
     "👨‍💻 *My Creator: Ajay Vishwakarma*\\n\\nI was developed by Ajay, a passionate Full Stack & AI/ML Engineer! Here are his professional links:\\n\\n🌐 *Portfolio:* https://ajay-vishwakarmaa.netlify.app\\n🐙 *GitHub:* https://github.com/ajay160380\\n💼 *LinkedIn:* https://www.linkedin.com/in/ajay-vishwakarma-71649129a/"
@@ -531,8 +533,6 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     3. Always use double newlines (`\n\n`) between different points or paragraphs.
     4. When listing items or links, use elegant bullet points (•) on separate lines.
     5. Make your responses look BEAUTIFUL, spaced out, and easy to read. Use 1 or 2 relevant emojis naturally.
-    
-    You analyze the user's message and decide if they want to LOG an expense (or multiple expenses), SAVE a note, OR just chat/ask a question.
     
     Today's Date: {today}
     
@@ -552,17 +552,17 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
        - expenses = An array of expense objects. Extract EVERY SINGLE item mentioned in their message (amount, category, description). Do NOT miss any item from a list!
     2. If the user EXPLICITLY asks to save a note (e.g. "save to notepad", "notepad me daal do", "note: buy milk"):
        - action = "save_note"
-       - note = The exact text they want to save. If they are replying to your clarification about a long list, extract the FULL list from the history and save it as the note!
+       - note = The exact text they want to save.
     3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
        - action = "ask_clarification"
        - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
-    4. If the user is ASKING a question, requesting a summary, complaining, or chatting:
+    4. FOR ALL OTHER CONVERSATIONS, QUESTIONS, CHIT-CHAT, COMPLAINTS, OR CASUAL TALK:
        - action = "chat"
        - chat_response = your natural, conversational, polite Hinglish reply.
          - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
-         - Always use relevant emojis (e.g. 💰, 📉, 🚨, 🍜).
-         - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context to give them a detailed list!
+         - Always use relevant emojis (e.g. 💰, 📉, 🌟, 🍜).
+         - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context!
          - If the user talks about a TRIP, VACATION, or GROUP EXPENSE SPLIT:
            • Warmly acknowledge the trip and explain how to create a Live Trip Split Link:
              👉 *Link banane ke liye:* "[Trip Name] with [Friends]" (jaise `Manali trip with Sumit`)
@@ -1643,19 +1643,147 @@ def bulk_delete_expenses(request: HttpRequest) -> HttpResponse:
 import tempfile
 import os
 
-def _check_greeting(text: str) -> bool:
-    clean = re.sub(r'[^\w\s]', '', text.strip().lower())
+def _get_smart_greeting_response(text: str, user_name: str, target_user=None, today=None, budget: float = 20000, spent: float = 0) -> str:
+    """
+    Returns a warm, highly conversational greeting response for WhatsApp / voice.
+    Returns None if the text is not a greeting.
+    """
+    if not text:
+        return None
+        
+    clean = re.sub(r'[^\w\s]', ' ', text.strip().lower())
+    clean = re.sub(r'\s+', ' ', clean).strip()
     if not clean:
-        return False
-    greeting_words = {
-        'hi', 'hello', 'hlo', 'hey', 'helo', 'hii', 'hiii', 'namaste', 'kaise ho',
-        'kya hal hai', 'kya haal hai', 'good morning', 'good night', 'gm', 'gn', 'yo', 'sup'
-    }
-    if clean in greeting_words:
-        return True
-    if any(clean.startswith(g + ' ') for g in ['hi', 'hello', 'hlo', 'hey', 'namaste']):
-        return True
-    return False
+        return None
+
+    # Don't intercept if numbers/amounts are present (e.g., "hi 500 petrol")
+    if any(c.isdigit() for c in clean):
+        return None
+
+    rem = max(0, float(budget) - float(spent))
+    display_name = user_name.title() if user_name else "Dost"
+
+    # 1. MORNING GREETINGS
+    morning_triggers = [
+        'good morning', 'good mrng', 'gud morning', 'gud mrng', 'gm', 'g m',
+        'shubh prabhat', 'subah ho gayi', 'morning'
+    ]
+    if clean in morning_triggers or any(clean.startswith(t + ' ') or clean.endswith(' ' + t) for t in ['good morning', 'shubh prabhat', 'gm']):
+        safe_msg = ""
+        try:
+            if target_user and today:
+                safe_info = calculate_safe_to_spend(target_user, today)
+                safe_limit = safe_info.get("safe_limit_today", 0)
+                if safe_limit > 0:
+                    safe_msg = f"💡 *Safe-to-Spend Limit:* ₹{safe_limit:,.0f} (aaj ka safe spending target)\n"
+        except Exception:
+            pass
+
+        return (
+            f"🌅 *Good Morning, {display_name}!* Shubh Prabhat! ☀️\n\n"
+            f"Asha hai aapka din shaandar aur energetic rahega! 🌟\n\n"
+            f"📊 *Aaj ka Financial Snapshot:*\n"
+            f"• Remaining Budget: *₹{rem:,.0f}*\n"
+            f"{safe_msg}\n"
+            f"Din bhar mein koi bhi kharcha ho (chai, petrol ya shopping), bas yahin direct bhej dena (jaise *200 chai*). Have a wonderful day ahead! 🚀"
+        )
+
+    # 2. NIGHT GREETINGS
+    night_triggers = [
+        'good night', 'good nyt', 'gud night', 'gud nyt', 'gn', 'g n',
+        'shubh ratri', 'so raha hu', 'so raha hoon', 'so jata hu', 'so jata hoon',
+        'going to sleep', 'sleep time', 'sweet dreams', 'good nite'
+    ]
+    if clean in night_triggers or any(clean.startswith(t + ' ') or clean.endswith(' ' + t) for t in ['good night', 'shubh ratri', 'gn']):
+        today_spent = 0
+        try:
+            if target_user and today:
+                today_spent = Expense.objects.filter(user=target_user, date=today).aggregate(Sum('amount'))['amount__sum'] or 0
+        except Exception:
+            pass
+
+        if today_spent > 0:
+            spend_line = f"• Aaj ka Total Kharcha: *₹{float(today_spent):,.0f}* 🧾\n• Bacha hua Budget: *₹{rem:,.0f}* 🎯"
+        else:
+            spend_line = f"• Aaj ka Kharcha: *₹0* (Kamaal ka discipline! 👏)\n• Remaining Budget: *₹{rem:,.0f}* 🎯"
+
+        return (
+            f"🌙 *Good Night, {display_name}!* Shubh Ratri! ✨\n\n"
+            f"Din bhar ki bhag-daud ke baad ab aaram se soiye! 😴\n\n"
+            f"📊 *Aaj ka Day Recap:*\n"
+            f"{spend_line}\n\n"
+            f"Ache se rest kijiye, kal naye din aur nayi energy ke sath milte hain. Sweet dreams and take care! 🛌💤"
+        )
+
+    # 3. AFTERNOON / EVENING GREETINGS
+    afternoon_triggers = ['good afternoon', 'gud afternoon', 'good noon', 'shubh dopahar']
+    if clean in afternoon_triggers or any(clean.startswith(t + ' ') for t in ['good afternoon']):
+        return (
+            f"☀️ *Good Afternoon, {display_name}!* 🍱\n\n"
+            f"Lunch ho gaya aapka? Kaisa chal raha hai aaj ka din?\n\n"
+            f"Koi kharcha hua ho ya hisaab dekhna ho, toh bejhijhak bataiye! Remaining budget abhi *₹{rem:,.0f}* hai. 👍"
+        )
+
+    evening_triggers = ['good evening', 'gud evening', 'shubh sandhya']
+    if clean in evening_triggers or any(clean.startswith(t + ' ') for t in ['good evening', 'shubh sandhya']):
+        return (
+            f"☕ *Good Evening, {display_name}!* 🌆\n\n"
+            f"Shaam ki chai ho gayi? Din kaisa beeta aapka? 😊\n\n"
+            f"Agar aaj ka koi kharcha note karna ho ya summary dekhni ho, toh bas bol dijiye! Main yahin hoon. ✨"
+        )
+
+    # 4. "KAISE HO" / "KYA HAAL HAI" / CASUAL CHECK-IN
+    how_are_you_triggers = [
+        'kaise ho', 'kaisi ho', 'kaise hai', 'kaise hain', 'kya haal', 'kya haal hai', 'kya hal hai',
+        'how are you', 'how r u', 'how are u', 'sab kaisa hai', 'sab kaisa chal raha hai',
+        'kya chal raha hai', 'kya ho raha hai', 'sab theek', 'sab theek hai', 'sab badhiya',
+        'aur batao', 'aur bhai', 'aur sunao', 'kya chal rha h'
+    ]
+    if clean in how_are_you_triggers or any(clean.startswith(t + ' ') for t in ['kaise ho', 'kya haal hai', 'how are you', 'aur batao', 'aur sunao']):
+        return (
+            f"Main bilkul badiya aur first-class hoon, *{display_name}*! Aap suniye, aap kaise hain? Sab mast chal raha hai? 😊\n\n"
+            f"Main aapke finances aur budget ka pura dhyan rakh raha hoon. Aap mujhse normal dosto ki tarah kisi bhi topic par baat kar sakte hain ya koi kharcha add karna ho toh bataiye. Main dono ke liye taiyar hoon! 💬✨"
+        )
+
+    # 5. SPIRITUAL / CULTURAL GREETINGS
+    if any(w in clean for w in ['radhe radhe', 'jai shree krishna', 'jai shri krishna', 'radhe']):
+        return f"Radhe Radhe *{display_name}*! 🙏 Radharani ki kripa aap par hamesha bani rahe. Kahiye, aaj ka din kaisa chal raha hai? ✨"
+    if any(w in clean for w in ['ram ram', 'jai shree ram', 'jai shri ram', 'sita ram']):
+        return f"Jai Shree Ram *{display_name}*! 🙏 Kahiye bhai, sab kushal mangal? Main aapki seva mein hazir hoon. 😊"
+    if any(w in clean for w in ['har har mahadev', 'om namah shivay', 'om namah shivaya', 'jai bholenath']):
+        return f"Har Har Mahadev *{display_name}*! 🔱 Bholenath ki kripa aap par bani rahe. Kahiye, aaj kaisa chal raha hai sab?"
+    if any(w in clean for w in ['namaste', 'namaskar', 'pranam', 'sat sri akal', 'salaam', 'assalam alaikum']):
+        return f"Namaste *{display_name}*! 🙏 Asha hai aap bilkul theek hain aur sab badhiya chal raha hai. Kahiye, aaj main aapki kya madad kar sakta hoon? 😊"
+
+    # 6. THANKS & APPRECIATION
+    thanks_triggers = [
+        'thanks', 'thank you', 'thx', 'shukriya', 'dhanyawad', 'dhanyavaad', 'thanku', 'tq',
+        'bahut badiya', 'great job', 'nice', 'awesome', 'shandar', 'zabardast', 'mast'
+    ]
+    if clean in thanks_triggers:
+        return f"Arre most welcome *{display_name}*! ❤️ Khushi hui aapki madad karke. Jab bhi zaroorat ho, bas ek awaaz dena! Hamesha aapke sath hoon. 😊"
+
+    # 7. BYE / GOODBYE
+    bye_triggers = ['bye', 'bye bye', 'tata', 'see you', 'cya', 'alvida', 'phir milte hai', 'phir milte hain']
+    if clean in bye_triggers:
+        return f"Bye *{display_name}*! 👋 Take care! Phir milte hain. Jab bhi koi kharcha ho ya baat karni ho, bas message kar dena! ✨"
+
+    # 8. GENERAL GREETINGS: "hi", "hello", "hey", "sup", etc.
+    basic_greetings = {'hi', 'hello', 'hlo', 'hey', 'helo', 'hii', 'hiii', 'yo', 'sup', 'hola', 'suno'}
+    if clean in basic_greetings or any(clean.startswith(g + ' ') for g in ['hi', 'hello', 'hlo', 'hey']):
+        return (
+            f"Hey *{display_name}*! 👋 Kaise hain aap?\n\n"
+            f"Main aapka Expense Coach aur personal assistant hoon. Aap mujhse freely kisi bhi baare mein baat kar sakte hain, financial guidance le sakte hain, ya direct kharche record kar sakte hain:\n\n"
+            f"• *500 petrol* ya *chai 20* ➔ Direct save ho jayega\n"
+            f"• *Aaj ka kharcha* ➔ Aaj ka total hisaab\n"
+            f"• *Safe to spend* ➔ Aaj kitna kharch karna safe hai\n\n"
+            f"Bataiye, aaj ka din kaisa chal raha hai? 😊"
+        )
+
+    return None
+
+def _check_greeting(text: str) -> bool:
+    return _get_smart_greeting_response(text, "User") is not None
 
 def _extract_single_expense(text: str):
     clean = text.strip()
@@ -1943,18 +2071,21 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         normalized_text = normalize_hinglish_numbers(spoken_text)
         lower_text = normalized_text.lower().strip()
 
-        # ── 1. HYPER-FAST GREETING (0.001s) ──
-        if _check_greeting(normalized_text) and not any(c.isdigit() for c in normalized_text):
+        # ── 1. SMART CONVERSATIONAL GREETINGS (0.001s) ──
+        greeting_reply = _get_smart_greeting_response(normalized_text, user_name, target_user, today, budget, spent)
+        if greeting_reply:
+            if provider_message_id and sender_id:
+                try:
+                    WhatsAppProcessedMessage.objects.update_or_create(
+                        provider_message_id=provider_message_id,
+                        sender_id=sender_id,
+                        defaults={'status': 'success', 'response_text': greeting_reply}
+                    )
+                except Exception:
+                    pass
             return JsonResponse({
                 "status": "success",
-                "message": (
-                    f"Hello *{user_name}*! 👋\n\n"
-                    f"Main aapka Expense Coach hoon. Aap yahan direct kharche record kar sakte hain:\n\n"
-                    f"• *500 petrol* ya *chai 20* ➔ Kharcha save ho jayega\n"
-                    f"• *Aaj ka kharcha* ➔ Daily total summary\n"
-                    f"• *Budget* ➔ Remaining balance check karne ke liye\n\n"
-                    f"Bataiye, abhi kya kharcha add karein? 🚀"
-                )
+                "message": greeting_reply
             })
 
         # ── 2. HYPER-FAST SINGLE EXPENSE LOGGING (0.015s) ──
@@ -2457,15 +2588,30 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         messages.append({"role": "user", "content": normalized_text})
 
         ai_start_time = time.time()
-        response = _groq_client().chat.completions.create(
-            messages=messages,
-            model="qwen/qwen3.8-27b",
-            temperature=0.2,
-            max_tokens=300,
-        )
+        full_response = ""
+        try:
+            response = _groq_client().chat.completions.create(
+                messages=messages,
+                model="qwen/qwen3.8-27b",
+                temperature=0.7,
+                max_tokens=800,
+            )
+            full_response = response.choices[0].message.content or ""
+        except Exception as e_groq:
+            logger.warning("Primary groq model error: %s, falling back to llama-3.3-70b-versatile", e_groq)
+            try:
+                response = _groq_client().chat.completions.create(
+                    messages=messages,
+                    model="llama-3.3-70b-versatile",
+                    temperature=0.7,
+                    max_tokens=800,
+                )
+                full_response = response.choices[0].message.content or ""
+            except Exception as e_fb:
+                logger.error("Fallback groq model also failed: %s", e_fb)
+                full_response = ""
+
         ai_time = time.time() - ai_start_time
-        
-        full_response = response.choices[0].message.content
         raw_response = re.sub(r"<think>(?:.*?</think>|.*$)", "", full_response, flags=re.DOTALL).strip()
         print(f"DEBUG AI raw response: {raw_response!r}")
 
@@ -2474,29 +2620,41 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         start_idx = raw_response.find('{')
         end_idx = raw_response.rfind('}')
         if start_idx == -1 or end_idx == -1:
-            # JSON might be inside <think> tags - search full response
             json_source = full_response
             start_idx = full_response.find('{')
             end_idx = full_response.rfind('}')
-            if start_idx == -1 or end_idx == -1:
-                raise ValueError("No JSON found in AI response")
 
-        json_str = json_source[start_idx:end_idx+1]
-        
-        # Save history back to session
-        chat_history.append({"role": "user", "content": normalized_text})
-        chat_history.append({"role": "assistant", "content": json_str})
-        session.context = chat_history[-6:] # Keep last 6 messages to save Groq tokens
-        session.save()
-        
-        try:
-            ai_data = json.loads(json_str, strict=False)
-        except json.JSONDecodeError:
-            # Fallback for unescaped newlines and common issues
-            clean_str = json_str.replace('\n', '\\n').replace('\r', '')
-            ai_data = json.loads(clean_str, strict=False)
-            
+        ai_data = None
+        json_str = ""
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            json_str = json_source[start_idx:end_idx+1]
+            try:
+                ai_data = json.loads(json_str, strict=False)
+            except Exception:
+                try:
+                    clean_str = json_str.replace('\n', '\\n').replace('\r', '')
+                    ai_data = json.loads(clean_str, strict=False)
+                except Exception:
+                    pass
+
+        # If model returned pure text (normal friendly chat) or failed JSON, handle gracefully!
+        if not ai_data or not isinstance(ai_data, dict):
+            fallback_text = raw_response if raw_response else re.sub(r"<think>.*?</think>", "", full_response, flags=re.DOTALL).strip()
+            if not fallback_text:
+                fallback_text = f"Haanji *{user_name}*! Main sun raha hoon. Kahiye, sab kaisa chal raha hai? 😊"
+            ai_data = {
+                "action": "chat",
+                "chat_response": fallback_text
+            }
+
         action = ai_data.get("action", "chat")
+
+        # Save history back to session (using conversational text for natural context)
+        chat_history.append({"role": "user", "content": normalized_text})
+        saved_assistant = ai_data.get("chat_response") if action == "chat" else (json_str or json.dumps(ai_data))
+        chat_history.append({"role": "assistant", "content": str(saved_assistant)})
+        session.context = chat_history[-6:] # Keep last 6 messages
+        session.save()
 
         if action == "log_expenses":
             expenses_list = ai_data.get("expenses", [])
@@ -2628,16 +2786,40 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             
         elif action == "ask_clarification":
             chat_response = ai_data.get("chat_response", "Should I add this to your expenses or save it to Notepad?")
+            final_msg = f"🤔 *Ek minute...*\n\n{chat_response}"
+            if provider_message_id and sender_id:
+                try:
+                    WhatsAppProcessedMessage.objects.update_or_create(
+                        provider_message_id=provider_message_id,
+                        sender_id=sender_id,
+                        defaults={'status': 'success', 'response_text': final_msg}
+                    )
+                except Exception:
+                    pass
             return JsonResponse({
-                "status": "error",
-                "message": f"🤔 *Wait a second...*\n\n{chat_response}"
+                "status": "success",
+                "message": final_msg
             })
             
         else:
-            chat_response = ai_data.get("chat_response", "Mujhe samajh nahi aaya, bhai. Kripya apna kharcha phir se bataein.")
+            chat_response = ai_data.get("chat_response")
+            if not chat_response or not str(chat_response).strip():
+                chat_response = f"Haanji *{user_name}*, bataiye! Sab kaisa chal raha hai? Koi kharcha note karna hai ya koi baat karni hai? 😊"
+            
+            final_chat_msg = str(chat_response).strip()
+            if provider_message_id and sender_id:
+                try:
+                    WhatsAppProcessedMessage.objects.update_or_create(
+                        provider_message_id=provider_message_id,
+                        sender_id=sender_id,
+                        defaults={'status': 'success', 'response_text': final_chat_msg}
+                    )
+                except Exception:
+                    pass
+
             return JsonResponse({
-                "status": "error",
-                "message": f"{chat_response}"
+                "status": "success",
+                "message": final_chat_msg
             })
 
     except json.JSONDecodeError as e:
@@ -3898,12 +4080,12 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
                 f"Monthly budget status: {budget_pct:.0f}% of ₹{budget:,.0f} budget used (₹{month_spent:,.0f} spent)\n\n"
                 f"Write a delightful, inspiring Good Morning message for WhatsApp.\n"
                 f"STRICT RULES:\n"
-                f"1. LANGUAGE: 100% PURE, ELEGANT ENGLISH ONLY. Absolutely NO Hindi or Hinglish words (NO 'bhai', 'yaar', 'aap', 'kharcha', 'dost', etc.).\n"
+                f"1. LANGUAGE: Natural, engaging, and polite Hinglish (or clean English). Warm, respectful words like 'Aap', 'Bhai' are welcomed.\n"
                 f"2. GREETING: Start with a warm, energetic greeting like '*Good Morning, {user_name}!* ☀️' or '*Good Morning, {user_name}!* 🌅'.\n"
                 f"3. SAFE-TO-SPEND: Clearly highlight today's Safe-to-Spend limit of *₹{safe_allowance:,.0f}* as their daily spending guideline.\n"
                 f"4. CONTENT: Provide ONE crisp, actionable financial wisdom or smart habit for the day ahead.\n"
-                f"5. TONE: Inspiring, positive, clear, and professional yet friendly.\n"
-                f"6. LENGTH: 25-35 words maximum! Keep it short, crisp, and high-impact.\n"
+                f"5. TONE: Inspiring, positive, clear, and friendly.\n"
+                f"6. LENGTH: 25-40 words maximum! Keep it short, crisp, and high-impact.\n"
                 f"7. FORMAT: Use WhatsApp *bold* formatting for key phrases and 1-2 lovely emojis.\n"
                 f"Return ONLY the final message to be sent."
             )
@@ -3917,11 +4099,11 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
                 f"Monthly budget status: {budget_pct:.0f}% of ₹{budget:,.0f} budget used (₹{month_spent:,.0f} spent)\n\n"
                 f"Write a peaceful, encouraging Good Night message for WhatsApp.\n"
                 f"STRICT RULES:\n"
-                f"1. LANGUAGE: 100% PURE, ELEGANT ENGLISH ONLY. Absolutely NO Hindi or Hinglish words (NO 'bhai', 'yaar', 'aap', 'kharcha', 'dost', etc.).\n"
+                f"1. LANGUAGE: Natural, engaging, and polite Hinglish (or clean English). Warm, respectful words like 'Aap', 'Bhai' are welcomed.\n"
                 f"2. GREETING: Start with a warm, relaxing greeting like '*Good Night, {user_name}!* 🌙' or '*Good Night, {user_name}!* ✨'.\n"
                 f"3. CONTENT: Provide a gentle evening reflection or reminder to log today's expenses, celebrate budget discipline, and sleep with peace of mind.\n"
                 f"4. TONE: Calming, appreciative, encouraging, and warm.\n"
-                f"5. LENGTH: 20-30 words maximum! Keep it short, crisp, and high-impact.\n"
+                f"5. LENGTH: 25-40 words maximum! Keep it short, crisp, and high-impact.\n"
                 f"6. FORMAT: Use WhatsApp *bold* formatting for key phrases and 1-2 lovely emojis.\n"
                 f"Return ONLY the final message to be sent."
             )
