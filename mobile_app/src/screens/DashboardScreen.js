@@ -85,6 +85,9 @@ export default function DashboardScreen({ navigation }) {
   const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
   const [shakeBannerVisible, setShakeBannerVisible] = useState(true);
+  const [goals, setGoals] = useState([]);
+  const [subsData, setSubsData] = useState(null);
+  const [quickSavingGoalId, setQuickSavingGoalId] = useState(null);
 
   // ── LUXURY ULTRA-CLEAN ENTRANCE ANIMATIONS (NO CROOKED ROTATION) ──
   const animGreetingX = useRef(new Animated.Value(-20)).current;
@@ -261,6 +264,48 @@ export default function DashboardScreen({ navigation }) {
     saveQuickShortcuts(updated);
   };
 
+  const handleQuickDeposit = async (goalId, amount) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setQuickSavingGoalId(goalId);
+
+      // Optimistic state update
+      setGoals(prev => prev.map(g => {
+        if (g.id === goalId) {
+          const newSaved = Math.min((g.saved_amount || 0) + amount, g.target_amount || 1);
+          const newPct = Math.min(100, Math.round((newSaved / (g.target_amount || 1)) * 100));
+          return { ...g, saved_amount: newSaved, progress_percent: newPct };
+        }
+        return g;
+      }));
+
+      const res = await api.post(`/savings-goals/${goalId}/update/`, { add_amount: amount });
+      if (res.data?.status === 'success') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('Deposit Saved! 🎯', res.data.message || `₹${amount} added successfully!`);
+        setGoals(prev => prev.map(g => {
+          if (g.id === goalId) {
+            return {
+              ...g,
+              saved_amount: res.data.saved_amount,
+              progress_percent: res.data.progress_percent,
+              is_completed: res.data.is_completed,
+            };
+          }
+          return g;
+        }));
+      }
+    } catch (err) {
+      console.error('Quick deposit error:', err);
+      Alert.alert('Deposit Failed', 'Could not record quick savings. Please try again.');
+      api.get('/savings-goals/').then(r => {
+        if (r.data?.goals) setGoals(r.data.goals);
+      }).catch(() => {});
+    } finally {
+      setQuickSavingGoalId(null);
+    }
+  };
+
   const handleOpenAddShortcut = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditShortcutItem(null);
@@ -435,6 +480,8 @@ export default function DashboardScreen({ navigation }) {
         if (parsed.tip) setDailyTip(parsed.tip);
         if (parsed.comp) setComparison(parsed.comp);
         if (parsed.anom) setAnomalies(parsed.anom);
+        if (parsed.goals) setGoals(parsed.goals);
+        if (parsed.subs) setSubsData(parsed.subs);
         if (isInitial) setLoading(false); // Stop loading spinner instantly!
       } else if (isInitial) {
         setLoading(true); // Only show loader if no cache exists
@@ -455,14 +502,18 @@ export default function DashboardScreen({ navigation }) {
         if (err.response?.status === 401) navigation.replace('Login');
       });
 
-      const [statsRes, tipRes, compRes, anomRes] = await Promise.allSettled([
+      const [statsRes, tipRes, compRes, anomRes, goalsRes, subsRes] = await Promise.allSettled([
         api.get('/summary-stats/'),
         api.get(`/daily-tip/?type=${localType}&hour=${localHour}`),
         api.get('/monthly-comparison/'),
         api.get('/anomalies/'),
+        api.get('/savings-goals/'),
+        api.get('/subscriptions/'),
       ]);
 
       let newStats, newTip, newComp, newAnom = [];
+      let newGoals = [];
+      let newSubs = null;
       
       if (statsRes.status === 'fulfilled') {
         newStats = statsRes.value.data;
@@ -480,13 +531,23 @@ export default function DashboardScreen({ navigation }) {
         newAnom = anomRes.value.data?.alerts || [];
         setAnomalies(newAnom);
       }
+      if (goalsRes.status === 'fulfilled') {
+        newGoals = goalsRes.value.data?.goals || [];
+        setGoals(newGoals);
+      }
+      if (subsRes.status === 'fulfilled') {
+        newSubs = subsRes.value.data;
+        setSubsData(newSubs);
+      }
 
       // ── 3. SAVE FRESH DATA TO CACHE ──
       await AsyncStorage.setItem('dashboard_cache', JSON.stringify({
         stats: newStats || stats,
         tip: newTip || dailyTip,
         comp: newComp || comparison,
-        anom: newAnom || anomalies
+        anom: newAnom || anomalies,
+        goals: newGoals.length > 0 ? newGoals : goals,
+        subs: newSubs || subsData,
       }));
 
     } catch (error) {
@@ -658,6 +719,43 @@ export default function DashboardScreen({ navigation }) {
 
     return cleaned.trim();
   };
+
+  // ── Smart Financial Widgets Calculations ──
+  const now = new Date();
+  const currentDay = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeftInMonth = Math.max(1, daysInMonth - currentDay);
+  const monthElapsedPct = Math.min(100, Math.round((currentDay / daysInMonth) * 100));
+
+  const totalSpentVal = stats?.total_spent || 0;
+  const budgetVal = stats?.budget || 20000;
+  const budgetUsedPct = Math.min(100, Math.round((totalSpentVal / budgetVal) * 100));
+  const avgPerDayVal = stats?.avg_per_day || (currentDay > 0 ? Math.round(totalSpentVal / currentDay) : 0);
+
+  const safeData = stats?.safe_to_spend;
+  const safeDailyVal = safeData?.safe_limit_today ?? Math.round(Math.max(0, budgetVal - totalSpentVal) / daysLeftInMonth);
+  const remainingTodayVal = safeData?.remaining_today ?? Math.max(0, safeDailyVal - (safeData?.today_spent || 0));
+
+  let velocityBadge = { label: 'Safe Pace 🔥', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' };
+  if (totalSpentVal >= budgetVal) {
+    velocityBadge = { label: 'Exceeded 🚨', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.12)' };
+  } else if (avgPerDayVal > safeDailyVal * 1.25) {
+    velocityBadge = { label: 'High Burn ⚡', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.12)' };
+  } else if (avgPerDayVal > safeDailyVal) {
+    velocityBadge = { label: 'Moderate ⚠️', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' };
+  }
+
+  const activeGoal = useMemo(() => {
+    if (!goals || goals.length === 0) return null;
+    return goals.find(g => !g.is_completed) || goals[0];
+  }, [goals]);
+
+  const upcomingSubscriptions = useMemo(() => {
+    if (!subsData?.subscriptions || subsData.subscriptions.length === 0) return [];
+    return [...subsData.subscriptions]
+      .sort((a, b) => a.days_until - b.days_until)
+      .slice(0, 3);
+  }, [subsData]);
 
   return (
     <View style={styles.container}>
@@ -1096,6 +1194,310 @@ export default function DashboardScreen({ navigation }) {
               </View>
             </View>
           )}
+
+          {/* ── SECTION 5.5: SMART FINANCIAL WIDGETS ── */}
+          <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }], marginTop: 18 }}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={[styles.widgetBadgeIconBox, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}>
+                  <Ionicons name="sparkles" size={13} color={isDark ? '#818CF8' : '#7C3AED'} />
+                </View>
+                <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]}>Smart Financial Widgets</Text>
+              </View>
+              <View style={[styles.widgetLivePill, isDark && { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <View style={styles.widgetLiveDot} />
+                <Text style={[styles.widgetLiveText, isDark && { color: '#34D399' }]}>LIVE</Text>
+              </View>
+            </View>
+
+            {/* WIDGET 1: SPENDING VELOCITY & RUNWAY FORECASTER */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('Analytics');
+              }}
+              style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              {/* Header */}
+              <View style={styles.widgetHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.18)' : '#FEF3C7' }]}>
+                    <Ionicons name="speedometer-outline" size={18} color="#F59E0B" />
+                  </View>
+                  <View>
+                    <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Burn Rate & Runway</Text>
+                    <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]}>Daily velocity vs safe limit</Text>
+                  </View>
+                </View>
+                <View style={[styles.widgetStatusBadge, { backgroundColor: velocityBadge.bg }]}>
+                  <Text style={[styles.widgetStatusText, { color: velocityBadge.color }]}>{velocityBadge.label}</Text>
+                </View>
+              </View>
+
+              {/* Metric Comparison Numbers */}
+              <View style={[styles.velocityMetricsRow, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
+                <View style={styles.velocityMetricCol}>
+                  <Text style={[styles.velocityMetricCaption, isDark && { color: colors.textSecondary }]}>ACTUAL BURN</Text>
+                  <Text style={[styles.velocityMetricValue, isDark && { color: colors.textPrimary }]}>
+                    ₹{avgPerDayVal.toLocaleString('en-IN')}<Text style={styles.velocityMetricUnit}>/d</Text>
+                  </Text>
+                </View>
+                <View style={[styles.velocityMetricDivider, isDark && { backgroundColor: colors.border }]} />
+                <View style={styles.velocityMetricCol}>
+                  <Text style={[styles.velocityMetricCaption, isDark && { color: colors.textSecondary }]}>SAFE CEILING</Text>
+                  <Text style={[styles.velocityMetricValue, { color: '#10B981' }]}>
+                    ₹{Math.max(0, safeDailyVal).toLocaleString('en-IN')}<Text style={styles.velocityMetricUnit}>/d</Text>
+                  </Text>
+                </View>
+                <View style={[styles.velocityMetricDivider, isDark && { backgroundColor: colors.border }]} />
+                <View style={styles.velocityMetricCol}>
+                  <Text style={[styles.velocityMetricCaption, isDark && { color: colors.textSecondary }]}>LEFT TODAY</Text>
+                  <Text style={[styles.velocityMetricValue, { color: remainingTodayVal > 0 ? (isDark ? '#818CF8' : '#7C3AED') : '#EF4444' }]}>
+                    ₹{Math.max(0, remainingTodayVal).toLocaleString('en-IN')}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Dual Progress Runway Gauge */}
+              <View style={styles.runwayGaugeWrapper}>
+                <View style={styles.runwayLabelRow}>
+                  <Text style={[styles.runwayLabelText, isDark && { color: colors.textSecondary }]}>
+                    Month: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>{currentDay}/{daysInMonth}d ({monthElapsedPct}%)</Text>
+                  </Text>
+                  <Text style={[styles.runwayLabelText, isDark && { color: colors.textSecondary }]}>
+                    Budget Spent: <Text style={{ fontWeight: '700', color: budgetUsedPct > 90 ? '#EF4444' : (isDark ? colors.textPrimary : '#0F172A') }}>{budgetUsedPct}%</Text>
+                  </Text>
+                </View>
+                {/* Progress Track */}
+                <View style={[styles.runwayTrack, isDark && { backgroundColor: colors.border }]}>
+                  <View style={[styles.runwayFillMonth, { width: `${monthElapsedPct}%` }]} />
+                  <View style={[styles.runwayFillBudget, { 
+                    width: `${budgetUsedPct}%`, 
+                    backgroundColor: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' 
+                  }]} />
+                </View>
+                <View style={styles.runwayLegendRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <View style={[styles.runwayDot, { backgroundColor: '#94A3B8' }]} />
+                    <Text style={[styles.runwayLegendCaption, isDark && { color: colors.textSecondary }]}>Timeline pace</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <View style={[styles.runwayDot, { backgroundColor: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }]} />
+                    <Text style={[styles.runwayLegendCaption, isDark && { color: colors.textSecondary }]}>
+                      {budgetUsedPct > monthElapsedPct ? 'Over timeline burn rate' : 'Under timeline burn rate 👍'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {/* WIDGET 2: MICRO-SAVINGS PIGGY BANK (WITH 1-TAP QUICK DEPOSIT) */}
+            <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginTop: 12 }]}>
+              {activeGoal ? (
+                <>
+                  {/* Header */}
+                  <View style={styles.widgetHeaderRow}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5' }]}>
+                        <Text style={{ fontSize: 18 }}>{activeGoal.icon || '🎯'}</Text>
+                      </View>
+                      <View>
+                        <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>{activeGoal.name}</Text>
+                        <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]}>Active Savings Milestone</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={() => navigation.navigate('SavingsGoals')}
+                      activeOpacity={0.7}
+                      style={[styles.widgetStatusBadge, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5' }]}
+                    >
+                      <Text style={[styles.widgetStatusText, { color: '#10B981', fontWeight: '800' }]}>
+                        {activeGoal.progress_percent}%
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Progress & Numbers */}
+                  <View style={{ marginTop: 12 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                      <Text style={[styles.savingsAmountCurrent, isDark && { color: colors.textPrimary }]}>
+                        ₹{(activeGoal.saved_amount || 0).toLocaleString('en-IN')}
+                        <Text style={[styles.savingsAmountTarget, isDark && { color: colors.textSecondary }]}>
+                          {' '}of ₹{(activeGoal.target_amount || 0).toLocaleString('en-IN')}
+                        </Text>
+                      </Text>
+                      <Text style={[styles.savingsRemainingText, isDark && { color: colors.textSecondary }]}>
+                        ₹{Math.max(0, (activeGoal.target_amount || 0) - (activeGoal.saved_amount || 0)).toLocaleString('en-IN')} to go
+                      </Text>
+                    </View>
+
+                    {/* Goal Progress Bar */}
+                    <View style={[styles.goalProgressBarBg, isDark && { backgroundColor: colors.border }]}>
+                      <LinearGradient
+                        colors={['#10B981', '#34D399']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={[styles.goalProgressBarFill, { width: `${Math.min(100, activeGoal.progress_percent || 0)}%` }]}
+                      />
+                    </View>
+                  </View>
+
+                  {/* 1-Tap Quick Deposit Bar */}
+                  <View style={[styles.microSaveRow, isDark && { borderTopColor: colors.border }]}>
+                    <Text style={[styles.microSaveLabel, isDark && { color: colors.textSecondary }]}>1-Tap Quick Save:</Text>
+                    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                      {[50, 100, 500].map(amt => (
+                        <TouchableOpacity
+                          key={amt}
+                          disabled={quickSavingGoalId === activeGoal.id}
+                          onPress={() => handleQuickDeposit(activeGoal.id, amt)}
+                          style={[
+                            styles.microSavePill,
+                            isDark && { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(52, 211, 153, 0.3)' }
+                          ]}
+                          activeOpacity={0.7}
+                        >
+                          {quickSavingGoalId === activeGoal.id ? (
+                            <ActivityIndicator size="small" color="#10B981" />
+                          ) : (
+                            <Text style={[styles.microSavePillText, isDark && { color: '#34D399' }]}>+₹{amt}</Text>
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                      <TouchableOpacity
+                        onPress={() => navigation.navigate('SavingsGoals')}
+                        style={[styles.microSaveMoreBtn, isDark && { backgroundColor: colors.bgElevated }]}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="ellipsis-horizontal" size={14} color={isDark ? colors.textSecondary : '#64748B'} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                /* Empty State if no savings goal exists yet */
+                <View style={styles.widgetEmptyContainer}>
+                  <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5', marginBottom: 8 }]}>
+                    <Ionicons name="trophy-outline" size={20} color="#10B981" />
+                  </View>
+                  <Text style={[styles.widgetEmptyTitle, isDark && { color: colors.textPrimary }]}>Start Your Micro-Savings Habit</Text>
+                  <Text style={[styles.widgetEmptyDesc, isDark && { color: colors.textSecondary }]}>
+                    Lock small wins daily (+₹50, +₹100) toward your emergency fund or dream purchase.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      navigation.navigate('SavingsGoals');
+                    }}
+                    style={styles.widgetEmptyActionBtn}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="add" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
+                    <Text style={styles.widgetEmptyActionText}>Create 1st Goal</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {/* WIDGET 3: UPCOMING BILLS & SUBSCRIPTIONS RADAR */}
+            <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginTop: 12 }]}>
+              {/* Header */}
+              <View style={styles.widgetHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.18)' : '#EEF2FF' }]}>
+                    <Ionicons name="repeat-outline" size={18} color={isDark ? '#818CF8' : '#7C3AED'} />
+                  </View>
+                  <View>
+                    <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Recurring Radar</Text>
+                    <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]}>
+                      {upcomingSubscriptions.length > 0 
+                        ? `₹${(subsData?.total_monthly || 0).toLocaleString('en-IN')}/mo committed` 
+                        : 'Subscriptions & recurring bills'}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    navigation.navigate('Subscriptions');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.widgetHeaderLink, isDark && { color: colors.primary }]}>Manage &gt;</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Subscriptions Content */}
+              {upcomingSubscriptions.length > 0 ? (
+                <View style={{ marginTop: 12, gap: 8 }}>
+                  {upcomingSubscriptions.map((sub, idx) => {
+                    const isUrgent = sub.days_until <= 3;
+                    const dueBadgeText = sub.days_until <= 0 
+                      ? 'Due Today 🚨' 
+                      : sub.days_until === 1 
+                      ? 'Due Tomorrow ⚠️' 
+                      : `Due in ${sub.days_until}d`;
+
+                    return (
+                      <View 
+                        key={sub.id || idx} 
+                        style={[
+                          styles.subRadarRow, 
+                          isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border },
+                          isUrgent && { borderColor: 'rgba(239, 68, 68, 0.35)' }
+                        ]}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <View style={[styles.subRadarIconBox, { backgroundColor: (sub.color || '#818CF8') + '22' }]}>
+                            <Text style={{ fontSize: 16 }}>{sub.icon || '📦'}</Text>
+                          </View>
+                          <View>
+                            <Text style={[styles.subRadarName, isDark && { color: colors.textPrimary }]} numberOfLines={1}>
+                              {sub.category || 'Subscription'}
+                            </Text>
+                            <View style={[
+                              styles.subRadarDueBadge,
+                              { backgroundColor: isUrgent ? (isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2') : (isDark ? 'rgba(100, 116, 139, 0.2)' : '#F1F5F9') }
+                            ]}>
+                              <Text style={[
+                                styles.subRadarDueText,
+                                { color: isUrgent ? '#EF4444' : (isDark ? colors.textSecondary : '#64748B') }
+                              ]}>
+                                {dueBadgeText}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+
+                        <Text style={[styles.subRadarAmount, isDark && { color: colors.textPrimary }]}>
+                          ₹{Number(sub.amount).toLocaleString('en-IN')}
+                          <Text style={[styles.subRadarAmountCycle, isDark && { color: colors.textSecondary }]}>/mo</Text>
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : (
+                <View style={styles.widgetEmptyContainer}>
+                  <Text style={[styles.widgetEmptyDesc, isDark && { color: colors.textSecondary }, { marginBottom: 10 }]}>
+                    No subscriptions tracked yet. Add your Netflix, WiFi, Rent, or SIP renewals to stay ahead.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      navigation.navigate('Subscriptions');
+                    }}
+                    style={[styles.widgetEmptyActionBtn, { backgroundColor: isDark ? colors.primary : '#7C3AED' }]}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="add" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
+                    <Text style={styles.widgetEmptyActionText}>Add Subscription</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </Animated.View>
 
           {/* ── SECTION 6: BENTO QUICK TOOLS ── */}
           <View style={styles.toolsBentoRow}>
@@ -3336,5 +3738,309 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14.5,
     fontWeight: '700',
+  },
+  // ── Smart Financial Widgets Styles ──
+  widgetBadgeIconBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  widgetLivePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: '#ECFDF5',
+  },
+  widgetLiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+    marginRight: 4,
+  },
+  widgetLiveText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#10B981',
+    letterSpacing: 0.5,
+  },
+  widgetCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  widgetHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  widgetIconSquare: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  widgetCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  widgetCardSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  widgetStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  widgetStatusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  velocityMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  velocityMetricCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  velocityMetricCaption: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  velocityMetricValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  velocityMetricUnit: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#94A3B8',
+  },
+  velocityMetricDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E2E8F0',
+  },
+  runwayGaugeWrapper: {
+    marginTop: 12,
+  },
+  runwayLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  runwayLabelText: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  runwayTrack: {
+    height: 8,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  runwayFillMonth: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(148, 163, 184, 0.45)',
+    borderRadius: 4,
+  },
+  runwayFillBudget: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 4,
+  },
+  runwayLegendRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  runwayDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  runwayLegendCaption: {
+    fontSize: 10,
+    color: '#64748B',
+  },
+  savingsAmountCurrent: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  savingsAmountTarget: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+  },
+  savingsRemainingText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  goalProgressBarBg: {
+    height: 8,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  goalProgressBarFill: {
+    height: 8,
+    borderRadius: 4,
+  },
+  microSaveRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  microSaveLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  microSavePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  microSavePillText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#10B981',
+  },
+  microSaveMoreBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  widgetEmptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  widgetEmptyTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  widgetEmptyDesc: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 16,
+    marginBottom: 10,
+  },
+  widgetEmptyActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10B981',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  widgetEmptyActionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  widgetHeaderLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#7C3AED',
+  },
+  subRadarRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  subRadarIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subRadarName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  subRadarDueBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 2,
+  },
+  subRadarDueText: {
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  subRadarAmount: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  subRadarAmountCycle: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#64748B',
   },
 });
