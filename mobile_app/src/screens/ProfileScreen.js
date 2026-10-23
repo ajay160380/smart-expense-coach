@@ -731,7 +731,7 @@ export default function ProfileScreen({ navigation }) {
             iconColor="#06B6D4"
             label="Check for Updates"
             sub="Check for latest EAS OTA update"
-            badge="v1.3.0"
+            badge="v1.3.1"
             badgeColor="#06B6D4"
             onPress={async () => {
               try {
@@ -789,70 +789,6 @@ export default function ProfileScreen({ navigation }) {
           </>
         )}
 
-        {/* ── SECTION 4: ABOUT DEVELOPER ── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Ionicons name="code-slash-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>ABOUT DEVELOPER</Text>
-        </View>
-        <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-          <View style={[styles.devCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.devTopRow}>
-              <LinearGradient
-                colors={['#6366F1', '#EC4899']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.devAvatarGrad}
-              >
-                <Text style={styles.devAvatarText}>AV</Text>
-              </LinearGradient>
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={[styles.devName, isDark && { color: colors.textPrimary }]}>Ajay Vishwakarma</Text>
-                  <Ionicons name="checkmark-circle" size={15} color="#06B6D4" style={{ marginLeft: 5 }} />
-                </View>
-                <Text style={[styles.devRole, isDark && { color: colors.textSecondary }]}>Creator & Lead Engineer</Text>
-              </View>
-            </View>
-
-            <View style={styles.devLinksGrid}>
-              <TouchableOpacity
-                style={[styles.devLinkPill, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Linking.openURL('https://github.com/ajay160380');
-                }}
-                activeOpacity={0.75}
-              >
-                <Ionicons name="logo-github" size={15} color={isDark ? colors.textPrimary : "#FFFFFF"} style={{ marginRight: 6 }} />
-                <Text style={[styles.devLinkText, isDark && { color: colors.textPrimary }]}>GitHub</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.devLinkPill, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Linking.openURL('https://ajay-vishwakarmaa.netlify.app');
-                }}
-                activeOpacity={0.75}
-              >
-                <Ionicons name="globe-outline" size={15} color="#38BDF8" style={{ marginRight: 6 }} />
-                <Text style={[styles.devLinkText, isDark && { color: colors.textPrimary }]}>Portfolio</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.devLinkPill, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Linking.openURL('https://www.linkedin.com/in/ajay-vishwakarma-71649129a/');
-                }}
-                activeOpacity={0.75}
-              >
-                <Ionicons name="logo-linkedin" size={15} color="#0A66C2" style={{ marginRight: 6 }} />
-                <Text style={[styles.devLinkText, isDark && { color: colors.textPrimary }]}>LinkedIn</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
 
         {/* ── SECTION 5: LEGAL & RESOURCES (Items 16, 17, 19) ── */}
         <View style={styles.sectionHeaderWrap}>
@@ -1451,66 +1387,7 @@ const styles = StyleSheet.create({
     marginLeft: 48,
   },
 
-  // ── Developer Card ──
-  devCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F1F3F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 24,
-    elevation: 3,
-  },
-  devTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  devAvatarGrad: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  devAvatarText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  devName: {
-    color: '#1F2937',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  devRole: {
-    color: '#6B7280',
-    fontSize: 11.5,
-    marginTop: 2,
-  },
-  devLinksGrid: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  devLinkPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingVertical: 9,
-    borderRadius: 12,
-  },
-  devLinkText: {
-    color: '#1F2937',
-    fontSize: 12,
-    fontWeight: '700',
-  },
+
 
   // ── Logout ──
   logoutBtn: {

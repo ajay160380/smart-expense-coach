@@ -527,7 +527,7 @@ export default function MoreFeaturesScreen({ navigation }) {
             iconColor="#06B6D4"
             title="Check for App Updates"
             desc="OTA updates via EAS Cloud"
-            badge="v1.3.0"
+            badge="v1.3.1"
             badgeColor="#06B6D4"
             onPress={async () => {
               try {
@@ -654,21 +654,12 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        {/* ── Developer Footer ── */}
-        <TouchableOpacity
-          style={styles.devFooter}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            Linking.openURL('https://github.com/ajay160380');
-          }}
-          activeOpacity={0.75}
-        >
-          <Ionicons name="code-slash" size={13} color="#6366F1" style={{ marginRight: 6 }} />
-          <Text style={styles.devFooterText}>
-            Crafted with ❤️ by <Text style={styles.devFooterLink}>Ajay Vishwakarma</Text>
+        {/* ── Version Footer ── */}
+        <View style={styles.devFooter}>
+          <Text style={[styles.devFooterText, isDark && { color: colors.textMuted }]}>
+            Paisamitra • v1.3.1
           </Text>
-          <Ionicons name="logo-github" size={13} color="#94A3B8" style={{ marginLeft: 8 }} />
-        </TouchableOpacity>
+        </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
