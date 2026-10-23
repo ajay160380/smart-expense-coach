@@ -6505,10 +6505,47 @@ def api_send_admin_push(request):
 
 LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/lkOyrCIa2oMeJqeW0pIUlV0HZO-xWeTltMH85XW3xN4.apk"
 
-def download_apk(request):
-    from django.http import HttpResponseRedirect
-    # Direct high-speed CDN redirect prevents Render free-tier proxy/Gunicorn timeouts that corrupt large 120MB APK downloads
+def get_apk_response():
+    import os
+    import requests
+    from django.conf import settings
+    from django.http import FileResponse, StreamingHttpResponse, HttpResponseRedirect
+
+    apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
+    if not (os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024):
+        static_root = getattr(settings, 'STATIC_ROOT', None)
+        if static_root:
+            alt_path = os.path.join(static_root, 'downloads', 'ExpenseTracker.apk')
+            if os.path.exists(alt_path) and os.path.getsize(alt_path) > 10 * 1024 * 1024:
+                apk_path = alt_path
+
+    # 1. First priority: Serve from local disk if 120MB binary exists
+    if os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
+        response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
+        response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
+        response['Content-Length'] = str(os.path.getsize(apk_path))
+        return response
+
+    # 2. Fallback: Stream directly from Expo CDN with custom ExpenseTracker.apk filename header
+    try:
+        r = requests.get(LATEST_EXPO_APK_URL, stream=True, timeout=15)
+        if r.status_code == 200:
+            response = StreamingHttpResponse(
+                r.iter_content(chunk_size=256 * 1024),
+                content_type='application/vnd.android.package-archive'
+            )
+            response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
+            if 'content-length' in r.headers:
+                response['Content-Length'] = r.headers['content-length']
+            return response
+    except Exception:
+        pass
+
+    # 3. Last fallback: Redirect
     return HttpResponseRedirect(LATEST_EXPO_APK_URL)
+
+def download_apk(request):
+    return get_apk_response()
 
 
 # ══════════════════════════════════════════════════════════════════════════════

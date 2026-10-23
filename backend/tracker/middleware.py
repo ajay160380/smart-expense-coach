@@ -22,8 +22,8 @@ class APKDownloadRedirectMiddleware:
             '/download-apk/',
             '/download-apk',
         ):
-            from tracker.views import LATEST_EXPO_APK_URL
-            return HttpResponseRedirect(LATEST_EXPO_APK_URL)
+            from tracker.views import get_apk_response
+            return get_apk_response()
 
         return self.get_response(request)
 
