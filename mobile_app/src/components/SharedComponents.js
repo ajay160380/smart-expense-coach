@@ -17,15 +17,26 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, RADIUS, SPACING, FONT, SHADOW } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 // ═══════════════════════════════════════════════
-// GLASS CARD — Pure White Card with Soft Elevation
+// GLASS CARD — Pure White / Dark Slate Card with Soft Elevation
 // ═══════════════════════════════════════════════
 export function GlassCard({ children, style, onPress }) {
+  const { isDark, colors } = useTheme();
   const Wrapper = onPress ? TouchableOpacity : View;
   return (
     <Wrapper
-      style={[styles.glassCard, style]}
+      style={[
+        styles.glassCard,
+        isDark && {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowColor: '#000',
+          shadowOpacity: 0.35,
+        },
+        style,
+      ]}
       onPress={onPress}
       activeOpacity={onPress ? 0.75 : 1}
     >
@@ -195,28 +206,30 @@ export function LoadingScreen({ message = 'Loading...' }) {
 }
 
 // ═══════════════════════════════════════════════
-// STAT CARD — Clean white mini-card
+// STAT CARD — Clean white / dark slate mini-card
 // ═══════════════════════════════════════════════
 export function StatCard({ label, value, color, icon }) {
+  const { isDark, colors } = useTheme();
   return (
-    <View style={styles.statCard}>
+    <View style={[styles.statCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {icon && <Text style={{ fontSize: 16, marginBottom: 4 }}>{icon}</Text>}
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, color && { color }]}>{value}</Text>
+      <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: color || (isDark ? colors.textPrimary : '#1F2937') }]}>{value}</Text>
     </View>
   );
 }
 
 // ═══════════════════════════════════════════════
-// SECTION HEADER — With Orange "View All >" Link
+// SECTION HEADER — With Orange / Luminous Accent Link
 // ═══════════════════════════════════════════════
 export function SectionHeader({ title, actionText = 'View All >', onAction }) {
+  const { isDark, colors } = useTheme();
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]}>{title}</Text>
       {onAction && (
         <TouchableOpacity onPress={onAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.sectionAction}>{actionText}</Text>
+          <Text style={[styles.sectionAction, isDark && { color: colors.primary }]}>{actionText}</Text>
         </TouchableOpacity>
       )}
     </View>

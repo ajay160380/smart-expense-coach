@@ -38,10 +38,13 @@ import api from '../api/config';
 import messaging from '../utils/messaging';
 import { clearAuthData } from '../utils/auth';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 import { formatApiError } from '../utils/errors';
 import { validateEmail } from '../utils/validation';
 
 export default function ProfileScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -332,7 +335,7 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* ── Top Bar ── */}
       <View style={styles.topBar}>
@@ -599,6 +602,13 @@ export default function ProfileScreen({ navigation }) {
                 Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
               }
             }}
+          />
+          <MenuItem
+            ionIcon={isDark ? "moon" : "sunny-outline"}
+            iconColor="#818CF8"
+            label="Night Theme (Dark Mode)"
+            sub={isDark ? "Layered dark slate active" : "Clean light theme active"}
+            rightComponent={<ThemeToggle size="small" />}
           />
           <MenuItem
             ionIcon={biometricEnabled ? 'shield-checkmark' : 'shield-outline'}
@@ -1036,7 +1046,7 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast, danger = false }) {
+function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast, danger = false, rightComponent }) {
   return (
     <>
       <TouchableOpacity
@@ -1063,8 +1073,12 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
           </View>
         )}
 
-        {(onPress || showArrow) && (
-          <Ionicons name="chevron-forward" size={16} color={danger ? '#EF4444' : '#475569'} style={{ marginLeft: 6 }} />
+        {rightComponent ? (
+          rightComponent
+        ) : (
+          (onPress || showArrow) && (
+            <Ionicons name="chevron-forward" size={16} color={danger ? '#EF4444' : '#475569'} style={{ marginLeft: 6 }} />
+          )
         )}
       </TouchableOpacity>
       {!isLast && <View style={styles.itemDivider} />}

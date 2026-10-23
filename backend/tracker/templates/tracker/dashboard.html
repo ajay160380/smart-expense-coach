@@ -7,12 +7,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ExpenseTracker Dashboard</title>
 <script>
-  let theme = localStorage.getItem('theme');
-  if (theme === 'light') {
-    document.documentElement.removeAttribute('data-theme');
-  } else {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  }
+  (function() {
+    try {
+      var saved = localStorage.getItem('theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (saved === 'dark' || (!saved && prefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    } catch(e) {}
+  })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,28 +54,30 @@
   --glass-filter: blur(24px);
 }
 [data-theme="dark"] {
-  --bg: #050511;
-  --surface: rgba(20, 24, 44, 0.45);
-  --surface2: rgba(30, 36, 62, 0.6);
-  --surface3: rgba(45, 52, 85, 0.8);
-  --border: rgba(255, 255, 255, 0.08);
-  --border2: rgba(255, 255, 255, 0.15);
-  --text: #F8FAFC;
-  --text2: #CBD5E1;
-  --text3: #94A3B8;
-  --primary: #3395FF;
-  --primary-l: rgba(51, 149, 255, 0.15);
-  --primary-d: #007AFF;
-  --accent: #B026FF;
-  --green: #00FF9D;
-  --green-bg: rgba(0, 255, 157, 0.15);
-  --amber: #FFB300;
-  --amber-bg: rgba(255, 179, 0, 0.15);
-  --red: #FF3366;
-  --red-bg: rgba(255, 51, 102, 0.15);
-  --shadow: 0 8px 32px 0 rgba(0,0,0,0.5);
-  --shadow-md: 0 12px 48px 0 rgba(0,0,0,0.6);
-  --glass-filter: blur(40px);
+  --bg: #0F172A;                  /* Base App Background: Layered dark slate */
+  --surface: #1E293B;             /* Widget Surface (Base Card) */
+  --surface2: #243047;            /* Inner Widget / Group card */
+  --surface3: #334155;            /* Elevated Elements (Popovers, Dropdowns) */
+  --border: #334155;              /* Borders & Dividers with 1px subtle separation */
+  --border2: rgba(51, 65, 85, 0.7);
+  --text: #F8FAFC;                /* High-contrast primary values */
+  --text2: #CBD5E1;               /* Body text */
+  --text3: #94A3B8;               /* Muted secondary labels */
+  --primary: #818CF8;             /* Vibrant accent curves */
+  --primary-l: rgba(99, 102, 241, 0.15); /* Subtle dark-mode glow backdrops */
+  --primary-d: #6366F1;
+  --accent: #A855F7;
+  --green: #34D399;               /* Readable positive trend */
+  --green-bg: rgba(16, 185, 129, 0.15);
+  --amber: #FBBF24;
+  --amber-bg: rgba(245, 158, 11, 0.15);
+  --red: #F87171;                 /* Readable negative trend */
+  --red-bg: rgba(239, 68, 68, 0.15);
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 12px 32px -4px rgba(0, 0, 0, 0.5);
+  --chart-grid: rgba(51, 65, 85, 0.5);
+  --badge-glow: rgba(99, 102, 241, 0.15);
+  --glass-filter: blur(20px);
 }
 
 body {

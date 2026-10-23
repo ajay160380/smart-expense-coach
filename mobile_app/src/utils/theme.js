@@ -79,6 +79,84 @@ export const COLORS = {
   whatsapp:      '#25D366',
 };
 
+export const DARK_COLORS = {
+  // ── Dark Slate Base (Layered Depth) ──
+  bg:            '#0F172A', // Base App Background: Deep Dark Slate
+  bgSoft:        '#1E293B',
+  bgCard:        '#1E293B', // Widget Surface (Base Card)
+  bgCardAlt:     '#243047',
+  bgInput:       '#334155', // Elevated Input Surface
+  bgElevated:    '#334155', // Elevated Elements (Popovers, Dropdowns)
+  surface:       '#1E293B',
+  glass:         '#1E293B',
+  glassBorder:   '#334155',
+
+  // ── Typography ──
+  textPrimary:   '#F8FAFC', // High-contrast primary values
+  textSecondary: '#94A3B8', // Muted secondary labels
+  textMuted:     '#64748B', // Tertiary / subtle
+  textInverse:   '#0F172A', // Inverted text on bright elements
+
+  // ── Brand Colors ──
+  primary:       '#818CF8', // Vibrant Indigo accent curve
+  primaryLight:  'rgba(99, 102, 241, 0.15)', // Subtle dark-mode glow
+  primaryDark:   '#6366F1',
+  accent:        '#A855F7',
+  orange:        '#FB923C',
+  orangeLight:   'rgba(251, 146, 60, 0.15)',
+
+  // ── System Accents ──
+  cyan:          '#38BDF8',
+  blue:          '#60A5FA',
+  green:         '#34D399', // Readable positive trend value
+  greenBright:   '#34D399',
+  greenLight:    'rgba(16, 185, 129, 0.15)', // Readable positive trend pill
+  red:           '#F87171', // Readable negative trend value
+  redLight:      'rgba(239, 68, 68, 0.15)', // Readable negative trend pill
+  yellow:        '#FBBF24',
+  pink:          '#F472B6',
+
+  // ── Bottom Navigation Bar ──
+  navBg:         '#090D16', // Ultra-dark crisp navigation bar
+  navBorder:     '#334155',
+  navActive:     '#818CF8',
+  navInactive:   '#64748B',
+  navFabRing:    '#0F172A',
+
+  // ── Gradients (for LinearGradient) ──
+  gradHero:      ['#1E293B', '#0F172A'],
+  gradPurple:    ['#818CF8', '#6366F1'],
+  gradOrange:    ['#F97316', '#EA580C'],
+  gradGreen:     ['#10B981', '#059669'],
+  gradRed:       ['#EF4444', '#DC2626'],
+  gradPink:      ['#EC4899', '#DB2777'],
+  gradCyan:      ['#06B6D4', '#0891B2'],
+  gradDeepPurp:  ['#6366F1', '#4338CA'],
+  gradCardLight: ['#1E293B', '#243047'],
+  gradPastelMint:['rgba(16, 185, 129, 0.12)', 'rgba(5, 150, 105, 0.08)'],
+  gradPastelPeach:['rgba(249, 115, 22, 0.12)', 'rgba(234, 88, 12, 0.08)'],
+
+  // ── Borders & Dividers ──
+  border:        '#334155', // 1px subtle separation
+  borderLight:   '#334155',
+  borderAccent:  '#818CF8',
+
+  // ── Status Indicators ──
+  success:       '#34D399',
+  warning:       '#FBBF24',
+  error:         '#F87171',
+  info:          '#60A5FA',
+
+  // ── Backdrops & Glows ──
+  badgeGlow:     'rgba(99, 102, 241, 0.15)',
+  chartGrid:     'rgba(51, 65, 85, 0.5)',
+
+  // ── WhatsApp Brand ──
+  whatsapp:      '#25D366',
+};
+
+export const getThemeColors = (isDark) => (isDark ? DARK_COLORS : COLORS);
+
 export const CAT_COLORS = {
   food:          '#F97316', // Vibrant Warm Orange
   transport:     '#06B6D4', // Cyan / Sky Blue

@@ -22,6 +22,7 @@ import MoneySplashScreen from './src/components/MoneySplashScreen';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import CustomAlertModal, { installGlobalAlert, showCustomAlert } from './src/components/CustomAlertModal';
 import * as Updates from 'expo-updates';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 installGlobalAlert();
 import { Accelerometer } from 'expo-sensors';
@@ -76,8 +77,9 @@ export const navigationRef = createNavigationContainerRef();
 // HOME STACK — Dashboard + sub-screens
 // ═══════════════════════════════════════════════
 function HomeStackScreen() {
+  const { colors } = useTheme();
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F7F7FB' } }}>
+    <HomeStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bg } }}>
       <HomeStack.Screen name="DashboardMain" component={DashboardScreen} />
       <HomeStack.Screen name="Profile" component={ProfileScreen} />
       <HomeStack.Screen name="AIChat" component={AIChatScreen} />
@@ -99,8 +101,9 @@ function HomeStackScreen() {
 // GOALS STACK
 // ═══════════════════════════════════════════════
 function GoalsStackScreen() {
+  const { colors } = useTheme();
   return (
-    <GoalsStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F7F7FB' } }}>
+    <GoalsStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bg } }}>
       <GoalsStack.Screen name="GoalsMain" component={SavingsGoalsScreen} />
     </GoalsStack.Navigator>
   );
@@ -110,8 +113,9 @@ function GoalsStackScreen() {
 // MORE FEATURES STACK (Workspace & Tools)
 // ═══════════════════════════════════════════════
 function MoreStackScreen() {
+  const { colors } = useTheme();
   return (
-    <MoreStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F7F7FB' } }}>
+    <MoreStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bg } }}>
       <MoreStack.Screen name="MoreMain" component={MoreFeaturesScreen} />
       <MoreStack.Screen name="Profile" component={ProfileScreen} />
       <MoreStack.Screen name="AIChat" component={AIChatScreen} />
@@ -169,6 +173,7 @@ const HIDE_TAB_BAR_SCREENS = [
 // MAIN TAB NAVIGATOR (Luxury Light Floating Bar)
 // ═══════════════════════════════════════════════
 function MainTabNavigator() {
+  const { isDark, colors } = useTheme();
   const insets = useSafeAreaInsets();
   const bottomInset = insets?.bottom || 0;
   const isAndroid = Platform.OS === 'android';
@@ -188,9 +193,9 @@ function MainTabNavigator() {
           tabBarStyle: shouldHideTab
             ? { display: 'none' }
             : {
-                backgroundColor: '#FFFFFF',
+                backgroundColor: isDark ? colors.surface : '#FFFFFF',
                 borderTopWidth: 1,
-                borderTopColor: '#F1F5F9',
+                borderTopColor: isDark ? colors.border : '#F1F5F9',
                 borderTopLeftRadius: 28,
                 borderTopRightRadius: 28,
                 height: tabHeight,
@@ -199,11 +204,11 @@ function MainTabNavigator() {
                 elevation: 16,
                 shadowColor: '#0F172A',
                 shadowOffset: { width: 0, height: -4 },
-                shadowOpacity: 0.08,
+                shadowOpacity: isDark ? 0.35 : 0.08,
                 shadowRadius: 14,
               },
-          tabBarActiveTintColor: '#7C3AED',
-          tabBarInactiveTintColor: '#94A3B8',
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: isDark ? colors.textSecondary : '#94A3B8',
           tabBarLabelStyle: {
             fontSize: 10,
             fontWeight: '700',
@@ -590,65 +595,91 @@ export default function App() {
     },
   };
 
+function AppNavigatorContent({ isAuthenticated, linking, showSplash, setShowSplash }) {
+  const { isDark, colors } = useTheme();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <NavigationContainer
+        ref={navigationRef}
+        linking={linking}
+        theme={{
+          dark: isDark,
+          colors: {
+            primary: colors.primary,
+            background: colors.bg,
+            card: colors.surface,
+            text: colors.textPrimary,
+            border: colors.border,
+            notification: colors.accent,
+          },
+        }}
+        onStateChange={() => {
+          const currentRouteName = navigationRef.getCurrentRoute()?.name;
+          if (currentRouteName) {
+            analytics.trackScreen(currentRouteName);
+          }
+        }}
+      >
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <Stack.Navigator
+          initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
+          screenOptions={{
+            headerShown: false,
+            cardStyle: { backgroundColor: colors.bg },
+          }}
+        >
+          {/* Auth Flow */}
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+
+          {/* Main App */}
+          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+
+          {/* Legal & System Screens */}
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+          <Stack.Screen name="Terms" component={TermsScreen} />
+          <Stack.Screen name="NotFound" component={NotFoundScreen} />
+
+          {/* Global Modals (accessible from anywhere) */}
+          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <CustomAlertModal />
+
+      {/* 💸 Money Burst Splash — Full-Screen Translucent Native Modal */}
+      {isAuthenticated && (
+        <Modal
+          visible={showSplash}
+          transparent={true}
+          animationType="none"
+          statusBarTranslucent={true}
+          onRequestClose={() => setShowSplash(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }}>
+            <MoneySplashScreen
+              onFinish={() => setShowSplash(false)}
+            />
+          </View>
+        </Modal>
+      )}
+    </View>
+  );
+}
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <View style={{ flex: 1 }}>
-          <NavigationContainer
-            ref={navigationRef}
+        <ThemeProvider>
+          <AppNavigatorContent
+            isAuthenticated={isAuthenticated}
             linking={linking}
-            onStateChange={() => {
-              const currentRouteName = navigationRef.getCurrentRoute()?.name;
-              if (currentRouteName) {
-                analytics.trackScreen(currentRouteName);
-              }
-            }}
-          >
-            <StatusBar style="dark" />
-            <Stack.Navigator
-              initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
-              screenOptions={{
-                headerShown: false,
-                cardStyle: { backgroundColor: '#F7F7FB' },
-              }}
-            >
-              {/* Auth Flow */}
-              <Stack.Screen name="Welcome" component={WelcomeScreen} />
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
-              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-
-              {/* Main App */}
-              <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-
-              {/* Legal & System Screens */}
-              <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-              <Stack.Screen name="Terms" component={TermsScreen} />
-              <Stack.Screen name="NotFound" component={NotFoundScreen} />
-
-              {/* Global Modals (accessible from anywhere) */}
-              <Stack.Screen name="Dashboard" component={DashboardScreen} />
-            </Stack.Navigator>
-          </NavigationContainer>
-          <CustomAlertModal />
-
-          {/* 💸 Money Burst Splash — Full-Screen Translucent Native Modal */}
-          {isAuthenticated && (
-            <Modal
-              visible={showSplash}
-              transparent={true}
-              animationType="none"
-              statusBarTranslucent={true}
-              onRequestClose={() => setShowSplash(false)}
-            >
-              <View style={{ flex: 1, backgroundColor: '#F7F7FB', justifyContent: 'center', alignItems: 'center' }}>
-                <MoneySplashScreen
-                  onFinish={() => setShowSplash(false)}
-                />
-              </View>
-            </Modal>
-          )}
-        </View>
+            showSplash={showSplash}
+            setShowSplash={setShowSplash}
+          />
+        </ThemeProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );
