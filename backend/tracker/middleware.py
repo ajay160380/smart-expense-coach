@@ -1,5 +1,32 @@
+from django.http import HttpResponseRedirect
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
+
+class APKDownloadRedirectMiddleware:
+    """
+    Ensures that any request to /static/downloads/ExpenseTracker.apk,
+    /downloads/ExpenseTracker.apk, or /download-apk/ is immediately
+    redirected to the latest Expo CDN build URL BEFORE WhiteNoise serves
+    a potentially stale or memory-heavy 120MB static file on Render free-tier.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path
+        if path in (
+            '/static/downloads/ExpenseTracker.apk',
+            '/downloads/ExpenseTracker.apk',
+            '/static/downloads/ExpenseTracker.apk/',
+            '/downloads/ExpenseTracker.apk/',
+            '/download-apk/',
+            '/download-apk',
+        ):
+            from tracker.views import LATEST_EXPO_APK_URL
+            return HttpResponseRedirect(LATEST_EXPO_APK_URL)
+
+        return self.get_response(request)
+
 
 class TokenAuthMiddleware:
     def __init__(self, get_response):

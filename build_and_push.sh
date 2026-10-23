@@ -19,9 +19,20 @@ DEST="/Users/ajayvishwakarma/Desktop/expense_project/backend/tracker/static/down
 echo "Downloading APK to $DEST..."
 curl -L -o "$DEST" "$APK_URL"
 
+VIEWS_FILE="/Users/ajayvishwakarma/Desktop/expense_project/backend/tracker/views.py"
+echo "Updating views.py LATEST_EXPO_APK_URL..."
+python3 -c "
+import re
+with open('$VIEWS_FILE', 'r') as f:
+    c = f.read()
+c = re.sub(r'LATEST_EXPO_APK_URL\s*=\s*\"[^\"]+\"', f'LATEST_EXPO_APK_URL = \"$APK_URL\"', c)
+with open('$VIEWS_FILE', 'w') as f:
+    f.write(c)
+"
+
 cd /Users/ajayvishwakarma/Desktop/expense_project
-git add "$DEST"
-git commit -m "Update ExpenseTracker.apk from latest Expo build"
+git add "$DEST" "$VIEWS_FILE"
+git commit -m "chore(release): update ExpenseTracker.apk and download redirect URL from latest Expo build"
 git push origin main
 
-echo "Done! APK built and website updated."
+echo "Done! APK built, views.py updated, and website/Render deployed."
