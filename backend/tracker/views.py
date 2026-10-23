@@ -6549,9 +6549,12 @@ def get_apk_response():
 
     # 1. First priority: Serve from local disk if 120MB binary exists (guarantees Content-Length)
     if os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
+        file_size = os.path.getsize(apk_path)
         response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
         response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
-        response['Content-Length'] = str(os.path.getsize(apk_path))
+        response['Content-Length'] = str(file_size)
+        response['Content-Encoding'] = 'identity'
+        response['Accept-Ranges'] = 'bytes'
         return response
 
     # 2. Fallback: Stream directly from Expo CDN with custom ExpenseTracker.apk filename header
@@ -6563,6 +6566,8 @@ def get_apk_response():
                 content_type='application/vnd.android.package-archive'
             )
             response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
+            response['Content-Encoding'] = 'identity'
+            response['Accept-Ranges'] = 'bytes'
             if 'content-length' in r.headers:
                 response['Content-Length'] = r.headers['content-length']
             return response
