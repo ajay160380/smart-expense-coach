@@ -1663,76 +1663,33 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
     rem = max(0, float(budget) - float(spent))
     display_name = user_name.title() if user_name else "Dost"
 
-    # 1. MORNING GREETINGS
+    # 1. MORNING GREETINGS (Short & Sweet in English)
     morning_triggers = [
         'good morning', 'good mrng', 'gud morning', 'gud mrng', 'gm', 'g m',
         'shubh prabhat', 'subah ho gayi', 'morning'
     ]
     if clean in morning_triggers or any(clean.startswith(t + ' ') or clean.endswith(' ' + t) for t in ['good morning', 'shubh prabhat', 'gm']):
-        safe_msg = ""
-        try:
-            if target_user and today:
-                safe_info = calculate_safe_to_spend(target_user, today)
-                safe_limit = safe_info.get("safe_limit_today", 0)
-                if safe_limit > 0:
-                    safe_msg = f"💡 *Safe-to-Spend Limit:* ₹{safe_limit:,.0f} (aaj ka safe spending target)\n"
-        except Exception:
-            pass
+        return f"🌅 *Good Morning, {display_name}!* ☀️\n\nWishing you a wonderful and productive day ahead! 🚀"
 
-        return (
-            f"🌅 *Good Morning, {display_name}!* Shubh Prabhat! ☀️\n\n"
-            f"Asha hai aapka din shaandar aur energetic rahega! 🌟\n\n"
-            f"📊 *Aaj ka Financial Snapshot:*\n"
-            f"• Remaining Budget: *₹{rem:,.0f}*\n"
-            f"{safe_msg}\n"
-            f"Din bhar mein koi bhi kharcha ho (chai, petrol ya shopping), bas yahin direct bhej dena (jaise *200 chai*). Have a wonderful day ahead! 🚀"
-        )
-
-    # 2. NIGHT GREETINGS
+    # 2. NIGHT GREETINGS (Short & Sweet in English)
     night_triggers = [
         'good night', 'good nyt', 'gud night', 'gud nyt', 'gn', 'g n',
         'shubh ratri', 'so raha hu', 'so raha hoon', 'so jata hu', 'so jata hoon',
         'going to sleep', 'sleep time', 'sweet dreams', 'good nite'
     ]
     if clean in night_triggers or any(clean.startswith(t + ' ') or clean.endswith(' ' + t) for t in ['good night', 'shubh ratri', 'gn']):
-        today_spent = 0
-        try:
-            if target_user and today:
-                today_spent = Expense.objects.filter(user=target_user, date=today).aggregate(Sum('amount'))['amount__sum'] or 0
-        except Exception:
-            pass
+        return f"🌙 *Good Night, {display_name}!* ✨\n\nSleep well and have sweet dreams. Take care, see you tomorrow! 🛌💤"
 
-        if today_spent > 0:
-            spend_line = f"• Aaj ka Total Kharcha: *₹{float(today_spent):,.0f}* 🧾\n• Bacha hua Budget: *₹{rem:,.0f}* 🎯"
-        else:
-            spend_line = f"• Aaj ka Kharcha: *₹0* (Kamaal ka discipline! 👏)\n• Remaining Budget: *₹{rem:,.0f}* 🎯"
-
-        return (
-            f"🌙 *Good Night, {display_name}!* Shubh Ratri! ✨\n\n"
-            f"Din bhar ki bhag-daud ke baad ab aaram se soiye! 😴\n\n"
-            f"📊 *Aaj ka Day Recap:*\n"
-            f"{spend_line}\n\n"
-            f"Ache se rest kijiye, kal naye din aur nayi energy ke sath milte hain. Sweet dreams and take care! 🛌💤"
-        )
-
-    # 3. AFTERNOON / EVENING GREETINGS
+    # 3. AFTERNOON / EVENING GREETINGS (Short & Sweet in English)
     afternoon_triggers = ['good afternoon', 'gud afternoon', 'good noon', 'shubh dopahar']
     if clean in afternoon_triggers or any(clean.startswith(t + ' ') for t in ['good afternoon']):
-        return (
-            f"☀️ *Good Afternoon, {display_name}!* 🍱\n\n"
-            f"Lunch ho gaya aapka? Kaisa chal raha hai aaj ka din?\n\n"
-            f"Koi kharcha hua ho ya hisaab dekhna ho, toh bejhijhak bataiye! Remaining budget abhi *₹{rem:,.0f}* hai. 👍"
-        )
+        return f"☀️ *Good Afternoon, {display_name}!* 🍱\n\nHope you are having a great day! 👍"
 
     evening_triggers = ['good evening', 'gud evening', 'shubh sandhya']
     if clean in evening_triggers or any(clean.startswith(t + ' ') for t in ['good evening', 'shubh sandhya']):
-        return (
-            f"☕ *Good Evening, {display_name}!* 🌆\n\n"
-            f"Shaam ki chai ho gayi? Din kaisa beeta aapka? 😊\n\n"
-            f"Agar aaj ka koi kharcha note karna ho ya summary dekhni ho, toh bas bol dijiye! Main yahin hoon. ✨"
-        )
+        return f"☕ *Good Evening, {display_name}!* 🌆\n\nHope you had a productive day! Relax and have a pleasant evening. ✨"
 
-    # 4. "KAISE HO" / "KYA HAAL HAI" / CASUAL CHECK-IN
+    # 4. "KAISE HO" / "HOW ARE YOU" (Short & Friendly)
     how_are_you_triggers = [
         'kaise ho', 'kaisi ho', 'kaise hai', 'kaise hain', 'kya haal', 'kya haal hai', 'kya hal hai',
         'how are you', 'how r u', 'how are u', 'sab kaisa hai', 'sab kaisa chal raha hai',
@@ -1740,10 +1697,9 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
         'aur batao', 'aur bhai', 'aur sunao', 'kya chal rha h'
     ]
     if clean in how_are_you_triggers or any(clean.startswith(t + ' ') for t in ['kaise ho', 'kya haal hai', 'how are you', 'aur batao', 'aur sunao']):
-        return (
-            f"Main bilkul badiya aur first-class hoon, *{display_name}*! Aap suniye, aap kaise hain? Sab mast chal raha hai? 😊\n\n"
-            f"Main aapke finances aur budget ka pura dhyan rakh raha hoon. Aap mujhse normal dosto ki tarah kisi bhi topic par baat kar sakte hain ya koi kharcha add karna ho toh bataiye. Main dono ke liye taiyar hoon! 💬✨"
-        )
+        if any(w in clean for w in ['how are you', 'how r u', 'how are u']):
+            return f"I'm doing great, *{display_name}*! How are you doing today? 😊"
+        return f"Main bilkul badiya hoon, *{display_name}*! Aap suniye, aap kaise hain? Sab theek thaak? 😊"
 
     # 5. SPIRITUAL / CULTURAL GREETINGS
     if any(w in clean for w in ['radhe radhe', 'jai shree krishna', 'jai shri krishna', 'radhe']):
@@ -1755,30 +1711,23 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
     if any(w in clean for w in ['namaste', 'namaskar', 'pranam', 'sat sri akal', 'salaam', 'assalam alaikum']):
         return f"Namaste *{display_name}*! 🙏 Asha hai aap bilkul theek hain aur sab badhiya chal raha hai. Kahiye, aaj main aapki kya madad kar sakta hoon? 😊"
 
-    # 6. THANKS & APPRECIATION
+    # 6. THANKS & APPRECIATION (Short in English)
     thanks_triggers = [
         'thanks', 'thank you', 'thx', 'shukriya', 'dhanyawad', 'dhanyavaad', 'thanku', 'tq',
         'bahut badiya', 'great job', 'nice', 'awesome', 'shandar', 'zabardast', 'mast'
     ]
     if clean in thanks_triggers:
-        return f"Arre most welcome *{display_name}*! ❤️ Khushi hui aapki madad karke. Jab bhi zaroorat ho, bas ek awaaz dena! Hamesha aapke sath hoon. 😊"
+        return f"You're most welcome, *{display_name}*! Always happy to help. 😊❤️"
 
-    # 7. BYE / GOODBYE
+    # 7. BYE / GOODBYE (Short in English)
     bye_triggers = ['bye', 'bye bye', 'tata', 'see you', 'cya', 'alvida', 'phir milte hai', 'phir milte hain']
     if clean in bye_triggers:
-        return f"Bye *{display_name}*! 👋 Take care! Phir milte hain. Jab bhi koi kharcha ho ya baat karni ho, bas message kar dena! ✨"
+        return f"Goodbye, *{display_name}*! Have a great day and take care! 👋✨"
 
-    # 8. GENERAL GREETINGS: "hi", "hello", "hey", "sup", etc.
+    # 8. GENERAL GREETINGS: "hi", "hello", "hey", etc. (Short in English)
     basic_greetings = {'hi', 'hello', 'hlo', 'hey', 'helo', 'hii', 'hiii', 'yo', 'sup', 'hola', 'suno'}
     if clean in basic_greetings or any(clean.startswith(g + ' ') for g in ['hi', 'hello', 'hlo', 'hey']):
-        return (
-            f"Hey *{display_name}*! 👋 Kaise hain aap?\n\n"
-            f"Main aapka Expense Coach aur personal assistant hoon. Aap mujhse freely kisi bhi baare mein baat kar sakte hain, financial guidance le sakte hain, ya direct kharche record kar sakte hain:\n\n"
-            f"• *500 petrol* ya *chai 20* ➔ Direct save ho jayega\n"
-            f"• *Aaj ka kharcha* ➔ Aaj ka total hisaab\n"
-            f"• *Safe to spend* ➔ Aaj kitna kharch karna safe hai\n\n"
-            f"Bataiye, aaj ka din kaisa chal raha hai? 😊"
-        )
+        return f"Hello *{display_name}*! 👋 How can I help you today? Feel free to chat or record your expenses anytime! 😊"
 
     return None
 
