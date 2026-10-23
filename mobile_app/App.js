@@ -90,6 +90,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="Notepad" component={NotepadScreen} />
       <HomeStack.Screen name="History" component={HistoryScreen} />
+      <HomeStack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
       <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <HomeStack.Screen name="Terms" component={TermsScreen} />
       <HomeStack.Screen name="NotFound" component={NotFoundScreen} />
@@ -184,6 +185,7 @@ function MainTabNavigator() {
 
   return (
     <Tab.Navigator
+      backBehavior="history"
       screenOptions={({ route }) => {
         const routeName = getFocusedRouteNameFromRoute(route);
         const shouldHideTab = Boolean(routeName && HIDE_TAB_BAR_SCREENS.includes(routeName));

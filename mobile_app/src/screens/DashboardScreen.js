@@ -89,6 +89,7 @@ export default function DashboardScreen({ navigation }) {
   const [goals, setGoals] = useState([]);
   const [subsData, setSubsData] = useState(null);
   const [quickSavingGoalId, setQuickSavingGoalId] = useState(null);
+  const [hideMicroSavingsWidget, setHideMicroSavingsWidget] = useState(false);
 
   // ── LUXURY ULTRA-CLEAN ENTRANCE ANIMATIONS (NO CROOKED ROTATION) ──
   const animGreetingX = useRef(new Animated.Value(-20)).current;
@@ -307,6 +308,21 @@ export default function DashboardScreen({ navigation }) {
     }
   };
 
+  const handleDismissMicroSavings = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setHideMicroSavingsWidget(true);
+    await AsyncStorage.setItem('hide_micro_savings_widget', 'true');
+  };
+
+  const navigateToGoals = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      navigation.navigate('Goals');
+    } catch (e) {
+      navigation.navigate('SavingsGoals');
+    }
+  };
+
   const handleOpenAddShortcut = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditShortcutItem(null);
@@ -471,6 +487,11 @@ export default function DashboardScreen({ navigation }) {
       const shakeDismissed = await AsyncStorage.getItem('shake_banner_dismissed');
       if (shakeDismissed === 'true') {
         setShakeBannerVisible(false);
+      }
+
+      const microDismissed = await AsyncStorage.getItem('hide_micro_savings_widget');
+      if (microDismissed === 'true') {
+        setHideMicroSavingsWidget(true);
       }
 
       // ── 1. LOAD CACHED DATA IMMEDIATELY (Offline-First) ──
@@ -1300,112 +1321,121 @@ export default function DashboardScreen({ navigation }) {
             </TouchableOpacity>
 
             {/* WIDGET 2: MICRO-SAVINGS PIGGY BANK (WITH 1-TAP QUICK DEPOSIT) */}
-            <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginTop: 12 }]}>
-              {activeGoal ? (
-                <>
-                  {/* Header */}
-                  <View style={styles.widgetHeaderRow}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5' }]}>
-                        <Text style={{ fontSize: 18 }}>{activeGoal.icon || '🎯'}</Text>
+            {!hideMicroSavingsWidget && (
+              <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginTop: 12, position: 'relative' }]}>
+                {/* Dismiss Cross (✕) Button */}
+                <TouchableOpacity
+                  onPress={handleDismissMicroSavings}
+                  style={[styles.widgetDismissBtn, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={15} color={isDark ? colors.textMuted : '#64748B'} />
+                </TouchableOpacity>
+
+                {activeGoal ? (
+                  <>
+                    {/* Header */}
+                    <View style={styles.widgetHeaderRow}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 32 }}>
+                        <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5' }]}>
+                          <Text style={{ fontSize: 18 }}>{activeGoal.icon || '🎯'}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]} numberOfLines={1}>{activeGoal.name}</Text>
+                          <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]}>Active Savings Milestone</Text>
+                        </View>
                       </View>
-                      <View>
-                        <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>{activeGoal.name}</Text>
-                        <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]}>Active Savings Milestone</Text>
-                      </View>
-                    </View>
-                    <TouchableOpacity 
-                      onPress={() => navigation.navigate('SavingsGoals')}
-                      activeOpacity={0.7}
-                      style={[styles.widgetStatusBadge, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5' }]}
-                    >
-                      <Text style={[styles.widgetStatusText, { color: '#10B981', fontWeight: '800' }]}>
-                        {activeGoal.progress_percent}%
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Progress & Numbers */}
-                  <View style={{ marginTop: 12 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                      <Text style={[styles.savingsAmountCurrent, isDark && { color: colors.textPrimary }]}>
-                        ₹{(activeGoal.saved_amount || 0).toLocaleString('en-IN')}
-                        <Text style={[styles.savingsAmountTarget, isDark && { color: colors.textSecondary }]}>
-                          {' '}of ₹{(activeGoal.target_amount || 0).toLocaleString('en-IN')}
-                        </Text>
-                      </Text>
-                      <Text style={[styles.savingsRemainingText, isDark && { color: colors.textSecondary }]}>
-                        ₹{Math.max(0, (activeGoal.target_amount || 0) - (activeGoal.saved_amount || 0)).toLocaleString('en-IN')} to go
-                      </Text>
-                    </View>
-
-                    {/* Goal Progress Bar */}
-                    <View style={[styles.goalProgressBarBg, isDark && { backgroundColor: colors.border }]}>
-                      <LinearGradient
-                        colors={['#10B981', '#34D399']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={[styles.goalProgressBarFill, { width: `${Math.min(100, activeGoal.progress_percent || 0)}%` }]}
-                      />
-                    </View>
-                  </View>
-
-                  {/* 1-Tap Quick Deposit Bar */}
-                  <View style={[styles.microSaveRow, isDark && { borderTopColor: colors.border }]}>
-                    <Text style={[styles.microSaveLabel, isDark && { color: colors.textSecondary }]}>1-Tap Quick Save:</Text>
-                    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                      {[50, 100, 500].map(amt => (
-                        <TouchableOpacity
-                          key={amt}
-                          disabled={quickSavingGoalId === activeGoal.id}
-                          onPress={() => handleQuickDeposit(activeGoal.id, amt)}
-                          style={[
-                            styles.microSavePill,
-                            isDark && { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(52, 211, 153, 0.3)' }
-                          ]}
-                          activeOpacity={0.7}
-                        >
-                          {quickSavingGoalId === activeGoal.id ? (
-                            <ActivityIndicator size="small" color="#10B981" />
-                          ) : (
-                            <Text style={[styles.microSavePillText, isDark && { color: '#34D399' }]}>+₹{amt}</Text>
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                      <TouchableOpacity
-                        onPress={() => navigation.navigate('SavingsGoals')}
-                        style={[styles.microSaveMoreBtn, isDark && { backgroundColor: colors.bgElevated }]}
+                      <TouchableOpacity 
+                        onPress={navigateToGoals}
                         activeOpacity={0.7}
+                        style={[styles.widgetStatusBadge, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5', marginRight: 24 }]}
                       >
-                        <Ionicons name="ellipsis-horizontal" size={14} color={isDark ? colors.textSecondary : '#64748B'} />
+                        <Text style={[styles.widgetStatusText, { color: '#10B981', fontWeight: '800' }]}>
+                          {activeGoal.progress_percent}%
+                        </Text>
                       </TouchableOpacity>
                     </View>
+
+                    {/* Progress & Numbers */}
+                    <View style={{ marginTop: 12 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                        <Text style={[styles.savingsAmountCurrent, isDark && { color: colors.textPrimary }]}>
+                          ₹{(activeGoal.saved_amount || 0).toLocaleString('en-IN')}
+                          <Text style={[styles.savingsAmountTarget, isDark && { color: colors.textSecondary }]}>
+                            {' '}of ₹{(activeGoal.target_amount || 0).toLocaleString('en-IN')}
+                          </Text>
+                        </Text>
+                        <Text style={[styles.savingsRemainingText, isDark && { color: colors.textSecondary }]}>
+                          ₹{Math.max(0, (activeGoal.target_amount || 0) - (activeGoal.saved_amount || 0)).toLocaleString('en-IN')} to go
+                        </Text>
+                      </View>
+
+                      {/* Goal Progress Bar */}
+                      <View style={[styles.goalProgressBarBg, isDark && { backgroundColor: colors.border }]}>
+                        <LinearGradient
+                          colors={['#10B981', '#34D399']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={[styles.goalProgressBarFill, { width: `${Math.min(100, activeGoal.progress_percent || 0)}%` }]}
+                        />
+                      </View>
+                    </View>
+
+                    {/* 1-Tap Quick Deposit Bar */}
+                    <View style={[styles.microSaveRow, isDark && { borderTopColor: colors.border }]}>
+                      <Text style={[styles.microSaveLabel, isDark && { color: colors.textSecondary }]}>1-Tap Quick Save:</Text>
+                      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                        {[50, 100, 500].map(amt => (
+                          <TouchableOpacity
+                            key={amt}
+                            disabled={quickSavingGoalId === activeGoal.id}
+                            onPress={() => handleQuickDeposit(activeGoal.id, amt)}
+                            style={[
+                              styles.microSavePill,
+                              isDark && { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(52, 211, 153, 0.3)' }
+                            ]}
+                            activeOpacity={0.7}
+                          >
+                            {quickSavingGoalId === activeGoal.id ? (
+                              <ActivityIndicator size="small" color="#10B981" />
+                            ) : (
+                              <Text style={[styles.microSavePillText, isDark && { color: '#34D399' }]}>+₹{amt}</Text>
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity
+                          onPress={navigateToGoals}
+                          style={[styles.microSaveMoreBtn, isDark && { backgroundColor: colors.bgElevated }]}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="ellipsis-horizontal" size={14} color={isDark ? colors.textSecondary : '#64748B'} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </>
+                ) : (
+                  /* Empty State if no savings goal exists yet */
+                  <View style={styles.widgetEmptyContainer}>
+                    <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5', marginBottom: 8 }]}>
+                      <Ionicons name="trophy-outline" size={20} color="#10B981" />
+                    </View>
+                    <Text style={[styles.widgetEmptyTitle, isDark && { color: colors.textPrimary }]}>Start Your Micro-Savings Habit</Text>
+                    <Text style={[styles.widgetEmptyDesc, isDark && { color: colors.textSecondary }]}>
+                      Lock small wins daily (+₹50, +₹100) toward your emergency fund or dream purchase.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={navigateToGoals}
+                      style={styles.widgetEmptyActionBtn}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="add" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
+                      <Text style={styles.widgetEmptyActionText}>Create 1st Goal</Text>
+                    </TouchableOpacity>
                   </View>
-                </>
-              ) : (
-                /* Empty State if no savings goal exists yet */
-                <View style={styles.widgetEmptyContainer}>
-                  <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ECFDF5', marginBottom: 8 }]}>
-                    <Ionicons name="trophy-outline" size={20} color="#10B981" />
-                  </View>
-                  <Text style={[styles.widgetEmptyTitle, isDark && { color: colors.textPrimary }]}>Start Your Micro-Savings Habit</Text>
-                  <Text style={[styles.widgetEmptyDesc, isDark && { color: colors.textSecondary }]}>
-                    Lock small wins daily (+₹50, +₹100) toward your emergency fund or dream purchase.
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      navigation.navigate('SavingsGoals');
-                    }}
-                    style={styles.widgetEmptyActionBtn}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="add" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
-                    <Text style={styles.widgetEmptyActionText}>Create 1st Goal</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+                )}
+              </View>
+            )}
 
             {/* WIDGET 3: UPCOMING BILLS & SUBSCRIPTIONS RADAR */}
             <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginTop: 12 }]}>
@@ -4049,5 +4079,17 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     color: '#64748B',
+  },
+  widgetDismissBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(148, 163, 184, 0.15)',
   },
 });

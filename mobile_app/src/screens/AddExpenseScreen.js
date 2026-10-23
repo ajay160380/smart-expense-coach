@@ -159,9 +159,14 @@ export default function AddExpenseScreen({ route, navigation }) {
         [{ 
           text: 'OK', 
           onPress: () => {
-            navigation.navigate('DashboardMain');
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('Home', { screen: 'DashboardMain' });
+            }
           } 
-        }]
+        }],
+        { cancelable: false }
       );
     } catch (error) {
       console.error(error);
@@ -195,8 +200,11 @@ export default function AddExpenseScreen({ route, navigation }) {
           <View style={styles.header}>
             <TouchableOpacity 
               onPress={() => {
-                if (navigation.canGoBack()) navigation.goBack();
-                else navigation.replace('DashboardMain');
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.navigate('Home', { screen: 'DashboardMain' });
+                }
               }} 
               style={[styles.backBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
