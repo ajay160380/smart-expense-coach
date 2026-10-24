@@ -6754,7 +6754,7 @@ def api_send_admin_push(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-LATEST_EXPO_APK_URL = "https://github.com/ajay160380/smart-expense-coach/releases/download/v1.3.2/ExpenseTracker.apk"
+LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/8A0B_d6OHpVFZTgM6CoWWoyJCjdRWkQFrxJ-szGc2DU.apk"
 
 def ensure_apk_cached_on_disk():
     import os
