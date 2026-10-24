@@ -1999,7 +1999,20 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         if hasattr(request, 'user') and request.user.is_authenticated:
             target_user = request.user
         else:
-            return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
+            # Check Token header for mobile app requests
+            auth_header = request.headers.get('Authorization') or request.META.get('HTTP_AUTHORIZATION', '')
+            if auth_header and 'Token ' in auth_header:
+                token_key = auth_header.split('Token ')[1].strip().split(' ')[0]
+                try:
+                    from rest_framework.authtoken.models import Token
+                    token_obj = Token.objects.select_related('user').get(key=token_key)
+                    target_user = token_obj.user
+                    request.user = target_user
+                except Exception as e:
+                    logger.warning("Token auth in voice_expense failed: %s", e)
+
+            if not target_user:
+                return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
     else:
         if '_WA_AUTH_CACHE' not in globals():
             _WA_AUTH_CACHE = {}
