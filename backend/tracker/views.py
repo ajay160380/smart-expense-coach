@@ -6762,25 +6762,40 @@ def ensure_apk_cached_on_disk():
     from django.conf import settings
 
     apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
+    url_marker_path = apk_path + ".url"
     os.makedirs(os.path.dirname(apk_path), exist_ok=True)
 
-    # 1. If file exists and is > 10MB, it is already cached
-    if os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
+    # Check if cached APK matches LATEST_EXPO_APK_URL
+    current_cached_url = ""
+    if os.path.exists(url_marker_path):
+        try:
+            with open(url_marker_path, 'r') as f:
+                current_cached_url = f.read().strip()
+        except Exception:
+            current_cached_url = ""
+
+    # 1. If file exists, is > 10MB, and URL matches, it is current
+    if current_cached_url == LATEST_EXPO_APK_URL and os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
         return apk_path
 
-    # 2. Check static_root as well
-    static_root = getattr(settings, 'STATIC_ROOT', None)
-    if static_root:
-        alt_path = os.path.join(static_root, 'downloads', 'ExpenseTracker.apk')
-        if os.path.exists(alt_path) and os.path.getsize(alt_path) > 10 * 1024 * 1024:
-            return alt_path
+    # If URL changed or marker missing, remove stale APK
+    if os.path.exists(apk_path):
+        try:
+            os.remove(apk_path)
+        except Exception:
+            pass
 
-    # 3. Otherwise download directly to disk so FileResponse serves with full Content-Length
+    # 2. Download directly to disk so FileResponse serves with full Content-Length
     temp_path = apk_path + ".tmp"
     try:
         urllib.request.urlretrieve(LATEST_EXPO_APK_URL, temp_path)
         if os.path.exists(temp_path) and os.path.getsize(temp_path) > 10 * 1024 * 1024:
             os.replace(temp_path, apk_path)
+            try:
+                with open(url_marker_path, 'w') as f:
+                    f.write(LATEST_EXPO_APK_URL)
+            except Exception:
+                pass
             return apk_path
     except Exception:
         if os.path.exists(temp_path):
