@@ -13,7 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { requestPinWidget } from 'react-native-android-widget';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { requestPinWidget, requestWidgetUpdate } from 'react-native-android-widget';
 
 const { width } = Dimensions.get('window');
 
@@ -62,39 +63,62 @@ export default function WidgetSelectionModal({
 
     if (Platform.OS !== 'android') {
       Alert.alert(
-        'Android Feature',
-        'Android Home Screen Widgets keval Android devices par support hote hain.'
+        'Android फ़ीचर',
+        'Android Home Screen Widgets केवल Android फ़ोन पर उपलब्ध हैं।'
       );
       return;
     }
 
     setPinning(true);
-    try {
-      const pinned = await requestPinWidget({ widgetName });
-      setPinning(false);
 
-      const widgetTitle = widgetName === 'WideExpenseWidget' ? 'Expense Tracker Wide' : 'Expense Tracker';
+    try {
+      // 1. Save user preference for widget layout
+      await AsyncStorage.setItem('preferred_widget_layout', widgetName);
+
+      // 2. Trigger widget update so active widgets adapt immediately
+      try {
+        await requestWidgetUpdate({ widgetName: 'AddExpenseWidget' });
+      } catch (e) {}
+      try {
+        await requestWidgetUpdate({ widgetName: 'WideExpenseWidget' });
+      } catch (e) {}
+
+      // 3. Attempt native pin
+      let pinned = false;
+      try {
+        pinned = await requestPinWidget({ widgetName });
+      } catch (pinErr) {
+        // If WideExpenseWidget is not found in older APK, fallback to AddExpenseWidget
+        if (widgetName === 'WideExpenseWidget') {
+          try {
+            pinned = await requestPinWidget({ widgetName: 'AddExpenseWidget' });
+          } catch (fbErr) {
+            pinned = false;
+          }
+        }
+      }
+
+      setPinning(false);
 
       if (pinned) {
         Alert.alert(
-          'Widget Pin Request Sent! 🎉',
-          `"${widgetTitle}" widget aapki Home Screen par add karne ka prompt bhej diya gaya hai. Agar launcher popup dikhe toh "Add" ya "Confirm" dabayein.`,
-          [{ text: 'Theek hai', onPress: onClose }]
+          'विजेट जोड़ने का अनुरोध भेजा गया! 🎉',
+          'आपकी होम स्क्रीन पर विजेट जोड़ने का प्रॉम्प्ट आ गया है। कृपया "Add" या "Confirm" पर टैप करें।',
+          [{ text: 'ठीक है', onPress: onClose }]
         );
       } else {
         Alert.alert(
-          'Manual Pin Required',
-          `Aapke phone ke launcher ne automatic pin support nahi kiya.\n\n📱 Kaise lagayein:\n1. Phone Home Screen par khali jagah 2 second touch & hold karein\n2. "Widgets" option chunein\n3. "${widgetTitle}" drag karke screen par rakh dein!`,
-          [{ text: 'Samajh gaya', onPress: onClose }]
+          'विजेट कैसे लगाएं',
+          'होम स्क्रीन पर 2 सेकंड दबाकर रखें (Touch & Hold) ➔ नीचे "Widgets" चुनें ➔ "Expense Tracker" को होम स्क्रीन पर लाएं।\n\n📌 Xiaomi / POCO / Redmi यूज़र्स:\nफ़ोन Settings ➔ Apps ➔ Manage Apps ➔ Expense Tracker ➔ Other Permissions में जाकर "Home screen shortcuts" को Allow कर दें।',
+          [{ text: 'समझ गया', onPress: onClose }]
         );
       }
     } catch (err) {
       setPinning(false);
-      const widgetTitle = widgetName === 'WideExpenseWidget' ? 'Expense Tracker Wide' : 'Expense Tracker';
       Alert.alert(
-        'Add Widget Manually',
-        `Home Screen par 2 second touch & hold karein -> "Widgets" select karein -> "${widgetTitle}" drag karein.`,
-        [{ text: 'Theek hai', onPress: onClose }]
+        'विजेट कैसे लगाएं',
+        'होम स्क्रीन पर 2 सेकंड दबाकर रखें ➔ "Widgets" चुनें ➔ "Expense Tracker" को होम स्क्रीन पर ड्रैग करें।',
+        [{ text: 'समझ गया', onPress: onClose }]
       );
     }
   };
@@ -111,14 +135,14 @@ export default function WidgetSelectionModal({
           {/* Top handle bar */}
           <View style={styles.handleBar} />
 
-          {/* Header */}
+          {/* Header in Pure Hindi */}
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.sheetTitle, isDark && { color: '#F8FAFC' }]}>
-                Add Widget to Home Screen
+                होम स्क्रीन विजेट
               </Text>
               <Text style={[styles.sheetSubtitle, isDark && { color: '#94A3B8' }]}>
-                Choose your favorite widget layout to place on your home screen
+                अपनी पसंद का विजेट चुनें और होम स्क्रीन पर लगाएं
               </Text>
             </View>
             <TouchableOpacity
@@ -151,33 +175,33 @@ export default function WidgetSelectionModal({
                   </View>
                   <View style={{ marginLeft: 10 }}>
                     <Text style={[styles.optionTitle, isDark && { color: '#F8FAFC' }]}>
-                      Compact Tracker
+                      2x2 चौकोर विजेट (Square)
                     </Text>
-                    <Text style={styles.optionSubtitle}>Square 2x2 Layout</Text>
+                    <Text style={styles.optionSubtitle}>कॉम्पैक्ट लेआउट • खर्च राशि, बजट मीटर और +Add</Text>
                   </View>
                 </View>
 
                 <View style={styles.badgePill}>
-                  <Text style={styles.badgePillText}>RECOMMENDED</Text>
+                  <Text style={styles.badgePillText}>अनुशंसित</Text>
                 </View>
               </View>
 
-              {/* Live Preview of Square Widget (Pixel Perfect from Image 1) */}
+              {/* Live Preview of Square Widget (Clean & Unclipped) */}
               <View style={styles.previewContainer}>
                 <View style={styles.squareWidgetPreview}>
                   {/* Top Header */}
                   <View style={styles.widgetHeaderRow}>
-                    <Text style={styles.widgetTitleText}>Expense Tracker</Text>
+                    <Text style={styles.widgetTitleText}>Expense</Text>
                     <View style={styles.widgetSafeBadge}>
                       <Text style={styles.widgetSafeText}>SAFE</Text>
                     </View>
                   </View>
 
                   {/* Middle Stats */}
-                  <View style={{ marginTop: 8 }}>
+                  <View style={{ marginTop: 4 }}>
                     <Text style={styles.widgetBigAmount}>₹{spentFormatted}</Text>
                     <Text style={styles.widgetSpentSubtitle}>
-                      spent · {budgetPct}% of ₹{budgetFormatted}
+                      खर्च · {budgetPct}% (बजट ₹{budgetFormatted})
                     </Text>
 
                     {/* Progress Track with Round Thumb */}
@@ -195,7 +219,7 @@ export default function WidgetSelectionModal({
                       <Text style={styles.widgetAddText}>+ Add</Text>
                     </View>
                     <View style={styles.widgetMicCircle}>
-                      <Ionicons name="mic" size={20} color="#FFFFFF" />
+                      <Ionicons name="mic" size={16} color="#FFFFFF" />
                     </View>
                   </View>
                 </View>
@@ -218,7 +242,7 @@ export default function WidgetSelectionModal({
                   style={styles.pinBtnGradient}
                 >
                   <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.pinBtnText}>Add 2x2 Compact Widget</Text>
+                  <Text style={styles.pinBtnText}>✨ यह 2x2 विजेट स्क्रीन पर लगाएं</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -241,18 +265,18 @@ export default function WidgetSelectionModal({
                   </View>
                   <View style={{ marginLeft: 10 }}>
                     <Text style={[styles.optionTitle, isDark && { color: '#F8FAFC' }]}>
-                      Wide Horizon Banner
+                      4x2 वाइड विजेट (Wide Banner)
                     </Text>
-                    <Text style={styles.optionSubtitle}>Full 4x2 Landscape Layout</Text>
+                    <Text style={styles.optionSubtitle}>फुल हॉरिजॉन्टल लेआउट • हालिया खर्च और माइक</Text>
                   </View>
                 </View>
 
                 <View style={[styles.badgePill, { backgroundColor: '#EDE9FE' }]}>
-                  <Text style={[styles.badgePillText, { color: '#7C3AED' }]}>DETAILED</Text>
+                  <Text style={[styles.badgePillText, { color: '#7C3AED' }]}>पॉपुलर</Text>
                 </View>
               </View>
 
-              {/* Live Preview of Wide Widget (Pixel Perfect from Image 2) */}
+              {/* Live Preview of Wide Widget */}
               <View style={styles.previewContainer}>
                 <LinearGradient
                   colors={['#1D4ED8', '#1E40AF']}
@@ -260,56 +284,45 @@ export default function WidgetSelectionModal({
                   end={{ x: 1, y: 1 }}
                   style={styles.wideWidgetPreview}
                 >
-                  {/* Left Column */}
                   <View style={{ flex: 1, justifyContent: 'space-between' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={styles.wideHeaderTitle}>Expense Tracker</Text>
+                      <Text style={styles.wideTitleText}>Expense</Text>
                       <View style={styles.wideSafeBadge}>
                         <Text style={styles.wideSafeText}>SAFE</Text>
                       </View>
                     </View>
 
-                    <Text style={styles.wideMonthTag}>THIS MONTH · {budgetPct}%</Text>
-
-                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 2 }}>
-                      <Text style={styles.wideAmountText}>₹{spentFormatted}</Text>
-                      <Text style={styles.wideBudgetTotal}> / ₹{budgetFormatted}</Text>
+                    <View style={{ marginVertical: 3 }}>
+                      <Text style={styles.wideBigAmount}>₹{spentFormatted}</Text>
+                      <Text style={styles.wideSubtitleText}>
+                        बजट ₹{budgetFormatted} ({budgetPct}%)
+                      </Text>
                     </View>
 
-                    {/* Segmented Progress Bar */}
-                    <View style={styles.segmentedRow}>
-                      {Array.from({ length: 18 }).map((_, idx) => {
-                        const isLit = idx < Math.max(1, Math.round((budgetPct / 100) * 18));
-                        return (
-                          <View
-                            key={idx}
-                            style={[
-                              styles.segmentPill,
-                              { backgroundColor: isLit ? '#93C5FD' : '#2563EB' },
-                            ]}
-                          />
-                        );
-                      })}
+                    {/* Progress Track */}
+                    <View style={styles.wideSegmentTrack}>
+                      <View style={[styles.wideSegmentFill, { flex: Math.max(1, Math.min(100, usedPct)) }]} />
+                      <View style={{ flex: Math.max(0, 100 - Math.min(100, usedPct)) }} />
                     </View>
 
-                    {/* Category pills */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                      <View style={styles.categoryPill}>
+                    {/* Recent Item Pills */}
+                    <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
+                      <View style={styles.categoryPillItem}>
                         <Text style={styles.categoryPillText} numberOfLines={1}>{pill1Text}</Text>
                       </View>
-                      <View style={styles.categoryPill}>
+                      <View style={styles.categoryPillItem}>
                         <Text style={styles.categoryPillText} numberOfLines={1}>{pill2Text}</Text>
                       </View>
                     </View>
                   </View>
 
-                  {/* Right Column */}
-                  <View style={styles.wideRightCol}>
-                    <View style={styles.wideBigPlusCircle}>
-                      <Ionicons name="add" size={28} color="#1E40AF" />
+                  {/* Right Actions */}
+                  <View style={styles.wideRightActionCol}>
+                    <View style={styles.widePlusButton}>
+                      <Ionicons name="add" size={20} color="#1E40AF" />
                     </View>
                     <View style={styles.wideMicPill}>
-                      <Ionicons name="mic" size={18} color="#1E40AF" />
+                      <Ionicons name="mic" size={14} color="#1E40AF" />
                     </View>
                   </View>
                 </LinearGradient>
@@ -326,37 +339,47 @@ export default function WidgetSelectionModal({
                 }}
               >
                 <LinearGradient
-                  colors={['#1D4ED8', '#1E40AF']}
+                  colors={['#7C3AED', '#6D28D9']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.pinBtnGradient}
                 >
                   <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.pinBtnText}>Add 4x2 Wide Widget</Text>
+                  <Text style={styles.pinBtnText}>✨ यह 4x2 वाइड विजेट लगाएं</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
 
-            {/* Manual Instructions Hint Card */}
+            {/* ════════════════════════════════════════════════════
+                MANUAL GUIDE CARD IN PURE HINDI
+            ════════════════════════════════════════════════════ */}
             <View style={[styles.helpCard, isDark && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                 <Ionicons name="information-circle-outline" size={18} color="#3B82F6" style={{ marginRight: 6 }} />
                 <Text style={[styles.helpTitle, isDark && { color: '#93C5FD' }]}>
-                  Manual Placement Guide
+                  विजेट लगाने का आसान तरीका
                 </Text>
               </View>
+
               <Text style={[styles.helpText, isDark && { color: '#94A3B8' }]}>
-                Agar button dabane par widget automatic add na ho:
+                अगर बटन दबाने पर विजेट अपने आप न जुड़े:
               </Text>
               <Text style={[styles.helpBullet, isDark && { color: '#CBD5E1' }]}>
-                1. Phone ki Home Screen par kisi khali jagah par 2 second touch & hold karein.
+                1. फ़ोन की होम स्क्रीन पर किसी भी खाली जगह पर 2 सेकंड तक दबाकर रखें (Touch & Hold)।
               </Text>
               <Text style={[styles.helpBullet, isDark && { color: '#CBD5E1' }]}>
-                2. Niche "Widgets" par tap karein aur "Expense Tracker" search karein.
+                2. नीचे "Widgets" (विजेट्स) विकल्प पर टैप करें।
               </Text>
               <Text style={[styles.helpBullet, isDark && { color: '#CBD5E1' }]}>
-                3. Manpasand widget ko hold karke home screen par drag karein!
+                3. "Expense Tracker" खोजें और विजेट को अपनी होम स्क्रीन पर ड्रैग करके रख दें!
               </Text>
+
+              <View style={styles.xiaomiNoteBox}>
+                <Text style={styles.xiaomiNoteText}>
+                  📌 Redmi / POCO / Xiaomi यूज़र्स ध्यान दें:{'\n'}
+                  अगर विजेट ऑटोमैटिक ऐड न हो, तो फ़ोन Settings ➔ Apps ➔ Manage Apps ➔ Expense Tracker ➔ Other Permissions में जाकर "Home screen shortcuts" को Allow कर दें।
+                </Text>
+              </View>
             </View>
           </ScrollView>
         </View>
@@ -458,7 +481,7 @@ const styles = StyleSheet.create({
   },
   optionTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#0F172A',
   },
   optionSubtitle: {
@@ -473,29 +496,27 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   badgePillText: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '800',
     color: '#1D4ED8',
-    letterSpacing: 0.5,
   },
   previewContainer: {
     alignItems: 'center',
-    marginVertical: 4,
+    marginVertical: 10,
   },
-
-  /* Square Widget Preview Styles */
   squareWidgetPreview: {
-    width: 210,
-    height: 210,
+    width: 150,
+    height: 140,
     backgroundColor: '#205FE6',
-    borderRadius: 28,
-    padding: 14,
+    borderRadius: 22,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     justifyContent: 'space-between',
     shadowColor: '#205FE6',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
-    elevation: 8,
+    elevation: 4,
   },
   widgetHeaderRow: {
     flexDirection: 'row',
@@ -503,220 +524,225 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   widgetTitleText: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: 'bold',
     color: '#FFFFFF',
   },
   widgetSafeBadge: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 9,
+    borderRadius: 10,
+    paddingHorizontal: 7,
     paddingVertical: 2,
   },
   widgetSafeText: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 9,
+    fontWeight: 'bold',
     color: '#205FE6',
   },
   widgetBigAmount: {
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: '900',
     color: '#FFFFFF',
   },
   widgetSpentSubtitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 9,
+    color: '#DCE7FE',
     marginTop: 1,
   },
   sliderTrack: {
     width: '100%',
-    height: 9,
-    borderRadius: 5,
+    height: 5,
+    borderRadius: 3,
     backgroundColor: '#4379EE',
-    marginTop: 10,
+    marginTop: 5,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 1,
   },
   sliderFill: {
-    height: 7,
+    height: 5,
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
   sliderThumb: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#FFFFFF',
   },
   widgetBottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 4,
   },
   widgetAddPill: {
     flex: 1,
-    height: 40,
+    height: 30,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
   widgetAddText: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: 'bold',
     color: '#205FE6',
   },
   widgetMicCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: '#4379EE',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
-  },
-
-  /* Wide Widget Preview Styles */
-  wideWidgetPreview: {
-    width: '100%',
-    height: 140,
-    borderRadius: 24,
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    shadowColor: '#1D4ED8',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  wideHeaderTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  wideSafeBadge: {
-    backgroundColor: '#93C5FD',
-    borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 1,
     marginLeft: 6,
   },
-  wideSafeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  wideMonthTag: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: '#BFDBFE',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  wideAmountText: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  wideBudgetTotal: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#BFDBFE',
-    marginBottom: 2,
-  },
-  segmentedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  segmentPill: {
-    width: 4.5,
-    height: 10,
-    borderRadius: 2.5,
-    marginRight: 2.5,
-  },
-  categoryPill: {
-    backgroundColor: '#2752B3',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginRight: 6,
-  },
-  categoryPillText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  wideRightCol: {
-    width: 72,
-    height: '100%',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginLeft: 6,
-  },
-  wideBigPlusCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: '#EBF3FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  wideMicPill: {
-    width: 66,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  /* Pin Button */
   pinActionBtn: {
-    marginTop: 12,
+    marginTop: 10,
     borderRadius: 14,
     overflow: 'hidden',
   },
   pinBtnGradient: {
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
   },
   pinBtnText: {
-    fontSize: 14,
-    fontWeight: '800',
     color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
 
-  /* Help Box */
+  /* Wide Widget Preview */
+  wideWidgetPreview: {
+    width: width - 64,
+    height: 120,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#1D4ED8',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  wideTitleText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  wideSafeBadge: {
+    backgroundColor: '#93C5FD',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    marginLeft: 6,
+  },
+  wideSafeText: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#1E3A8A',
+  },
+  wideBigAmount: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  wideSubtitleText: {
+    fontSize: 9,
+    color: '#DBEAFE',
+  },
+  wideSegmentTrack: {
+    width: '100%',
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#3B82F6',
+    flexDirection: 'row',
+    overflow: 'hidden',
+    marginVertical: 4,
+  },
+  wideSegmentFill: {
+    height: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+  categoryPillItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    maxWidth: 90,
+  },
+  categoryPillText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '600',
+  },
+  wideRightActionCol: {
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: '100%',
+    marginLeft: 8,
+  },
+  widePlusButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wideMicPill: {
+    width: 32,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#BFDBFE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /* Help Card */
   helpCard: {
-    backgroundColor: '#EFF6FF',
+    marginTop: 18,
+    backgroundColor: '#F8FAFC',
     borderRadius: 16,
     padding: 14,
-    marginTop: 16,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#E2E8F0',
   },
   helpTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#1E40AF',
+    fontWeight: '800',
+    color: '#1E293B',
   },
   helpText: {
     fontSize: 12,
-    color: '#475569',
+    color: '#64748B',
     marginBottom: 6,
+    fontWeight: '500',
   },
   helpBullet: {
-    fontSize: 11.5,
+    fontSize: 12,
     color: '#334155',
     lineHeight: 18,
-    marginTop: 2,
+    marginBottom: 4,
+  },
+  xiaomiNoteBox: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  xiaomiNoteText: {
+    fontSize: 11,
+    color: '#EA580C',
+    lineHeight: 16,
+    fontWeight: '600',
   },
 });
