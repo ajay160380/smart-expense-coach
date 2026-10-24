@@ -40,6 +40,7 @@ import { COLORS, RADIUS, SHADOW } from '../utils/theme';
 import { requestPinWidget } from 'react-native-android-widget';
 import { useTheme } from '../theme/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
+import WidgetSelectionModal from '../components/WidgetSelectionModal';
 
 export default function MoreFeaturesScreen({ navigation }) {
   const { isDark, colors, toggleTheme } = useTheme();
@@ -49,6 +50,8 @@ export default function MoreFeaturesScreen({ navigation }) {
   const [feedbackText, setFeedbackText] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [widgetModalVisible, setWidgetModalVisible] = useState(false);
+  const [cachedStats, setCachedStats] = useState(null);
 
   const adminCheckPhone = profile?.phone_number || profile?.whatsapp_number || '';
   const cleanAdminPhone = String(adminCheckPhone).replace(/\D/g, '');
@@ -476,24 +479,14 @@ export default function MoreFeaturesScreen({ navigation }) {
               icon="grid-outline"
               iconColor="#A855F7"
               title="Home Screen Widget"
-              desc="Pin 1-tap quick add button to home screen"
-              onPress={async () => {
-                try {
-                  const pinned = await requestPinWidget({ widgetName: 'AddExpenseWidget' });
-                  if (!pinned) {
-                    Alert.alert(
-                      'Pin Widget Manually',
-                      'Agar automatic pin support nahi hua, toh phone ki Home Screen par 2 second touch & hold karein -> "Widgets" select karein -> "Expense Tracker" widget ko drag karein.',
-                      [{ text: 'Theek hai' }]
-                    );
+              desc="Choose layout & pin widget to home screen"
+              onPress={() => {
+                AsyncStorage.getItem('dashboard_cache').then(c => {
+                  if (c) {
+                    try { setCachedStats(JSON.parse(c)?.stats || null); } catch (e) {}
                   }
-                } catch (e) {
-                  Alert.alert(
-                    'Pin Widget Manually',
-                    'Home Screen par 2 second touch & hold karein -> "Widgets" select karein -> "Expense Tracker" widget ko drag karein.',
-                    [{ text: 'Theek hai' }]
-                  );
-                }
+                });
+                setWidgetModalVisible(true);
               }}
             />
           )}
@@ -766,6 +759,14 @@ export default function MoreFeaturesScreen({ navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <WidgetSelectionModal
+        visible={widgetModalVisible}
+        onClose={() => setWidgetModalVisible(false)}
+        stats={cachedStats}
+        isDark={isDark}
+        colors={colors}
+      />
     </SafeAreaView>
   );
 }

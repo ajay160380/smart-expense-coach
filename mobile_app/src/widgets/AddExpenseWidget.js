@@ -1,16 +1,24 @@
 import React from 'react';
-import { FlexWidget, TextWidget } from 'react-native-android-widget';
+import { FlexWidget, TextWidget, SvgWidget } from 'react-native-android-widget';
 
 export function AddExpenseWidget({ stats = null }) {
-  const spentVal = stats?.total_spent ?? 0;
-  const budgetVal = stats?.budget ?? 20000;
-  const remainingVal = stats?.remaining ?? Math.max(0, budgetVal - spentVal);
-  const budgetPct = stats?.budget_percent ?? (budgetVal > 0 ? Math.min(100, Math.round((spentVal / budgetVal) * 100)) : 0);
+  const spentVal = stats?.total_spent ?? 1200;
+  const budgetVal = stats?.budget ?? 18800;
+  const budgetPct = stats?.budget_percent ?? (budgetVal > 0 ? Math.min(100, Math.round((spentVal / budgetVal) * 100)) : 6);
 
   const spentFormatted = Number(spentVal).toLocaleString('en-IN');
-  const remainingFormatted = Number(remainingVal).toLocaleString('en-IN');
+  const budgetFormatted = Number(budgetVal).toLocaleString('en-IN');
   const usedPct = Math.max(1, Math.min(100, Math.round(budgetPct)));
-  const leftPct = Math.max(1, 100 - usedPct);
+
+  // Status badge label
+  let statusBadge = 'SAFE';
+  if (budgetPct > 100) {
+    statusBadge = 'ALERT';
+  } else if (budgetPct > 80) {
+    statusBadge = 'WARN';
+  }
+
+  const micSvg = `<svg viewBox="0 0 24 24" width="22" height="22"><path fill="#ffffff" d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path fill="#ffffff" d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>`;
 
   return (
     <FlexWidget
@@ -20,19 +28,13 @@ export function AddExpenseWidget({ stats = null }) {
         flexDirection: 'column',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundGradient: {
-          from: '#FFFFFF',
-          to: '#F8FAFC',
-          orientation: 'TL_BR',
-        },
-        borderRadius: 26,
-        borderWidth: 1.5,
-        borderColor: '#E2E8F0',
-        padding: 12,
+        backgroundColor: '#205FE6',
+        borderRadius: 28,
+        padding: 16,
       }}
       clickAction="OPEN_ADD_EXPENSE"
     >
-      {/* ── Top Header Row: Brand & Status ── */}
+      {/* ── Top Header Row: Expense Tracker & SAFE ── */}
       <FlexWidget
         style={{
           width: 'match_parent',
@@ -41,140 +43,103 @@ export function AddExpenseWidget({ stats = null }) {
           alignItems: 'center',
         }}
       >
-        <FlexWidget
+        <TextWidget
+          text="Expense Tracker"
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
+            fontSize: 16,
+            color: '#FFFFFF',
+            fontWeight: 'bold',
           }}
-        >
-          <TextWidget
-            text="💳 PaisaMitra"
-            style={{
-              fontSize: 12,
-              color: '#0F172A',
-              fontWeight: 'bold',
-            }}
-          />
-        </FlexWidget>
+        />
 
         <FlexWidget
           style={{
-            backgroundColor: '#ECFDF5',
-            borderRadius: 8,
-            paddingHorizontal: 7,
-            paddingVertical: 2,
-            borderWidth: 1,
-            borderColor: '#A7F3D0',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 14,
+            paddingHorizontal: 12,
+            paddingVertical: 3,
           }}
         >
           <TextWidget
-            text="SAFE ⚡"
+            text={statusBadge}
             style={{
-              fontSize: 9,
-              color: '#059669',
+              fontSize: 11,
+              color: budgetPct > 100 ? '#EF4444' : '#205FE6',
               fontWeight: 'bold',
             }}
           />
         </FlexWidget>
       </FlexWidget>
 
-      {/* ── Center Section: Live Financial Snapshot & Runway ── */}
+      {/* ── Center Section: Big Amount, Subtitle & Progress Bar ── */}
       <FlexWidget
         style={{
           width: 'match_parent',
-          backgroundColor: '#F1F5F9',
-          borderRadius: 14,
-          paddingHorizontal: 10,
-          paddingVertical: 8,
           flexDirection: 'column',
-          borderWidth: 1,
-          borderColor: '#E2E8F0',
+          marginTop: 4,
+          marginBottom: 4,
         }}
       >
-        <FlexWidget
+        <TextWidget
+          text={`₹${spentFormatted}`}
           style={{
-            width: 'match_parent',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            fontSize: 38,
+            color: '#FFFFFF',
+            fontWeight: 'bold',
           }}
-        >
-          <TextWidget
-            text="THIS MONTH"
-            style={{
-              fontSize: 8.5,
-              color: '#64748B',
-              fontWeight: 'bold',
-              letterSpacing: 0.5,
-            }}
-          />
-          <TextWidget
-            text={`${usedPct}% of budget`}
-            style={{
-              fontSize: 8.5,
-              color: usedPct > 90 ? '#EF4444' : '#059669',
-              fontWeight: 'bold',
-            }}
-          />
-        </FlexWidget>
+        />
 
-        <FlexWidget
+        <TextWidget
+          text={`spent · ${budgetPct}% of ₹${budgetFormatted}`}
           style={{
-            width: 'match_parent',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 3,
+            fontSize: 13,
+            color: '#FFFFFF',
+            fontWeight: 'bold',
+            marginTop: 2,
           }}
-        >
-          <TextWidget
-            text={`₹${spentFormatted}`}
-            style={{
-              fontSize: 18,
-              color: '#0F172A',
-              fontWeight: 'bold',
-            }}
-          />
-          <TextWidget
-            text={`₹${remainingFormatted} left`}
-            style={{
-              fontSize: 10,
-              color: '#64748B',
-              fontWeight: 'bold',
-            }}
-          />
-        </FlexWidget>
+        />
 
-        {/* Dual Progress Bar using Flex ratio */}
+        {/* Progress Slider Track with round indicator */}
         <FlexWidget
           style={{
             width: 'match_parent',
-            height: 4,
-            borderRadius: 2,
-            marginTop: 6,
+            height: 10,
+            borderRadius: 5,
+            backgroundColor: '#4379EE',
+            marginTop: 12,
             flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 1,
           }}
         >
           <FlexWidget
             style={{
-              flex: usedPct,
-              height: 4,
-              backgroundColor: usedPct > 90 ? '#EF4444' : '#10B981',
-              borderRadius: 2,
+              flex: Math.max(1, Math.min(94, usedPct)),
+              height: 8,
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
             }}
-          />
+          >
+            <FlexWidget
+              style={{
+                width: 14,
+                height: 14,
+                borderRadius: 7,
+                backgroundColor: '#FFFFFF',
+              }}
+            />
+          </FlexWidget>
           <FlexWidget
             style={{
-              flex: leftPct,
-              height: 4,
-              backgroundColor: '#CBD5E1',
-              borderRadius: 2,
+              flex: Math.max(1, 100 - Math.min(94, usedPct)),
+              height: 8,
             }}
           />
         </FlexWidget>
       </FlexWidget>
 
-      {/* ── Bottom Section: 1-Tap Action Shortcuts ── */}
+      {/* ── Bottom Section: + Add Button & Voice Mic Button ── */}
       <FlexWidget
         style={{
           width: 'match_parent',
@@ -183,30 +148,24 @@ export function AddExpenseWidget({ stats = null }) {
           justifyContent: 'space-between',
         }}
       >
-        {/* Main Action: + Add Expense */}
+        {/* Main Action: + Add */}
         <FlexWidget
           style={{
             flex: 1,
-            height: 38,
-            backgroundGradient: {
-              from: '#7C3AED',
-              to: '#6366F1',
-              orientation: 'TL_BR',
-            },
-            borderRadius: 12,
+            height: 48,
+            backgroundColor: '#FFFFFF',
+            borderRadius: 24,
             flexDirection: 'row',
             justifyContent: 'center',
             alignItems: 'center',
-            borderWidth: 1,
-            borderColor: '#A78BFA',
           }}
           clickAction="OPEN_ADD_EXPENSE"
         >
           <TextWidget
-            text="+ Add Expense"
+            text="+ Add"
             style={{
-              fontSize: 11.5,
-              color: '#FFFFFF',
+              fontSize: 18,
+              color: '#205FE6',
               fontWeight: 'bold',
             }}
           />
@@ -215,22 +174,21 @@ export function AddExpenseWidget({ stats = null }) {
         {/* Voice Logging Shortcut: 🎙️ */}
         <FlexWidget
           style={{
-            width: 38,
-            height: 38,
-            backgroundColor: '#F3E8FF',
-            borderRadius: 12,
+            width: 48,
+            height: 48,
+            backgroundColor: '#4379EE',
+            borderRadius: 24,
             justifyContent: 'center',
             alignItems: 'center',
-            borderWidth: 1,
-            borderColor: '#DDD6FE',
-            marginLeft: 6,
+            marginLeft: 10,
           }}
           clickAction="OPEN_VOICE"
         >
-          <TextWidget
-            text="🎙️"
+          <SvgWidget
+            svg={micSvg}
             style={{
-              fontSize: 15,
+              width: 22,
+              height: 22,
             }}
           />
         </FlexWidget>

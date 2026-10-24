@@ -22,6 +22,8 @@ import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { requestWidgetUpdate } from 'react-native-android-widget';
 import { AddExpenseWidget } from '../widgets/AddExpenseWidget';
+import { WideExpenseWidget } from '../widgets/WideExpenseWidget';
+import WidgetSelectionModal from '../components/WidgetSelectionModal';
 import { useFocusEffect } from '@react-navigation/native';
 import api, { BASE_URL } from '../api/config';
 import { getUsername, clearAuthData, getToken } from '../utils/auth';
@@ -90,6 +92,7 @@ export default function DashboardScreen({ navigation }) {
   const [subsData, setSubsData] = useState(null);
   const [quickSavingGoalId, setQuickSavingGoalId] = useState(null);
   const [hideMicroSavingsWidget, setHideMicroSavingsWidget] = useState(false);
+  const [widgetModalVisible, setWidgetModalVisible] = useState(false);
 
   // ── LUXURY ULTRA-CLEAN ENTRANCE ANIMATIONS (NO CROOKED ROTATION) ──
   const animGreetingX = useRef(new Animated.Value(-20)).current;
@@ -572,12 +575,18 @@ export default function DashboardScreen({ navigation }) {
         subs: newSubs || subsData,
       }));
 
-      // ── 4. UPDATE ANDROID HOME SCREEN WIDGET ──
+      // ── 4. UPDATE ANDROID HOME SCREEN WIDGETS ──
       try {
-        if (newStats || stats) {
+        const liveStats = newStats || stats;
+        if (liveStats) {
           requestWidgetUpdate({
             widgetName: 'AddExpenseWidget',
-            renderWidget: () => <AddExpenseWidget stats={newStats || stats} />,
+            renderWidget: () => <AddExpenseWidget stats={liveStats} />,
+            widgetNotFound: () => {},
+          });
+          requestWidgetUpdate({
+            widgetName: 'WideExpenseWidget',
+            renderWidget: () => <WideExpenseWidget stats={liveStats} />,
             widgetNotFound: () => {},
           });
         }
@@ -1232,9 +1241,21 @@ export default function DashboardScreen({ navigation }) {
                 </View>
                 <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]}>Smart Financial Widgets</Text>
               </View>
-              <View style={[styles.widgetLivePill, isDark && { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                <View style={styles.widgetLiveDot} />
-                <Text style={[styles.widgetLiveText, isDark && { color: '#34D399' }]}>LIVE</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {Platform.OS === 'android' && (
+                  <TouchableOpacity
+                    style={[styles.pinHomePill, isDark && { backgroundColor: 'rgba(37, 99, 235, 0.18)', borderColor: '#3B82F6' }]}
+                    onPress={() => setWidgetModalVisible(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="add" size={12} color={isDark ? '#60A5FA' : '#2563EB'} />
+                    <Text style={[styles.pinHomeText, isDark && { color: '#60A5FA' }]}>Pin to Home</Text>
+                  </TouchableOpacity>
+                )}
+                <View style={[styles.widgetLivePill, isDark && { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                  <View style={styles.widgetLiveDot} />
+                  <Text style={[styles.widgetLiveText, isDark && { color: '#34D399' }]}>LIVE</Text>
+                </View>
               </View>
             </View>
 
@@ -2111,6 +2132,14 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <WidgetSelectionModal
+        visible={widgetModalVisible}
+        onClose={() => setWidgetModalVisible(false)}
+        stats={stats}
+        isDark={isDark}
+        colors={colors}
+      />
     </View>
   );
 }
@@ -3784,6 +3813,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(124, 58, 237, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pinHomePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    gap: 3,
+  },
+  pinHomeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#2563EB',
   },
   widgetLivePill: {
     flexDirection: 'row',

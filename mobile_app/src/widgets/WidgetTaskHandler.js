@@ -2,9 +2,11 @@ import React from 'react';
 import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AddExpenseWidget } from './AddExpenseWidget';
+import { WideExpenseWidget } from './WideExpenseWidget';
 
 export async function widgetTaskHandler(props) {
   const widgetAction = props.widgetAction;
+  const widgetName = props.widgetInfo?.widgetName;
 
   switch (widgetAction) {
     case 'WIDGET_ADDED':
@@ -19,7 +21,11 @@ export async function widgetTaskHandler(props) {
         }
       } catch (e) {}
 
-      props.renderWidget(<AddExpenseWidget stats={stats} />);
+      if (widgetName === 'WideExpenseWidget') {
+        props.renderWidget(<WideExpenseWidget stats={stats} />);
+      } else {
+        props.renderWidget(<AddExpenseWidget stats={stats} />);
+      }
       break;
     }
 

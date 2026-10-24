@@ -261,13 +261,21 @@ _HINDI_UNITS = {
     'sattanave':97,'sattanbe':97,'सत्तानवे':97,
     'atthanave':98,'atthanbe':98,'अट्ठानवे':98,
     'ninanave':99,'ninyanbe':99,'निन्यानवे':99,
+
+    # ── English Number Words (0-90) ──
+    'zero':0, 'one':1, 'two':2, 'three':3, 'four':4, 'five':5,
+    'six':6, 'seven':7, 'eight':8, 'nine':9, 'ten':10,
+    'eleven':11, 'twelve':12, 'thirteen':13, 'fourteen':14, 'fifteen':15,
+    'sixteen':16, 'seventeen':17, 'eighteen':18, 'nineteen':19,
+    'twenty':20, 'thirty':30, 'forty':40, 'fifty':50,
+    'sixty':60, 'seventy':70, 'eighty':80, 'ninety':90,
 }
 
 # Multipliers (×100, ×1000 etc.) — used for compound number parsing
 _HINDI_MULTIPLIERS = {
-    'sau':100,'sou':100,'so':100,'सौ':100,'saw':100,'saww':100,'sow':100,
-    'hazar':1000,'hajaar':1000,'hajar':1000,'hazaar':1000,'हजार':1000,'हज़ार':1000,
-    'lakh':100000,'lac':100000,'लाख':100000,
+    'sau':100,'sou':100,'so':100,'सौ':100,'saw':100,'saww':100,'sow':100,'hundred':100,
+    'hazar':1000,'hajaar':1000,'hajar':1000,'hazaar':1000,'हजार':1000,'हज़ार':1000,'thousand':1000,'k':1000,
+    'lakh':100000,'lac':100000,'लाख':100000,'million':1000000,
     'karod':10000000,'crore':10000000,'krod':10000000,'करोड़':10000000,'करोड':10000000,
 }
 
@@ -547,16 +555,18 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     - Recent Notes: {user_context.get('recent_notes', 'None')}
 
     Rules for Routing (CRITICAL):
-    1. If the user EXPLICITLY asks to log expenses (e.g. "add to expenses", "is list ko expense me add karo") OR gives a simple short expense (e.g. "500 petrol"):
+    1. EXPENSE RECORDING (HIGHEST PRIORITY):
+       Whenever the user mentions ANY expense, purchase, money spent, paid, bought, or incurred (e.g. "500 petrol", "200 chai", "swiggy se 450 ka khana", "maine 300 rupaye khana khaya", "doodh 60 ka", "bought medicine for 350", "uber cab 280 rupaye de diye", "pizza 450"):
        - action = "log_expenses"
-       - expenses = An array of expense objects. Extract EVERY SINGLE item mentioned in their message (amount, category, description). Do NOT miss any item from a list!
+       - expenses = An array of expense objects: [{"amount": 500, "category": "transport", "description": "Petrol"}]. Extract EVERY SINGLE item mentioned.
+       - NEVER classify a message mentioning an amount of money spent as "chat"! Always set action="log_expenses".
     2. If the user EXPLICITLY asks to save a note (e.g. "save to notepad", "notepad me daal do", "note: buy milk"):
        - action = "save_note"
        - note = The exact text they want to save.
     3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
        - action = "ask_clarification"
        - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
-    4. FOR ALL OTHER CONVERSATIONS, QUESTIONS, CHIT-CHAT, COMPLAINTS, OR CASUAL TALK:
+    4. ONLY FOR PURE CONVERSATION, GREETINGS, CHIT-CHAT, OR QUESTIONS WITHOUT ANY EXPENSES (e.g. "hi", "kaise ho", "kya chal raha hai", "good morning"):
        - action = "chat"
        - chat_response = your natural, conversational, polite Hinglish reply.
          - Address the user by their name ({user_name}) when appropriate!
@@ -1734,39 +1744,58 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
 def _check_greeting(text: str) -> bool:
     return _get_smart_greeting_response(text, "User") is not None
 
+def _clean_expense_desc(desc: str) -> str:
+    desc = re.sub(r'^(?:aaj|kal|maine|mene|meine|humne|hamne|i\s+paid|i\s+spent|spent|paid|bought|got)\s+', '', desc, flags=re.IGNORECASE)
+    desc = re.sub(r'^(?:for|ka|ki|ke|on|ke\s*liye|mein|me|pe|se|par)\s+', '', desc, flags=re.IGNORECASE)
+    for _ in range(2):
+        desc = re.sub(r'(?:^\s*|\s+)(?:de\s*diye|de\s*diya|de\s*di|diya|diye|pay\s*kiya|paid|spent|kharcha|kharche|kharch\s*kiye?|kharch\s*huye|liye|liya|mangwaya|lag\s*gaye|laga)$', '', desc, flags=re.IGNORECASE)
+        desc = re.sub(r'(?:^\s*|\s+)(?:for|ka|ki|ke|on|ke\s*liye|mein|me|pe|se|par)$', '', desc, flags=re.IGNORECASE)
+    desc = re.sub(r'^(?:rs\.?|inr|rupees?|rupaye?)\s*', '', desc, flags=re.IGNORECASE)
+    return desc.strip()
+
 def _extract_single_expense(text: str):
     clean = text.strip()
     clean = re.sub(r'^[₹\s]+', '', clean, flags=re.IGNORECASE)
     clean = re.sub(r'^(?:rs\.?|inr)\s*', '', clean, flags=re.IGNORECASE).strip()
-    
+    clean = re.sub(r'^(?:aaj\s+maine|aaj\s+mene|maine|mene|meine|humne|hamne|i\s+paid|i\s+spent)\s+', '', clean, flags=re.IGNORECASE).strip()
+
     # 1. Pattern: [Amount] [optional currency] [optional prep] [Description]
-    m1 = re.match(r'^(\d+(?:\.\d+)?)\s*(?:rs\.?|rupaye?|inr|/-)?\s*(?:for|ka|on|ke\s*liye|mein)?\s+(.+)$', clean, flags=re.IGNORECASE)
+    m1 = re.match(r'^(\d+(?:\.\d+)?)\s*(?:rs\.?|rupaye?|rupees?|inr|/-)?\s*(?:for|ka|ki|ke|on|ke\s*liye|mein|me|pe)?\s+(.+)$', clean, flags=re.IGNORECASE)
     if m1:
         try:
             amt = Decimal(m1.group(1))
-            desc = m1.group(2).strip()
-            desc = re.sub(r'^(?:for|ka|on|ke\s*liye|mein)\s+', '', desc, flags=re.IGNORECASE)
-            desc = re.sub(r'\s+(?:de\s*diya|diya|paid|spent)$', '', desc, flags=re.IGNORECASE)
+            desc = _clean_expense_desc(m1.group(2))
             if amt > 0 and len(desc) >= 2:
                 return amt, desc
         except Exception:
             pass
-            
-    # 2. Pattern: [Description] [optional prep] [Amount] [optional currency]
-    m2 = re.match(r'^(.+?)\s+(?:for|ka|on|ke\s*liye|mein)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|rupaye?|inr|/-)?$', clean, flags=re.IGNORECASE)
+
+    # 2. Pattern: [Description] [optional prep] [Amount] [optional currency] [optional trailing action]
+    m2 = re.match(r'^(.+?)\s+(?:for|ka|ki|ke|on|ke\s*liye|mein|me|pe)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|rupaye?|rupees?|inr|/-)?(?:\s+(?:ka|ki|ke|de\s*diye|de\s*diya|de\s*di|diya|diye|spent|paid|lag\s*gaye|laga|kharcha|kharche))?$', clean, flags=re.IGNORECASE)
     if m2:
         try:
-            desc = m2.group(1).strip()
+            desc = _clean_expense_desc(m2.group(1))
             amt = Decimal(m2.group(2))
-            desc = re.sub(r'^(?:paid|spent|de\s*diya)\s+', '', desc, flags=re.IGNORECASE)
-            desc = re.sub(r'\s+(?:for|ka|on|ke\s*liye|mein)$', '', desc, flags=re.IGNORECASE)
-            desc = re.sub(r'^(?:rs\.?|inr)\s*', '', desc, flags=re.IGNORECASE).strip()
             if amt > 0 and len(desc) >= 2 and not any(kw in desc.lower() for kw in ['trip', 'split', 'note', 'link', 'summary', 'kharcha', 'report', 'budget']):
                 return amt, desc
         except Exception:
             pass
 
+    # 3. Pattern: Middle Amount: [Prefix] [Amount] [Suffix] (e.g., 'swiggy se 450 ka khana', 'petrol par 500 kharche')
+    m3 = re.match(r'^(.+?)\s+(?:se|ke\s*liye|mein|me|pe|par)?\s*(\d+(?:\.\d+)?)\s*(?:rs\.?|rupaye?|rupees?|inr|/-)?\s*(?:ka|ki|ke|for|on)?\s+(.+)$', clean, flags=re.IGNORECASE)
+    if m3:
+        try:
+            p1 = _clean_expense_desc(m3.group(1))
+            amt = Decimal(m3.group(2))
+            p2 = _clean_expense_desc(m3.group(3))
+            combined_desc = f"{p1} {p2}".strip() if p1 and p2 else (p1 or p2)
+            if amt > 0 and len(combined_desc) >= 2 and not any(kw in combined_desc.lower() for kw in ['trip', 'split', 'note', 'link', 'summary', 'budget']):
+                return amt, combined_desc
+        except Exception:
+            pass
+
     return None, None
+
 
 
 @csrf_exempt
@@ -1813,27 +1842,48 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         
         if audio_file:
             try:
-                # Save uploaded file temporarily to pass to Groq
-                with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.name)[1]) as temp_audio:
+                # Ensure valid audio extension for Groq Whisper
+                orig_name = getattr(audio_file, 'name', '') or 'voice_recording.m4a'
+                ext = os.path.splitext(orig_name)[1].lower()
+                if ext not in ['.m4a', '.mp3', '.webm', '.wav', '.ogg', '.flac', '.mp4']:
+                    ext = '.m4a'
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_audio:
                     for chunk in audio_file.chunks():
                         temp_audio.write(chunk)
                     temp_audio_path = temp_audio.name
                 
-                logger.info("Transcribing audio file via Groq Whisper...")
+                logger.info("Transcribing audio file via Groq Whisper (%s)...", ext)
                 with open(temp_audio_path, "rb") as file:
+                    audio_bytes = file.read()
+
+                whisper_prompt = (
+                    "PaisaMitra expense tracker. Output numbers as digits: "
+                    "500 petrol, 200 chai, 150 auto, 1200 grocery, 450 pizza, "
+                    "300 khana, 2500 rent, 80 snacks, 2000 shopping, 350 medicine."
+                )
+
+                try:
                     translation = _groq_client().audio.transcriptions.create(
-                        file=(audio_file.name, file.read()),
-                        model="whisper-large-v3",
-                        language="hi",  # Explicitly set to Hindi for better accuracy
-                        prompt="Yeh ek expense tracking app hai. User Hindi ya Hinglish mein bolta hai, jaise '500 petrol', 'teen sau rupaye khaana', 'do hazar ka shopping'.",
+                        file=(f"audio{ext}", audio_bytes),
+                        model="whisper-large-v3-turbo",
+                        prompt=whisper_prompt,
                     )
-                    spoken_text = translation.text.strip()
-                    logger.info("Transcription result: %s", spoken_text)
+                except Exception as e_turbo:
+                    logger.warning("whisper-large-v3-turbo failed, falling back to whisper-large-v3: %s", e_turbo)
+                    translation = _groq_client().audio.transcriptions.create(
+                        file=(f"audio{ext}", audio_bytes),
+                        model="whisper-large-v3",
+                        prompt=whisper_prompt,
+                    )
+
+                spoken_text = translation.text.strip()
+                logger.info("Transcription result: %s", spoken_text)
                     
                 os.remove(temp_audio_path)
             except Exception as e:
                 logger.error("Audio transcription failed: %s", e)
-                return JsonResponse({"status": "error", "message": "Failed to transcribe audio. Please try again."}, status=500)
+                return JsonResponse({"status": "error", "message": "Failed to transcribe audio. Please try speaking again."}, status=500)
         else:
             # If they sent multipart without an audio file, maybe they just sent text
             spoken_text = str(request.POST.get("text", "")).strip()
@@ -2078,6 +2128,18 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "status": "success",
                 "message": "\n".join(msg_lines),
                 "expense_id": expense.pk,
+                "transcription": spoken_text,
+                "action": "log_expenses",
+                "expense": {
+                    "id": expense.pk,
+                    "amount": float(expense.amount),
+                    "category": expense.category,
+                    "category_icon": icon,
+                    "description": expense.description or expense.category.title(),
+                    "date": str(expense.date),
+                    "total_spent_month": new_spent,
+                    "remaining_budget": new_rem,
+                }
             })
 
         # ── 3. HYPER-FAST TODAY SUMMARY (0.01s) ──
@@ -2312,6 +2374,18 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     "status": "success",
                     "message": final_message,
                     "expense_id": expense.pk,
+                    "transcription": spoken_text,
+                    "action": "log_expenses",
+                    "expense": {
+                        "id": expense.pk,
+                        "amount": float(expense.amount),
+                        "category": expense.category,
+                        "category_icon": icon,
+                        "description": expense.description or expense.category.title(),
+                        "date": str(expense.date),
+                        "total_spent_month": new_spent,
+                        "remaining_budget": new_rem,
+                    }
                 })
 
         # ──────────────────────────────────────────────────────────────────────
@@ -2598,6 +2672,20 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
         action = ai_data.get("action", "chat")
 
+        # Safety net: If AI mistakenly flagged action as 'chat' but an amount/expense is clearly present:
+        if action == "chat":
+            has_num = bool(re.search(r'\b\d+(?:\.\d+)?\b', normalized_text or spoken_text))
+            if has_num:
+                s_amt, s_desc = _extract_single_expense(normalized_text or spoken_text)
+                if s_amt and s_desc:
+                    action = "log_expenses"
+                    ai_data["action"] = "log_expenses"
+                    ai_data["expenses"] = [{
+                        "amount": float(s_amt),
+                        "category": _keyword_category_fallback(s_desc),
+                        "description": s_desc
+                    }]
+
         # Save history back to session (using conversational text for natural context)
         chat_history.append({"role": "user", "content": normalized_text})
         saved_assistant = ai_data.get("chat_response") if action == "chat" else (json_str or json.dumps(ai_data))
@@ -2720,6 +2808,18 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "status": "success",
                 "message": final_message,
                 "expense_id": created_expenses[0].pk,
+                "transcription": spoken_text,
+                "action": "log_expenses",
+                "expense": {
+                    "id": created_expenses[0].pk,
+                    "amount": float(total_logged),
+                    "category": created_expenses[0].category,
+                    "category_icon": CAT_ICONS.get(created_expenses[0].category, "📦"),
+                    "description": created_expenses[0].description or created_expenses[0].category.title(),
+                    "date": str(created_expenses[0].date),
+                    "total_spent_month": new_spent,
+                    "remaining_budget": new_rem,
+                }
             })
             
         elif action == "save_note":
@@ -2731,6 +2831,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             return JsonResponse({
                 "status": "success",
                 "message": f"📝 *Note Saved Successfully!*\n\n\"{note_text[:50]}...\"\n\nYou can view all your notes in the Web App or Mobile App.",
+                "transcription": spoken_text,
+                "action": "save_note",
             })
             
         elif action == "ask_clarification":
@@ -2747,7 +2849,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     pass
             return JsonResponse({
                 "status": "success",
-                "message": final_msg
+                "message": final_msg,
+                "transcription": spoken_text,
+                "action": "ask_clarification",
             })
             
         else:
@@ -2768,7 +2872,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
             return JsonResponse({
                 "status": "success",
-                "message": final_chat_msg
+                "message": final_chat_msg,
+                "transcription": spoken_text,
+                "action": "chat",
+                "is_chat": True
             })
 
     except json.JSONDecodeError as e:

@@ -57,6 +57,14 @@
               "minHeight": "140dp",
               "description": "Quickly add an expense",
               "updatePeriodMillis": 3600000
+            },
+            {
+              "name": "WideExpenseWidget",
+              "label": "Expense Tracker Wide",
+              "minWidth": "280dp",
+              "minHeight": "110dp",
+              "description": "Wide expense tracker with quick add",
+              "updatePeriodMillis": 3600000
             }
           ]
         }
