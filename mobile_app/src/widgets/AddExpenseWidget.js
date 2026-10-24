@@ -90,9 +90,9 @@ export function AddExpenseWidget({ stats = null }) {
           }}
         />
 
-        {/* Hindi/English clean subtitle */}
+        {/* English clean subtitle */}
         <TextWidget
-          text={`खर्च · ${budgetPct}% (बजट ₹${budgetFormatted})`}
+          text={`spent · ${budgetPct}% of ₹${budgetFormatted}`}
           style={{
             fontSize: 10,
             color: '#DCE7FE',

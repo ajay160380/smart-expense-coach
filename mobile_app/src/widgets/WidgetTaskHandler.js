@@ -13,24 +13,16 @@ export async function widgetTaskHandler(props) {
     case 'WIDGET_UPDATE':
     case 'WIDGET_RESIZED': {
       let stats = null;
-      let preferredLayout = 'AddExpenseWidget';
       try {
         const cached = await AsyncStorage.getItem('dashboard_cache');
         if (cached) {
           const parsed = JSON.parse(cached);
           stats = parsed?.stats || null;
         }
-        const pref = await AsyncStorage.getItem('preferred_widget_layout');
-        if (pref) preferredLayout = pref;
       } catch (e) {}
 
-      // Render wide if widget is WideExpenseWidget, user chose Wide, or width is resized wide (> 220dp)
-      const isWide =
-        widgetName === 'WideExpenseWidget' ||
-        preferredLayout === 'WideExpenseWidget' ||
-        (props.widgetInfo?.width && props.widgetInfo.width > 220);
-
-      if (isWide) {
+      // Dedicated rendering: 2x2 always renders AddExpenseWidget, 4x2 always renders WideExpenseWidget
+      if (widgetName === 'WideExpenseWidget') {
         props.renderWidget(<WideExpenseWidget stats={stats} />);
       } else {
         props.renderWidget(<AddExpenseWidget stats={stats} />);

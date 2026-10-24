@@ -63,8 +63,8 @@ export default function WidgetSelectionModal({
 
     if (Platform.OS !== 'android') {
       Alert.alert(
-        'Android फ़ीचर',
-        'Android Home Screen Widgets केवल Android फ़ोन पर उपलब्ध हैं।'
+        'Android Feature',
+        'Home screen widgets are supported on Android devices.'
       );
       return;
     }
@@ -72,10 +72,10 @@ export default function WidgetSelectionModal({
     setPinning(true);
 
     try {
-      // 1. Save user preference for widget layout
+      // 1. Save user selection
       await AsyncStorage.setItem('preferred_widget_layout', widgetName);
 
-      // 2. Trigger widget update so active widgets adapt immediately
+      // 2. Trigger updates
       try {
         await requestWidgetUpdate({ widgetName: 'AddExpenseWidget' });
       } catch (e) {}
@@ -88,37 +88,35 @@ export default function WidgetSelectionModal({
       try {
         pinned = await requestPinWidget({ widgetName });
       } catch (pinErr) {
-        // If WideExpenseWidget is not found in older APK, fallback to AddExpenseWidget
+        // If WideExpenseWidget is not found in the currently installed APK, inform user gracefully
         if (widgetName === 'WideExpenseWidget') {
-          try {
-            pinned = await requestPinWidget({ widgetName: 'AddExpenseWidget' });
-          } catch (fbErr) {
-            pinned = false;
-          }
+          pinned = false;
         }
       }
 
       setPinning(false);
 
+      const widgetTitle = widgetName === 'WideExpenseWidget' ? 'Expense Tracker Wide (4x2)' : 'Expense Tracker (2x2)';
+
       if (pinned) {
         Alert.alert(
-          'विजेट जोड़ने का अनुरोध भेजा गया! 🎉',
-          'आपकी होम स्क्रीन पर विजेट जोड़ने का प्रॉम्प्ट आ गया है। कृपया "Add" या "Confirm" पर टैप करें।',
-          [{ text: 'ठीक है', onPress: onClose }]
+          'Widget Pin Request Sent! 🎉',
+          `A prompt to add "${widgetTitle}" has been sent to your home screen. Please tap "Add" or "Confirm" on the popup.`,
+          [{ text: 'OK', onPress: onClose }]
         );
       } else {
         Alert.alert(
-          'विजेट कैसे लगाएं',
-          'होम स्क्रीन पर 2 सेकंड दबाकर रखें (Touch & Hold) ➔ नीचे "Widgets" चुनें ➔ "Expense Tracker" को होम स्क्रीन पर लाएं।\n\n📌 Xiaomi / POCO / Redmi यूज़र्स:\nफ़ोन Settings ➔ Apps ➔ Manage Apps ➔ Expense Tracker ➔ Other Permissions में जाकर "Home screen shortcuts" को Allow कर दें।',
-          [{ text: 'समझ गया', onPress: onClose }]
+          'How to Add Widget',
+          `1. Long press (Touch & Hold) on an empty area of your Home Screen.\n2. Tap "Widgets" at the bottom.\n3. Scroll down to "Expense Tracker" and drag "${widgetTitle}" to your screen!\n\n📌 Xiaomi / Redmi / POCO users:\nPlease ensure "Home screen shortcuts" permission is allowed in Settings ➔ Apps ➔ Manage Apps ➔ Expense Tracker ➔ Other Permissions.`,
+          [{ text: 'Got it', onPress: onClose }]
         );
       }
     } catch (err) {
       setPinning(false);
       Alert.alert(
-        'विजेट कैसे लगाएं',
-        'होम स्क्रीन पर 2 सेकंड दबाकर रखें ➔ "Widgets" चुनें ➔ "Expense Tracker" को होम स्क्रीन पर ड्रैग करें।',
-        [{ text: 'समझ गया', onPress: onClose }]
+        'Add Widget Manually',
+        'Touch & hold your Home Screen ➔ tap "Widgets" ➔ drag "Expense Tracker" to your screen.',
+        [{ text: 'OK', onPress: onClose }]
       );
     }
   };
@@ -135,14 +133,14 @@ export default function WidgetSelectionModal({
           {/* Top handle bar */}
           <View style={styles.handleBar} />
 
-          {/* Header in Pure Hindi */}
+          {/* Header in English */}
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.sheetTitle, isDark && { color: '#F8FAFC' }]}>
-                होम स्क्रीन विजेट
+                Add Widget to Home Screen
               </Text>
               <Text style={[styles.sheetSubtitle, isDark && { color: '#94A3B8' }]}>
-                अपनी पसंद का विजेट चुनें और होम स्क्रीन पर लगाएं
+                Choose your favorite widget layout to place on your home screen
               </Text>
             </View>
             <TouchableOpacity
@@ -175,14 +173,14 @@ export default function WidgetSelectionModal({
                   </View>
                   <View style={{ marginLeft: 10 }}>
                     <Text style={[styles.optionTitle, isDark && { color: '#F8FAFC' }]}>
-                      2x2 चौकोर विजेट (Square)
+                      2x2 Compact Widget (Square)
                     </Text>
-                    <Text style={styles.optionSubtitle}>कॉम्पैक्ट लेआउट • खर्च राशि, बजट मीटर और +Add</Text>
+                    <Text style={styles.optionSubtitle}>Spent Amount, Budget Progress Bar & Quick Add</Text>
                   </View>
                 </View>
 
                 <View style={styles.badgePill}>
-                  <Text style={styles.badgePillText}>अनुशंसित</Text>
+                  <Text style={styles.badgePillText}>RECOMMENDED</Text>
                 </View>
               </View>
 
@@ -201,7 +199,7 @@ export default function WidgetSelectionModal({
                   <View style={{ marginTop: 4 }}>
                     <Text style={styles.widgetBigAmount}>₹{spentFormatted}</Text>
                     <Text style={styles.widgetSpentSubtitle}>
-                      खर्च · {budgetPct}% (बजट ₹{budgetFormatted})
+                      spent · {budgetPct}% of ₹{budgetFormatted}
                     </Text>
 
                     {/* Progress Track with Round Thumb */}
@@ -242,7 +240,7 @@ export default function WidgetSelectionModal({
                   style={styles.pinBtnGradient}
                 >
                   <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.pinBtnText}>✨ यह 2x2 विजेट स्क्रीन पर लगाएं</Text>
+                  <Text style={styles.pinBtnText}>✨ Add 2x2 Square Widget</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -265,14 +263,14 @@ export default function WidgetSelectionModal({
                   </View>
                   <View style={{ marginLeft: 10 }}>
                     <Text style={[styles.optionTitle, isDark && { color: '#F8FAFC' }]}>
-                      4x2 वाइड विजेट (Wide Banner)
+                      4x2 Wide Banner Widget
                     </Text>
-                    <Text style={styles.optionSubtitle}>फुल हॉरिजॉन्टल लेआउट • हालिया खर्च और माइक</Text>
+                    <Text style={styles.optionSubtitle}>Full Landscape Layout • Budget Bar, Recent Items & Mic</Text>
                   </View>
                 </View>
 
                 <View style={[styles.badgePill, { backgroundColor: '#EDE9FE' }]}>
-                  <Text style={[styles.badgePillText, { color: '#7C3AED' }]}>पॉपुलर</Text>
+                  <Text style={[styles.badgePillText, { color: '#7C3AED' }]}>POPULAR</Text>
                 </View>
               </View>
 
@@ -286,7 +284,7 @@ export default function WidgetSelectionModal({
                 >
                   <View style={{ flex: 1, justifyContent: 'space-between' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={styles.wideTitleText}>Expense</Text>
+                      <Text style={styles.wideTitleText}>Expense Tracker</Text>
                       <View style={styles.wideSafeBadge}>
                         <Text style={styles.wideSafeText}>SAFE</Text>
                       </View>
@@ -295,7 +293,7 @@ export default function WidgetSelectionModal({
                     <View style={{ marginVertical: 3 }}>
                       <Text style={styles.wideBigAmount}>₹{spentFormatted}</Text>
                       <Text style={styles.wideSubtitleText}>
-                        बजट ₹{budgetFormatted} ({budgetPct}%)
+                        Total Budget ₹{budgetFormatted} ({budgetPct}%)
                       </Text>
                     </View>
 
@@ -345,39 +343,39 @@ export default function WidgetSelectionModal({
                   style={styles.pinBtnGradient}
                 >
                   <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.pinBtnText}>✨ यह 4x2 वाइड विजेट लगाएं</Text>
+                  <Text style={styles.pinBtnText}>✨ Add 4x2 Wide Widget</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
 
             {/* ════════════════════════════════════════════════════
-                MANUAL GUIDE CARD IN PURE HINDI
+                MANUAL GUIDE CARD IN CLEAN ENGLISH
             ════════════════════════════════════════════════════ */}
             <View style={[styles.helpCard, isDark && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                 <Ionicons name="information-circle-outline" size={18} color="#3B82F6" style={{ marginRight: 6 }} />
                 <Text style={[styles.helpTitle, isDark && { color: '#93C5FD' }]}>
-                  विजेट लगाने का आसान तरीका
+                  How to Add Widget to Home Screen
                 </Text>
               </View>
 
               <Text style={[styles.helpText, isDark && { color: '#94A3B8' }]}>
-                अगर बटन दबाने पर विजेट अपने आप न जुड़े:
+                If the automatic button doesn't pop up:
               </Text>
               <Text style={[styles.helpBullet, isDark && { color: '#CBD5E1' }]}>
-                1. फ़ोन की होम स्क्रीन पर किसी भी खाली जगह पर 2 सेकंड तक दबाकर रखें (Touch & Hold)।
+                1. Long press (Touch & Hold) on any empty area on your phone's Home Screen.
               </Text>
               <Text style={[styles.helpBullet, isDark && { color: '#CBD5E1' }]}>
-                2. नीचे "Widgets" (विजेट्स) विकल्प पर टैप करें।
+                2. Tap "Widgets" at the bottom of the screen.
               </Text>
               <Text style={[styles.helpBullet, isDark && { color: '#CBD5E1' }]}>
-                3. "Expense Tracker" खोजें और विजेट को अपनी होम स्क्रीन पर ड्रैग करके रख दें!
+                3. Scroll down to "Expense Tracker" and drag your desired widget to the Home Screen!
               </Text>
 
               <View style={styles.xiaomiNoteBox}>
                 <Text style={styles.xiaomiNoteText}>
-                  📌 Redmi / POCO / Xiaomi यूज़र्स ध्यान दें:{'\n'}
-                  अगर विजेट ऑटोमैटिक ऐड न हो, तो फ़ोन Settings ➔ Apps ➔ Manage Apps ➔ Expense Tracker ➔ Other Permissions में जाकर "Home screen shortcuts" को Allow कर दें।
+                  📌 Note for Xiaomi / POCO / Redmi users:{'\n'}
+                  If the widget doesn't pin automatically, go to phone Settings ➔ Apps ➔ Manage Apps ➔ Expense Tracker ➔ Other Permissions, and set "Home screen shortcuts" to "Always Allow".
                 </Text>
               </View>
             </View>
