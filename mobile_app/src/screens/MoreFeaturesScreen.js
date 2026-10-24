@@ -41,6 +41,7 @@ import { requestPinWidget } from 'react-native-android-widget';
 import { useTheme } from '../theme/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 import WidgetSelectionModal from '../components/WidgetSelectionModal';
+import { checkAppVersion, downloadAndInstallLatestApk, subscribeToUpdateStatus, CURRENT_APP_VERSION } from '../utils/versionCheck';
 
 export default function MoreFeaturesScreen({ navigation }) {
   const { isDark, colors, toggleTheme } = useTheme();
@@ -52,6 +53,17 @@ export default function MoreFeaturesScreen({ navigation }) {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [widgetModalVisible, setWidgetModalVisible] = useState(false);
   const [cachedStats, setCachedStats] = useState(null);
+  const [updateInfo, setUpdateInfo] = useState(null);
+
+  useEffect(() => {
+    const unsub = subscribeToUpdateStatus((status) => {
+      setUpdateInfo(status);
+    });
+    checkAppVersion(true).then((res) => {
+      if (res) setUpdateInfo(res);
+    });
+    return unsub;
+  }, []);
 
   const adminCheckPhone = profile?.phone_number || profile?.whatsapp_number || '';
   const cleanAdminPhone = String(adminCheckPhone).replace(/\D/g, '');
@@ -273,6 +285,41 @@ export default function MoreFeaturesScreen({ navigation }) {
             </View>
           </LinearGradient>
         </TouchableOpacity>
+
+        {/* ── UPDATE HIGHLIGHT BANNER (When new APK is available) ── */}
+        {updateInfo?.hasUpdate && (
+          <TouchableOpacity
+            style={styles.updateHighlightBanner}
+            activeOpacity={0.88}
+            onPress={() => downloadAndInstallLatestApk(updateInfo.apkUrl)}
+          >
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.updateHighlightGrad}
+            >
+              <View style={styles.updateIconCircle}>
+                <Ionicons name="cloud-download" size={20} color="#059669" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.updateHighlightTitle}>New Version Available!</Text>
+                  <View style={styles.updateVersionPill}>
+                    <Text style={styles.updateVersionPillText}>v{updateInfo.latestVersion}</Text>
+                  </View>
+                </View>
+                <Text style={styles.updateHighlightDesc} numberOfLines={2}>
+                  {updateInfo.releaseNotes || 'Tap to download and install the new APK directly.'}
+                </Text>
+              </View>
+              <View style={styles.updateInstallBtn}>
+                <Text style={styles.updateInstallBtnText}>Install</Text>
+                <Ionicons name="arrow-down-circle" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
 
         {/* ── SECTION 1: AI & SMART FINANCE ── */}
         <View style={styles.sectionHeader}>
@@ -517,25 +564,22 @@ export default function MoreFeaturesScreen({ navigation }) {
           />
           <ListItem
             icon="cloud-download-outline"
-            iconColor="#06B6D4"
-            title="Check for App Updates"
-            desc="OTA updates via EAS Cloud"
-            badge="v1.3.1"
-            badgeColor="#06B6D4"
+            iconColor={updateInfo?.hasUpdate ? '#10B981' : '#06B6D4'}
+            title={updateInfo?.hasUpdate ? "New APK Available! 🚀" : "App Version & Updates"}
+            desc={updateInfo?.hasUpdate ? `Tap to install v${updateInfo.latestVersion}` : `v${CURRENT_APP_VERSION} • Tap to check for updates`}
+            badge={updateInfo?.hasUpdate ? 'UPDATE' : `v${CURRENT_APP_VERSION}`}
+            badgeColor={updateInfo?.hasUpdate ? '#EF4444' : '#06B6D4'}
             onPress={async () => {
-              try {
-                const update = await Updates.checkForUpdateAsync();
-                if (update.isAvailable) {
-                  Alert.alert('Update Available', 'Downloading latest features...');
-                  await Updates.fetchUpdateAsync();
-                  Alert.alert('Success', 'Update applied! Restarting app...', [
-                    { text: 'OK', onPress: () => Updates.reloadAsync() },
-                  ]);
+              if (updateInfo?.hasUpdate) {
+                downloadAndInstallLatestApk(updateInfo.apkUrl);
+              } else {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                const res = await checkAppVersion(false);
+                if (res?.hasUpdate) {
+                  downloadAndInstallLatestApk(res.apkUrl);
                 } else {
-                  Alert.alert('App Up to Date', 'You are on the latest version! 🎉');
+                  Alert.alert('App Up to Date! 🎉', `You are running the latest version (v${CURRENT_APP_VERSION}).`);
                 }
-              } catch (e) {
-                Alert.alert('App Up to Date', 'You are running the latest version.');
               }
             }}
             isLast={!isAdmin}
@@ -1284,6 +1328,71 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#EF4444',
     fontSize: 14.5,
+    fontWeight: '800',
+  },
+
+  // ── Update Highlight Banner ──
+  updateHighlightBanner: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  updateHighlightGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+  },
+  updateIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  updateHighlightTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  updateVersionPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+    marginLeft: 6,
+  },
+  updateVersionPillText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  updateHighlightDesc: {
+    color: '#D1FAE5',
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  updateInstallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 8,
+  },
+  updateInstallBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '800',
   },
 });

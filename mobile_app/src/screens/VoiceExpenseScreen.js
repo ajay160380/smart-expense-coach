@@ -33,6 +33,59 @@ const SAMPLE_PROMPTS = [
   { icon: 'chart-pie', text: 'aaj ka summary' },
 ];
 
+export function parseExpenseFromSpeech(text) {
+  if (!text || typeof text !== 'string') return null;
+  const clean = text.trim();
+  
+  // Extract number (support formats like 500, 250.50, etc.)
+  const numMatch = clean.match(/\b(\d+(?:\.\d+)?)\b/);
+  const amount = numMatch ? parseFloat(numMatch[1]) : 0;
+  
+  // Extract description: remove number and common currency/filler words
+  let desc = clean
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, '')
+    .replace(/\b(rs|inr|rupees|rupaye|rupe|ka|ki|ke|ko|mein|me|for|spent|kharch|kharcha|diya)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+    
+  if (!desc || desc.length < 2) desc = 'Expense';
+
+  // Keyword category matching
+  const lower = clean.toLowerCase();
+  let category = 'other';
+  let category_icon = '📦';
+
+  if (/petrol|diesel|fuel|cng|auto|cab|uber|ola|rapido|bike|car|metro|bus|train|ticket|toll|parking|puncture|scooty/i.test(lower)) {
+    category = 'transport';
+    category_icon = '🚗';
+  } else if (/chai|coffee|tea|swiggy|zomato|pizza|burger|snack|snacks|breakfast|lunch|dinner|khana|restaurant|cafe|canteen|food|momo|samosa|biryani|dosa|roti/i.test(lower)) {
+    category = 'food';
+    category_icon = '🍔';
+  } else if (/grocery|groceries|kirana|milk|doodh|sabzi|vegetable|fruit|fruits|ration|bread|egg|eggs|paneer|atta|dal|oil|sugar|rice/i.test(lower)) {
+    category = 'groceries';
+    category_icon = '🛒';
+  } else if (/recharge|bill|wifi|electricity|bijli|water|gas|cylinder|rent|maintenance|broadband|dth/i.test(lower)) {
+    category = 'bills';
+    category_icon = '💡';
+  } else if (/medicine|dawa|dawae|doctor|hospital|clinic|tablet|medical|pharmacy|test|checkup/i.test(lower)) {
+    category = 'health';
+    category_icon = '🏥';
+  } else if (/shopping|clothes|kapde|shoes|amazon|flipkart|myntra|meesho|zara|h&m|shirt|jeans/i.test(lower)) {
+    category = 'shopping';
+    category_icon = '🛍️';
+  } else if (/movie|cinema|netflix|game|party|trip|travel|gym/i.test(lower)) {
+    category = 'entertainment';
+    category_icon = '🎬';
+  }
+
+  return {
+    amount,
+    description: desc,
+    category,
+    category_icon,
+  };
+}
+
 export default function VoiceExpenseScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -247,17 +300,41 @@ export default function VoiceExpenseScreen({ navigation }) {
         }
       );
 
-      const data = JSON.parse(response.body);
+      let data = {};
+      try {
+        data = JSON.parse(response.body);
+      } catch (e) {
+        data = {};
+      }
 
       if (response.status === 200 && data.status === 'success') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setTranscription(data.transcription || '');
+        const spoken = (data.transcription || data.spoken_text || '').trim();
+        setTranscription(spoken);
 
-        if (data.action === 'log_expenses' || data.expense || data.expense_id) {
-          setLoggedExpense(data.expense || {
-            amount: 'Recorded',
-            description: data.transcription || 'Voice Expense',
-            category: 'other',
+        const parsed = parseExpenseFromSpeech(spoken);
+
+        if (data.action === 'log_expenses' || data.expense || data.expense_id || (parsed && parsed.amount > 0)) {
+          const srvExp = data.expense || {};
+          const finalAmt = (typeof srvExp.amount === 'number' && srvExp.amount > 0)
+            ? srvExp.amount
+            : (parseFloat(srvExp.amount) || parsed?.amount || 0);
+
+          const finalCat = (srvExp.category && srvExp.category !== 'other')
+            ? srvExp.category
+            : (parsed?.category || srvExp.category || 'other');
+
+          const finalIcon = srvExp.category_icon || parsed?.category_icon || '🏷️';
+          const finalDesc = srvExp.description || parsed?.description || spoken || 'Voice Expense';
+
+          setLoggedExpense({
+            id: srvExp.id || data.expense_id,
+            amount: finalAmt,
+            category: finalCat,
+            category_icon: finalIcon,
+            description: finalDesc,
+            date: srvExp.date || new Date().toISOString().split('T')[0],
+            remaining_budget: srvExp.remaining_budget,
             message: data.message,
           });
         } else if (data.is_chat || data.action === 'chat') {
@@ -267,7 +344,7 @@ export default function VoiceExpenseScreen({ navigation }) {
         }
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Alert.alert('Notice', data.message || data.error || 'Please mention the amount and item (e.g. 500 petrol).');
+        Alert.alert('Notice', data.message || data.error || 'Please speak clearly with your amount (e.g. 500 petrol).');
       }
     } catch (error) {
       console.error('Upload Error:', error);
@@ -305,11 +382,32 @@ export default function VoiceExpenseScreen({ navigation }) {
       if (response.ok && data.status === 'success') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setManualText('');
-        if (data.action === 'log_expenses' || data.expense || data.expense_id) {
-          setLoggedExpense(data.expense || {
-            amount: 'Recorded',
-            description: text,
-            category: 'other',
+        const spoken = (data.transcription || text).trim();
+        setTranscription(spoken);
+
+        const parsed = parseExpenseFromSpeech(spoken);
+
+        if (data.action === 'log_expenses' || data.expense || data.expense_id || (parsed && parsed.amount > 0)) {
+          const srvExp = data.expense || {};
+          const finalAmt = (typeof srvExp.amount === 'number' && srvExp.amount > 0)
+            ? srvExp.amount
+            : (parseFloat(srvExp.amount) || parsed?.amount || 0);
+
+          const finalCat = (srvExp.category && srvExp.category !== 'other')
+            ? srvExp.category
+            : (parsed?.category || srvExp.category || 'other');
+
+          const finalIcon = srvExp.category_icon || parsed?.category_icon || '🏷️';
+          const finalDesc = srvExp.description || parsed?.description || spoken || 'Expense';
+
+          setLoggedExpense({
+            id: srvExp.id || data.expense_id,
+            amount: finalAmt,
+            category: finalCat,
+            category_icon: finalIcon,
+            description: finalDesc,
+            date: srvExp.date || new Date().toISOString().split('T')[0],
+            remaining_budget: srvExp.remaining_budget,
             message: data.message,
           });
         } else {
@@ -348,16 +446,6 @@ export default function VoiceExpenseScreen({ navigation }) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>AI Voice Expense</Text>
-          <View style={styles.aiBadge}>
-            <LinearGradient 
-              colors={['#2563EB', '#1D4ED8']} 
-              start={{ x: 0, y: 0 }} 
-              end={{ x: 1, y: 0 }} 
-              style={styles.aiBadgeGradient}
-            >
-              <Text style={styles.aiBadgeText}>Whisper Turbo</Text>
-            </LinearGradient>
-          </View>
         </View>
         <TouchableOpacity 
           onPress={() => setShowTextInput(!showTextInput)} 
@@ -479,24 +567,31 @@ export default function VoiceExpenseScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── Recognized Transcript Display ── */}
+        {/* ── Recognized Transcript Display (Immediate Real-time verification) ── */}
         {transcription ? (
           <View style={styles.transcriptCard}>
             <View style={styles.transcriptHeader}>
-              <MaterialCommunityIcons name="waveform" size={16} color="#2563EB" />
-              <Text style={styles.transcriptTitle}>Recognized Speech:</Text>
+              <Ionicons name="mic" size={16} color="#2563EB" />
+              <Text style={styles.transcriptTitle}>Recognized Speech (Aapne Bola):</Text>
             </View>
             <Text style={styles.transcriptText}>"{transcription}"</Text>
           </View>
         ) : null}
 
-        {/* ── Logged Expense Success Card ── */}
+        {/* ── Logged Expense Success Card (Instant AI Breakdown) ── */}
         {loggedExpense && (
           <View style={styles.expenseResultCard}>
             <LinearGradient
               colors={['#F0FDF4', '#FFFFFF']}
               style={styles.expenseResultGradient}
             >
+              <View style={styles.resultSuccessHeader}>
+                <View style={styles.successCheckCircle}>
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                </View>
+                <Text style={styles.successTitleText}>Expense Logged Successfully! 🎉</Text>
+              </View>
+
               <View style={styles.resultRow}>
                 <View style={styles.resultCategoryPill}>
                   <Text style={styles.categoryIconText}>
@@ -508,18 +603,19 @@ export default function VoiceExpenseScreen({ navigation }) {
                 </View>
                 <View style={styles.amountBadge}>
                   <Text style={styles.amountBadgeText}>
-                    ₹{typeof loggedExpense.amount === 'number' ? loggedExpense.amount.toLocaleString('en-IN') : loggedExpense.amount}
+                    ₹{typeof loggedExpense.amount === 'number' && loggedExpense.amount > 0 ? Number(loggedExpense.amount).toLocaleString('en-IN') : (loggedExpense.amount || '0')}
                   </Text>
                 </View>
               </View>
 
-              <Text style={styles.resultDescription}>
-                {loggedExpense.description || 'Logged successfully'}
-              </Text>
+              <View style={styles.detailBox}>
+                <Text style={styles.detailLabel}>Note / Item:</Text>
+                <Text style={styles.detailValue}>{loggedExpense.description || transcription || 'Expense'}</Text>
+              </View>
 
               {loggedExpense.remaining_budget !== undefined && (
                 <View style={styles.budgetRow}>
-                  <Text style={styles.budgetLabel}>Remaining Budget:</Text>
+                  <Text style={styles.budgetLabel}>Remaining Monthly Budget:</Text>
                   <Text style={styles.budgetValue}>
                     ₹{Math.round(loggedExpense.remaining_budget).toLocaleString('en-IN')}
                   </Text>
@@ -822,6 +918,25 @@ const styles = StyleSheet.create({
   expenseResultGradient: {
     padding: 18,
   },
+  resultSuccessHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  successCheckCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#16A34A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successTitleText: {
+    color: '#15803D',
+    fontSize: 14,
+    fontWeight: '800',
+  },
   resultRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -856,6 +971,25 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '900',
+  },
+  detailBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  detailLabel: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  detailValue: {
+    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '700',
   },
   resultDescription: {
     color: '#0F172A',

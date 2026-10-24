@@ -23,6 +23,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import CustomAlertModal, { installGlobalAlert, showCustomAlert } from './src/components/CustomAlertModal';
 import * as Updates from 'expo-updates';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { checkAppVersion, subscribeToUpdateStatus } from './src/utils/versionCheck';
 
 installGlobalAlert();
 import { Accelerometer } from 'expo-sensors';
@@ -176,6 +177,15 @@ const HIDE_TAB_BAR_SCREENS = [
 function MainTabNavigator() {
   const { isDark, colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const [hasUpdate, setHasUpdate] = useState(false);
+
+  useEffect(() => {
+    const unsub = subscribeToUpdateStatus((st) => {
+      setHasUpdate(Boolean(st?.hasUpdate));
+    });
+    return unsub;
+  }, []);
+
   const bottomInset = insets?.bottom || 0;
   const isAndroid = Platform.OS === 'android';
   const bottomPadding = Platform.OS === 'ios'
@@ -247,7 +257,23 @@ function MainTabNavigator() {
         }}
       />
       <Tab.Screen name="Goals" component={GoalsStackScreen} />
-      <Tab.Screen name="More" component={MoreStackScreen} options={{ tabBarLabel: 'Menu' }} />
+      <Tab.Screen 
+        name="More" 
+        component={MoreStackScreen} 
+        options={{ 
+          tabBarLabel: 'Menu',
+          tabBarBadge: hasUpdate ? 'NEW' : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: '#EF4444',
+            color: '#FFFFFF',
+            fontSize: 9,
+            fontWeight: '900',
+            lineHeight: 12,
+            minWidth: 16,
+            height: 16,
+          },
+        }} 
+      />
     </Tab.Navigator>
   );
 }
@@ -381,37 +407,29 @@ export default function App() {
   }, [isAuthenticated, shakeSensitivity]);
 
   useEffect(() => {
-    const checkForAppUpdate = async () => {
+    const handleSilentUpdates = async () => {
+      // 1. Silent background OTA update: downloads quietly without any restart popups!
       try {
         if (!__DEV__) {
           const update = await Updates.checkForUpdateAsync();
           if (update.isAvailable) {
+            // Silently fetch update in background — seamlessly applies on next app launch without disturbing user!
             await Updates.fetchUpdateAsync();
-            showCustomAlert(
-              '🚀 New Update Ready!',
-              'Expense Tracker has been updated with new features and improvements. Restart now to apply?',
-              [
-                { text: 'Later', style: 'cancel' },
-                {
-                  text: 'Restart Now',
-                  onPress: async () => {
-                    await Updates.reloadAsync();
-                  },
-                },
-              ]
-            );
           }
         }
-      } catch (e) {
-        console.log("Error checking for update:", e);
-      }
+      } catch (e) {}
+
+      // 2. Check for latest APK version (highlights in Menu tab if new APK exists)
+      try {
+        await checkAppVersion(true);
+      } catch (e) {}
     };
 
-    checkForAppUpdate();
+    handleSilentUpdates();
 
     const sub = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
-        checkForAppUpdate();
+        handleSilentUpdates();
       }
     });
 
