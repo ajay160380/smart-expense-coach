@@ -154,6 +154,7 @@ urlpatterns = [
     path('download-apk/', views.download_apk, name='download_apk'),
     path('static/downloads/ExpenseTracker.apk', views.download_apk, name='static_download_apk'),
     path('downloads/ExpenseTracker.apk', views.download_apk, name='downloads_apk'),
+    path('api/app-version/', views.get_app_version, name='app_version'),
 
     # ══════════════════════════════════════════════════════════════════════
     # FEATURE 1: MONTHLY COMPARISON

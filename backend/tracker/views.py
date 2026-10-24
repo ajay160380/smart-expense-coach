@@ -6846,6 +6846,22 @@ def get_apk_response():
 def download_apk(request):
     return get_apk_response()
 
+@csrf_exempt
+def get_app_version(request):
+    """
+    Returns latest app version information so the mobile app can notify users
+    when a new APK build is available and provide 1-tap download.
+    """
+    return JsonResponse({
+        "status": "success",
+        "latest_version": "1.3.2",
+        "latest_version_code": 4,
+        "apk_url": "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk",
+        "direct_expo_url": LATEST_EXPO_APK_URL,
+        "release_notes": "Dual Home Screen Widgets (2x2 + 4x2), Instant AI Voice breakdown & in-app APK updater!",
+        "published_at": "2026-10-24",
+    })
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DATABASE BACKUP APIS (Item 9)
