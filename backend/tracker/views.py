@@ -6754,7 +6754,7 @@ def api_send_admin_push(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/lkOyrCIa2oMeJqeW0pIUlV0HZO-xWeTltMH85XW3xN4.apk"
+LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/WQ8DjJn2rArxdy2IB9josPKajt8RZzVAGejO6cQDvbg.apk"
 
 def ensure_apk_cached_on_disk():
     import os
