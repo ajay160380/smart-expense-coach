@@ -192,6 +192,10 @@ async function startBot(sessionName = null) {
             latestQR = null; // Clear QR on successful connection
             console.log(`✅ WhatsApp Bot is ready and connected using ${currentSessionName}!`);
             
+            // Auto check morning/night tips 15s after connection stabilizes
+            setTimeout(() => {
+                checkAndSendTips();
+            }, 15000);
         }
     });
 
@@ -228,17 +232,18 @@ async function startBot(sessionName = null) {
         }
 
         // ── MANUAL TRIGGER FOR NIGHT / MORNING TIPS ──
-        if (isAllowedAdmin && (lowerBody === '!goodnight' || lowerBody === '!good night' || lowerBody === '!trigger_night' || lowerBody === '!goodmorning' || lowerBody === '!good morning' || lowerBody === '!trigger_morning')) {
-            const tipType = (lowerBody === '!goodnight' || lowerBody === '!good night' || lowerBody === '!trigger_night') ? 'night' : 'morning';
+        if (isAllowedAdmin && (lowerBody.startsWith('!goodnight') || lowerBody.startsWith('!good night') || lowerBody.startsWith('!trigger_night') || lowerBody.startsWith('!goodmorning') || lowerBody.startsWith('!good morning') || lowerBody.startsWith('!trigger_morning'))) {
+            const tipType = lowerBody.includes('night') ? 'night' : 'morning';
             const tipLabel = tipType === 'night' ? 'Night' : 'Morning';
             const tipEmoji = tipType === 'night' ? '🌙' : '☀️';
+            const isForce = lowerBody.includes('force');
             
-            await safeReply(remoteJid, `⏳ Fetching and triggering ${tipLabel} Tips manually...`, msg);
+            await safeReply(remoteJid, `⏳ Fetching and triggering ${tipLabel} Tips manually${isForce ? ' (FORCE mode)' : ''}...`, msg);
             try {
                 const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType })
+                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType, force: isForce })
                 });
                 const data = await response.json();
 
@@ -455,70 +460,50 @@ async function checkAndSendTips() {
     const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
     const istHour = istTime.getHours();
 
-    // Morning window: Exactly 8 AM (08:00 - 08:59 IST)
-    if (istHour === 8) {
-        console.log('⏰ Checking morning tip window...');
-        try {
-            const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'morning' })
-            });
-            const data = await response.json();
-            if (data.tips && data.tips.length > 0) {
-                console.log(`☀️ Delivering ${data.tips.length} morning tips...`);
-                for (const tip of data.tips) {
-                    try {
-                        let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
-                        await safeReply(`${cleanPhone}@s.whatsapp.net`, tip.message);
-                        console.log(`✅ Delivered morning tip to ${cleanPhone}`);
-                        await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: 'morning' })
-                        }).catch(e => {});
-                        await new Promise(r => setTimeout(r, 4000));
-                    } catch (e) {
-                        console.error(`❌ Failed delivering morning tip to ${tip.whatsapp_number}:`, e.message);
-                    }
-                }
-            }
-        } catch (err) {
-            console.error('❌ Morning tip fetch failed:', err.message);
-        }
+    // Morning window: 7:00 AM - 10:59 AM IST
+    const isMorning = istHour >= 7 && istHour <= 10;
+    // Night window: 8:30 PM - 11:59 PM IST (20:30 to 23:59)
+    const istMinute = istTime.getMinutes();
+    const isNight = (istHour === 20 && istMinute >= 30) || (istHour >= 21 && istHour <= 23);
+
+    if (!isMorning && !isNight) {
+        return;
     }
 
-    // Night window: Exactly 10 PM (22:00 - 22:59 IST)
-    if (istHour === 22) {
-        console.log('⏰ Checking night tip window...');
-        try {
-            const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ secret: "paisamitra-daily-2025", type: 'night' })
-            });
-            const data = await response.json();
-            if (data.tips && data.tips.length > 0) {
-                console.log(`🌙 Delivering ${data.tips.length} night tips...`);
-                for (const tip of data.tips) {
-                    try {
-                        let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
-                        await safeReply(`${cleanPhone}@s.whatsapp.net`, tip.message);
-                        console.log(`✅ Delivered night tip to ${cleanPhone}`);
-                        await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: 'night' })
-                        }).catch(e => {});
-                        await new Promise(r => setTimeout(r, 4000));
-                    } catch (e) {
-                        console.error(`❌ Failed delivering night tip to ${tip.whatsapp_number}:`, e.message);
-                    }
+    const tipType = isMorning ? 'morning' : 'night';
+    const tipLabel = isMorning ? 'Morning' : 'Night';
+    const tipEmoji = isMorning ? '☀️' : '🌙';
+
+    console.log(`⏰ Checking ${tipLabel} tip window (IST Hour: ${istHour}:${istMinute < 10 ? '0' : ''}${istMinute})...`);
+    try {
+        const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType })
+        });
+        const data = await response.json();
+        if (data.tips && data.tips.length > 0) {
+            console.log(`${tipEmoji} Delivering ${data.tips.length} ${tipLabel} tips...`);
+            for (const tip of data.tips) {
+                try {
+                    let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
+                    await safeReply(`${cleanPhone}@s.whatsapp.net`, tip.message);
+                    console.log(`✅ Delivered ${tipLabel} tip to ${cleanPhone}`);
+                    await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: tipType })
+                    }).catch(e => {});
+                    await new Promise(r => setTimeout(r, 4000));
+                } catch (e) {
+                    console.error(`❌ Failed delivering ${tipLabel} tip to ${tip.whatsapp_number}:`, e.message);
                 }
             }
-        } catch (err) {
-            console.error('❌ Night tip fetch failed:', err.message);
+        } else {
+            console.log(`ℹ️ No pending ${tipLabel} tips (already delivered today or 0 linked users).`);
         }
+    } catch (err) {
+        console.error(`❌ ${tipLabel} tip fetch failed:`, err.message);
     }
     
     } finally {
@@ -528,9 +513,8 @@ async function checkAndSendTips() {
 
 const isCronScheduled = process.env.NODE_APP_INSTANCE === '0' || !process.env.NODE_APP_INSTANCE;
 if (isCronScheduled) {
-    // Run exactly at 8:00 AM and 10:00 PM IST
-    cron.schedule('0 8 * * *', checkAndSendTips, { timezone: "Asia/Kolkata" });
-    cron.schedule('0 22 * * *', checkAndSendTips, { timezone: "Asia/Kolkata" });
+    // Run every 15 minutes to guarantee delivery even if instance reboots or sleeps
+    cron.schedule('*/15 * * * *', checkAndSendTips, { timezone: "Asia/Kolkata" });
 }
 
 // ── EXPRESS API SERVER ──

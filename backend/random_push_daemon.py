@@ -121,18 +121,20 @@ def send_random_push(scheduled_time):
         print("Skipped individual tokens because topic succeeded.")
 
 def run_daemon():
+    import zoneinfo
+    IST = zoneinfo.ZoneInfo("Asia/Kolkata")
     print("Daemon started. Smart bot is active!")
-    print("Will send context-aware messages exactly at 8 AM and 10 PM every day.")
+    print("Will send context-aware messages in Asia/Kolkata (IST) morning & evening.")
     while True:
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(IST)
         
-        # Generate a random morning/afternoon time (between 9 AM and 2 PM)
-        random_hour_1 = random.randint(9, 14)
+        # Morning time: 8:00 AM - 10:00 AM IST
+        random_hour_1 = random.randint(8, 10)
         random_minute_1 = random.randint(0, 59)
         time1 = now.replace(hour=random_hour_1, minute=random_minute_1, second=0, microsecond=0)
         
-        # Generate a random evening/night time (between 5 PM and 9 PM)
-        random_hour_2 = random.randint(17, 21)
+        # Evening/Night time: 8:30 PM - 10:30 PM IST
+        random_hour_2 = random.randint(20, 22)
         random_minute_2 = random.randint(0, 59)
         time2 = now.replace(hour=random_hour_2, minute=random_minute_2, second=0, microsecond=0)
         
@@ -148,16 +150,19 @@ def run_daemon():
             time2 += datetime.timedelta(days=1)
             times_to_fire = [time1, time2]
             
-        print(f"\n--- Next Scheduled Pushes ---")
+        print(f"\n--- Next Scheduled Pushes (IST) ---")
         for t in times_to_fire:
-            print(f"Push scheduled at: {t}")
+            print(f"Push scheduled at: {t.strftime('%Y-%m-%d %H:%M:%S %Z')}")
             
         for t in times_to_fire:
-            # Re-evaluate sleep time just in case of drifts
-            sleep_seconds = (t - datetime.datetime.now()).total_seconds()
+            # Re-evaluate sleep time against current IST time
+            sleep_seconds = (t - datetime.datetime.now(IST)).total_seconds()
             if sleep_seconds > 0:
-                print(f"[{datetime.datetime.now()}] Sleeping until {t} ({int(sleep_seconds)} seconds)...")
-                time.sleep(sleep_seconds)
+                print(f"[{datetime.datetime.now(IST).strftime('%H:%M:%S')}] Sleeping until {t.strftime('%H:%M')} ({int(sleep_seconds)} seconds)...")
+                # Sleep in chunks of 60 seconds so process stays responsive
+                while sleep_seconds > 0:
+                    time.sleep(min(sleep_seconds, 60))
+                    sleep_seconds = (t - datetime.datetime.now(IST)).total_seconds()
             send_random_push(t)
 
 if __name__ == "__main__":
