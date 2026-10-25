@@ -128,15 +128,11 @@ def run_daemon():
     while True:
         now = datetime.datetime.now(IST)
         
-        # Morning time: 8:00 AM - 10:00 AM IST
-        random_hour_1 = random.randint(8, 10)
-        random_minute_1 = random.randint(0, 59)
-        time1 = now.replace(hour=random_hour_1, minute=random_minute_1, second=0, microsecond=0)
+        # Morning time: EXACTLY 8:00:00 AM IST
+        time1 = now.replace(hour=8, minute=0, second=0, microsecond=0)
         
-        # Evening/Night time: 8:30 PM - 10:30 PM IST
-        random_hour_2 = random.randint(20, 22)
-        random_minute_2 = random.randint(0, 59)
-        time2 = now.replace(hour=random_hour_2, minute=random_minute_2, second=0, microsecond=0)
+        # Evening/Night time: EXACTLY 10:00:00 PM IST (22:00)
+        time2 = now.replace(hour=22, minute=0, second=0, microsecond=0)
         
         times_to_fire = []
         if time1 > now:

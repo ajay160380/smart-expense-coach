@@ -191,11 +191,6 @@ async function startBot(sessionName = null) {
             reconnectAttempts = 0; // Reset on successful connection
             latestQR = null; // Clear QR on successful connection
             console.log(`✅ WhatsApp Bot is ready and connected using ${currentSessionName}!`);
-            
-            // Auto check morning/night tips 15s after connection stabilizes
-            setTimeout(() => {
-                checkAndSendTips();
-            }, 15000);
         }
     });
 
@@ -443,43 +438,35 @@ async function startBot(sessionName = null) {
 
 let isProcessingTips = false;
 
-// ── CRON JOBS (Tip Scheduler) ──
-async function checkAndSendTips() {
-    if (!isBotConnected || !globalSock) {
-        console.log('⏰ Skipping tip check: WhatsApp bot is not connected yet.');
-        return;
-    }
+// ── CRON JOBS (Exact 8:00 AM & 10:00 PM IST Scheduler) ──
+async function dispatchTipsForType(type) {
     if (isProcessingTips) {
-        console.log('⏰ Skipping tip check: Already processing tips from previous run.');
+        console.log(`⏰ Skipping ${type} tip check: Already processing from previous run.`);
         return;
     }
     isProcessingTips = true;
+    const tipLabel = type === 'morning' ? 'Morning' : 'Night';
+    const tipEmoji = type === 'morning' ? '☀️' : '🌙';
+
     try {
+        // Retry loop: If bot socket is reconnecting, wait up to 3 minutes
+        let attempts = 0;
+        while ((!isBotConnected || !globalSock) && attempts < 18) {
+            console.log(`⏳ Waiting for WhatsApp socket before sending ${tipLabel} tips (attempt ${attempts + 1}/18)...`);
+            await new Promise(r => setTimeout(r, 10000));
+            attempts++;
+        }
 
-    const now = new Date();
-    const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-    const istHour = istTime.getHours();
+        if (!isBotConnected || !globalSock) {
+            console.error(`❌ Could not deliver ${tipLabel} tips: WhatsApp bot remained disconnected.`);
+            return;
+        }
 
-    // Morning window: 7:00 AM - 10:59 AM IST
-    const isMorning = istHour >= 7 && istHour <= 10;
-    // Night window: 8:30 PM - 11:59 PM IST (20:30 to 23:59)
-    const istMinute = istTime.getMinutes();
-    const isNight = (istHour === 20 && istMinute >= 30) || (istHour >= 21 && istHour <= 23);
-
-    if (!isMorning && !isNight) {
-        return;
-    }
-
-    const tipType = isMorning ? 'morning' : 'night';
-    const tipLabel = isMorning ? 'Morning' : 'Night';
-    const tipEmoji = isMorning ? '☀️' : '🌙';
-
-    console.log(`⏰ Checking ${tipLabel} tip window (IST Hour: ${istHour}:${istMinute < 10 ? '0' : ''}${istMinute})...`);
-    try {
+        console.log(`⏰ [EXACT ${type === 'morning' ? '08:00 AM' : '10:00 PM'} IST] Triggering ${tipLabel} tips...`);
         const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType })
+            body: JSON.stringify({ secret: "paisamitra-daily-2025", type })
         });
         const data = await response.json();
         if (data.tips && data.tips.length > 0) {
@@ -492,7 +479,7 @@ async function checkAndSendTips() {
                     await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: tipType })
+                        body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type })
                     }).catch(e => {});
                     await new Promise(r => setTimeout(r, 4000));
                 } catch (e) {
@@ -503,9 +490,7 @@ async function checkAndSendTips() {
             console.log(`ℹ️ No pending ${tipLabel} tips (already delivered today or 0 linked users).`);
         }
     } catch (err) {
-        console.error(`❌ ${tipLabel} tip fetch failed:`, err.message);
-    }
-    
+        console.error(`❌ ${tipLabel} tips fetch/send error:`, err.message);
     } finally {
         isProcessingTips = false;
     }
@@ -513,8 +498,24 @@ async function checkAndSendTips() {
 
 const isCronScheduled = process.env.NODE_APP_INSTANCE === '0' || !process.env.NODE_APP_INSTANCE;
 if (isCronScheduled) {
-    // Run every 15 minutes to guarantee delivery even if instance reboots or sleeps
-    cron.schedule('*/15 * * * *', checkAndSendTips, { timezone: "Asia/Kolkata" });
+    // 1. EXACTLY 8:00:00 AM IST (Good Morning Message)
+    cron.schedule('0 8 * * *', () => {
+        console.log('⏰ [CRON 08:00 AM IST] Fired! Starting Good Morning tips delivery...');
+        dispatchTipsForType('morning');
+    }, { timezone: "Asia/Kolkata" });
+
+    // 2. EXACTLY 10:00:00 PM IST (Good Night Message)
+    cron.schedule('0 22 * * *', () => {
+        console.log('⏰ [CRON 10:00 PM IST] Fired! Starting Good Night tips delivery...');
+        dispatchTipsForType('night');
+    }, { timezone: "Asia/Kolkata" });
+
+    // 3. Keep-alive pinger every 10 minutes so Render free-tier never goes to sleep
+    cron.schedule('*/10 * * * *', async () => {
+        try {
+            await fetch('https://smart-expense-coach.onrender.com/health/').catch(() => {});
+        } catch (e) {}
+    });
 }
 
 // ── EXPRESS API SERVER ──
