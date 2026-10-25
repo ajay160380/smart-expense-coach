@@ -1,3 +1,15 @@
+---
+title: ExpenseTracker
+emoji: 💸
+colorFrom: green
+colorTo: indigo
+sdk: gradio
+sdk_version: 4.44.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
 <div align="center">
   <img src="backend/tracker/static/tracker/images/icon.png" alt="Paisa Mitra Logo" width="120" height="120" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
 
