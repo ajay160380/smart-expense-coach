@@ -6786,42 +6786,11 @@ def ensure_apk_cached_on_disk():
 
     return apk_path
 
+GITHUB_APK_CDN_URL = "https://github.com/ajay160380/smart-expense-coach/raw/main/backend/tracker/static/downloads/ExpenseTracker.apk"
+
 def get_apk_response():
-    import os
-    import requests
-    from django.http import FileResponse, StreamingHttpResponse, HttpResponseRedirect
-
-    apk_path = ensure_apk_cached_on_disk()
-
-    # 1. First priority: Serve from local disk if 120MB binary exists (guarantees Content-Length)
-    if os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
-        file_size = os.path.getsize(apk_path)
-        response = FileResponse(open(apk_path, 'rb'), content_type='application/vnd.android.package-archive')
-        response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
-        response['Content-Length'] = str(file_size)
-        response['Content-Encoding'] = 'identity'
-        response['Accept-Ranges'] = 'bytes'
-        return response
-
-    # 2. Fallback: Stream directly from Expo CDN with custom ExpenseTracker.apk filename header
-    try:
-        r = requests.get(LATEST_EXPO_APK_URL, stream=True, timeout=15)
-        if r.status_code == 200:
-            response = StreamingHttpResponse(
-                r.iter_content(chunk_size=256 * 1024),
-                content_type='application/vnd.android.package-archive'
-            )
-            response['Content-Disposition'] = 'attachment; filename="ExpenseTracker.apk"'
-            response['Content-Encoding'] = 'identity'
-            response['Accept-Ranges'] = 'bytes'
-            if 'content-length' in r.headers:
-                response['Content-Length'] = r.headers['content-length']
-            return response
-    except Exception:
-        pass
-
-    # 3. Last fallback: Redirect
-    return HttpResponseRedirect(LATEST_EXPO_APK_URL)
+    from django.http import HttpResponseRedirect
+    return HttpResponseRedirect(GITHUB_APK_CDN_URL)
 
 def download_apk(request):
     return get_apk_response()
@@ -6836,8 +6805,8 @@ def get_app_version(request):
         "status": "success",
         "latest_version": "1.3.5",
         "latest_version_code": 7,
-        "apk_url": "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk",
-        "direct_expo_url": "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk",
+        "apk_url": GITHUB_APK_CDN_URL,
+        "direct_expo_url": GITHUB_APK_CDN_URL,
         "release_notes": "Added loud sound, vibration & heads-up banner notifications with custom notification channel!",
         "published_at": "2026-10-25",
     })
