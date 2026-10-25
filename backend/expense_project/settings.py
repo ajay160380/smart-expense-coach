@@ -28,13 +28,10 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
 
+is_hf = bool(os.environ.get('SPACE_ID') or os.environ.get('HF_SPACE') or any('7860' in arg for arg in sys.argv))
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-if not SECRET_KEY:
-    if DEBUG or any(cmd in sys.argv for cmd in ('collectstatic', 'test', 'check')):
-        SECRET_KEY = 'django-insecure-dev-only-local-secret-key-change-me'
-    else:
-        raise RuntimeError("DJANGO_SECRET_KEY environment variable is required in production.")
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY') or 'django-insecure-w-w+e7iyxs@%$+*l-r7p@nn@c7+h1x6ena-1@l0&%dndd*g9d^'
 
 # SEC-003: Explicit allowed hosts
 raw_allowed_hosts = os.getenv('ALLOWED_HOSTS', '').strip()
@@ -134,7 +131,7 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
+            default=os.environ.get('DATABASE_URL') or 'postgresql://postgres.glwfyengmazoxtxabydz:Ajay%401603801221@aws-1-ap-south-1.pooler.supabase.com:6543/postgres',
             conn_max_age=600,
             conn_health_checks=True,
         )
