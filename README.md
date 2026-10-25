@@ -16,7 +16,7 @@ license: mit
   <h1> Smart Expense Tracker 💸🤖</h1>
   <p><strong>Your AI-Powered Personal Finance Assistant & WhatsApp Bot</strong></p>
 
-  [![Visit Website](https://img.shields.io/badge/🌐%20Visit%20Website-blue?style=for-the-badge)](https://smart-expense-coach.onrender.com)
+  [![Visit Website](https://img.shields.io/badge/🌐%20Visit%20Website-blue?style=for-the-badge)](https://expense-coach-prxm.onrender.com)
   [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](#-license)
   [![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
   [![Django](https://img.shields.io/badge/Django-5.0-success?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com)
