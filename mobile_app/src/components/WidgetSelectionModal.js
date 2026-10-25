@@ -162,25 +162,30 @@ export default function WidgetSelectionModal({
             <View
               style={[
                 styles.optionCard,
-                isDark && { backgroundColor: '#1E293B', borderColor: selectedWidget === 'AddExpenseWidget' ? '#3B82F6' : '#334155' },
                 selectedWidget === 'AddExpenseWidget' && styles.optionCardSelected,
+                isDark && {
+                  backgroundColor: selectedWidget === 'AddExpenseWidget' ? 'rgba(37, 99, 235, 0.18)' : '#1E293B',
+                  borderColor: selectedWidget === 'AddExpenseWidget' ? '#3B82F6' : '#334155',
+                },
               ]}
             >
               <View style={styles.optionHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
                   <View style={[styles.radioOuter, selectedWidget === 'AddExpenseWidget' && styles.radioOuterActive]}>
                     {selectedWidget === 'AddExpenseWidget' && <View style={styles.radioInner} />}
                   </View>
-                  <View style={{ marginLeft: 10 }}>
-                    <Text style={[styles.optionTitle, isDark && { color: '#F8FAFC' }]}>
-                      2x2 Compact Widget (Square)
+                  <View style={{ marginLeft: 10, flex: 1 }}>
+                    <Text style={[styles.optionTitle, isDark && { color: '#F8FAFC' }]} numberOfLines={1}>
+                      2x2 Compact Widget
                     </Text>
-                    <Text style={styles.optionSubtitle}>Spent Amount, Budget Progress Bar & Quick Add</Text>
+                    <Text style={[styles.optionSubtitle, isDark && { color: '#94A3B8' }]} numberOfLines={1}>
+                      Spent, Budget Progress & Quick Add
+                    </Text>
                   </View>
                 </View>
 
-                <View style={styles.badgePill}>
-                  <Text style={styles.badgePillText}>RECOMMENDED</Text>
+                <View style={[styles.badgePill, isDark && { backgroundColor: 'rgba(37, 99, 235, 0.25)' }]}>
+                  <Text style={[styles.badgePillText, isDark && { color: '#60A5FA' }]}>RECOMMENDED</Text>
                 </View>
               </View>
 
@@ -251,26 +256,31 @@ export default function WidgetSelectionModal({
             <View
               style={[
                 styles.optionCard,
-                isDark && { backgroundColor: '#1E293B', borderColor: selectedWidget === 'WideExpenseWidget' ? '#3B82F6' : '#334155' },
                 selectedWidget === 'WideExpenseWidget' && styles.optionCardSelected,
+                isDark && {
+                  backgroundColor: selectedWidget === 'WideExpenseWidget' ? 'rgba(124, 58, 237, 0.18)' : '#1E293B',
+                  borderColor: selectedWidget === 'WideExpenseWidget' ? '#8B5CF6' : '#334155',
+                },
                 { marginTop: 16 },
               ]}
             >
               <View style={styles.optionHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
                   <View style={[styles.radioOuter, selectedWidget === 'WideExpenseWidget' && styles.radioOuterActive]}>
                     {selectedWidget === 'WideExpenseWidget' && <View style={styles.radioInner} />}
                   </View>
-                  <View style={{ marginLeft: 10 }}>
-                    <Text style={[styles.optionTitle, isDark && { color: '#F8FAFC' }]}>
-                      4x2 Wide Banner Widget
+                  <View style={{ marginLeft: 10, flex: 1 }}>
+                    <Text style={[styles.optionTitle, isDark && { color: '#F8FAFC' }]} numberOfLines={1}>
+                      4x2 Wide Banner
                     </Text>
-                    <Text style={styles.optionSubtitle}>Full Landscape Layout • Budget Bar, Recent Items & Mic</Text>
+                    <Text style={[styles.optionSubtitle, isDark && { color: '#94A3B8' }]} numberOfLines={1}>
+                      Landscape Layout • Recent Items & Mic
+                    </Text>
                   </View>
                 </View>
 
-                <View style={[styles.badgePill, { backgroundColor: '#EDE9FE' }]}>
-                  <Text style={[styles.badgePillText, { color: '#7C3AED' }]}>POPULAR</Text>
+                <View style={[styles.badgePill, { backgroundColor: isDark ? 'rgba(124, 58, 237, 0.25)' : '#EDE9FE' }]}>
+                  <Text style={[styles.badgePillText, { color: isDark ? '#A78BFA' : '#7C3AED' }]}>POPULAR</Text>
                 </View>
               </View>
 
@@ -489,14 +499,17 @@ const styles = StyleSheet.create({
   },
   badgePill: {
     backgroundColor: '#DBEAFE',
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 8,
+    flexShrink: 0,
+    alignSelf: 'center',
   },
   badgePillText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
     color: '#1D4ED8',
+    letterSpacing: 0.3,
   },
   previewContainer: {
     alignItems: 'center',
