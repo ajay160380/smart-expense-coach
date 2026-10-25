@@ -123,47 +123,52 @@ def send_random_push(scheduled_time):
 def run_daemon():
     import zoneinfo
     IST = zoneinfo.ZoneInfo("Asia/Kolkata")
-    print("Daemon started. Smart bot is active!")
-    print("Will send context-aware messages in Asia/Kolkata (IST) morning & evening.")
+    print("Daemon started. Smart push notification bot is active!")
+    print("Will send context-aware notifications EXACTLY ONCE per day at a RANDOM time (Asia/Kolkata IST).")
+    
+    last_sent_date = None
+    
     while True:
         now = datetime.datetime.now(IST)
+        today_date = now.date()
         
-        # 1. Random daytime notification (between 10:00 AM and 3:30 PM IST)
-        random_hour_1 = random.randint(10, 15)
-        random_minute_1 = random.randint(0, 59)
-        time1 = now.replace(hour=random_hour_1, minute=random_minute_1, second=0, microsecond=0)
+        # If we already sent today, sleep until next day begins
+        if last_sent_date == today_date:
+            tomorrow = now + datetime.timedelta(days=1)
+            next_midnight = tomorrow.replace(hour=0, minute=5, second=0, microsecond=0)
+            sleep_sec = (next_midnight - now).total_seconds()
+            if sleep_sec > 0:
+                print(f"[{now.strftime('%H:%M:%S')}] Already sent 1 push today. Sleeping until tomorrow ({int(sleep_sec)}s)...")
+                while sleep_sec > 0:
+                    time.sleep(min(sleep_sec, 300))
+                    sleep_sec = (next_midnight - datetime.datetime.now(IST)).total_seconds()
+            continue
+
+        # Generate 1 single random time for today (between 11:00 AM and 7:59 PM IST)
+        random_hour = random.randint(11, 19)
+        random_minute = random.randint(0, 59)
+        target_time = now.replace(hour=random_hour, minute=random_minute, second=0, microsecond=0)
         
-        # 2. Random evening notification (between 6:00 PM and 9:30 PM IST)
-        random_hour_2 = random.randint(18, 21)
-        random_minute_2 = random.randint(0, 59)
-        time2 = now.replace(hour=random_hour_2, minute=random_minute_2, second=0, microsecond=0)
+        # If target time has already passed today, schedule for tomorrow
+        if target_time <= now:
+            tomorrow = now + datetime.timedelta(days=1)
+            random_hour = random.randint(11, 19)
+            random_minute = random.randint(0, 59)
+            target_time = tomorrow.replace(hour=random_hour, minute=random_minute, second=0, microsecond=0)
+            
+        print(f"\n--- Today's Single Push Notification Scheduled (IST) ---")
+        print(f"Push scheduled at: {target_time.strftime('%Y-%m-%d %I:%M %p %Z')}")
         
-        times_to_fire = []
-        if time1 > now:
-            times_to_fire.append(time1)
-        if time2 > now:
-            times_to_fire.append(time2)
-            
-        # If both times have passed today, schedule for tomorrow
-        if not times_to_fire:
-            time1 += datetime.timedelta(days=1)
-            time2 += datetime.timedelta(days=1)
-            times_to_fire = [time1, time2]
-            
-        print(f"\n--- Next Scheduled Pushes (IST) ---")
-        for t in times_to_fire:
-            print(f"Push scheduled at: {t.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-            
-        for t in times_to_fire:
-            # Re-evaluate sleep time against current IST time
-            sleep_seconds = (t - datetime.datetime.now(IST)).total_seconds()
-            if sleep_seconds > 0:
-                print(f"[{datetime.datetime.now(IST).strftime('%H:%M:%S')}] Sleeping until {t.strftime('%H:%M')} ({int(sleep_seconds)} seconds)...")
-                # Sleep in chunks of 60 seconds so process stays responsive
-                while sleep_seconds > 0:
-                    time.sleep(min(sleep_seconds, 60))
-                    sleep_seconds = (t - datetime.datetime.now(IST)).total_seconds()
-            send_random_push(t)
+        sleep_seconds = (target_time - datetime.datetime.now(IST)).total_seconds()
+        if sleep_seconds > 0:
+            print(f"[{datetime.datetime.now(IST).strftime('%H:%M:%S')}] Sleeping until {target_time.strftime('%I:%M %p')} ({int(sleep_seconds)} seconds)...")
+            while sleep_seconds > 0:
+                time.sleep(min(sleep_seconds, 60))
+                sleep_seconds = (target_time - datetime.datetime.now(IST)).total_seconds()
+                
+        send_random_push(target_time)
+        last_sent_date = target_time.date()
+        print(f"✅ Daily single push sent successfully for {last_sent_date}. No more pushes will be sent today.")
 
 if __name__ == "__main__":
     try:
