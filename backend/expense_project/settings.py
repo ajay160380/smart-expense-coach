@@ -184,7 +184,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # SEC-003: Security headers, cookies & HTTPS redirect
 import sys
-is_hf = any('7860' in arg for arg in sys.argv)
+is_hf = bool(os.environ.get('SPACE_ID') or os.environ.get('HF_SPACE') or any('7860' in arg for arg in sys.argv))
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True

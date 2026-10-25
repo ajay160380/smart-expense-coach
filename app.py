@@ -13,8 +13,10 @@ from django.core.management import call_command
 try:
     print("🚀 Running Django migrations...", flush=True)
     call_command('migrate', interactive=False)
+    print("🎨 Collecting static files for Hugging Face...", flush=True)
+    call_command('collectstatic', interactive=False, verbosity=0)
 except Exception as e:
-    print(f"Migration notice: {e}", flush=True)
+    print(f"Migration/static notice: {e}", flush=True)
 
 from expense_project.wsgi import application as django_wsgi_app
 import gradio as gr
