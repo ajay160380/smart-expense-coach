@@ -363,7 +363,7 @@ def api_login_required(view_func):
             # Enforce CSRF validation for state-changing browser requests
             if request.method in ("POST", "PUT", "PATCH", "DELETE"):
                 from django.middleware.csrf import CsrfViewMiddleware
-                reason = CsrfViewMiddleware().process_view(request, None, (), {})
+                reason = CsrfViewMiddleware(lambda req: None).process_view(request, None, (), {})
                 if reason:
                     return JsonResponse({"error": "CSRF verification failed."}, status=403)
             return view_func(request, *args, **kwargs)
