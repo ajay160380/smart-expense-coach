@@ -153,27 +153,52 @@ export default function AddExpenseScreen({ route, navigation }) {
         has_description: !!description,
       });
 
-      Alert.alert(
-        isEdit ? '✅ Expense Updated!' : '✅ Expense Saved!',
-        res.data?.message || `₹${parseFloat(cleanAmount).toLocaleString('en-IN')} for ${category}`,
-        [{ 
-          text: 'OK', 
-          onPress: () => {
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-            } else {
-              navigation.navigate('Home', { screen: 'DashboardMain' });
-            }
-          } 
-        }],
-        { cancelable: false }
-      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      DeviceEventEmitter.emit('EXPENSE_UPDATED');
+
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate('Home', { screen: 'DashboardMain' });
+      }
     } catch (error) {
       console.error(error);
       Alert.alert('Save Failed', formatApiError(error));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteExpense = () => {
+    if (!expense?.id) return;
+    Alert.alert(
+      'Delete Expense',
+      `Are you sure you want to delete this expense of ₹${parseFloat(amount || 0).toLocaleString('en-IN')}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await api.post(`/delete-expense/${expense.id}/`);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              DeviceEventEmitter.emit('EXPENSE_UPDATED');
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('Home', { screen: 'DashboardMain' });
+              }
+            } catch (err) {
+              Alert.alert('Delete Failed', formatApiError(err));
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const selectedCat = CATEGORIES.find((c) => c.key === category) || CATEGORIES[7];
@@ -208,10 +233,23 @@ export default function AddExpenseScreen({ route, navigation }) {
               }} 
               style={[styles.backBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
-              <Ionicons name="close" size={28} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
+              <Ionicons name="close" size={26} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>New Expense</Text>
-            <View style={{ width: 36 }} />
+            <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>
+              {isEdit ? 'Edit Expense' : 'New Expense'}
+            </Text>
+            {isEdit ? (
+              <TouchableOpacity
+                onPress={handleDeleteExpense}
+                disabled={loading}
+                style={[styles.deleteHeaderBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.18)' }]}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 36 }} />
+            )}
           </View>
 
           <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -342,15 +380,36 @@ export default function AddExpenseScreen({ route, navigation }) {
             <View style={{ height: 100 }} />
           </ScrollView>
 
-          {/* ── Absolute Save Button ── */}
-          <View style={styles.footer}>
-            <GradientButton
-              title="Save Expense"
-              onPress={handleAddExpense}
-              loading={loading}
-              colors={[selectedCat.color, selectedCat.color + 'CC']}
-              icon={selectedCat.icon}
-            />
+          {/* ── Absolute Action Buttons ── */}
+          <View style={[styles.footer, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {isEdit ? (
+              <View style={{ gap: 10 }}>
+                <GradientButton
+                  title="Update Expense"
+                  onPress={handleAddExpense}
+                  loading={loading}
+                  colors={[selectedCat.color, selectedCat.color + 'CC']}
+                  icon={selectedCat.icon}
+                />
+                <TouchableOpacity
+                  style={[styles.deleteFooterBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.14)', borderColor: 'rgba(239, 68, 68, 0.3)' }]}
+                  onPress={handleDeleteExpense}
+                  disabled={loading}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="trash-outline" size={17} color="#EF4444" style={{ marginRight: 6 }} />
+                  <Text style={styles.deleteFooterText}>Delete Expense</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <GradientButton
+                title="Save Expense"
+                onPress={handleAddExpense}
+                loading={loading}
+                colors={[selectedCat.color, selectedCat.color + 'CC']}
+                icon={selectedCat.icon}
+              />
+            )}
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -510,5 +569,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderColor: '#F1F3F9',
-  }
+  },
+  deleteHeaderBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteFooterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: RADIUS.lg,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  deleteFooterText: {
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });

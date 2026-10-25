@@ -20,6 +20,7 @@ import {
   Platform,
   Alert,
   RefreshControl,
+  DeviceEventEmitter,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
@@ -78,6 +79,10 @@ export default function HistoryScreen({ navigation }) {
 
   useEffect(() => {
     fetchHistory();
+    const sub = DeviceEventEmitter.addListener('EXPENSE_UPDATED', () => {
+      fetchHistory();
+    });
+    return () => sub.remove();
   }, [fetchHistory]);
 
   const onRefresh = async () => {
@@ -319,6 +324,44 @@ export default function HistoryScreen({ navigation }) {
                         idx < group.items.length - 1 && styles.expenseBorder,
                       ]}
                       onPress={() => navigation.navigate('AddExpense', { expense: exp })}
+                      onLongPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        Alert.alert(
+                          'Expense Actions',
+                          `₹${Number(exp.amount).toLocaleString('en-IN')} - ${exp.description || exp.category}`,
+                          [
+                            { text: '✏️ Edit', onPress: () => navigation.navigate('AddExpense', { expense: exp }) },
+                            {
+                              text: '🗑️ Delete',
+                              style: 'destructive',
+                              onPress: () => {
+                                Alert.alert(
+                                  'Confirm Delete',
+                                  `Delete ₹${Number(exp.amount).toLocaleString('en-IN')} expense?`,
+                                  [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    {
+                                      text: 'Delete',
+                                      style: 'destructive',
+                                      onPress: async () => {
+                                        try {
+                                          await api.post(`/delete-expense/${exp.id}/`);
+                                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                          fetchHistory();
+                                          DeviceEventEmitter.emit('EXPENSE_UPDATED');
+                                        } catch (e) {
+                                          Alert.alert('Error', 'Could not delete expense');
+                                        }
+                                      }
+                                    }
+                                  ]
+                                );
+                              }
+                            },
+                            { text: 'Cancel', style: 'cancel' }
+                          ]
+                        );
+                      }}
                       activeOpacity={0.75}
                     >
                       {/* Colored Rounded-Square Icon */}

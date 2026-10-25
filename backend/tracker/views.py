@@ -3600,6 +3600,7 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
         amount=validated["amount"],
         category=validated["category"],
         date=validated["date"],
+        description=validated.get("description", "") or "",
     )
     update_user_gamification(request.user, validated["date"])
 
@@ -3637,6 +3638,9 @@ def api_edit_expense(request: HttpRequest, pk: int) -> JsonResponse:
     if "category" in data:
         category = str(data["category"]).strip().lower()
         expense.category = category
+
+    if "description" in data:
+        expense.description = str(data["description"]).strip()[:255]
 
     if "date" in data:
         try:
@@ -6811,7 +6815,7 @@ def get_app_version(request):
     """
     return JsonResponse({
         "status": "success",
-        "latest_version": "1.3.6",
+        "latest_version": "1.3.2",
         "latest_version_code": 8,
         "apk_url": GITHUB_APK_CDN_URL,
         "direct_expo_url": GITHUB_APK_CDN_URL,

@@ -150,6 +150,11 @@ export default function DashboardScreen({ navigation }) {
       runEntranceAnimation();
     });
 
+    // Listen for expense created / edited / deleted to refresh instantly
+    const expSub = DeviceEventEmitter.addListener('EXPENSE_UPDATED', () => {
+      loadData(false);
+    });
+
     // Fallback: if splash didn't run or finished earlier
     const fallbackTimer = setTimeout(() => {
       if (!hasRevealedRef.current) {
@@ -160,6 +165,7 @@ export default function DashboardScreen({ navigation }) {
 
     return () => {
       sub.remove();
+      expSub.remove();
       clearTimeout(fallbackTimer);
     };
   }, [runEntranceAnimation]);
@@ -911,35 +917,94 @@ export default function DashboardScreen({ navigation }) {
 
         {/* ── CURVED WHITE SHEET CONTAINER ── */}
         <View style={[styles.sheetContainer, isDark && { backgroundColor: colors.bg }]}>
-          {/* ── ANOMALY SPENDING INSIGHT (If Any) ── */}
+          {/* ── ANOMALY SPENDING INSIGHT (AI COACH) ── */}
           {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
-            <Animated.View style={[styles.alertBanner, { opacity: animGreetingOpacity }]}>
-              {anomalies.map((alert, idx) => {
-                if (dismissedAnomalies[idx]) return null;
-                return (
-                  <View key={idx} style={[styles.alertItem, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <View style={styles.alertIconBadge}>
-                      <Ionicons name="bulb" size={13} color="#F59E0B" />
-                    </View>
-                    <View style={{ flex: 1, paddingHorizontal: 8 }}>
-                      <Text style={[styles.alertCategoryTitle, isDark && { color: '#FBBF24' }]}>SPENDING INSIGHT</Text>
-                      <Text style={[styles.alertText, isDark && { color: colors.textPrimary }]} numberOfLines={2}>
-                        {alert.message}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setDismissedAnomalies(prev => ({ ...prev, [idx]: true }));
-                      }}
-                      style={styles.alertDismissBtn}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons name="close" size={13} color={isDark ? colors.textSecondary : '#9CA3AF'} />
-                    </TouchableOpacity>
+            <Animated.View style={[styles.aiInsightCard, isDark && styles.aiInsightCardDark, { opacity: animGreetingOpacity }]}>
+              {/* Header */}
+              <View style={styles.aiInsightHeader}>
+                <View style={styles.aiInsightTitleGroup}>
+                  <LinearGradient
+                    colors={['#F59E0B', '#EF4444']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.aiInsightIconGlow}
+                  >
+                    <Ionicons name="sparkles" size={13} color="#FFFFFF" />
+                  </LinearGradient>
+                  <Text style={[styles.aiInsightTitleText, isDark && { color: colors.textPrimary }]}>
+                    AI Spending Insights
+                  </Text>
+                  <View style={[styles.aiAlertCountBadge, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}>
+                    <Text style={styles.aiAlertCountText}>
+                      {anomalies.filter((_, i) => !dismissedAnomalies[i]).length}
+                    </Text>
                   </View>
-                );
-              })}
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    const allDismissed = {};
+                    anomalies.forEach((_, i) => { allDismissed[i] = true; });
+                    setDismissedAnomalies(allDismissed);
+                  }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  style={styles.aiDismissAllBtn}
+                >
+                  <Text style={[styles.aiDismissAllText, isDark && { color: colors.textSecondary }]}>Dismiss</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Alert items */}
+              <View style={styles.aiInsightList}>
+                {anomalies.map((alert, idx) => {
+                  if (dismissedAnomalies[idx]) return null;
+
+                  const isCritical = alert.severity === 'critical' || alert.type === 'budget_exceeded';
+                  const isSpike = alert.type === 'spending_spike';
+                  const badgeLabel = isCritical ? 'BUDGET EXCEEDED' : isSpike ? 'SPENDING SPIKE' : 'INSIGHT';
+                  const badgeBg = isCritical ? 'rgba(239, 68, 68, 0.14)' : isSpike ? 'rgba(245, 158, 11, 0.14)' : 'rgba(129, 140, 248, 0.14)';
+                  const badgeColor = isCritical ? '#EF4444' : isSpike ? '#F59E0B' : '#818CF8';
+                  const badgeIcon = isCritical ? 'alert-circle' : isSpike ? 'trending-up' : 'bulb';
+
+                  return (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.aiAlertItem,
+                        isDark && styles.aiAlertItemDark,
+                        idx > 0 && { marginTop: 8 }
+                      ]}
+                    >
+                      <View style={[styles.aiAlertIconBox, { backgroundColor: badgeBg }]}>
+                        <Ionicons name={badgeIcon} size={15} color={badgeColor} />
+                      </View>
+
+                      <View style={{ flex: 1, paddingHorizontal: 10 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                          <View style={[styles.aiAlertPill, { backgroundColor: badgeBg }]}>
+                            <Text style={[styles.aiAlertPillText, { color: badgeColor }]}>{badgeLabel}</Text>
+                          </View>
+                        </View>
+                        <Text style={[styles.aiAlertMessageText, isDark && { color: colors.textPrimary }]}>
+                          {alert.message}
+                        </Text>
+                      </View>
+
+                      <TouchableOpacity
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setDismissedAnomalies(prev => ({ ...prev, [idx]: true }));
+                        }}
+                        style={[styles.aiAlertCloseBtn, isDark && { backgroundColor: 'rgba(255,255,255,0.08)' }]}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="close" size={13} color={isDark ? colors.textSecondary : '#94A3B8'} />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
             </Animated.View>
           )}
 
@@ -1235,13 +1300,13 @@ export default function DashboardScreen({ navigation }) {
           {/* ── SECTION 5.5: SMART FINANCIAL WIDGETS ── */}
           <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }], marginTop: 18 }}>
             <View style={styles.sectionHeaderRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1, marginRight: 8 }}>
                 <View style={[styles.widgetBadgeIconBox, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}>
                   <Ionicons name="sparkles" size={13} color={isDark ? '#818CF8' : '#7C3AED'} />
                 </View>
-                <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]}>Smart Financial Widgets</Text>
+                <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]} numberOfLines={1}>Financial Widgets</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                 {Platform.OS === 'android' && (
                   <TouchableOpacity
                     style={[styles.pinHomePill, isDark && { backgroundColor: 'rgba(37, 99, 235, 0.18)', borderColor: '#3B82F6' }]}
@@ -1249,7 +1314,7 @@ export default function DashboardScreen({ navigation }) {
                     activeOpacity={0.8}
                   >
                     <Ionicons name="add" size={12} color={isDark ? '#60A5FA' : '#2563EB'} />
-                    <Text style={[styles.pinHomeText, isDark && { color: '#60A5FA' }]}>Pin to Home</Text>
+                    <Text style={[styles.pinHomeText, isDark && { color: '#60A5FA' }]}>Pin</Text>
                   </TouchableOpacity>
                 )}
                 <View style={[styles.widgetLivePill, isDark && { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
@@ -1649,6 +1714,43 @@ export default function DashboardScreen({ navigation }) {
                       key={exp.id || idx}
                       style={[styles.txCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                       onPress={() => navigation.navigate('AddExpense', { expense: exp })}
+                      onLongPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        Alert.alert(
+                          'Expense Actions',
+                          `₹${Number(exp.amount).toLocaleString('en-IN')} - ${exp.description || exp.category}`,
+                          [
+                            { text: '✏️ Edit', onPress: () => navigation.navigate('AddExpense', { expense: exp }) },
+                            {
+                              text: '🗑️ Delete',
+                              style: 'destructive',
+                              onPress: () => {
+                                Alert.alert(
+                                  'Confirm Delete',
+                                  `Delete ₹${Number(exp.amount).toLocaleString('en-IN')} expense?`,
+                                  [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    {
+                                      text: 'Delete',
+                                      style: 'destructive',
+                                      onPress: async () => {
+                                        try {
+                                          await api.post(`/delete-expense/${exp.id}/`);
+                                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                          loadData(false);
+                                        } catch (e) {
+                                          Alert.alert('Error', 'Could not delete expense');
+                                        }
+                                      }
+                                    }
+                                  ]
+                                );
+                              }
+                            },
+                            { text: 'Cancel', style: 'cancel' }
+                          ]
+                        );
+                      }}
                       activeOpacity={0.8}
                     >
                       {/* Left: Soft colored rounded-square icon box */}
@@ -4136,5 +4238,121 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(148, 163, 184, 0.15)',
+  },
+
+  // ── AI Spending Insights / Anomaly Card ──
+  aiInsightCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  aiInsightCardDark: {
+    backgroundColor: '#1E2235',
+    borderColor: 'rgba(245, 158, 11, 0.25)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.3,
+  },
+  aiInsightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(245, 158, 11, 0.15)',
+  },
+  aiInsightTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aiInsightIconGlow: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiInsightTitleText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  aiAlertCountBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+  },
+  aiAlertCountText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#D97706',
+  },
+  aiDismissAllBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  aiDismissAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  aiInsightList: {
+    gap: 8,
+  },
+  aiAlertItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
+  },
+  aiAlertItemDark: {
+    backgroundColor: '#161926',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  aiAlertIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  aiAlertPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+  },
+  aiAlertPillText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  aiAlertMessageText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  aiAlertCloseBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
   },
 });

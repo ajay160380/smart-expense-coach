@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../api/config';
 
 // Current App Version dynamically read from installed app config
-export const CURRENT_APP_VERSION = Constants?.expoConfig?.version || '1.3.1';
+export const CURRENT_APP_VERSION = Constants?.expoConfig?.version || '1.3.2';
 export const CURRENT_VERSION_CODE = Number(Constants?.expoConfig?.android?.versionCode || 3);
 
 let _updateStatusCache = null;
