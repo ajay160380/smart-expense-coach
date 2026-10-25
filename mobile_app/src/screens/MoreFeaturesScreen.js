@@ -570,16 +570,43 @@ export default function MoreFeaturesScreen({ navigation }) {
             badge={updateInfo?.hasUpdate ? 'UPDATE' : `v${CURRENT_APP_VERSION}`}
             badgeColor={updateInfo?.hasUpdate ? '#EF4444' : '#06B6D4'}
             onPress={async () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               if (updateInfo?.hasUpdate) {
                 downloadAndInstallLatestApk(updateInfo.apkUrl);
-              } else {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                const res = await checkAppVersion(false);
-                if (res?.hasUpdate) {
-                  downloadAndInstallLatestApk(res.apkUrl);
-                } else {
-                  Alert.alert('App Up to Date! 🎉', `You are running the latest version (v${CURRENT_APP_VERSION}).`);
+                return;
+              }
+
+              // 1. Check for live OTA update first
+              try {
+                if (!__DEV__ && Updates.checkForUpdateAsync) {
+                  const ota = await Updates.checkForUpdateAsync();
+                  if (ota.isAvailable) {
+                    Alert.alert('Update Available 🚀', 'Downloading latest features and fixes...');
+                    await Updates.fetchUpdateAsync();
+                    Alert.alert(
+                      'Update Applied! 🎉',
+                      'Latest update downloaded. Restart app now to apply?',
+                      [
+                        { text: 'Later', style: 'cancel' },
+                        { text: 'Restart Now', onPress: () => Updates.reloadAsync() },
+                      ]
+                    );
+                    return;
+                  }
                 }
+              } catch (otaErr) {
+                console.log('OTA check error:', otaErr);
+              }
+
+              // 2. Check for latest APK build
+              const res = await checkAppVersion(false);
+              if (res?.hasUpdate) {
+                downloadAndInstallLatestApk(res.apkUrl);
+              } else {
+                Alert.alert(
+                  'App Up to Date! 🎉',
+                  `You are running the latest version (v${CURRENT_APP_VERSION}) with all live patches.`
+                );
               }
             }}
             isLast={!isAdmin}
