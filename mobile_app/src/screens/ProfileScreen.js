@@ -754,8 +754,8 @@ export default function ProfileScreen({ navigation }) {
             ionIcon="globe-outline"
             iconColor="#3B82F6"
             label="Web Dashboard"
-            sub="smart-expense-coach.onrender.com"
-            onPress={() => openLink('https://smart-expense-coach.onrender.com')}
+            sub="expense-coach-prxm.onrender.com"
+            onPress={() => openLink('https://expense-coach-prxm.onrender.com')}
             showArrow
             isLast
           />

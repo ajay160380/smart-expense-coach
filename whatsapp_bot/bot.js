@@ -7,9 +7,50 @@ const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 const usePostgresAuthState = require('./postgresAuthState');
 
-const PORT = process.env.PORT || 8000;
-// Use DJANGO_URL if provided, else fallback to localhost for monolithic deployment
+const PORT = process.env.PORT || 10000;
+const PUBLIC_API_URL = process.env.PUBLIC_APP_URL || process.env.RENDER_EXTERNAL_URL || 'https://expense-coach-prxm.onrender.com';
 const INTERNAL_API_URL = process.env.DJANGO_URL || `http://127.0.0.1:${PORT}`;
+
+const DJANGO_URL_CANDIDATES = [...new Set([
+    process.env.DJANGO_URL,
+    `http://127.0.0.1:${PORT}`,
+    'http://127.0.0.1:10000',
+    'http://127.0.0.1:8000',
+    PUBLIC_API_URL
+].filter(Boolean))];
+
+async function callDjangoApi(endpoint, options = {}) {
+    let lastError = null;
+    for (const baseUrl of DJANGO_URL_CANDIDATES) {
+        try {
+            const cleanBase = baseUrl.replace(/\/+$/, '');
+            const cleanEndpoint = '/' + endpoint.replace(/^\/+/, '');
+            const targetUrl = `${cleanBase}${cleanEndpoint}`;
+
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 25000);
+
+            const response = await fetch(targetUrl, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                const text = await response.text();
+                throw new Error(`Non-JSON response (HTTP ${response.status}): ${text.slice(0, 120)}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (err) {
+            lastError = err;
+            console.warn(`[API Candidate] ${baseUrl} failed: ${err.message}. Trying next candidate...`);
+        }
+    }
+    throw lastError || new Error(`All Django API candidates failed for ${endpoint}`);
+}
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -235,12 +276,11 @@ async function startBot(sessionName = null) {
             
             await safeReply(remoteJid, `⏳ Fetching and triggering ${tipLabel} Tips manually${isForce ? ' (FORCE mode)' : ''}...`, msg);
             try {
-                const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
+                const data = await callDjangoApi('/api/trigger-daily-tips/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType, force: isForce })
                 });
-                const data = await response.json();
 
                 if (data.tips && data.tips.length > 0) {
                     await safeReply(remoteJid, `${tipEmoji} Found ${data.tips.length} tips. Sending now...`, msg);
@@ -249,7 +289,7 @@ async function startBot(sessionName = null) {
                             let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
                             let targetJid = `${cleanPhone}@s.whatsapp.net`;
                             await safeReply(targetJid, tip.message);
-                            await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
+                            await callDjangoApi('/api/confirm-tip-sent/', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: tipType })
@@ -356,12 +396,11 @@ async function startBot(sessionName = null) {
 
             try {
                 await safeReply(remoteJid, `⏳ Sending Push: *${title}*...`, msg);
-                const response = await fetch(`${INTERNAL_API_URL}/api/send-admin-push/`, {
+                const data = await callDjangoApi('/api/send-admin-push/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secret: process.env.ADMIN_PUSH_SECRET || "", title, body })
                 });
-                const data = await response.json();
                 if (data.status === 'success') {
                     await safeReply(remoteJid, `✅ Push successfully broadcasted!`, msg);
                 } else {
@@ -375,42 +414,18 @@ async function startBot(sessionName = null) {
 
         // ── PROCESS EXPENSE ──
         try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 30000);
+            const data = await callDjangoApi('/api/voice-expense/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone,
+                    text,
+                    name: pushName,
+                    message_id: msg.key?.id || '',
+                    sender_id: remoteJid || phone
+                })
+            });
 
-            let response;
-            try {
-                response = await fetch(`${INTERNAL_API_URL}/api/voice-expense/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone,
-                        text,
-                        name: pushName,
-                        message_id: msg.key?.id || '',
-                        sender_id: remoteJid || phone
-                    }),
-                    signal: controller.signal
-                });
-            } catch (fetchErr) {
-                console.warn(`⚠️ Internal API fetch error (${fetchErr.message}), falling back to public endpoint...`);
-                response = await fetch('https://smart-expense-coach.onrender.com/api/voice-expense/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone,
-                        text,
-                        name: pushName,
-                        message_id: msg.key?.id || '',
-                        sender_id: remoteJid || phone
-                    }),
-                    signal: controller.signal
-                });
-            }
-            clearTimeout(timeout);
-
-            const data = await response.json();
-            
             if (data.media) {
                 const mediaBuffer = Buffer.from(data.media.base64, 'base64');
                 const mimetype = data.media.mimetype || 'application/pdf';
@@ -463,12 +478,11 @@ async function dispatchTipsForType(type) {
         }
 
         console.log(`⏰ [EXACT ${type === 'morning' ? '08:00 AM' : '10:00 PM'} IST] Triggering ${tipLabel} tips...`);
-        const response = await fetch(`${INTERNAL_API_URL}/api/trigger-daily-tips/`, {
+        const data = await callDjangoApi('/api/trigger-daily-tips/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ secret: "paisamitra-daily-2025", type })
         });
-        const data = await response.json();
         if (data.tips && data.tips.length > 0) {
             console.log(`${tipEmoji} Delivering ${data.tips.length} ${tipLabel} tips...`);
             for (const tip of data.tips) {
@@ -476,7 +490,7 @@ async function dispatchTipsForType(type) {
                     let cleanPhone = tip.whatsapp_number.replace(/[^0-9]/g, '');
                     await safeReply(`${cleanPhone}@s.whatsapp.net`, tip.message);
                     console.log(`✅ Delivered ${tipLabel} tip to ${cleanPhone}`);
-                    await fetch(`${INTERNAL_API_URL}/api/confirm-tip-sent/`, {
+                    await callDjangoApi('/api/confirm-tip-sent/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type })
@@ -513,7 +527,7 @@ if (isCronScheduled) {
     // 3. Keep-alive pinger every 10 minutes so Render free-tier never goes to sleep
     cron.schedule('*/10 * * * *', async () => {
         try {
-            await fetch('https://smart-expense-coach.onrender.com/health/').catch(() => {});
+            await fetch(`${PUBLIC_API_URL}/health/`).catch(() => {});
         } catch (e) {}
     });
 }

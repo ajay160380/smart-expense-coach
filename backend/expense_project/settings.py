@@ -43,6 +43,7 @@ else:
     ALLOWED_HOSTS = [
         'localhost',
         '127.0.0.1',
+        'expense-coach-prxm.onrender.com',
         'smart-expense-coach.onrender.com',
         '.onrender.com',
         '.hf.space',
@@ -58,6 +59,7 @@ if raw_csrf_origins:
     CSRF_TRUSTED_ORIGINS = [o.strip() for o in raw_csrf_origins.split(',') if o.strip()]
 else:
     CSRF_TRUSTED_ORIGINS = [
+        'https://expense-coach-prxm.onrender.com',
         'https://smart-expense-coach.onrender.com',
         'https://*.onrender.com',
         'https://*.hf.space',

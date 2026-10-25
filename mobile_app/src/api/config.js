@@ -9,7 +9,7 @@ import axios from 'axios';
 import { getToken, clearAuthData } from '../utils/auth';
 
 // ── Base URL — configurable for environment ──
-export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://smart-expense-coach.onrender.com';
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://expense-coach-prxm.onrender.com';
 
 // ── Axios Instance ──
 const api = axios.create({

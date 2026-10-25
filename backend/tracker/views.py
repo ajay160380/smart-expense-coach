@@ -546,7 +546,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     
     User Context:
     - Name: {user_name}
-    - Dashboard Link: https://smart-expense-coach.onrender.com
+    - Dashboard Link: https://expense-coach-prxm.onrender.com
     - Monthly Budget: ₹{user_context.get('budget', 20000)}
     - Total Spent This Month: ₹{user_context.get('spent', 0)}
     - Remaining Budget: ₹{user_context.get('remaining', 0)}
@@ -2058,7 +2058,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 if not profile or not profile.user:
                     return JsonResponse({
                         "status":  "error",
-                        "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://smart-expense-coach.onrender.com/register/"
+                        "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://expense-coach-prxm.onrender.com/register/"
                     })
             target_user = profile.user
             _WA_AUTH_CACHE[incoming_phone] = target_user.id
@@ -2236,7 +2236,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         if any(trg in lower_text for trg in trip_history_triggers) and not any(char.isdigit() for char in lower_text):
             host_domain = request.build_absolute_uri('/')[:-1]
             if "localhost" in host_domain or "127.0.0.1" in host_domain:
-                host_domain = "https://smart-expense-coach.onrender.com"
+                host_domain = os.getenv('PUBLIC_APP_URL') or os.getenv('RENDER_EXTERNAL_URL') or "https://expense-coach-prxm.onrender.com"
             splits_url = f"{host_domain}/splits/"
             return JsonResponse({
                 "status": "success", 
@@ -2291,7 +2291,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         if is_split_intent:
             host_domain = request.build_absolute_uri('/')[:-1]
             if "localhost" in host_domain or "127.0.0.1" in host_domain:
-                host_domain = "https://smart-expense-coach.onrender.com"
+                host_domain = os.getenv('PUBLIC_APP_URL') or os.getenv('RENDER_EXTERNAL_URL') or "https://expense-coach-prxm.onrender.com"
             res = parse_and_handle_split_message(target_user, spoken_text, host_domain, session)
 
             # Persist session context so subsequent AI turns know about this trip/split!
@@ -4718,7 +4718,7 @@ def compute_group_settlement(group, host_domain=None):
         })
 
     if not host_domain:
-        host_domain = "https://smart-expense-coach.onrender.com"
+        host_domain = os.getenv('PUBLIC_APP_URL') or os.getenv('RENDER_EXTERNAL_URL') or "https://expense-coach-prxm.onrender.com"
     public_url = f"{host_domain.rstrip('/')}/split/{group.share_token}/"
 
     settle_lines = []
@@ -6803,12 +6803,12 @@ def get_app_version(request):
     """
     return JsonResponse({
         "status": "success",
-        "latest_version": "1.3.5",
-        "latest_version_code": 7,
+        "latest_version": "1.3.6",
+        "latest_version_code": 8,
         "apk_url": GITHUB_APK_CDN_URL,
         "direct_expo_url": GITHUB_APK_CDN_URL,
-        "release_notes": "Added loud sound, vibration & heads-up banner notifications with custom notification channel!",
-        "published_at": "2026-10-25",
+        "release_notes": "Connected to fast live cloud server with sound and banner notifications!",
+        "published_at": "2026-10-26",
     })
 
 

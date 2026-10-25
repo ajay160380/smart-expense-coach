@@ -541,9 +541,9 @@ export default function MoreFeaturesScreen({ navigation }) {
             icon="globe-outline"
             iconColor="#3B82F6"
             title="Web Cloud Portal"
-            desc="smart-expense-coach.onrender.com"
+            desc="expense-coach-prxm.onrender.com"
             showArrow
-            onPress={() => openLink('https://smart-expense-coach.onrender.com')}
+            onPress={() => openLink('https://expense-coach-prxm.onrender.com')}
             isLast
           />
         </View>
