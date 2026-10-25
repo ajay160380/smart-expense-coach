@@ -6758,44 +6758,22 @@ LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/6fEQmjVfwMsDlbSHZtW41Q46Cr
 
 def ensure_apk_cached_on_disk():
     import os
-    import urllib.request
     from django.conf import settings
 
     apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
-    url_marker_path = apk_path + ".url"
     os.makedirs(os.path.dirname(apk_path), exist_ok=True)
 
-    # Check if cached APK matches LATEST_EXPO_APK_URL
-    current_cached_url = ""
-    if os.path.exists(url_marker_path):
-        try:
-            with open(url_marker_path, 'r') as f:
-                current_cached_url = f.read().strip()
-        except Exception:
-            current_cached_url = ""
-
-    # 1. If file exists, is > 10MB, and URL matches, it is current
-    if current_cached_url == LATEST_EXPO_APK_URL and os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
+    # 1. If committed/built APK exists on disk and is > 10MB, always prefer and serve it!
+    if os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
         return apk_path
 
-    # If URL changed or marker missing, remove stale APK
-    if os.path.exists(apk_path):
-        try:
-            os.remove(apk_path)
-        except Exception:
-            pass
-
-    # 2. Download directly to disk so FileResponse serves with full Content-Length
+    # 2. Fallback: Download from EAS artifact if missing
     temp_path = apk_path + ".tmp"
     try:
+        import urllib.request
         urllib.request.urlretrieve(LATEST_EXPO_APK_URL, temp_path)
         if os.path.exists(temp_path) and os.path.getsize(temp_path) > 10 * 1024 * 1024:
             os.replace(temp_path, apk_path)
-            try:
-                with open(url_marker_path, 'w') as f:
-                    f.write(LATEST_EXPO_APK_URL)
-            except Exception:
-                pass
             return apk_path
     except Exception:
         if os.path.exists(temp_path):
@@ -6854,12 +6832,12 @@ def get_app_version(request):
     """
     return JsonResponse({
         "status": "success",
-        "latest_version": "1.3.3",
-        "latest_version_code": 5,
+        "latest_version": "1.3.4",
+        "latest_version_code": 6,
         "apk_url": "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk",
-        "direct_expo_url": LATEST_EXPO_APK_URL,
-        "release_notes": "Dual Home Screen Widgets (2x2 + 4x2), Instant AI Voice breakdown & in-app APK updater!",
-        "published_at": "2026-10-24",
+        "direct_expo_url": "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk",
+        "release_notes": "Admin Panel text visibility fix, dual home screen widgets, and built-in offline updates!",
+        "published_at": "2026-10-25",
     })
 
 
