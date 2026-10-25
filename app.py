@@ -1,7 +1,14 @@
+# 1. Hugging Face ZeroGPU Initialization (MUST be top of file)
+import spaces
+
+@spaces.GPU
+def probe_zerogpu(text="Paisa Mitra Status"):
+    return f"⚡ ZeroGPU Hardware Active | {text}"
+
 import os
 import sys
 
-# 1. Django Environment Setup
+# 2. Django Environment Setup
 backend_dir = os.path.join(os.path.dirname(__file__), "backend")
 sys.path.insert(0, backend_dir)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expense_project.settings')
@@ -22,13 +29,6 @@ from expense_project.wsgi import application as django_wsgi_app
 import gradio as gr
 from fastapi import FastAPI
 from a2wsgi import WSGIMiddleware
-
-# 2. Hugging Face ZeroGPU Integration
-import spaces
-
-@spaces.GPU
-def probe_zerogpu(text="Paisa Mitra Status"):
-    return f"⚡ ZeroGPU Hardware Active | {text}"
 
 # 3. Gradio Interface (Mounted at /_gradio for ZeroGPU compliance)
 with gr.Blocks(title="Paisa Mitra — ZeroGPU Backend") as demo:
