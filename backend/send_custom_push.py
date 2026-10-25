@@ -7,7 +7,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expense_project.settings')
 django.setup()
 
 from tracker.models import UserProfile
-from tracker.fcm_utils import send_push_notification, initialize_firebase
+from tracker.fcm_utils import send_push_notification, initialize_firebase, get_android_config, get_apns_config
 from firebase_admin import messaging
 
 def main():
@@ -43,6 +43,8 @@ def main():
             ),
             data=data,
             topic=args.topic,
+            android=get_android_config(title, body),
+            apns=get_apns_config(title, body),
         )
         res = messaging.send(topic_message)
         print(f"Successfully broadcasted to topic '{args.topic}':", res)

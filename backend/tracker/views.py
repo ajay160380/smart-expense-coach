@@ -6737,7 +6737,7 @@ def api_send_admin_push(request):
         return Response({"status": "error", "message": "Title and body required"}, status=400)
 
     try:
-        from tracker.fcm_utils import initialize_firebase, send_push_notification
+        from tracker.fcm_utils import initialize_firebase, send_push_notification, get_android_config, get_apns_config
         from firebase_admin import messaging
 
         initialize_firebase()
@@ -6748,6 +6748,8 @@ def api_send_admin_push(request):
             ),
             data={"screen": screen},
             topic='all_users',
+            android=get_android_config(title, body),
+            apns=get_apns_config(title, body),
         )
         res = messaging.send(topic_message)
         return Response({"status": "success", "message": "Push sent to all_users topic", "res": res})
@@ -6832,11 +6834,11 @@ def get_app_version(request):
     """
     return JsonResponse({
         "status": "success",
-        "latest_version": "1.3.4",
-        "latest_version_code": 6,
+        "latest_version": "1.3.5",
+        "latest_version_code": 7,
         "apk_url": "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk",
         "direct_expo_url": "https://smart-expense-coach.onrender.com/static/downloads/ExpenseTracker.apk",
-        "release_notes": "Admin Panel text visibility fix, dual home screen widgets, and built-in offline updates!",
+        "release_notes": "Added loud sound, vibration & heads-up banner notifications with custom notification channel!",
         "published_at": "2026-10-25",
     })
 

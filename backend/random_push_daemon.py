@@ -8,7 +8,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expense_project.settings')
 django.setup()
 
 from tracker.models import UserProfile
-from tracker.fcm_utils import send_push_notification, initialize_firebase
+from tracker.fcm_utils import send_push_notification, initialize_firebase, get_android_config, get_apns_config
 from firebase_admin import messaging
 
 MORNING_MESSAGES = [
@@ -102,6 +102,8 @@ def send_random_push(scheduled_time):
             ),
             data=data,
             topic='all_users',
+            android=get_android_config(title, body),
+            apns=get_apns_config(title, body),
         )
         res = messaging.send(topic_message)
         print("Successfully broadcasted to topic 'all_users':", res)

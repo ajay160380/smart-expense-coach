@@ -35,47 +35,53 @@ export async function scheduleRandomNotifications() {
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
+      await Notifications.setNotificationChannelAsync('expense_tracker_alerts_v2', {
+        name: 'Expense Alerts & Reminders',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF231F7C',
+        sound: 'default',
+        enableVibrate: true,
+        showBadge: true,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      });
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Default Alerts',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        sound: 'default',
+        enableVibrate: true,
+        showBadge: true,
       });
     }
 
     // Cancel all previously scheduled local notifications so we don't spam
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    // Schedule for the next 7 days
+    // Schedule for the next 7 days: strictly 1 random notification per day
     for (let i = 0; i < 7; i++) {
-      // 1 or 2 notifications per day
-      const numNotifications = Math.random() < 0.5 ? 1 : 2;
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      
+      // Random hour between 18:00 (6 PM) and 21:59 (10 PM)
+      const randomHour = 18 + Math.floor(Math.random() * 4);
+      const randomMinute = Math.floor(Math.random() * 60);
+      
+      date.setHours(randomHour, randomMinute, 0, 0);
 
-      for (let j = 0; j < numNotifications; j++) {
-        // Random time between 18:00 (6 PM) and 22:00 (10 PM)
-        const date = new Date();
-        date.setDate(date.getDate() + i);
+      // Don't schedule in the past
+      if (date.getTime() > Date.now()) {
+        const randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
         
-        // Random hour between 18 and 21 (so max is 21:59)
-        const randomHour = 18 + Math.floor(Math.random() * 4);
-        const randomMinute = Math.floor(Math.random() * 60);
-        
-        date.setHours(randomHour, randomMinute, 0, 0);
-
-        // Don't schedule in the past
-        if (date.getTime() > Date.now()) {
-          const randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
-          
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: "Expense Tracker 💡",
-              body: randomMessage,
-              sound: true,
-            },
-            trigger: date,
-          });
-          console.log(`Scheduled notification for ${date.toLocaleString()}`);
-        }
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Expense Tracker 💡",
+            body: randomMessage,
+            sound: 'default',
+            channelId: 'expense_tracker_alerts_v2',
+          },
+          trigger: date,
+        });
+        console.log(`Scheduled notification for ${date.toLocaleString()}`);
       }
     }
   } catch (error) {

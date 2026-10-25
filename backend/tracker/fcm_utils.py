@@ -25,9 +25,36 @@ def initialize_firebase():
         except Exception as e:
             print("Warning: Could not initialize Firebase Admin.", e)
 
+def get_android_config(title, body, channel_id='expense_tracker_alerts_v2'):
+    return messaging.AndroidConfig(
+        priority='high',
+        notification=messaging.AndroidNotification(
+            title=title,
+            body=body,
+            sound='default',
+            channel_id=channel_id,
+            priority='max',
+            default_sound=True,
+            default_vibrate_timings=True,
+            visibility='public',
+        ),
+    )
+
+def get_apns_config(title, body):
+    return messaging.APNSConfig(
+        headers={'apns-priority': '10'},
+        payload=messaging.APNSPayload(
+            aps=messaging.Aps(
+                alert=messaging.ApsAlert(title=title, body=body),
+                sound='default',
+                badge=1,
+            )
+        ),
+    )
+
 def send_push_notification(fcm_token, title, body, data=None):
     """
-    Send a push notification to a specific device token.
+    Send a push notification to a specific device token with high priority, sound, and popup channel.
     """
     initialize_firebase()
     
@@ -44,17 +71,8 @@ def send_push_notification(fcm_token, title, body, data=None):
             ),
             data=data if data else {},
             token=fcm_token,
-            android=messaging.AndroidConfig(
-                priority='high',
-                notification=messaging.AndroidNotification(
-                    sound='default',
-                ),
-            ),
-            apns=messaging.APNSConfig(
-                payload=messaging.APNSPayload(
-                    aps=messaging.Aps(sound='default')
-                ),
-            )
+            android=get_android_config(title, body),
+            apns=get_apns_config(title, body)
         )
 
         # Send the message

@@ -35,6 +35,14 @@ import { scheduleRandomNotifications } from './src/utils/localNotifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as LocalAuthentication from 'expo-local-authentication';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 // ── Auth Screens ──
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -441,8 +449,38 @@ export default function App() {
   useEffect(() => {
     const setupFCM = async (authToken) => {
       try {
-        if (Platform.OS === 'android' && Platform.Version >= 33) {
-          await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+        if (Platform.OS === 'android') {
+          if (Platform.Version >= 33) {
+            await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+          }
+          await Notifications.setNotificationChannelAsync('expense_tracker_alerts_v2', {
+            name: 'Expense Alerts & Reminders',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            sound: 'default',
+            enableVibrate: true,
+            showBadge: true,
+            lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+            bypassDnd: true,
+          });
+          await Notifications.setNotificationChannelAsync('expense_tracker_alerts', {
+            name: 'Expense Tracker Alerts',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            sound: 'default',
+            enableVibrate: true,
+            showBadge: true,
+            lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          });
+          await Notifications.setNotificationChannelAsync('default', {
+            name: 'General Notifications',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            sound: 'default',
+            enableVibrate: true,
+            showBadge: true,
+            lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          });
         }
 
         const authStatus = await messaging().requestPermission();
@@ -479,13 +517,30 @@ export default function App() {
       }
     };
 
+    let unsubscribe = () => {};
+    let notifResponseSub = null;
+
     try {
-      const unsubscribe = messaging().onMessage(async remoteMessage => {
+      unsubscribe = messaging().onMessage(async remoteMessage => {
         await saveNotification(remoteMessage);
-        Alert.alert(
-          remoteMessage.notification?.title || 'New Notification', 
-          remoteMessage.notification?.body || JSON.stringify(remoteMessage)
-        );
+        try {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: remoteMessage.notification?.title || 'Expense Tracker 💡',
+              body: remoteMessage.notification?.body || '',
+              data: remoteMessage.data || {},
+              sound: 'default',
+              channelId: 'expense_tracker_alerts_v2',
+            },
+            trigger: null, // immediate heads-up popup banner and sound!
+          });
+        } catch (notifErr) {
+          console.log('Error showing heads-up notification in foreground:', notifErr);
+          Alert.alert(
+            remoteMessage.notification?.title || 'New Notification', 
+            remoteMessage.notification?.body || JSON.stringify(remoteMessage)
+          );
+        }
       });
 
       // Handle background notification tap
@@ -513,6 +568,13 @@ export default function App() {
           }
         }
       }).catch(err => console.log('getInitialNotification error:', err));
+
+      notifResponseSub = Notifications.addNotificationResponseReceivedListener(response => {
+        const data = response.notification.request.content.data;
+        if (data?.screen && navigationRef.isReady()) {
+          navigationRef.navigate(data.screen);
+        }
+      });
     } catch (msgErr) {
       console.log('FCM messaging listener error:', msgErr);
     }
@@ -541,7 +603,8 @@ export default function App() {
     });
 
     return () => {
-      unsubscribe();
+      if (typeof unsubscribe === 'function') unsubscribe();
+      if (notifResponseSub && notifResponseSub.remove) notifResponseSub.remove();
     };
   }, []);
 
