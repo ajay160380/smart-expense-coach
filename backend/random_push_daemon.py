@@ -128,11 +128,15 @@ def run_daemon():
     while True:
         now = datetime.datetime.now(IST)
         
-        # Morning time: EXACTLY 8:00:00 AM IST
-        time1 = now.replace(hour=8, minute=0, second=0, microsecond=0)
+        # 1. Random daytime notification (between 10:00 AM and 3:30 PM IST)
+        random_hour_1 = random.randint(10, 15)
+        random_minute_1 = random.randint(0, 59)
+        time1 = now.replace(hour=random_hour_1, minute=random_minute_1, second=0, microsecond=0)
         
-        # Evening/Night time: EXACTLY 10:00:00 PM IST (22:00)
-        time2 = now.replace(hour=22, minute=0, second=0, microsecond=0)
+        # 2. Random evening notification (between 6:00 PM and 9:30 PM IST)
+        random_hour_2 = random.randint(18, 21)
+        random_minute_2 = random.randint(0, 59)
+        time2 = now.replace(hour=random_hour_2, minute=random_minute_2, second=0, microsecond=0)
         
         times_to_fire = []
         if time1 > now:
