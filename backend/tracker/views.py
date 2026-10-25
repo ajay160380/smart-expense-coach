@@ -558,7 +558,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     1. EXPENSE RECORDING (HIGHEST PRIORITY):
        Whenever the user mentions ANY expense, purchase, money spent, paid, bought, or incurred (e.g. "500 petrol", "200 chai", "swiggy se 450 ka khana", "maine 300 rupaye khana khaya", "doodh 60 ka", "bought medicine for 350", "uber cab 280 rupaye de diye", "pizza 450"):
        - action = "log_expenses"
-       - expenses = An array of expense objects: [{"amount": 500, "category": "transport", "description": "Petrol"}]. Extract EVERY SINGLE item mentioned.
+       - expenses = An array of expense objects: [{{"amount": 500, "category": "transport", "description": "Petrol"}}]. Extract EVERY SINGLE item mentioned.
        - NEVER classify a message mentioning an amount of money spent as "chat"! Always set action="log_expenses".
     2. If the user EXPLICITLY asks to save a note (e.g. "save to notepad", "notepad me daal do", "note: buy milk"):
        - action = "save_note"
@@ -1734,9 +1734,9 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
     if clean in bye_triggers:
         return f"Goodbye, *{display_name}*! Have a great day and take care! 👋✨"
 
-    # 8. GENERAL GREETINGS: "hi", "hello", "hey", etc. (Short in English)
-    basic_greetings = {'hi', 'hello', 'hlo', 'hey', 'helo', 'hii', 'hiii', 'yo', 'sup', 'hola', 'suno'}
-    if clean in basic_greetings or any(clean.startswith(g + ' ') for g in ['hi', 'hello', 'hlo', 'hey']):
+    # 8. GENERAL GREETINGS: "hi", "hello", "hey", etc. (Only exact standalone greetings)
+    basic_greetings = {'hi', 'hello', 'hlo', 'hey', 'helo', 'hii', 'hiii', 'yo', 'sup', 'hola'}
+    if clean in basic_greetings:
         return f"Hello *{display_name}*! 👋 How can I help you today? Feel free to chat or record your expenses anytime! 😊"
 
     return None
@@ -2642,11 +2642,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             )
             full_response = response.choices[0].message.content or ""
         except Exception as e_groq:
-            logger.warning("Primary groq model error: %s, falling back to llama-3.3-70b-versatile", e_groq)
+            logger.warning("Primary groq model error: %s, falling back to openai/gpt-oss-120b", e_groq)
             try:
                 response = _groq_client().chat.completions.create(
                     messages=messages,
-                    model="llama-3.3-70b-versatile",
+                    model="openai/gpt-oss-120b",
                     temperature=0.7,
                     max_tokens=800,
                 )
