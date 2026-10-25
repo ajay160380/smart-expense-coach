@@ -24,14 +24,11 @@ from fastapi import FastAPI
 from a2wsgi import WSGIMiddleware
 
 # 2. Hugging Face ZeroGPU Integration
-try:
-    import spaces
-    @spaces.GPU(duration=30)
-    def probe_zerogpu(text="Paisa Mitra Status"):
-        return f"⚡ ZeroGPU Hardware Active | {text}"
-except Exception:
-    def probe_zerogpu(text="Paisa Mitra Status"):
-        return f"⚡ Hardware Active | {text}"
+import spaces
+
+@spaces.GPU
+def probe_zerogpu(text="Paisa Mitra Status"):
+    return f"⚡ ZeroGPU Hardware Active | {text}"
 
 # 3. Gradio Interface (Mounted at /_gradio for ZeroGPU compliance)
 with gr.Blocks(title="Paisa Mitra — ZeroGPU Backend") as demo:
