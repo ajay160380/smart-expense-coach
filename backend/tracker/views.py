@@ -1921,8 +1921,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "status": "error",
                 "message": (
                     "📲 *Link Your Expense Tracker*\n\n"
-                    "Apna account WhatsApp bot se link karne ke liye apna registered mobile number likhein:\n\n"
-                    "👉 *Example:* `Link 917905398965`"
+                    "To link your account, reply with your registered mobile number:\n\n"
+                    "👉 *Example:* `link 917905398965`"
                 )
             })
 
@@ -1932,7 +1932,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         if not clean_phone or len(clean_phone) < 10:
             return JsonResponse({
                 "status": "error",
-                "message": f"❌ *Invalid Mobile Number*\n\n`{mobile_raw}` ek valid 10-digit number nahi hai. Kripya apna registered number bhejein (jaise: `Link 917905398965`)."
+                "message": f"❌ *Invalid Mobile Number*\n\n`{mobile_raw}` is not a valid 10-digit number. Please send your registered number (e.g. `link 917905398965`)."
             })
 
         # 1. Match profile (exact, with/without country code, or last 10 digits)
@@ -1947,8 +1947,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "status": "error",
                 "message": (
                     f"❌ *Account Not Found*\n\n"
-                    f"Mobile number `{clean_phone}` se koi registered account nahi mila.\n\n"
-                    f"Kripya app me check karein ki aapka account kis phone number se bana hai."
+                    f"No registered account found with mobile number `{clean_phone}`.\n\n"
+                    f"Please check your registered number in the app, or create a new account here:\n"
+                    f"https://expense-coach-prxm.onrender.com/register/"
                 )
             })
 
@@ -1960,12 +1961,12 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "status": "success",
                 "message": (
                     f"⚡ *Account Already Linked!*\n\n"
-                    f"Hello *{target_name}*! Aapka WhatsApp number pehle se hi successfully linked aur active hai. 🎉\n\n"
-                    f"Aap directly yahan text bhejkar kharche track kar sakte hain:\n"
+                    f"Hello *{target_name}*! Your WhatsApp is already linked and active. 🎉\n\n"
+                    f"You can log expenses directly by messaging here:\n"
                     f"• *500 petrol*\n"
-                    f"• *200 chai snacks*\n"
+                    f"• *200 dinner*\n"
                     f"• *today summary*\n\n"
-                    f"Koi naya expense add karein? 💬"
+                    f"What would you like to track today? 💬"
                 )
             })
 
@@ -1983,12 +1984,12 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             "status": "success",
             "message": (
                 f"🎉 *WhatsApp Successfully Linked!*\n\n"
-                f"Welcome *{target_name}*! Aapka Expense Tracker account ab link ho chuka hai. ✅\n\n"
-                f"Ab aap bina app khole yahan se direct kharche record kar sakte hain:\n"
-                f"• *'500 dinner'* ➔ Expense save ho jayega\n"
-                f"• *'Aaj ka kharcha'* ➔ Daily total summary\n"
-                f"• *'Budget'* ➔ Remaining balance check\n\n"
-                f"Try kijiye, abhi koi expense text karke dekhiye! 🚀"
+                f"Welcome *{target_name}*! Your Expense Tracker account is now linked. ✅\n\n"
+                f"You can now track your expenses directly from WhatsApp:\n"
+                f"• *'500 dinner'* ➔ Save expense instantly\n"
+                f"• *'today summary'* ➔ View today's total\n"
+                f"• *'budget'* ➔ Check remaining balance\n\n"
+                f"Try it now! Send your first expense message. 🚀"
             )
         })
 
@@ -2058,7 +2059,14 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 if not profile or not profile.user:
                     return JsonResponse({
                         "status":  "error",
-                        "message": f"❌ Account not linked.\n\nApna WhatsApp link karne ke liye:\n1️⃣ Type karo: *link <apna registered mobile number>*\n   Example: *link 919876543210*\n\n📱 Agar account nahi hai, toh pehle register karo: https://expense-coach-prxm.onrender.com/register/"
+                        "message": (
+                            "❌ *Account Not Linked*\n\n"
+                            "To link your WhatsApp with your Expense Tracker account:\n"
+                            "1️⃣ Reply with: *link <your registered mobile number>*\n"
+                            "   _Example:_ *link 917905398965*\n\n"
+                            "📱 Don't have an account yet? Register here:\n"
+                            "https://expense-coach-prxm.onrender.com/register/"
+                        )
                     })
             target_user = profile.user
             _WA_AUTH_CACHE[incoming_phone] = target_user.id
