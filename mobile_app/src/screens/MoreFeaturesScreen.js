@@ -698,9 +698,9 @@ export default function MoreFeaturesScreen({ navigation }) {
           <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
         </View>
 
-        <View style={[styles.listCard, { borderColor: isDark ? '#7F1D1D' : '#FECACA', backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FFFFFF', elevation: 0 }]}>
+        <View style={[styles.listCard, { borderColor: isDark ? 'rgba(239, 68, 68, 0.28)' : '#FECACA', backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FFFFFF', elevation: 0 }]}>
           <ListItem
-            icon="trash-bin-outline"
+            icon="trash-outline"
             iconColor="#EF4444"
             title={deletingAccount ? "Deleting Account..." : "Delete Account"}
             desc="Permanently delete account, expenses & all records"
@@ -713,7 +713,7 @@ export default function MoreFeaturesScreen({ navigation }) {
         </View>
 
         {/* ── Sign Out Button ── */}
-        <TouchableOpacity style={[styles.logoutBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: '#7F1D1D' }]} onPress={handleLogout} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.logoutBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)', elevation: 0, shadowOpacity: 0 }]} onPress={handleLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>

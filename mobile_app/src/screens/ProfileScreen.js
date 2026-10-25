@@ -58,7 +58,7 @@ export default function ProfileScreen({ navigation }) {
   const [editLastName, setEditLastName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [submittingProfile, setSubmittingProfile] = useState(false);
-  const [shakeLevel, setShakeLevel] = useState('3.5');
+  const [shakeLevel, setShakeLevel] = useState('disabled');
   const [widgetModalVisible, setWidgetModalVisible] = useState(false);
   const [cachedStats, setCachedStats] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -99,7 +99,7 @@ export default function ProfileScreen({ navigation }) {
       fetchProfile();
       AsyncStorage.getItem('shake_sensitivity').then((val) => {
         if (val) setShakeLevel(val);
-        else setShakeLevel('3.5');
+        else setShakeLevel('disabled');
       });
       AsyncStorage.getItem('biometric_enabled').then((val) => {
         setBiometricEnabled(val === 'true');
@@ -274,16 +274,17 @@ export default function ProfileScreen({ navigation }) {
     if (level === '1.2' || level === '2.0') return 'High (Very Sensitive)';
     if (level === '1.8' || level === '3.5') return 'Medium (Normal)';
     if (level === '2.6' || level === '5.0') return 'Low (Hard Shake)';
-    return 'Disabled';
+    return 'Off (Disabled)';
   };
 
   const toggleShake = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     let next = '1.8';
-    if (shakeLevel === '1.8' || shakeLevel === '3.5') next = '1.2';
+    if (shakeLevel === 'disabled' || shakeLevel === 'off') next = '1.8';
+    else if (shakeLevel === '1.8' || shakeLevel === '3.5') next = '1.2';
     else if (shakeLevel === '1.2' || shakeLevel === '2.0') next = '2.6';
     else if (shakeLevel === '2.6' || shakeLevel === '5.0') next = 'disabled';
-    else next = '1.8';
+    else next = 'disabled';
 
     setShakeLevel(next);
     await AsyncStorage.setItem('shake_sensitivity', next);
@@ -631,8 +632,8 @@ export default function ProfileScreen({ navigation }) {
             iconColor="#F59E0B"
             label="Shake Sensitivity"
             sub={`Magic Shake: ${getShakeText(shakeLevel)}`}
-            badge={getShakeText(shakeLevel).split(' ')[0]}
-            badgeColor="#F59E0B"
+            badge={shakeLevel === 'disabled' || shakeLevel === 'off' ? 'Off' : getShakeText(shakeLevel).split(' ')[0]}
+            badgeColor={shakeLevel === 'disabled' || shakeLevel === 'off' ? '#64748B' : '#F59E0B'}
             onPress={toggleShake}
           />
           <MenuItem
@@ -724,7 +725,7 @@ export default function ProfileScreen({ navigation }) {
             iconColor="#06B6D4"
             label="Check for Updates"
             sub="Check for latest EAS OTA update"
-            badge="v1.3.1"
+            badge="v1.3.2"
             badgeColor="#06B6D4"
             onPress={async () => {
               try {
@@ -821,9 +822,9 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="warning-outline" size={13} color="#EF4444" style={{ marginRight: 6 }} />
           <Text style={[styles.sectionHeaderTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
         </View>
-        <View style={[styles.menuGroupCard, { borderColor: isDark ? '#7F1D1D' : '#FECACA', backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FFFFFF', elevation: 0 }]}>
+        <View style={[styles.menuGroupCard, { borderColor: isDark ? 'rgba(239, 68, 68, 0.28)' : '#FECACA', backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FFFFFF', elevation: 0 }]}>
           <MenuItem
-            ionIcon="trash-bin-outline"
+            ionIcon="trash-outline"
             iconColor="#EF4444"
             label={deletingAccount ? "Deleting Account..." : "Delete Account"}
             sub="Permanently delete all expenses, goals & personal data"
@@ -835,7 +836,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* ── Logout Button (Item 1) ── */}
-        <TouchableOpacity style={[styles.logoutBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: '#7F1D1D' }]} onPress={handleLogout} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.logoutBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)', elevation: 0, shadowOpacity: 0 }]} onPress={handleLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>

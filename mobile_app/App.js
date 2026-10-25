@@ -292,7 +292,7 @@ function MainTabNavigator() {
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [shakeSensitivity, setShakeSensitivity] = useState(1.8);
+  const [shakeSensitivity, setShakeSensitivity] = useState(0);
   const [isBiometricUnlocked, setIsBiometricUnlocked] = useState(false);
   const [appLocked, setAppLocked] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
@@ -323,11 +323,13 @@ export default function App() {
       try {
         const val = await AsyncStorage.getItem('shake_sensitivity');
         if (val) {
-          if (val === 'disabled') setShakeSensitivity(0);
+          if (val === 'disabled' || val === 'off') setShakeSensitivity(0);
           else if (val === '2.0' || val === '1.2') setShakeSensitivity(1.2);
           else if (val === '3.5' || val === '1.8') setShakeSensitivity(1.8);
           else if (val === '5.0' || val === '2.6') setShakeSensitivity(2.6);
-          else setShakeSensitivity(parseFloat(val) || 1.8);
+          else setShakeSensitivity(parseFloat(val) || 0);
+        } else {
+          setShakeSensitivity(0); // Default OFF for newly downloaded APK / fresh install
         }
         
         const bioEnabled = await AsyncStorage.getItem('biometric_enabled');
@@ -345,10 +347,10 @@ export default function App() {
     loadSettings();
 
     const listener = DeviceEventEmitter.addListener('shake_sensitivity_changed', (val) => {
-      if (val === 'disabled') {
+      if (val === 'disabled' || val === 'off') {
         setShakeSensitivity(0);
       } else {
-        setShakeSensitivity(parseFloat(val) || 1.8);
+        setShakeSensitivity(parseFloat(val) || 0);
       }
     });
 
