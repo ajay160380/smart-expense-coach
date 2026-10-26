@@ -279,12 +279,23 @@ export default function AnalyticsScreen({ navigation }) {
           {aiReport ? (
             <View style={{ marginTop: 14 }}>
               <SectionHeader title="AI Coach Financial Report" />
-              <View style={[styles.aiReportCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Ionicons name="sparkles" size={16} color={isDark ? colors.primary : "#7C3AED"} style={{ marginRight: 6 }} />
-                  <Text style={{ color: isDark ? colors.primary : '#7C3AED', fontWeight: '800', fontSize: 13 }}>Smart AI Summary</Text>
+              <View style={[styles.aiReportCard, isDark && { backgroundColor: colors.surface, borderColor: 'rgba(124, 58, 237, 0.25)' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: 'rgba(124, 58, 237, 0.12)', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+                    <Ionicons name="sparkles" size={14} color="#7C3AED" />
+                  </View>
+                  <Text style={{ color: isDark ? '#A78BFA' : '#7C3AED', fontWeight: '800', fontSize: 13.5 }}>Smart AI Summary</Text>
                 </View>
-                <Text style={[styles.aiReportText, isDark && { color: colors.textPrimary }]}>{aiReport}</Text>
+                {aiReport.split('\n').filter(l => l.trim().length > 0).map((line, idx) => {
+                  const cleaned = line.replace(/^[\*\-\•]\s*/, '').replace(/\*\*([^*]+)\*\*/g, '$1').trim();
+                  return (
+                    <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: idx > 0 ? 8 : 0 }}>
+                      <Text style={[styles.aiReportText, isDark && { color: colors.textPrimary }, { flex: 1 }]}>
+                        {cleaned}
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
             </View>
           ) : null}

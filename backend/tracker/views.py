@@ -1182,10 +1182,10 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
             f"Total spent: ₹{month_data['total']:,.0f} | Budget: ₹{month_data['budget']:,.0f}\n"
             f"Top categories: {top_cats or 'None'}\n"
             f"Transactions: {month_data['count']}\n\n"
-            f"Write a 2-sentence English monthly report:\n"
-            f"Sentence 1: Summary of how the month went (honest, slightly funny)\n"
-            f"Sentence 2: One specific action for next month\n"
-            f"ONLY return the 2 sentences. No headings."
+            f"Write a clean, beautifully formatted 2-part financial insight in natural polite Hinglish (Aap/Bhai):\n"
+            f"• Overview: 1 short sentence summarizing how the month went with an emoji.\n"
+            f"• Pro Tip: 1 actionable saving tip for next month with an emoji.\n"
+            f"Format as 2 separate clean lines. Keep it concise and under 45 words total."
         )
 
         r = _groq_client().chat.completions.create(
@@ -1195,6 +1195,7 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
             max_tokens=1000,
         )
         report = re.sub(r"<think>(?:.*?</think>|.*$)", "", r.choices[0].message.content, flags=re.DOTALL).strip()
+        report = re.sub(r"\*\*([^*]+)\*\*", r"\1", report)
         cache.set(ck, report, AI_CACHE_TIMEOUT)
         return report
 
@@ -2956,9 +2957,10 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
     ).days
 
-    system = f"""You are Expense Tracker AI, a smart, respectful, and helpful financial AI. NEVER use words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish by default.
+    system = f"""You are Expense Tracker AI, a smart, friendly, and respectful personal financial coach. 
+NEVER use disrespectful words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish.
 
-══ USER's {today.strftime('%B %Y')} FINANCIAL SNAPSHOT ══
+══ USER's {today.strftime('%B %Y')} LIVE FINANCIAL SNAPSHOT ══
 Budget:         ₹{budget:,.0f}
 Spent:          ₹{stats['total_spent']:,.0f}
 Remaining:      ₹{stats['remaining_budget']:,.0f}
@@ -2972,12 +2974,12 @@ Savings Rate:   {stats['savings_rate']:.0f}%
 TOP SPENDING CATEGORIES:
 {cat_lines or '  (No data available yet)'}
 
-══ YOUR RULES ══
-1. Always respond respectfully using "Aap" or "Bhai".
-2. Keep responses concise — max 100 words.
-3. If user asks for calculations, do them correctly.
-4. Never make up numbers. Use the exact data provided above.
-5. If budget is exceeded, gently warn them but remain polite."""
+══ CRITICAL RULES ══
+1. You HAVE full direct access to the user's live financial data shown above. NEVER say "mere paas aapka data nahi hai", "I don't have access to your bank", or "share your statements".
+2. Always answer their questions directly, warmly, and accurately using the numbers above.
+3. Keep responses concise, conversational, and helpful — under 80 words.
+4. If budget is exceeded or getting high, gently advise them like a caring brother/friend.
+5. If user says hi/hello or general greeting, respond warmly and give a quick 1-sentence budget status."""
 
     messages_payload = [{"role": "system", "content": system}]
 
@@ -2998,6 +3000,8 @@ TOP SPENDING CATEGORIES:
             max_tokens=1000,
         )
         reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
+        if not reply:
+            reply = f"Bhai, is mahine aapka total kharcha ₹{stats['total_spent']:,.0f} hua hai aur ₹{stats['remaining_budget']:,.0f} bache hain. Koi specific hisaab jaanna hai toh batayein! 📊"
         logger.info("AI chat uid=%s msg_len=%d", request.user.id, len(user_msg))
         return JsonResponse({"reply": reply, "status": "success"})
 
@@ -3006,17 +3010,20 @@ TOP SPENDING CATEGORIES:
         try:
             resp = _groq_client().chat.completions.create(
                 messages=messages_payload,
-                model="openai/gpt-oss-120b",
+                model="openai/gpt-oss-20b",
                 temperature=0.7,
                 max_tokens=800,
             )
             reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
+            if not reply:
+                reply = f"Bhai, is mahine aapka ₹{stats['total_spent']:,.0f} kharch hua hai aur ₹{stats['remaining_budget']:,.0f} budget remaining hai! 📊"
             return JsonResponse({"reply": reply, "status": "success"})
         except Exception as e2:
             logger.error("AI chat fallback uid=%s error=%s", request.user.id, e2)
+            fallback_text = f"Bhai, is mahine aapka total kharcha ₹{stats['total_spent']:,.0f} hua hai (Budget: ₹{budget:,.0f}). Abhi ₹{stats['remaining_budget']:,.0f} bache hain. 📊"
             return JsonResponse({
-                "reply":  "Bhai, thoda sa network issue ho gaya hai. Aap thodi der baad dubara pucho! 🤖",
-                "status": "error",
+                "reply":  fallback_text,
+                "status": "success",
             })
 
 
