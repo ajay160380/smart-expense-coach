@@ -17,8 +17,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import api, { BASE_URL } from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { COLORS } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function ExpenseSplitScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -247,14 +249,14 @@ export default function ExpenseSplitScreen({ navigation }) {
   const settledGroups = groups.filter((g) => g.is_settled);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, isDark && { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📱 Expense Split</Text>
+        <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>📱 Expense Split</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreateModal(true)}>
           <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
@@ -262,7 +264,7 @@ export default function ExpenseSplitScreen({ navigation }) {
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.cyan} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? colors.primary : COLORS.cyan} />}
         showsVerticalScrollIndicator={false}
       >
         {activeGroups.length > 0 ? (
@@ -271,8 +273,8 @@ export default function ExpenseSplitScreen({ navigation }) {
               <View style={styles.groupHeader}>
                 <Text style={styles.groupEmoji}>👥</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.groupName}>{group.name}</Text>
-                  <Text style={styles.groupMeta}>{group.member_count} members • {group.expense_count} expenses</Text>
+                  <Text style={[styles.groupName, isDark && { color: colors.textPrimary }]}>{group.name}</Text>
+                  <Text style={[styles.groupMeta, isDark && { color: colors.textSecondary }]}>{group.member_count} members • {group.expense_count} expenses</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => shareGroupLink(group)}
@@ -282,18 +284,18 @@ export default function ExpenseSplitScreen({ navigation }) {
                   <Ionicons name="share-social-outline" size={19} color="#25D366" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => deleteGroup(group.id, group.name)}>
-                  <Ionicons name="trash-outline" size={18} color={COLORS.textMuted} />
+                  <Ionicons name="trash-outline" size={18} color={isDark ? colors.textMuted : COLORS.textMuted} />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.splitStats}>
-                <View style={styles.splitStatItem}>
-                  <Text style={styles.splitStatLabel}>Total</Text>
-                  <Text style={styles.splitStatValue}>₹{Math.round(group.total).toLocaleString('en-IN')}</Text>
+                <View style={[styles.splitStatItem, isDark && { backgroundColor: colors.bgElevated }]}>
+                  <Text style={[styles.splitStatLabel, isDark && { color: colors.textMuted }]}>Total</Text>
+                  <Text style={[styles.splitStatValue, isDark && { color: colors.textPrimary }]}>₹{Math.round(group.total).toLocaleString('en-IN')}</Text>
                 </View>
-                <View style={styles.splitStatItem}>
-                  <Text style={styles.splitStatLabel}>Per Person</Text>
-                  <Text style={[styles.splitStatValue, { color: COLORS.cyan }]}>
+                <View style={[styles.splitStatItem, isDark && { backgroundColor: colors.bgElevated }]}>
+                  <Text style={[styles.splitStatLabel, isDark && { color: colors.textMuted }]}>Per Person</Text>
+                  <Text style={[styles.splitStatValue, { color: isDark ? colors.primary : COLORS.cyan }]}>
                     ₹{Math.round(group.per_person).toLocaleString('en-IN')}
                   </Text>
                 </View>
@@ -301,21 +303,21 @@ export default function ExpenseSplitScreen({ navigation }) {
 
               <View style={styles.memberChips}>
                 {group.members.map((m, i) => (
-                  <View key={i} style={styles.memberChip}>
-                    <Text style={styles.memberChipText}>{m}</Text>
+                  <View key={i} style={[styles.memberChip, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.18)' }]}>
+                    <Text style={[styles.memberChipText, isDark && { color: colors.primary }]}>{m}</Text>
                   </View>
                 ))}
               </View>
 
               {/* Expense list with delete */}
               {(group.expenses || []).length > 0 && (
-                <View style={styles.expenseList}>
-                  <Text style={[styles.splitStatLabel, { marginBottom: 6 }]}>EXPENSES</Text>
+                <View style={[styles.expenseList, isDark && { borderTopColor: colors.border }]}>
+                  <Text style={[styles.splitStatLabel, isDark && { color: colors.textMuted }, { marginBottom: 6 }]}>EXPENSES</Text>
                   {group.expenses.map((exp) => (
-                    <View key={exp.id} style={styles.expenseRow}>
+                    <View key={exp.id} style={[styles.expenseRow, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.expenseDesc}>{exp.description}</Text>
-                        <Text style={styles.expenseMeta}>{exp.paid_by} paid ₹{Math.round(exp.amount).toLocaleString('en-IN')}</Text>
+                        <Text style={[styles.expenseDesc, isDark && { color: colors.textPrimary }]}>{exp.description}</Text>
+                        <Text style={[styles.expenseMeta, isDark && { color: colors.textSecondary }]}>{exp.paid_by} paid ₹{Math.round(exp.amount).toLocaleString('en-IN')}</Text>
                       </View>
                       <TouchableOpacity
                         onPress={() => deleteExpense(group.id, exp.id, exp.description)}
@@ -328,7 +330,7 @@ export default function ExpenseSplitScreen({ navigation }) {
                 </View>
               )}
 
-              <View style={styles.groupActions}>
+              <View style={[styles.groupActions, isDark && { borderTopColor: colors.border }]}>
                 <TouchableOpacity
                   style={styles.groupBtn}
                   onPress={() => {
@@ -337,20 +339,21 @@ export default function ExpenseSplitScreen({ navigation }) {
                     setExpDesc('');
                     setExpAmount('');
                   }}
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name="add-circle-outline" size={16} color={COLORS.cyan} />
-                  <Text style={[styles.groupBtnText, { color: COLORS.cyan }]}>Add Expense</Text>
+                  <Ionicons name="add-circle-outline" size={15} color={isDark ? colors.primary : COLORS.cyan} />
+                  <Text style={[styles.groupBtnText, { color: isDark ? colors.primary : COLORS.cyan }]}>+ Expense</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.groupBtn} onPress={() => viewSummary(group.id)}>
-                  <Ionicons name="receipt-outline" size={16} color={COLORS.primary} />
-                  <Text style={[styles.groupBtnText, { color: COLORS.primary }]}>Summary</Text>
+                <TouchableOpacity style={styles.groupBtn} onPress={() => viewSummary(group.id)} activeOpacity={0.7}>
+                  <Ionicons name="receipt-outline" size={15} color={isDark ? '#A78BFA' : COLORS.primary} />
+                  <Text style={[styles.groupBtnText, { color: isDark ? '#A78BFA' : COLORS.primary }]}>Summary</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.groupBtn} onPress={() => settleGroup(group.id)}>
-                  <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.green} />
-                  <Text style={[styles.groupBtnText, { color: COLORS.green }]}>Settle</Text>
+                <TouchableOpacity style={styles.groupBtn} onPress={() => settleGroup(group.id)} activeOpacity={0.7}>
+                  <Ionicons name="checkmark-circle-outline" size={15} color={isDark ? '#34D399' : COLORS.green} />
+                  <Text style={[styles.groupBtnText, { color: isDark ? '#34D399' : COLORS.green }]}>Settle</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.groupBtn} onPress={() => shareGroupLink(group)}>
-                  <Ionicons name="share-social-outline" size={16} color="#25D366" />
+                <TouchableOpacity style={styles.groupBtn} onPress={() => shareGroupLink(group)} activeOpacity={0.7}>
+                  <Ionicons name="share-social-outline" size={15} color="#25D366" />
                   <Text style={[styles.groupBtnText, { color: '#25D366' }]}>Share</Text>
                 </TouchableOpacity>
               </View>
@@ -398,42 +401,42 @@ export default function ExpenseSplitScreen({ navigation }) {
           style={styles.modalOverlay} 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>👥 New Split Group</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>👥 New Split Group</Text>
               <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textMuted : COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>GROUP NAME</Text>
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>GROUP NAME</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="e.g., Goa Trip" placeholderTextColor={COLORS.textMuted} value={groupName} onChangeText={setGroupName} />
+              <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]} placeholder="e.g., Goa Trip" placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted} value={groupName} onChangeText={setGroupName} />
               <TouchableOpacity onPress={handleGetEstimate} style={styles.aiEstimateBtn}>
                 {loadingEstimate ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.aiEstimateText}>✨ AI Estimate</Text>}
               </TouchableOpacity>
             </View>
 
             {aiEstimate && (
-              <View style={styles.aiEstimateBox}>
-                <Text style={styles.aiEstimateBoxText}>{aiEstimate}</Text>
+              <View style={[styles.aiEstimateBox, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)', borderColor: 'rgba(129, 140, 248, 0.3)' }]}>
+                <Text style={[styles.aiEstimateBoxText, isDark && { color: colors.textPrimary }]}>{aiEstimate}</Text>
               </View>
             )}
 
-            <Text style={styles.label}>MEMBERS</Text>
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>MEMBERS</Text>
             {members.map((m, idx) => (
               <TextInput
                 key={idx}
-                style={[styles.input, { marginBottom: 8 }]}
+                style={[styles.input, { marginBottom: 8 }, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                 placeholder={`Member ${idx + 1}`}
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted}
                 value={m}
                 onChangeText={(v) => updateMember(idx, v)}
               />
             ))}
             <TouchableOpacity onPress={addMemberField} style={styles.addMemberBtn}>
-              <Ionicons name="add" size={16} color={COLORS.cyan} />
-              <Text style={{ color: COLORS.cyan, fontSize: 13, marginLeft: 4 }}>Add member</Text>
+              <Ionicons name="add" size={16} color={isDark ? colors.primary : COLORS.cyan} />
+              <Text style={{ color: isDark ? colors.primary : COLORS.cyan, fontSize: 13, marginLeft: 4 }}>Add member</Text>
             </TouchableOpacity>
 
             <GradientButton title="Create Group" onPress={handleCreateGroup} loading={submitting} colors={COLORS.gradCyan} icon="👥" style={{ marginTop: 20 }} />
@@ -447,15 +450,15 @@ export default function ExpenseSplitScreen({ navigation }) {
           style={styles.modalOverlay} 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>💸 Add Split Expense</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>💸 Add Split Expense</Text>
               <TouchableOpacity onPress={() => setShowExpenseModal(null)}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textMuted : COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>PAID BY</Text>
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>PAID BY</Text>
             <View style={styles.paidByChips}>
               {(() => {
                 const group = groups.find((g) => g.id === showExpenseModal);
@@ -465,24 +468,26 @@ export default function ExpenseSplitScreen({ navigation }) {
                     key={idx}
                     style={[
                       styles.paidByChip,
-                      expPaidBy === m && styles.paidByChipActive,
+                      isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border },
+                      expPaidBy === m && (isDark ? { backgroundColor: 'rgba(129, 140, 248, 0.25)', borderColor: colors.primary } : styles.paidByChipActive),
                     ]}
                     onPress={() => setExpPaidBy(m)}
                   >
                     <Text style={[
                       styles.paidByChipText,
-                      expPaidBy === m && styles.paidByChipTextActive,
+                      isDark && { color: colors.textPrimary },
+                      expPaidBy === m && (isDark ? { color: colors.primary } : styles.paidByChipTextActive),
                     ]}>{m}</Text>
                   </TouchableOpacity>
                 ));
               })()}
             </View>
 
-            <Text style={styles.label}>DESCRIPTION</Text>
-            <TextInput style={styles.input} placeholder="e.g., Hotel booking" placeholderTextColor={COLORS.textMuted} value={expDesc} onChangeText={setExpDesc} />
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>DESCRIPTION</Text>
+            <TextInput style={[styles.input, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]} placeholder="e.g., Hotel booking" placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted} value={expDesc} onChangeText={setExpDesc} />
 
-            <Text style={styles.label}>AMOUNT (₹)</Text>
-            <TextInput style={styles.input} placeholder="0.00" placeholderTextColor={COLORS.textMuted} keyboardType="numeric" value={expAmount} onChangeText={(v) => setExpAmount(sanitizeAmount(v))} />
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>AMOUNT (₹)</Text>
+            <TextInput style={[styles.input, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]} placeholder="0.00" placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted} keyboardType="numeric" value={expAmount} onChangeText={(v) => setExpAmount(sanitizeAmount(v))} />
 
             <GradientButton title="Add Expense" onPress={() => handleAddExpense(showExpenseModal)} loading={submittingExpense} colors={COLORS.gradOrange} icon="💸" style={{ marginTop: 20 }} />
           </View>
@@ -492,35 +497,35 @@ export default function ExpenseSplitScreen({ navigation }) {
       {/* ── Summary Modal ── */}
       <Modal visible={showSummary !== null} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+          <View style={[styles.modalContent, { maxHeight: '90%' }, isDark && { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>📊 Split Summary</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>📊 Split Summary</Text>
               <TouchableOpacity onPress={() => setShowSummary(null)}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textMuted : COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
             {summaryData && (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.summaryTotals}>
-                  <View style={styles.summaryTotalItem}>
-                    <Text style={styles.summaryLabel}>Total</Text>
-                    <Text style={styles.summaryValue}>₹{Math.round(summaryData.total).toLocaleString('en-IN')}</Text>
+                  <View style={[styles.summaryTotalItem, isDark && { backgroundColor: colors.bgElevated }]}>
+                    <Text style={[styles.summaryLabel, isDark && { color: colors.textMuted }]}>Total</Text>
+                    <Text style={[styles.summaryValue, isDark && { color: colors.textPrimary }]}>₹{Math.round(summaryData.total).toLocaleString('en-IN')}</Text>
                   </View>
-                  <View style={styles.summaryTotalItem}>
-                    <Text style={styles.summaryLabel}>Per Person</Text>
-                    <Text style={[styles.summaryValue, { color: COLORS.cyan }]}>₹{Math.round(summaryData.per_person).toLocaleString('en-IN')}</Text>
+                  <View style={[styles.summaryTotalItem, isDark && { backgroundColor: colors.bgElevated }]}>
+                    <Text style={[styles.summaryLabel, isDark && { color: colors.textMuted }]}>Per Person</Text>
+                    <Text style={[styles.summaryValue, { color: isDark ? colors.primary : COLORS.cyan }]}>₹{Math.round(summaryData.per_person).toLocaleString('en-IN')}</Text>
                   </View>
                 </View>
 
-                <Text style={[styles.label, { marginTop: 16 }]}>MEMBERS</Text>
+                <Text style={[styles.label, isDark && { color: colors.textSecondary }, { marginTop: 16 }]}>MEMBERS</Text>
                 {(summaryData.members || []).map((m, idx) => (
-                  <View key={idx} style={styles.memberRow}>
-                    <Text style={styles.memberName}>{m.name}</Text>
+                  <View key={idx} style={[styles.memberRow, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
+                    <Text style={[styles.memberName, isDark && { color: colors.textPrimary }]}>{m.name}</Text>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.memberPaid}>Paid: ₹{Math.round(m.paid).toLocaleString('en-IN')}</Text>
+                      <Text style={[styles.memberPaid, isDark && { color: colors.textSecondary }]}>Paid: ₹{Math.round(m.paid).toLocaleString('en-IN')}</Text>
                       <Text style={[styles.memberNet, {
-                        color: m.status === 'gets_back' ? COLORS.green : m.status === 'owes' ? COLORS.red : COLORS.textMuted,
+                        color: m.status === 'gets_back' ? (isDark ? '#34D399' : COLORS.green) : m.status === 'owes' ? (isDark ? '#F87171' : COLORS.red) : (isDark ? colors.textMuted : COLORS.textMuted),
                       }]}>
                         {m.status === 'gets_back' ? `Gets ₹${Math.round(Math.abs(m.net))}` :
                          m.status === 'owes' ? `Owes ₹${Math.round(Math.abs(m.net))}` : 'Settled ✅'}
@@ -531,11 +536,11 @@ export default function ExpenseSplitScreen({ navigation }) {
 
                 {(summaryData.settlements || []).length > 0 && (
                   <>
-                    <Text style={[styles.label, { marginTop: 16 }]}>SETTLEMENTS</Text>
+                    <Text style={[styles.label, isDark && { color: colors.textSecondary }, { marginTop: 16 }]}>SETTLEMENTS</Text>
                     {summaryData.settlements.map((s, idx) => (
-                      <View key={idx} style={styles.settlementRow}>
-                        <Text style={styles.settlementText}>
-                          {s.from} ➡️ {s.to}: <Text style={{ color: COLORS.green, fontWeight: 'bold' }}>₹{Math.round(s.amount).toLocaleString('en-IN')}</Text>
+                      <View key={idx} style={[styles.settlementRow, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
+                        <Text style={[styles.settlementText, isDark && { color: colors.textPrimary }]}>
+                          {s.from} ➡️ {s.to}: <Text style={{ color: isDark ? '#34D399' : COLORS.green, fontWeight: 'bold' }}>₹{Math.round(s.amount).toLocaleString('en-IN')}</Text>
                         </Text>
                       </View>
                     ))}
@@ -617,9 +622,26 @@ const styles = StyleSheet.create({
   expenseMeta: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
   expDeleteBtn: { padding: 6 },
 
-  groupActions: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: COLORS.borderLight, paddingTop: 12 },
-  groupBtn: { flexDirection: 'row', alignItems: 'center', padding: 6 },
-  groupBtnText: { fontSize: 12, fontWeight: '600', marginLeft: 4 },
+  groupActions: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    borderTopWidth: 1, 
+    borderTopColor: COLORS.borderLight, 
+    paddingTop: 10,
+    paddingHorizontal: 2,
+  },
+  groupBtn: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingVertical: 6,
+    paddingHorizontal: 3,
+  },
+  groupBtnText: { 
+    fontSize: 11.5, 
+    fontWeight: '700', 
+    marginLeft: 3,
+  },
 
   // ── Modal ──
   modalOverlay: { flex: 1, backgroundColor: 'rgba(17, 24, 39, 0.45)', justifyContent: 'flex-end' },

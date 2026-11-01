@@ -27,6 +27,7 @@ import api from '../api/config';
 import { getUsername } from '../utils/auth';
 import { sanitizeInput } from '../utils/auth';
 import { COLORS } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const QUICK_CHIPS = [
   { label: '💰 Budget Check', text: 'Budget kitna bacha hai?' },
@@ -37,6 +38,7 @@ const QUICK_CHIPS = [
 ];
 
 export default function AIChatScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -115,15 +117,20 @@ export default function AIChatScreen({ navigation }) {
     return (
       <View style={[styles.msgRow, isUser && styles.msgRowUser]}>
         {!isUser && (
-          <View style={styles.botAvatar}>
+          <View style={[styles.botAvatar, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.2)' }]}>
             <Text style={{ fontSize: 16 }}>🤖</Text>
           </View>
         )}
-        <View style={[styles.msgBubble, isUser ? styles.userBubble : styles.botBubble]}>
-          <Text style={[styles.msgText, isUser ? styles.userText : styles.botText]}>
+        <View style={[
+          styles.msgBubble, 
+          isUser 
+            ? [styles.userBubble, isDark && { backgroundColor: colors.primary }] 
+            : [styles.botBubble, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]
+        ]}>
+          <Text style={[styles.msgText, isUser ? styles.userText : [styles.botText, isDark && { color: colors.textPrimary }]]}>
             {item.text}
           </Text>
-          <Text style={[styles.msgTime, isUser && { color: 'rgba(255,255,255,0.5)' }]}>
+          <Text style={[styles.msgTime, isUser ? { color: 'rgba(255,255,255,0.7)' } : (isDark && { color: colors.textMuted })]}>
             {item.time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
@@ -132,23 +139,23 @@ export default function AIChatScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* ── Header ── */}
-        <View style={styles.header}>
+        <View style={[styles.header, isDark && { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
-            <View style={styles.headerAvatar}>
+            <View style={[styles.headerAvatar, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.2)', borderColor: colors.border }]}>
               <Text style={{ fontSize: 20 }}>🤖</Text>
             </View>
             <View>
-              <Text style={styles.headerTitle}>ExpenseTracker AI</Text>
+              <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>ExpenseTracker AI</Text>
               <View style={styles.onlineRow}>
                 <View style={styles.onlineDot} />
                 <Text style={styles.onlineText}>Online</Text>
@@ -172,11 +179,11 @@ export default function AIChatScreen({ navigation }) {
               {QUICK_CHIPS.map((chip, idx) => (
                 <TouchableOpacity
                   key={idx}
-                  style={styles.chip}
+                  style={[styles.chip, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={() => sendMessage(chip.text)}
                   disabled={loading}
                 >
-                  <Text style={styles.chipText}>{chip.label}</Text>
+                  <Text style={[styles.chipText, isDark && { color: colors.textPrimary }]}>{chip.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -186,22 +193,22 @@ export default function AIChatScreen({ navigation }) {
       {/* ── Typing Indicator ── */}
       {loading && (
         <View style={styles.typingRow}>
-          <View style={styles.botAvatar}>
+          <View style={[styles.botAvatar, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.2)' }]}>
             <Text style={{ fontSize: 14 }}>🤖</Text>
           </View>
-          <View style={styles.typingBubble}>
-            <ActivityIndicator size="small" color={COLORS.primary} />
-            <Text style={styles.typingText}>ExpenseTracker is thinking...</Text>
+          <View style={[styles.typingBubble, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <ActivityIndicator size="small" color={isDark ? colors.primary : COLORS.primary} />
+            <Text style={[styles.typingText, isDark && { color: colors.textSecondary }]}>ExpenseTracker is thinking...</Text>
           </View>
         </View>
       )}
 
         {/* ── Input Bar ── */}
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, isDark && { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
             placeholder="Ask anything... (Hinglish bhi chalega!)"
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted}
             value={inputText}
             onChangeText={setInputText}
             multiline
@@ -215,7 +222,7 @@ export default function AIChatScreen({ navigation }) {
             disabled={!inputText.trim() || loading}
           >
             <LinearGradient
-              colors={inputText.trim() ? ['#7C3AED', '#6D28D9'] : ['#E5E7EB', '#E5E7EB']}
+              colors={inputText.trim() ? (isDark ? ['#818CF8', '#6366F1'] : ['#7C3AED', '#6D28D9']) : (isDark ? ['#334155', '#334155'] : ['#E5E7EB', '#E5E7EB'])}
               style={styles.sendGrad}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}

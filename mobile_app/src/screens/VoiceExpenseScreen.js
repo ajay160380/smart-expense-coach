@@ -22,6 +22,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { COLORS, SHADOW } from '../utils/theme';
 import { BASE_URL } from '../api/config';
 import { getToken } from '../utils/auth';
+import { useTheme } from '../theme/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -87,6 +88,7 @@ export function parseExpenseFromSpeech(text) {
 }
 
 export default function VoiceExpenseScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -432,30 +434,30 @@ export default function VoiceExpenseScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* ── Header ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, isDark && { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()} 
-          style={styles.backButton}
+          style={[styles.backButton, isDark && { backgroundColor: colors.bgElevated }]}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>AI Voice Expense</Text>
+          <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>AI Voice Expense</Text>
         </View>
         <TouchableOpacity 
           onPress={() => setShowTextInput(!showTextInput)} 
-          style={styles.keyboardToggle}
+          style={[styles.keyboardToggle, isDark && { backgroundColor: colors.bgElevated }]}
           activeOpacity={0.7}
         >
           <Ionicons 
             name={showTextInput ? "mic-outline" : "keypad-outline"} 
             size={22} 
-            color={COLORS.primary || '#2563EB'} 
+            color={isDark ? colors.primary : (COLORS.primary || '#2563EB')} 
           />
         </TouchableOpacity>
       </View>
@@ -467,7 +469,7 @@ export default function VoiceExpenseScreen({ navigation }) {
       >
         {/* ── Status Header ── */}
         <View style={styles.statusSection}>
-          <Text style={styles.instructionText}>
+          <Text style={[styles.instructionText, isDark && { color: colors.textPrimary }]}>
             {isRecording 
               ? 'Listening to you...' 
               : loading 
@@ -477,7 +479,7 @@ export default function VoiceExpenseScreen({ navigation }) {
               : 'Speak Your Expense'}
           </Text>
 
-          <Text style={styles.subInstructionText}>
+          <Text style={[styles.subInstructionText, isDark && { color: colors.textSecondary }]}>
             {isRecording 
               ? 'Speak naturally: amount + what you bought' 
               : loading 
@@ -517,11 +519,11 @@ export default function VoiceExpenseScreen({ navigation }) {
           {loading ? (
             <View style={styles.loadingContainer}>
               <LinearGradient
-                colors={['#F0FDF4', '#DCFCE7']}
+                colors={isDark ? ['#1E293B', '#0F172A'] : ['#F0FDF4', '#DCFCE7']}
                 style={styles.loadingInner}
               >
                 <ActivityIndicator size="large" color="#16A34A" />
-                <Text style={styles.loadingText}>Analyzing...</Text>
+                <Text style={[styles.loadingText, isDark && { color: '#34D399' }]}>Analyzing...</Text>
               </LinearGradient>
             </View>
           ) : (
@@ -538,7 +540,7 @@ export default function VoiceExpenseScreen({ navigation }) {
               ]}
             >
               <LinearGradient 
-                colors={isRecording ? ['#EF4444', '#DC2626'] : ['#2563EB', '#1D4ED8']} 
+                colors={isRecording ? ['#EF4444', '#DC2626'] : (isDark ? ['#6366F1', '#4F46E5'] : ['#2563EB', '#1D4ED8'])} 
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.micGradient}
@@ -560,7 +562,7 @@ export default function VoiceExpenseScreen({ navigation }) {
                 <Text style={styles.recordingTimerText}>{formatTimer(recordSeconds)}</Text>
               </View>
             ) : (
-              <Text style={styles.hintLabel}>
+              <Text style={[styles.hintLabel, isDark && { color: colors.textMuted }]}>
                 {loading ? 'Transcribing...' : 'Tap to Record • Hold to Talk'}
               </Text>
             )}
@@ -569,35 +571,35 @@ export default function VoiceExpenseScreen({ navigation }) {
 
         {/* ── Recognized Transcript Display (Immediate Real-time verification) ── */}
         {transcription ? (
-          <View style={styles.transcriptCard}>
+          <View style={[styles.transcriptCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.transcriptHeader}>
-              <Ionicons name="mic" size={16} color="#2563EB" />
-              <Text style={styles.transcriptTitle}>Recognized Speech (Aapne Bola):</Text>
+              <Ionicons name="mic" size={16} color={isDark ? colors.primary : '#2563EB'} />
+              <Text style={[styles.transcriptTitle, isDark && { color: colors.primary }]}>Recognized Speech (Aapne Bola):</Text>
             </View>
-            <Text style={styles.transcriptText}>"{transcription}"</Text>
+            <Text style={[styles.transcriptText, isDark && { color: colors.textPrimary }]}>"{transcription}"</Text>
           </View>
         ) : null}
 
         {/* ── Logged Expense Success Card (Instant AI Breakdown) ── */}
         {loggedExpense && (
-          <View style={styles.expenseResultCard}>
+          <View style={[styles.expenseResultCard, isDark && { borderColor: 'rgba(52, 211, 153, 0.4)' }]}>
             <LinearGradient
-              colors={['#F0FDF4', '#FFFFFF']}
+              colors={isDark ? ['#1E293B', '#0F172A'] : ['#F0FDF4', '#FFFFFF']}
               style={styles.expenseResultGradient}
             >
               <View style={styles.resultSuccessHeader}>
                 <View style={styles.successCheckCircle}>
                   <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                 </View>
-                <Text style={styles.successTitleText}>Expense Logged Successfully! 🎉</Text>
+                <Text style={[styles.successTitleText, isDark && { color: '#34D399' }]}>Expense Logged Successfully! 🎉</Text>
               </View>
 
               <View style={styles.resultRow}>
-                <View style={styles.resultCategoryPill}>
+                <View style={[styles.resultCategoryPill, isDark && { backgroundColor: colors.bgElevated }]}>
                   <Text style={styles.categoryIconText}>
                     {loggedExpense.category_icon || '🏷️'}
                   </Text>
-                  <Text style={styles.categoryTitleText}>
+                  <Text style={[styles.categoryTitleText, isDark && { color: colors.textPrimary }]}>
                     {(loggedExpense.category || 'Expense').toUpperCase()}
                   </Text>
                 </View>
@@ -608,15 +610,15 @@ export default function VoiceExpenseScreen({ navigation }) {
                 </View>
               </View>
 
-              <View style={styles.detailBox}>
-                <Text style={styles.detailLabel}>Note / Item:</Text>
-                <Text style={styles.detailValue}>{loggedExpense.description || transcription || 'Expense'}</Text>
+              <View style={[styles.detailBox, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
+                <Text style={[styles.detailLabel, isDark && { color: colors.textMuted }]}>Note / Item:</Text>
+                <Text style={[styles.detailValue, isDark && { color: colors.textPrimary }]}>{loggedExpense.description || transcription || 'Expense'}</Text>
               </View>
 
               {loggedExpense.remaining_budget !== undefined && (
-                <View style={styles.budgetRow}>
-                  <Text style={styles.budgetLabel}>Remaining Monthly Budget:</Text>
-                  <Text style={styles.budgetValue}>
+                <View style={[styles.budgetRow, isDark && { borderTopColor: colors.border }]}>
+                  <Text style={[styles.budgetLabel, isDark && { color: colors.textSecondary }]}>Remaining Monthly Budget:</Text>
+                  <Text style={[styles.budgetValue, isDark && { color: '#34D399' }]}>
                     ₹{Math.round(loggedExpense.remaining_budget).toLocaleString('en-IN')}
                   </Text>
                 </View>
@@ -624,19 +626,19 @@ export default function VoiceExpenseScreen({ navigation }) {
 
               <View style={styles.resultActions}>
                 <TouchableOpacity
-                  style={styles.actionBtnOutline}
+                  style={[styles.actionBtnOutline, isDark && { borderColor: colors.primary }]}
                   onPress={() => {
                     setLoggedExpense(null);
                     setTranscription('');
                   }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="refresh" size={16} color="#2563EB" />
-                  <Text style={styles.actionBtnOutlineText}>Record Another</Text>
+                  <Ionicons name="refresh" size={16} color={isDark ? colors.primary : '#2563EB'} />
+                  <Text style={[styles.actionBtnOutlineText, isDark && { color: colors.primary }]}>Record Another</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.actionBtnSolid}
+                  style={[styles.actionBtnSolid, isDark && { backgroundColor: colors.primary }]}
                   onPress={() => navigation.goBack()}
                   activeOpacity={0.7}
                 >
@@ -649,25 +651,25 @@ export default function VoiceExpenseScreen({ navigation }) {
 
         {/* ── Conversational Chat Reply ── */}
         {chatReply ? (
-          <View style={styles.chatCard}>
-            <Text style={styles.chatReplyText}>{chatReply}</Text>
+          <View style={[styles.chatCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.chatReplyText, isDark && { color: colors.textPrimary }]}>{chatReply}</Text>
           </View>
         ) : null}
 
         {/* ── Text Fallback Input (Optional) ── */}
         {showTextInput && (
-          <View style={styles.textInputBox}>
+          <View style={[styles.textInputBox, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TextInput
-              style={styles.textInputField}
+              style={[styles.textInputField, isDark && { color: colors.textPrimary }]}
               placeholder="Or type here (e.g. 500 petrol)..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={isDark ? colors.textMuted : '#9CA3AF'}
               value={manualText}
               onChangeText={setManualText}
               onSubmitEditing={() => submitTextExpense()}
               returnKeyType="send"
             />
             <TouchableOpacity 
-              style={styles.sendButton}
+              style={[styles.sendButton, isDark && { backgroundColor: colors.primary }]}
               onPress={() => submitTextExpense()}
               activeOpacity={0.7}
             >
@@ -678,17 +680,17 @@ export default function VoiceExpenseScreen({ navigation }) {
 
         {/* ── Sample Prompt Chips ── */}
         <View style={styles.suggestionsContainer}>
-          <Text style={styles.suggestionsTitle}>💡 Quick Examples to Try:</Text>
+          <Text style={[styles.suggestionsTitle, isDark && { color: colors.textSecondary }]}>💡 Quick Examples to Try:</Text>
           <View style={styles.chipsRow}>
             {SAMPLE_PROMPTS.map((item, idx) => (
               <TouchableOpacity
                 key={idx}
-                style={styles.sampleChip}
+                style={[styles.sampleChip, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => submitTextExpense(item.text)}
                 activeOpacity={0.7}
               >
-                <MaterialCommunityIcons name={item.icon} size={15} color="#2563EB" />
-                <Text style={styles.sampleChipText}>"{item.text}"</Text>
+                <MaterialCommunityIcons name={item.icon} size={15} color={isDark ? colors.primary : '#2563EB'} />
+                <Text style={[styles.sampleChipText, isDark && { color: colors.textPrimary }]}>"{item.text}"</Text>
               </TouchableOpacity>
             ))}
           </View>

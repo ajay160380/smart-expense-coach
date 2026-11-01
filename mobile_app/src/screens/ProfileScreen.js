@@ -212,7 +212,7 @@ export default function ProfileScreen({ navigation }) {
     }
     setSubmittingFeedback(true);
     try {
-      await api.post('/feedback/', { feedback: feedbackText });
+      await api.post('/feedback/', { text: feedbackText.trim(), feedback: feedbackText.trim(), source: 'app' });
       Alert.alert('Thank You! 🎉', 'Your feedback has been received. We appreciate your support!');
       setFeedbackText('');
       setFeedbackVisible(false);

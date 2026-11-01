@@ -20,10 +20,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { COLORS, CAT_ICONS, RADIUS, getFallbackIcon, CAT_COLORS } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const SUB_CATEGORIES = ['entertainment', 'utilities', 'health', 'education', 'food', 'shopping', 'other'];
 
 export default function SubscriptionsScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,14 +107,14 @@ export default function SubscriptionsScreen({ navigation }) {
   const totalYearly = data?.total_yearly || 0;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, isDark && { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📅 Subscriptions</Text>
+        <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>📅 Subscriptions</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddModal(true)}>
           <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
@@ -120,21 +122,21 @@ export default function SubscriptionsScreen({ navigation }) {
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? colors.primary : COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Totals Card ── */}
         {subs.length > 0 && (
-          <LinearGradient colors={COLORS.heroGradient} style={styles.totalsCard}>
+          <LinearGradient colors={isDark ? ['#1E293B', '#0F172A'] : COLORS.heroGradient} style={styles.totalsCard}>
             <View style={styles.totalsRow}>
               <View style={styles.totalItem}>
                 <Text style={styles.totalLabel}>MONTHLY</Text>
                 <Text style={styles.totalValue}>₹{Math.round(totalMonthly).toLocaleString('en-IN')}</Text>
               </View>
-              <View style={styles.totalDivider} />
+              <View style={[styles.totalDivider, isDark && { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
               <View style={styles.totalItem}>
                 <Text style={styles.totalLabel}>YEARLY</Text>
-                <Text style={[styles.totalValue, { color: '#FFE0B2' }]}>₹{Math.round(totalYearly).toLocaleString('en-IN')}</Text>
+                <Text style={[styles.totalValue, { color: isDark ? colors.primary : '#FFE0B2' }]}>₹{Math.round(totalYearly).toLocaleString('en-IN')}</Text>
               </View>
             </View>
             <Text style={styles.totalCount}>{subs.length} active subscription{subs.length !== 1 ? 's' : ''}</Text>
@@ -145,27 +147,27 @@ export default function SubscriptionsScreen({ navigation }) {
         {subs.length > 0 ? (
           <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
             {subs.map((sub, idx) => (
-              <View key={sub.id} style={[styles.subRow, idx < subs.length - 1 && styles.subBorder]}>
+              <View key={sub.id} style={[styles.subRow, idx < subs.length - 1 && [styles.subBorder, isDark && { borderBottomColor: colors.border }]]}>
                 <View style={[styles.subIcon, { backgroundColor: (CAT_COLORS[sub.category] || COLORS.cyan) + '22' }]}>
                   <Text style={{ fontSize: 20 }}>{sub.icon || getFallbackIcon(sub.category)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.subNameRow}>
-                    <Text style={styles.subName}>{sub.category.charAt(0).toUpperCase() + sub.category.slice(1)}</Text>
+                    <Text style={[styles.subName, isDark && { color: colors.textPrimary }]}>{sub.category.charAt(0).toUpperCase() + sub.category.slice(1)}</Text>
                     {sub.due_soon && (
                       <View style={styles.dueBadge}>
                         <Text style={styles.dueBadgeText}>Due in {sub.days_until}d</Text>
                       </View>
                     )}
                   </View>
-                  <Text style={styles.subNext}>
+                  <Text style={[styles.subNext, isDark && { color: colors.textSecondary }]}>
                     Next: {new Date(sub.next_billing).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                     {sub.days_until > 0 ? ` (${sub.days_until} days)` : ' (Today!)'}
                   </Text>
                 </View>
                 <View style={styles.subAmountCol}>
-                  <Text style={styles.subAmount}>₹{Math.round(sub.amount).toLocaleString('en-IN')}</Text>
-                  <Text style={styles.subFreq}>/month</Text>
+                  <Text style={[styles.subAmount, isDark && { color: colors.textPrimary }]}>₹{Math.round(sub.amount).toLocaleString('en-IN')}</Text>
+                  <Text style={[styles.subFreq, isDark && { color: colors.textMuted }]}>/month</Text>
                 </View>
               </View>
             ))}
@@ -189,38 +191,38 @@ export default function SubscriptionsScreen({ navigation }) {
           style={styles.modalOverlay} 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>📅 New Subscription</Text>
+              <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>📅 New Subscription</Text>
               <TouchableOpacity onPress={() => { setShowAddModal(false); resetForm(); }}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                <Ionicons name="close" size={24} color={isDark ? colors.textMuted : COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>NAME</Text>
-            <TextInput style={styles.input} placeholder="e.g., Netflix" placeholderTextColor={COLORS.textMuted} value={subName} onChangeText={setSubName} />
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>NAME</Text>
+            <TextInput style={[styles.input, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]} placeholder="e.g., Netflix" placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted} value={subName} onChangeText={setSubName} />
 
-            <Text style={styles.label}>AMOUNT (₹/MONTH)</Text>
-            <TextInput style={styles.input} placeholder="e.g., 649" placeholderTextColor={COLORS.textMuted} keyboardType="numeric" value={subAmount} onChangeText={(v) => setSubAmount(sanitizeAmount(v))} />
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>AMOUNT (₹/MONTH)</Text>
+            <TextInput style={[styles.input, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]} placeholder="e.g., 649" placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted} keyboardType="numeric" value={subAmount} onChangeText={(v) => setSubAmount(sanitizeAmount(v))} />
 
-            <Text style={styles.label}>CATEGORY</Text>
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>CATEGORY</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
               {SUB_CATEGORIES.map((cat) => (
                 <TouchableOpacity
                   key={cat}
-                  style={[styles.catChip, subCategory === cat && styles.catChipActive]}
+                  style={[styles.catChip, isDark && { backgroundColor: colors.bgElevated }, subCategory === cat && styles.catChipActive]}
                   onPress={() => setSubCategory(cat)}
                 >
                   <Text style={{ marginRight: 4 }}>{CAT_ICONS[cat] || getFallbackIcon(cat)}</Text>
-                  <Text style={[styles.catChipText, subCategory === cat && { color: '#fff' }]}>
+                  <Text style={[styles.catChipText, isDark && { color: colors.textPrimary }, subCategory === cat && { color: '#fff' }]}>
                     {cat.charAt(0).toUpperCase() + cat.slice(1)}
                   </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
-            <Text style={styles.label}>NEXT BILLING DATE</Text>
-            <TextInput style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor={COLORS.textMuted} value={subDate} onChangeText={setSubDate} />
+            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>NEXT BILLING DATE</Text>
+            <TextInput style={[styles.input, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]} placeholder="YYYY-MM-DD" placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted} value={subDate} onChangeText={setSubDate} />
 
             <GradientButton title="Add Subscription" onPress={handleAddSub} loading={submitting} colors={COLORS.gradPurple} icon="📅" style={{ marginTop: 20 }} />
           </View>
