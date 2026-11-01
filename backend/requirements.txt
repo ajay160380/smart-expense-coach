@@ -26,8 +26,9 @@ django-mathfilters==1.0.0
 dj-database-url==2.1.0
 phonenumbers==9.0.31
 requests==2.32.3
-psycopg2-binary
+psycopg2-binary==2.9.10
 django-cors-headers==4.6.0
 reportlab==4.0.0
 firebase-admin==6.6.0
-gunicorn>=21.2.0
+gunicorn==23.0.0
+sentry-sdk[django]>=2.0.0,<3.0.0

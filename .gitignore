@@ -24,3 +24,7 @@ wwebjs_temp_session*/
 backend/firebase-service-account.json
 backend/backups/*.json.gz
 backend/staticfiles/
+*.apk
+*.idsig
+backend/tracker/static/downloads/*.apk
+backend/tracker/static/downloads/*.idsig

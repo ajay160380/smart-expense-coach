@@ -3538,6 +3538,40 @@ def math_ceil(x: float) -> int:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def health_check(request: HttpRequest) -> JsonResponse:
+    """
+    Readiness probe: returns 200 only if DB query succeeds, 503 otherwise.
+    Keeps all existing JSON fields for backward compatibility.
+    """
+    from django.db import connection
+    db_ok = True
+    db_error = None
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except Exception as exc:
+        db_ok = False
+        db_error = str(exc)
+
+    status_code = 200 if db_ok else 503
+    payload = {
+        "status":    "ok" if db_ok else "degraded",
+        "service":   "ExpenseTracker",
+        "version":   "3.2.0",
+        "timestamp": datetime.now().isoformat(),
+    }
+    if not db_ok:
+        payload["database"] = "unreachable"
+        if getattr(settings, 'DEBUG', False):
+            payload["error"] = db_error
+
+    return JsonResponse(payload, status=status_code)
+
+
+def health_live(request: HttpRequest) -> JsonResponse:
+    """
+    Liveness probe: verifies process is running without touching the database.
+    """
     return JsonResponse({
         "status":    "ok",
         "service":   "ExpenseTracker",
@@ -7084,7 +7118,8 @@ GITHUB_APK_CDN_URL = "https://github.com/ajay160380/smart-expense-coach/raw/main
 
 def get_apk_response():
     from django.http import HttpResponseRedirect
-    return HttpResponseRedirect(GITHUB_APK_CDN_URL)
+    target = os.getenv('LATEST_EXPO_APK_URL', LATEST_EXPO_APK_URL) or GITHUB_APK_CDN_URL
+    return HttpResponseRedirect(target)
 
 def download_apk(request):
     return get_apk_response()
@@ -7095,12 +7130,13 @@ def get_app_version(request):
     Returns latest app version information so the mobile app can notify users
     when a new APK build is available and provide 1-tap download.
     """
+    target = os.getenv('LATEST_EXPO_APK_URL', LATEST_EXPO_APK_URL) or GITHUB_APK_CDN_URL
     return JsonResponse({
         "status": "success",
         "latest_version": "1.3.2",
         "latest_version_code": 8,
-        "apk_url": GITHUB_APK_CDN_URL,
-        "direct_expo_url": GITHUB_APK_CDN_URL,
+        "apk_url": target,
+        "direct_expo_url": target,
         "release_notes": "Connected to fast live cloud server with sound and banner notifications!",
         "published_at": "2026-10-26",
     })

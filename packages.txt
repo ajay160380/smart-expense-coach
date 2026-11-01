@@ -1,4 +1,0 @@
-libpq-dev
-libcairo2
-pkg-config
-tesseract-ocr

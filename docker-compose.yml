@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: bash -c "cd backend && python manage.py migrate && python manage.py createcachetable && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/home/user/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+      - DEBUG=True
+    restart: unless-stopped
+
+  whatsapp_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: bash -c "cd whatsapp_bot && node bot.js"
+    volumes:
+      - ./whatsapp_bot:/home/user/app/whatsapp_bot
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - PORT=3001
+      - DJANGO_API_BASE=http://web:8000
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  push_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: bash -c "cd backend && python random_push_daemon.py"
+    volumes:
+      - ./backend:/home/user/app/backend
+    env_file:
+      - .env
+    depends_on:
+      - web
+    restart: unless-stopped

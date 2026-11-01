@@ -87,6 +87,24 @@ else:
             f"Please configure them in your production environment."
         )
 
+# Sentry Error Tracking (Phase 4, Item 6)
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration()],
+            traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
+            send_default_pii=False,
+            environment=os.getenv('ENVIRONMENT', 'production' if not DEBUG else 'development'),
+        )
+    except ImportError:
+        import logging
+        logging.getLogger(__name__).warning("SENTRY_DSN configured but sentry-sdk is not installed.")
+
 raw_csrf_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '').strip()
 if raw_csrf_origins:
     CSRF_TRUSTED_ORIGINS = [o.strip() for o in raw_csrf_origins.split(',') if o.strip()]

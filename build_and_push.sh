@@ -31,7 +31,7 @@ with open('$VIEWS_FILE', 'w') as f:
 "
 
 cd /Users/ajayvishwakarma/Desktop/expense_project
-git add "$DEST" "$VIEWS_FILE"
+git add "$VIEWS_FILE"
 git commit -m "chore(release): update ExpenseTracker.apk and download redirect URL from latest Expo build"
 git push origin main
 
