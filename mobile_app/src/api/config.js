@@ -67,6 +67,19 @@ export function setUnauthorizedHandler(handler) {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const config = error.config;
+
+    // ── Auto-retry on transient network / timeout failure (up to 2 retries) ──
+    if (config && (!error.response || error.code === 'ECONNABORTED')) {
+      config.__retryCount = config.__retryCount || 0;
+      if (config.__retryCount < 2) {
+        config.__retryCount += 1;
+        console.warn(`[Network Retry ${config.__retryCount}/2] Retrying ${config.url}...`);
+        await new Promise((resolve) => setTimeout(resolve, 1200 * config.__retryCount));
+        return api(config);
+      }
+    }
+
     if (error.response) {
       const { status } = error.response;
 

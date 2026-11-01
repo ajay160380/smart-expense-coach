@@ -129,43 +129,56 @@ export default function AddExpenseScreen({ route, navigation }) {
     }
 
     setLoading(true);
+    let saveSuccess = false;
     try {
-      let res;
       if (isEdit) {
-        res = await api.post(`/edit-expense/${expense.id}/`, {
+        await api.post(`/edit-expense/${expense.id}/`, {
           amount: parseFloat(cleanAmount),
           category: category,
           description: sanitizeInput(description),
           date: expDate || TODAY,
         });
       } else {
-        res = await api.post('/quick-add/', {
+        await api.post('/quick-add/', {
           amount: parseFloat(cleanAmount),
           category: category,
           description: sanitizeInput(description),
           date: expDate || TODAY,
         });
       }
+      saveSuccess = true;
+    } catch (error) {
+      console.error('AddExpense Save Error:', error);
+      Alert.alert('Save Failed', formatApiError(error));
+      setLoading(false);
+      return;
+    }
 
-      analytics.track(isEdit ? 'expense_updated' : 'expense_created', {
-        amount: parseFloat(cleanAmount),
-        category,
-        has_description: !!description,
-      });
+    if (saveSuccess) {
+      try {
+        analytics.track(isEdit ? 'expense_updated' : 'expense_created', {
+          amount: parseFloat(cleanAmount),
+          category,
+          has_description: !!description,
+        });
+      } catch (e) {}
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      DeviceEventEmitter.emit('EXPENSE_UPDATED');
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (e) {}
 
+      setTimeout(() => {
+        try {
+          DeviceEventEmitter.emit('EXPENSE_UPDATED');
+        } catch (e) {}
+      }, 50);
+
+      setLoading(false);
       if (navigation.canGoBack()) {
         navigation.goBack();
       } else {
         navigation.navigate('Home', { screen: 'DashboardMain' });
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Save Failed', formatApiError(error));
-    } finally {
-      setLoading(false);
     }
   };
 

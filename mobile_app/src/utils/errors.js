@@ -12,12 +12,17 @@ export function formatApiError(error, defaultMsg = 'An unexpected error occurred
   // 1. Check if error is already a string
   if (typeof error === 'string') return error;
 
-  // 2. Network / Offline errors
-  if (error.message === 'Network Error' || !error.response) {
-    if (error.code === 'ECONNABORTED' || (error.message && error.message.includes('timeout'))) {
-      return 'The request timed out. Please check your internet connection and try again.';
+  // 2. Network / Offline errors (only for actual Axios network errors)
+  if (error.isAxiosError) {
+    if (error.message === 'Network Error' || !error.response) {
+      if (error.code === 'ECONNABORTED' || (error.message && error.message.includes('timeout'))) {
+        return 'The request timed out. Please check your internet connection and try again.';
+      }
+      return 'Unable to reach the server. Please check your internet connection.';
     }
-    return 'Unable to reach the server. Please check your internet connection.';
+  } else if (!error.response) {
+    // Standard JS error or other exception
+    return error.message || defaultMsg;
   }
 
   const { status, data } = error.response;
