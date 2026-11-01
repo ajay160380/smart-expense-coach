@@ -16,3 +16,4 @@ class AutoCapturePackage : ReactPackage {
         return emptyList()
     }
 }
+

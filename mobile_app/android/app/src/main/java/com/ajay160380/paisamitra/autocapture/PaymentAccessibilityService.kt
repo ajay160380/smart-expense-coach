@@ -156,3 +156,4 @@ class PaymentAccessibilityService : AccessibilityService() {
         Log.d(TAG, "Accessibility service interrupted")
     }
 }
+

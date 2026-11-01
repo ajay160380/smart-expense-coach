@@ -109,3 +109,4 @@ class AutoCaptureModule(private val reactContext: ReactApplicationContext) : Rea
         }
     }
 }
+

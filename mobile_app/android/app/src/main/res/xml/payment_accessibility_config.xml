@@ -8,3 +8,4 @@
     android:settingsActivity="com.ajay160380.paisamitra.MainActivity"
     android:packageNames="com.google.android.apps.nbu.paisa.user,com.phonepe.app,net.one97.paytm,in.org.npci.upiapp,com.snapwork.hdfc,com.sbi.upi,com.csam.icici.bank.imobile,com.axis.mobile,com.msf.kopl,com.fedmobile,com.rblbank.mobank,com.dreamplug.androidapp"
 />
+

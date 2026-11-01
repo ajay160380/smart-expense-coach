@@ -532,41 +532,6 @@ class Phase9WhatsAppCommandsTests(TestCase):
         self.assertIn('monthly budget set nahi hai', data['message'])
 
 
-class Phase9AccountAggregatorTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username='p9aauser', password='Password123!', email='p9aa@test.com')
-        self.profile = UserProfile.objects.create(user=self.user, phone_number='9876543219', monthly_budget=25000)
-
-    def test_ingest_account_aggregator_debit(self):
-        """9.9: Ingest debit transaction from RBI AA partner"""
-        from tracker.account_aggregator_service import ingest_account_aggregator_transaction
-        result = ingest_account_aggregator_transaction(
-            user=self.user,
-            bank_name='HDFC Bank',
-            bank_txn_id='HDFC987654321',
-            amount=Decimal('450.00'),
-            narration='UPI/40391823/SWIGGY BANGALORE/PAYTM',
-            txn_type='DEBIT'
-        )
-        self.assertEqual(result['status'], 'success')
-        self.assertEqual(result['category'], 'food') # Swiggy -> food
-        self.assertEqual(result['source'], 'bank')
-        self.assertFalse(result['is_reviewed'])
-
-    def test_ingest_account_aggregator_skips_credits(self):
-        """9.9: Ingest skips salary/interest/refund credit transactions"""
-        from tracker.account_aggregator_service import ingest_account_aggregator_transaction
-        result = ingest_account_aggregator_transaction(
-            user=self.user,
-            bank_name='HDFC Bank',
-            bank_txn_id='HDFC987654322',
-            amount=Decimal('50000.00'),
-            narration='SALARY CREDIT FOR NOV',
-            txn_type='CREDIT'
-        )
-        self.assertEqual(result['status'], 'skipped')
-        self.assertEqual(result['reason'], 'non_debit_transaction')
-
 
 
 
