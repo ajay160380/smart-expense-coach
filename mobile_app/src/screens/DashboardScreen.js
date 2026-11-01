@@ -96,6 +96,7 @@ export default function DashboardScreen({ navigation }) {
   const [subsData, setSubsData] = useState(null);
   const [quickSavingGoalId, setQuickSavingGoalId] = useState(null);
   const [hideMicroSavingsWidget, setHideMicroSavingsWidget] = useState(false);
+  const [hideRecurringRadarWidget, setHideRecurringRadarWidget] = useState(false);
   const [widgetModalVisible, setWidgetModalVisible] = useState(false);
 
   // ── LUXURY ULTRA-CLEAN ENTRANCE ANIMATIONS (NO CROOKED ROTATION) ──
@@ -327,6 +328,12 @@ export default function DashboardScreen({ navigation }) {
     await AsyncStorage.setItem('hide_micro_savings_widget', 'true');
   };
 
+  const handleDismissRecurringRadar = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setHideRecurringRadarWidget(true);
+    await AsyncStorage.setItem('hide_recurring_radar_widget', 'true');
+  };
+
   const navigateToGoals = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
@@ -522,6 +529,10 @@ export default function DashboardScreen({ navigation }) {
 
       AsyncStorage.getItem('hide_micro_savings_widget').then(val => {
         if (val === 'true') setHideMicroSavingsWidget(true);
+      }).catch(() => {});
+
+      AsyncStorage.getItem('hide_recurring_radar_widget').then(val => {
+        if (val === 'true') setHideRecurringRadarWidget(true);
       }).catch(() => {});
 
       const localHour = new Date().getHours();
@@ -1330,6 +1341,34 @@ export default function DashboardScreen({ navigation }) {
                 <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]} numberOfLines={1}>Financial Widgets</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                {(hideMicroSavingsWidget || hideRecurringRadarWidget) && (
+                  <TouchableOpacity
+                    style={[styles.restoreWidgetsBtn, isDark && { backgroundColor: 'rgba(148, 163, 184, 0.15)', borderColor: 'rgba(148, 163, 184, 0.3)' }]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      Alert.alert(
+                        'Restore Widgets',
+                        'Do you want to show hidden widgets again on your dashboard?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Restore',
+                            onPress: async () => {
+                              setHideMicroSavingsWidget(false);
+                              setHideRecurringRadarWidget(false);
+                              await AsyncStorage.removeItem('hide_micro_savings_widget');
+                              await AsyncStorage.removeItem('hide_recurring_radar_widget');
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="eye-outline" size={12} color={isDark ? colors.textSecondary : '#64748B'} />
+                    <Text style={[styles.restoreWidgetsText, isDark && { color: colors.textSecondary }]}>Unhide</Text>
+                  </TouchableOpacity>
+                )}
                 {Platform.OS === 'android' && (
                   <TouchableOpacity
                     style={[styles.pinHomePill, isDark && { backgroundColor: 'rgba(37, 99, 235, 0.18)', borderColor: '#3B82F6' }]}
@@ -1547,32 +1586,44 @@ export default function DashboardScreen({ navigation }) {
             )}
 
             {/* WIDGET 3: UPCOMING BILLS & SUBSCRIPTIONS RADAR */}
-            <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginTop: 12 }]}>
-              {/* Header */}
-              <View style={styles.widgetHeaderRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.18)' : '#EEF2FF' }]}>
-                    <Ionicons name="repeat-outline" size={18} color={isDark ? '#818CF8' : '#7C3AED'} />
-                  </View>
-                  <View>
-                    <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Recurring Radar</Text>
-                    <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]}>
-                      {upcomingSubscriptions.length > 0 
-                        ? `₹${(subsData?.total_monthly || 0).toLocaleString('en-IN')}/mo committed` 
-                        : 'Subscriptions & recurring bills'}
-                    </Text>
-                  </View>
-                </View>
+            {!hideRecurringRadarWidget && (
+              <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginTop: 12, position: 'relative' }]}>
+                {/* Dismiss Cross (✕) Button */}
                 <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    navigation.navigate('Subscriptions');
-                  }}
+                  onPress={handleDismissRecurringRadar}
+                  style={[styles.widgetDismissBtn, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.widgetHeaderLink, isDark && { color: colors.primary }]}>Manage &gt;</Text>
+                  <Ionicons name="close" size={15} color={isDark ? colors.textMuted : '#64748B'} />
                 </TouchableOpacity>
-              </View>
+
+                {/* Header */}
+                <View style={styles.widgetHeaderRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 32 }}>
+                    <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.18)' : '#EEF2FF' }]}>
+                      <Ionicons name="repeat-outline" size={18} color={isDark ? '#818CF8' : '#7C3AED'} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]} numberOfLines={1}>Recurring Radar</Text>
+                      <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]} numberOfLines={1}>
+                        {upcomingSubscriptions.length > 0 
+                          ? `₹${(subsData?.total_monthly || 0).toLocaleString('en-IN')}/mo committed` 
+                          : 'Subscriptions & recurring bills'}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      navigation.navigate('Subscriptions');
+                    }}
+                    activeOpacity={0.7}
+                    style={{ marginRight: 28 }}
+                  >
+                    <Text style={[styles.widgetHeaderLink, isDark && { color: colors.primary }]}>Manage &gt;</Text>
+                  </TouchableOpacity>
+                </View>
 
               {/* Subscriptions Content */}
               {upcomingSubscriptions.length > 0 ? (
@@ -1643,7 +1694,8 @@ export default function DashboardScreen({ navigation }) {
                 </View>
               )}
             </View>
-          </Animated.View>
+          )}
+        </Animated.View>
 
           {/* ── SECTION 6: BENTO QUICK TOOLS ── */}
           <View style={styles.toolsBentoRow}>
@@ -3942,6 +3994,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(124, 58, 237, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  restoreWidgetsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    gap: 3,
+  },
+  restoreWidgetsText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#64748B',
   },
   pinHomePill: {
     flexDirection: 'row',
