@@ -2238,6 +2238,63 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "data": safe_data
             })
 
+        # ── Intercept Trip / Split Live Link Request (WhatsApp Bot) ──
+        trip_link_triggers = [
+            "trip link", "trip ka link", "active trip link", "active trip ka link",
+            "active trip", "split link", "split ka link", "share trip", "share link",
+            "trip share", "trip url", "group link", "trip link bhejo", "link bhejo",
+            "share split", "mera trip link", "active split", "current trip", "trip hisab link",
+            "trip hisaab link", "/triplink", "/splitlink", "link trip wala", "trip wala link"
+        ]
+        is_asking_trip_link = (
+            any(trg in lower_text for trg in trip_link_triggers) or
+            ("link" in lower_text and any(w in lower_text for w in ["trip", "split", "group", "hisaab", "hisab"]))
+        ) and not any(w in lower_text for w in ["paid", "diya", "add", "spent"])
+
+        if is_asking_trip_link:
+            clean_query = lower_text
+            for noise in ["link", "trip", "ka", "wala", "bhejo", "active", "split", "share", "mera", "meri", "de do", "dedo", "send", "plz", "please", "bhai"]:
+                clean_query = clean_query.replace(noise, "")
+            clean_query = clean_query.strip()
+
+            group = None
+            if clean_query and len(clean_query) >= 2:
+                group = SplitGroup.objects.filter(creator=target_user, name__icontains=clean_query).order_by('-id').first()
+                if not group:
+                    group = SplitGroup.objects.filter(members__name__iexact=user_name, name__icontains=clean_query).order_by('-id').first()
+
+            if not group:
+                group = SplitGroup.objects.filter(creator=target_user, is_settled=False).order_by('-id').first()
+            if not group:
+                group = SplitGroup.objects.filter(members__name__iexact=user_name, is_settled=False).order_by('-id').first()
+            if not group:
+                group = SplitGroup.objects.filter(creator=target_user).order_by('-id').first()
+
+            if group:
+                try:
+                    host_domain = request.build_absolute_uri('/')[:-1]
+                except Exception:
+                    host_domain = "https://expense-coach-prxm.onrender.com"
+
+                if "localhost" in host_domain or "127.0.0.1" in host_domain or "testserver" in host_domain:
+                    host_domain = os.getenv('PUBLIC_APP_URL') or os.getenv('RENDER_EXTERNAL_URL') or "https://expense-coach-prxm.onrender.com"
+                settlement = compute_group_settlement(group, host_domain)
+                return JsonResponse({
+                    "status": "success",
+                    "message": settlement["whatsapp_message"],
+                    "data": settlement
+                })
+            else:
+                return JsonResponse({
+                    "status": "success",
+                    "message": (
+                        "❌ *Koi Active Trip/Split Nahi Mila*\n\n"
+                        "Naya trip shuru karne ke liye WhatsApp par message bhejein:\n"
+                        "👉 *Goa trip: Ajay 2000, Aman 2000*\n\n"
+                        "Ya PaisaMitra App me *Expense Split* tab me jakar *Create Group* karein! 🏖️"
+                    )
+                })
+
         # ── Intercept Trip History / Split History ──
         trip_history_triggers = [
             "trip history", "split history", "my trips", "mere trips", "all trips", "show my trips"

@@ -6,18 +6,15 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking, Share } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import * as Haptics from 'expo-haptics';
 import { GlassCard, GradientButton, EmptyState, SectionHeader } from '../components/SharedComponents';
 
-
-
-
-
 import { useFocusEffect } from '@react-navigation/native';
-import api from '../api/config';
+import api, { BASE_URL } from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { COLORS } from '../utils/theme';
 
@@ -197,6 +194,40 @@ export default function ExpenseSplitScreen({ navigation }) {
     Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message)}`);
   };
 
+  const shareGroupLink = async (group) => {
+    try {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch (e) {}
+
+      const domain = (BASE_URL || 'https://expense-coach-prxm.onrender.com').replace(/\/api\/?$/, '');
+      const liveUrl = `${domain}/split/${group.share_token}/`;
+      const membersStr = (group.members || []).join(', ');
+
+      const shareText =
+        `🏖️ *${group.name} — Split Hisaab on PaisaMitra*\n\n` +
+        `💰 *Total:* ₹${Math.round(group.total).toLocaleString('en-IN')}\n` +
+        `👤 *Per Person:* ₹${Math.round(group.per_person).toLocaleString('en-IN')}\n` +
+        `👥 *Members:* ${membersStr}\n\n` +
+        `🔗 *Live Trip Link (Zero Login):*\n${liveUrl}\n\n` +
+        `_Tap the link to view live expenses, who owes whom, and settle payments!_`;
+
+      await Share.share({
+        message: shareText,
+        url: liveUrl,
+        title: `${group.name} Split Hisaab`,
+      });
+    } catch (error) {
+      try {
+        const domain = (BASE_URL || 'https://expense-coach-prxm.onrender.com').replace(/\/api\/?$/, '');
+        const liveUrl = `${domain}/split/${group.share_token}/`;
+        Linking.openURL(`https://wa.me/?text=${encodeURIComponent(`🏖️ *${group.name}* Live Split Link:\n${liveUrl}`)}`);
+      } catch (e) {
+        Alert.alert('Error', 'Could not open share dialog.');
+      }
+    }
+  };
+
   const addMemberField = () => setMembers([...members, '']);
   const updateMember = (idx, val) => {
     const updated = [...members];
@@ -243,6 +274,13 @@ export default function ExpenseSplitScreen({ navigation }) {
                   <Text style={styles.groupName}>{group.name}</Text>
                   <Text style={styles.groupMeta}>{group.member_count} members • {group.expense_count} expenses</Text>
                 </View>
+                <TouchableOpacity
+                  onPress={() => shareGroupLink(group)}
+                  style={styles.headerShareBtn}
+                  accessibilityLabel="Share Trip Link"
+                >
+                  <Ionicons name="share-social-outline" size={19} color="#25D366" />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => deleteGroup(group.id, group.name)}>
                   <Ionicons name="trash-outline" size={18} color={COLORS.textMuted} />
                 </TouchableOpacity>
@@ -310,6 +348,10 @@ export default function ExpenseSplitScreen({ navigation }) {
                 <TouchableOpacity style={styles.groupBtn} onPress={() => settleGroup(group.id)}>
                   <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.green} />
                   <Text style={[styles.groupBtnText, { color: COLORS.green }]}>Settle</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.groupBtn} onPress={() => shareGroupLink(group)}>
+                  <Ionicons name="share-social-outline" size={16} color="#25D366" />
+                  <Text style={[styles.groupBtnText, { color: '#25D366' }]}>Share</Text>
                 </TouchableOpacity>
               </View>
             </GlassCard>
@@ -500,14 +542,31 @@ export default function ExpenseSplitScreen({ navigation }) {
                   </>
                 )}
 
-                {summaryData.whatsapp_message && (
-                  <TouchableOpacity
-                    style={styles.waShareBtn}
-                    onPress={() => shareOnWhatsApp(summaryData.whatsapp_message)}
-                  >
-                    <FontAwesome name="whatsapp" size={18} color="#fff" />
-                    <Text style={styles.waShareText}>Share on WhatsApp</Text>
-                  </TouchableOpacity>
+                {summaryData && (
+                  <View style={styles.summaryShareRow}>
+                    <TouchableOpacity
+                      style={styles.summaryWaBtn}
+                      onPress={() => shareOnWhatsApp(summaryData.whatsapp_message || `${summaryData.group_name} Link: ${summaryData.public_url}`)}
+                      activeOpacity={0.8}
+                    >
+                      <FontAwesome name="whatsapp" size={18} color="#fff" style={{ marginRight: 6 }} />
+                      <Text style={styles.summaryShareText}>WhatsApp</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.summaryNativeBtn}
+                      onPress={() => {
+                        Share.share({
+                          message: summaryData.whatsapp_message || `Check out ${summaryData.group_name} split on PaisaMitra: ${summaryData.public_url}`,
+                          url: summaryData.public_url,
+                          title: `${summaryData.group_name} Split`,
+                        });
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="share-social-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                      <Text style={styles.summaryShareText}>Share Link</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </ScrollView>
             )}
@@ -602,6 +661,40 @@ const styles = StyleSheet.create({
 
   settlementRow: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, marginBottom: 6, borderWidth: 1, borderColor: '#F1F3F9' },
   settlementText: { color: COLORS.textPrimary, fontSize: 14 },
+
+  headerShareBtn: {
+    padding: 6,
+    marginRight: 6,
+  },
+  summaryShareRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+    marginBottom: 20,
+  },
+  summaryWaBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25D366',
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  summaryNativeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary || '#7C3AED',
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  summaryShareText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
 
   waShareBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
