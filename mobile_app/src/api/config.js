@@ -23,9 +23,38 @@ const api = axios.create({
   },
 });
 
+// ── Cold-Start & Server Warming State ──
+let isFirstRequest = true;
+let serverWarmingListeners = [];
+
+export function subscribeServerWarming(listener) {
+  serverWarmingListeners.push(listener);
+  return () => {
+    serverWarmingListeners = serverWarmingListeners.filter((l) => l !== listener);
+  };
+}
+
+function notifyServerWarming(isWarming) {
+  serverWarmingListeners.forEach((fn) => {
+    try { fn(isWarming); } catch (e) {}
+  });
+}
+
 // ── Request Interceptor ──
 api.interceptors.request.use(
   async (config) => {
+    // ── First request cold-start tolerance: allow up to 60s for Render free-tier spin-up ──
+    if (isFirstRequest) {
+      config.timeout = Math.max(config.timeout || 30000, 60000);
+      isFirstRequest = false;
+    }
+
+    // ── Notify if request takes longer than 3.5s (server waking up) ──
+    const warmTimer = setTimeout(() => {
+      notifyServerWarming(true);
+    }, 3500);
+    config.__warmTimer = warmTimer;
+
     // ── Auto-prefix /api/ to endpoints if missing ──
     if (config.url && !config.url.startsWith('/api') && !config.url.startsWith('/ai_chat')) {
       const formattedPath = config.url.startsWith('/') ? config.url : `/${config.url}`;
@@ -65,9 +94,19 @@ export function setUnauthorizedHandler(handler) {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response?.config?.__warmTimer) {
+      clearTimeout(response.config.__warmTimer);
+    }
+    notifyServerWarming(false);
+    return response;
+  },
   async (error) => {
     const config = error.config;
+    if (config?.__warmTimer) {
+      clearTimeout(config.__warmTimer);
+    }
+    notifyServerWarming(false);
 
     // ── Auto-retry on transient network / timeout failure (up to 2 retries) ──
     if (config && (!error.response || error.code === 'ECONNABORTED')) {

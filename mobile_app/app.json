@@ -18,7 +18,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ajay160380.paisamitra"
+      "bundleIdentifier": "com.ajay160380.paisamitra",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Expense Tracker uses the camera to scan bill receipts and invoices for expense logging.",
+        "NSMicrophoneUsageDescription": "Expense Tracker uses the microphone to record voice notes to automatically log expenses.",
+        "NSFaceIDUsageDescription": "Expense Tracker uses biometric authentication to secure your financial data.",
+        "NSPhotoLibraryUsageDescription": "Expense Tracker needs access to your photos to upload receipts and bills.",
+        "NSLocationWhenInUseUsageDescription": "Expense Tracker uses your location to auto-tag expense locations."
+      }
     },
     "android": {
       "versionCode": 8,
@@ -47,6 +54,32 @@
       "expo-font",
       "expo-asset",
       "expo-sharing",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Expense Tracker uses the camera to scan bill receipts and invoices for expense logging."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Expense Tracker uses your location to auto-tag expense locations."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Expense Tracker uses biometric authentication to secure your financial data."
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#7C6FF7"
+        }
+      ],
       [
         "react-native-android-widget",
         {

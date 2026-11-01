@@ -7,7 +7,14 @@
 
 import 'react-native-gesture-handler';
 if (__DEV__) {
-  require('./src/reticle-dev');
+  try {
+    require('./src/reticle-dev');
+  } catch (e) {}
+} else {
+  // Production: silence debug/info logs to avoid performance overhead and leaking sensitive info
+  console.log = () => {};
+  console.debug = () => {};
+  console.info = () => {};
 }
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer, createNavigationContainerRef, getFocusedRouteNameFromRoute, DefaultTheme, DarkTheme } from '@react-navigation/native';
