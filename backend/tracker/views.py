@@ -49,7 +49,8 @@ import hmac
 from .models import (
     Expense, Subscription, UserProfile, SavingsGoal, SplitGroup,
     SplitExpense, SplitMember, SplitSettlement, WhatsAppSession,
-    OTPVerification, Note, SubscriptionCharge, WhatsAppProcessedMessage, ContactMessage
+    OTPVerification, Note, SubscriptionCharge, WhatsAppProcessedMessage, ContactMessage,
+    DailyNotificationLog, UserMerchantCategory
 )
 from .forms import ExpenseForm, SubscriptionForm, CustomRegistrationForm
 
@@ -3519,6 +3520,126 @@ def api_daily_budget(request):
 
     res_data = calculate_daily_budget(user)
     return Response(res_data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([ScopedRateThrottle])
+def api_auto_expense(request):
+    """
+    PHASE 9.3:
+    POST: Ingests an auto-captured or bank-synced expense.
+      Fields: amount, merchant, source ("upi"|"bank"|"aa"|"auto"|"bank_sync"), timestamp, client_txn_id, description.
+    GET: Lists auto-captured/bank-synced expenses with optional filter ?reviewed=false|true.
+    """
+    request.scope = 'authenticated'
+    user = request.user
+
+    if request.method == 'POST':
+        data = request.data if hasattr(request, 'data') else {}
+        amount = data.get('amount')
+        merchant = data.get('merchant') or data.get('payee') or 'Payment'
+        source = data.get('source') or 'auto'
+        timestamp = data.get('timestamp')
+        client_txn_id = data.get('client_txn_id')
+        description = data.get('description')
+
+        if not amount:
+            return Response({'error': 'Amount is required.'}, status=400)
+
+        from .auto_expense_service import process_auto_expense
+        success, result, status_code = process_auto_expense(
+            user=user,
+            amount=amount,
+            merchant=merchant,
+            source=source,
+            timestamp=timestamp,
+            client_txn_id=client_txn_id,
+            description=description
+        )
+        return Response(result, status=status_code)
+
+    # GET request: list auto-captured expenses
+    reviewed_param = request.GET.get('reviewed', '').strip().lower()
+    qs = Expense.objects.filter(user=user, source__in=['auto', 'bank_sync', 'upi', 'bank'])
+    if reviewed_param == 'false':
+        qs = qs.filter(is_reviewed=False)
+    elif reviewed_param == 'true':
+        qs = qs.filter(is_reviewed=True)
+
+    items = [
+        {
+            "id": e.id,
+            "amount": float(e.amount),
+            "category": e.category,
+            "icon": e.icon,
+            "description": e.description,
+            "date": e.date.isoformat(),
+            "source": e.source,
+            "is_reviewed": e.is_reviewed,
+            "client_txn_id": e.client_txn_id,
+        }
+        for e in qs[:50]
+    ]
+    return Response({"count": len(items), "expenses": items})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([ScopedRateThrottle])
+def api_auto_expense_review(request):
+    """
+    PHASE 9.3: Review, Confirm, Edit Category, or Undo (Delete) an auto-captured expense.
+    Fields:
+      - expense_id: int
+      - action: 'confirm' | 'delete' | 'undo' | 'update_category'
+      - new_category: string (optional)
+    """
+    request.scope = 'authenticated'
+    user = request.user
+    data = request.data if hasattr(request, 'data') else {}
+
+    expense_id = data.get('expense_id')
+    action = str(data.get('action', '')).strip().lower()
+
+    if not expense_id:
+        return Response({'error': 'expense_id is required.'}, status=400)
+
+    try:
+        expense = Expense.objects.get(id=expense_id, user=user)
+    except Expense.DoesNotExist:
+        return Response({'error': 'Expense not found.'}, status=404)
+
+    if action in ('delete', 'undo'):
+        expense.delete()
+        return Response({'status': 'success', 'message': 'Expense deleted / undone successfully.'})
+
+    elif action == 'confirm':
+        expense.is_reviewed = True
+        expense.save(update_fields=['is_reviewed'])
+        return Response({'status': 'success', 'message': 'Expense confirmed.'})
+
+    elif action == 'update_category':
+        new_cat = str(data.get('new_category', '')).strip().lower()
+        if not new_cat:
+            return Response({'error': 'new_category is required.'}, status=400)
+
+        expense.category = new_cat
+        expense.icon = CAT_ICONS.get(new_cat, '💸')
+        expense.is_reviewed = True
+        expense.save(update_fields=['category', 'icon', 'is_reviewed'])
+
+        # Remember per-user category correction
+        merchant_name = (expense.description or '').replace('Auto-paid at ', '').strip().lower()
+        if merchant_name:
+            UserMerchantCategory.objects.update_or_create(
+                user=user,
+                merchant=merchant_name,
+                defaults={'category': new_cat}
+            )
+        return Response({'status': 'success', 'message': f'Category updated to {new_cat} and remembered.'})
+
+    return Response({'error': f'Invalid action: {action}'}, status=400)
 
 
 @api_login_required

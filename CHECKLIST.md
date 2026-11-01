@@ -95,6 +95,11 @@ When submitting the Android app to Google Play, complete the **Data Safety** sec
    - **FCM Push Notification Token:** Collected for App Functionality (sending user-requested budget tips, expense reminders).
 5. **Personal Info:**
    - **Name, Email Address, Phone Number:** Collected for Account Management, OTP verification, and WhatsApp integration.
+6. **Notification Access (BIND_NOTIFICATION_LISTENER_SERVICE - Phase 9):**
+   - **Declaration:** 100% Optional & Opt-in only.
+   - **Prominent In-App Disclosure:** App explicitly discloses prior to permission request that only transaction amounts and merchant names from allowed financial apps (Google Pay, PhonePe, Paytm, BHIM, Bank apps) are parsed on-device to create draft expenses.
+   - **Data Minimization:** Raw notification text is NEVER uploaded or stored on servers. Personal chats, OTPs, and promotional banners are filtered and discarded on-device immediately.
+   - **Data Safety Form Entry:** Financial Info -> Other Financial Info -> Optional -> App Functionality -> Encrypted in transit.
 
 ### Security Practices
 - **Data Encrypted in Transit:** Yes. All traffic between the mobile app, bot, and backend is encrypted using HTTPS / TLS 1.3.

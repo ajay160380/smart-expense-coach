@@ -119,3 +119,94 @@ class Phase9DailyBudgetTests(TestCase):
         self.assertEqual(self.profile.daily_budget_basis, 'income')
         self.assertTrue(self.profile.daily_budget_rollover)
         self.assertEqual(post_res.data['basis'], 'income')
+
+
+class Phase9AutoExpenseTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='p9autouser', password='Password123!', email='p9auto@test.com')
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            phone_number='9876543211',
+            monthly_budget=20000,
+            live_budget_alerts=True
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+
+    def test_auto_expense_creation_and_category_mapping(self):
+        """9.3: Test auto-expense creation and automated category mapping"""
+        res = self.client.post('/api/auto-expense/', {
+            'amount': '350.00',
+            'merchant': 'Zepto Quick Grocery',
+            'source': 'upi',
+            'client_txn_id': 'txn_zepto_001'
+        }, format='json')
+
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.data['status'], 'success')
+        self.assertEqual(res.data['amount'], 350.0)
+        self.assertEqual(res.data['category'], 'food') # Zepto mapped to groceries/food
+        self.assertEqual(res.data['source'], 'upi')
+        self.assertFalse(res.data['is_reviewed'])
+
+        # Verify in DB
+        expense = Expense.objects.get(id=res.data['expense_id'])
+        self.assertEqual(expense.source, 'upi')
+        self.assertEqual(expense.client_txn_id, 'txn_zepto_001')
+        self.assertFalse(expense.is_reviewed)
+
+    def test_auto_expense_idempotency(self):
+        """9.3: Same client_txn_id should return duplicate without creating second row"""
+        payload = {
+            'amount': '250.00',
+            'merchant': 'Starbucks',
+            'source': 'upi',
+            'client_txn_id': 'txn_starbucks_unique_123'
+        }
+        res1 = self.client.post('/api/auto-expense/', payload, format='json')
+        self.assertEqual(res1.status_code, 201)
+
+        res2 = self.client.post('/api/auto-expense/', payload, format='json')
+        self.assertEqual(res2.status_code, 200)
+        self.assertEqual(res2.data['status'], 'duplicate')
+        self.assertTrue(res2.data.get('is_idempotent'))
+
+        # DB should have exactly 1 expense
+        self.assertEqual(Expense.objects.filter(client_txn_id='txn_starbucks_unique_123').count(), 1)
+
+    def test_auto_expense_review_actions(self):
+        """9.3: Test review actions: confirm, update_category, undo/delete"""
+        # Create auto expense
+        res = self.client.post('/api/auto-expense/', {
+            'amount': '800.00',
+            'merchant': 'Zara Mall',
+            'source': 'bank',
+            'client_txn_id': 'txn_zara_01'
+        }, format='json')
+        expense_id = res.data['expense_id']
+
+        # 1. Update Category & remember preference
+        rev_res = self.client.post('/api/auto-expense/review/', {
+            'expense_id': expense_id,
+            'action': 'update_category',
+            'new_category': 'shopping'
+        }, format='json')
+        self.assertEqual(rev_res.status_code, 200)
+        expense = Expense.objects.get(id=expense_id)
+        self.assertEqual(expense.category, 'shopping')
+        self.assertTrue(expense.is_reviewed)
+
+        # Verify memory created
+        pref = UserMerchantCategory.objects.filter(user=self.user, merchant='zara mall').first()
+        self.assertIsNotNone(pref)
+        self.assertEqual(pref.category, 'shopping')
+
+        # 2. Undo / Delete
+        undo_res = self.client.post('/api/auto-expense/review/', {
+            'expense_id': expense_id,
+            'action': 'undo'
+        }, format='json')
+        self.assertEqual(undo_res.status_code, 200)
+        self.assertFalse(Expense.objects.filter(id=expense_id).exists())
+

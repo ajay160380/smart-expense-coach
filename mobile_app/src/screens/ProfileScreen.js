@@ -73,6 +73,7 @@ export default function ProfileScreen({ navigation }) {
   const [verifyOtp, setVerifyOtp] = useState('');
   const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
+  const [autoCaptureEnabled, setAutoCaptureEnabled] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -103,6 +104,9 @@ export default function ProfileScreen({ navigation }) {
       });
       AsyncStorage.getItem('biometric_enabled').then((val) => {
         setBiometricEnabled(val === 'true');
+      });
+      AsyncStorage.getItem('auto_capture_enabled').then((val) => {
+        setAutoCaptureEnabled(val === 'true');
       });
     }, [])
   );
@@ -704,6 +708,66 @@ export default function ProfileScreen({ navigation }) {
               }
             }}
           />
+          {Platform.OS === 'android' ? (
+            <MenuItem
+              ionIcon="flash-outline"
+              iconColor="#F59E0B"
+              label="Auto UPI & Bank Tracking"
+              sub={autoCaptureEnabled ? "Active • Listening to payment apps" : "Auto-detect expenses from UPI & bank alerts"}
+              badge={autoCaptureEnabled ? "ON" : "OFF"}
+              badgeColor={autoCaptureEnabled ? "#10B981" : "#94A3B8"}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                if (autoCaptureEnabled) {
+                  Alert.alert(
+                    "Disable Auto-Capture",
+                    "Kya aap automatic UPI & bank tracking band karna chahte hain?",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Turn Off",
+                        style: "destructive",
+                        onPress: () => {
+                          setAutoCaptureEnabled(false);
+                          AsyncStorage.setItem('auto_capture_enabled', 'false');
+                          api.post('/api/daily-budget/', { auto_capture_enabled: false }).catch(() => {});
+                        }
+                      }
+                    ]
+                  );
+                } else {
+                  Alert.alert(
+                    "Auto UPI & Bank Tracking ⚡",
+                    "• Exactly what is read: Transaction amount & merchant from payment apps (Google Pay, PhonePe, Paytm, BHIM, Banks).\n\n• 100% Ignored: OTPs, personal chats, and promotional alerts are NEVER read.\n\n• Privacy & Safety: Raw text is NEVER uploaded to the server.\n\n• Full Control: Har payment 'Auto' badge ke saath aayegi jise aap 1-tap me Confirm, Edit ya Undo kar sakte hain.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Enable (Opt-in)",
+                        onPress: () => {
+                          setAutoCaptureEnabled(true);
+                          AsyncStorage.setItem('auto_capture_enabled', 'true');
+                          api.post('/api/daily-budget/', { auto_capture_enabled: true }).catch(() => {});
+                          Alert.alert("Auto-Capture Active 🎉", "Aapke UPI aur bank debits ab automatically detect honge aur 'Review' list me show honge.");
+                        }
+                      }
+                    ]
+                  );
+                }
+              }}
+            />
+          ) : (
+            <MenuItem
+              ionIcon="flash-outline"
+              iconColor="#94A3B8"
+              label="Auto UPI & Bank Tracking"
+              sub="Available on Android devices only"
+              badge="Android Only"
+              badgeColor="#94A3B8"
+              onPress={() => {
+                Alert.alert("Notice", "iOS does not permit reading notifications from other apps. Auto-capture is supported on Android only.");
+              }}
+            />
+          )}
           {Platform.OS === 'android' && (
             <MenuItem
               ionIcon="grid-outline"
