@@ -708,6 +708,13 @@ export default function ProfileScreen({ navigation }) {
               }
             }}
           />
+          <MenuItem
+            ionIcon="notifications-outline"
+            iconColor="#6C5CE7"
+            label="Daily Budget & Notifications"
+            sub="Morning/night pushes, roast tone, rollover"
+            onPress={() => navigation.navigate('Notifications')}
+          />
           {Platform.OS === 'android' ? (
             <MenuItem
               ionIcon="flash-outline"
