@@ -5892,56 +5892,92 @@ import secrets
 from django.conf import settings
 from .models import AppAnalyticsEvent, AppErrorLog
 
-def generate_expense_tracker_email_html(otp_code, title="Security Verification Code", subtitle="Use this one-time code to securely verify your account on Expense Tracker:"):
+def generate_expense_tracker_email_html(otp_code, title="Account Verification", subtitle="Use the one-time code below to securely verify your account on Expense Tracker:"):
     return f"""<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #0A0D14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0A0D14; padding: 35px 15px;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Tracker Verification Code</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0F111A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0F111A; padding: 40px 15px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width: 480px; background: linear-gradient(145deg, #161B26, #0F131D); border: 1px solid #232B3E; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);">
+        <!-- Main Card Container -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 480px; background: #161824; border: 1px solid rgba(124, 111, 247, 0.25); border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);">
+          
+          <!-- Top Accent Gradient Line -->
           <tr>
-            <td height="4" style="background: linear-gradient(90deg, #6366F1, #8B5CF6, #06B6D4); font-size: 0; line-height: 0;">&nbsp;</td>
+            <td height="5" style="background: linear-gradient(90deg, #7C6FF7, #9061F9, #38BDF8); font-size: 0; line-height: 0;">&nbsp;</td>
           </tr>
+
+          <!-- Header Section -->
           <tr>
-            <td style="padding: 32px 28px 16px 28px; text-align: center;">
-              <div style="display: inline-block; width: 54px; height: 54px; line-height: 54px; border-radius: 16px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25)); border: 1px solid rgba(139, 92, 246, 0.4); font-size: 26px; text-align: center; margin-bottom: 14px;">
-                💳
+            <td style="padding: 36px 32px 20px 32px; text-align: center;">
+              <!-- App Logo Badge -->
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto 16px auto;">
+                <tr>
+                  <td align="center" style="width: 58px; height: 58px; background: linear-gradient(135deg, #7C6FF7, #6366F1); border-radius: 18px; box-shadow: 0 10px 20px rgba(124, 111, 247, 0.35); text-align: center;">
+                    <span style="font-size: 28px; line-height: 58px; display: block;">💰</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Brand Name -->
+              <h1 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px;">
+                Expense Tracker
+              </h1>
+              
+              <!-- Purpose Pill -->
+              <div style="display: inline-block; padding: 4px 14px; background: rgba(124, 111, 247, 0.15); border: 1px solid rgba(124, 111, 247, 0.35); border-radius: 20px; font-size: 11px; font-weight: 700; color: #A78BFA; letter-spacing: 0.8px; text-transform: uppercase;">
+                {title}
               </div>
-              <h1 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Expense Tracker</h1>
-              <p style="margin: 0; font-size: 13px; font-weight: 600; color: #818CF8; text-transform: uppercase; letter-spacing: 1px;">{title}</p>
             </td>
           </tr>
+
+          <!-- Body Content -->
           <tr>
-            <td style="padding: 0 28px 28px 28px; text-align: center;">
-              <p style="margin: 0 0 22px 0; font-size: 14px; line-height: 1.6; color: #CBD5E1;">
+            <td style="padding: 0 32px 32px 32px; text-align: center;">
+              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #94A3B8;">
                 {subtitle}
               </p>
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 auto 18px auto;">
+
+              <!-- OTP Display Box -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 auto 20px auto;">
                 <tr>
                   <td align="center">
-                    <div style="background: #1A2234; border: 1px solid #3B82F6; border-radius: 14px; padding: 18px 28px; display: inline-block; box-shadow: 0 0 25px rgba(59, 130, 246, 0.25);">
-                      <span style="font-family: 'SF Mono', Consolas, Menlo, monospace; font-size: 36px; font-weight: 800; letter-spacing: 10px; color: #60A5FA; display: block; text-shadow: 0 0 12px rgba(96, 165, 250, 0.5);">
+                    <div style="background: #1E2130; border: 2px dashed #7C6FF7; border-radius: 16px; padding: 20px 30px; display: inline-block; box-shadow: 0 0 30px rgba(124, 111, 247, 0.2);">
+                      <span style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 900; letter-spacing: 8px; color: #FFFFFF; display: block;">
                         {otp_code}
                       </span>
                     </div>
                   </td>
                 </tr>
               </table>
-              <div style="display: inline-block; padding: 6px 14px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; font-size: 12px; color: #FBBF24; font-weight: 600;">
-                ⏱️ Valid for 5 minutes only
+
+              <!-- Expiry Alert -->
+              <div style="display: inline-block; padding: 6px 16px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.28); border-radius: 20px; font-size: 12px; color: #FBBF24; font-weight: 600; margin-bottom: 24px;">
+                ⏱️ Valid for <strong>5 minutes</strong> only
               </div>
-              <div style="height: 1px; background: #232B3E; margin: 24px 0 18px 0;"></div>
-              <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748B; text-align: left;">
-                🔒 <strong>Security Notice:</strong> Never share this code with anyone. Expense Tracker team will never ask for your code or password.
-              </p>
+
+              <!-- Security Warning -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 18px; text-align: left;">
+                <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #94A3B8;">
+                  🔒 <strong style="color: #F1F5F9;">Security Tip:</strong> Never share this verification code with anyone. Expense Tracker team will never ask for your code over call or chat.
+                </p>
+              </div>
             </td>
           </tr>
+
+          <!-- Footer -->
           <tr>
-            <td style="padding: 16px 28px; background: #0B0E14; border-top: 1px solid #1E2638; text-align: center;">
-              <p style="margin: 0; font-size: 11px; color: #64748B;">
-                © 2026 Expense Tracker. All rights reserved.
+            <td style="padding: 20px 32px; background: #11131C; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
+              <p style="margin: 0 0 6px 0; font-size: 12px; color: #64748B;">
+                Sent securely by <strong>Expense Tracker</strong> • AI Financial Coach
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #475569;">
+                Need assistance? Contact <a href="mailto:expensetracker.care@gmail.com" style="color: #7C6FF7; text-decoration: none;">expensetracker.care@gmail.com</a>
               </p>
             </td>
           </tr>
