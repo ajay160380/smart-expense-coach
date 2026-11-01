@@ -253,3 +253,4 @@ def process_auto_expense(user, amount, merchant: str, source: str = "auto", time
         "daily_budget_remaining": remaining_today,
         "live_alert": live_alert
     }, 201
+

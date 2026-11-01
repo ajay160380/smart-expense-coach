@@ -79,3 +79,4 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"Finished scheduled notification dispatch. Morning: {morning_sent}, Night: {night_sent}."
         ))
+

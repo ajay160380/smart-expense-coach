@@ -176,3 +176,4 @@ By adhering to this interface, connecting a live AA provider requires only:
 1. Setting partner credentials (`SETU_CLIENT_ID`, `SETU_CLIENT_SECRET`, `AA_PRIVATE_KEY_PEM`).
 2. Receiving the AA webhook and invoking `ingest_account_aggregator_transaction`.
 3. All existing category mapping, memory learning, budget alerts, and deduplication logic automatically apply with zero changes!
+

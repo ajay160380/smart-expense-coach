@@ -24,6 +24,7 @@ import {
   RefreshControl,
   DeviceEventEmitter,
   PermissionsAndroid,
+  NativeModules,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -725,12 +726,21 @@ export default function ProfileScreen({ navigation }) {
               badgeColor={autoCaptureEnabled ? "#10B981" : "#94A3B8"}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                const { AutoCaptureModule } = NativeModules;
                 if (autoCaptureEnabled) {
                   Alert.alert(
-                    "Disable Auto-Capture",
-                    "Kya aap automatic UPI & bank tracking band karna chahte hain?",
+                    "Auto-Capture Settings ⚡",
+                    "Choose an option to manage detection or turn off:",
                     [
                       { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Screen Reader Settings",
+                        onPress: () => AutoCaptureModule?.openAccessibilitySettings?.()
+                      },
+                      {
+                        text: "Notification Settings",
+                        onPress: () => AutoCaptureModule?.openNotificationListenerSettings?.()
+                      },
                       {
                         text: "Turn Off",
                         style: "destructive",
@@ -744,17 +754,26 @@ export default function ProfileScreen({ navigation }) {
                   );
                 } else {
                   Alert.alert(
-                    "Auto UPI & Bank Tracking ⚡",
-                    "• Exactly what is read: Transaction amount & merchant from payment apps (Google Pay, PhonePe, Paytm, BHIM, Banks).\n\n• 100% Ignored: OTPs, personal chats, and promotional alerts are NEVER read.\n\n• Privacy & Safety: Raw text is NEVER uploaded to the server.\n\n• Full Control: Har payment 'Auto' badge ke saath aayegi jise aap 1-tap me Confirm, Edit ya Undo kar sakte hain.",
+                    "Smart Auto-Capture ⚡",
+                    "• Notification Listener: Reads incoming payment push alerts.\n• Screen Reader: Reads payment success screens directly (works even if notification is muted/missing).\n• Zero Battery Drain: Wakes up ONLY when GPay/PhonePe/Bank apps show payment success.\n• 100% Private: Only amount & merchant read; no personal chats or OTPs.",
                     [
                       { text: "Cancel", style: "cancel" },
                       {
-                        text: "Enable (Opt-in)",
+                        text: "Enable Screen Reader",
                         onPress: () => {
                           setAutoCaptureEnabled(true);
                           AsyncStorage.setItem('auto_capture_enabled', 'true');
                           api.post('/api/daily-budget/', { auto_capture_enabled: true }).catch(() => {});
-                          Alert.alert("Auto-Capture Active 🎉", "Aapke UPI aur bank debits ab automatically detect honge aur 'Review' list me show honge.");
+                          AutoCaptureModule?.openAccessibilitySettings?.();
+                        }
+                      },
+                      {
+                        text: "Enable Notifications",
+                        onPress: () => {
+                          setAutoCaptureEnabled(true);
+                          AsyncStorage.setItem('auto_capture_enabled', 'true');
+                          api.post('/api/daily-budget/', { auto_capture_enabled: true }).catch(() => {});
+                          AutoCaptureModule?.openNotificationListenerSettings?.();
                         }
                       }
                     ]

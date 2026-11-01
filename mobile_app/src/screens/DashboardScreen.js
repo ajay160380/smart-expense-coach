@@ -30,6 +30,7 @@ import api, { BASE_URL } from '../api/config';
 import { getUsername, clearAuthData, getToken } from '../utils/auth';
 import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
 import { formatApiError } from '../utils/errors';
+import { useAutoCapture } from '../utils/useAutoCapture';
 
 const { width } = Dimensions.get('window');
 
@@ -638,6 +639,11 @@ export default function DashboardScreen({ navigation }) {
       fetchDashboardData(loading); // pass true only when loading is still true (initial open)
     }, [])
   );
+
+  // ── PHASE 9 AUTO-CAPTURE REALTIME SYNC ──
+  useAutoCapture(() => {
+    fetchDashboardData();
+  });
 
   const onRefresh = () => {
     fetchDashboardData();

@@ -1,0 +1,7 @@
+<resources>
+  <string name="app_name">Expense Tracker</string>
+  <string name="expo_runtime_version">1.3.4</string>
+  <string name="widget_addexpensewidget_description" translatable="false">Quickly add an expense</string>
+  <string name="widget_wideexpensewidget_description" translatable="false">Wide expense tracker with quick add</string>
+  <string name="accessibility_service_description" translatable="false">PaisaMitra automatically reads payment success amounts from UPI and bank apps to update your daily budget with zero battery drain.</string>
+</resources>
