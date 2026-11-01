@@ -571,12 +571,8 @@ export default function MoreFeaturesScreen({ navigation }) {
             badgeColor={updateInfo?.hasUpdate ? '#EF4444' : '#06B6D4'}
             onPress={async () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              if (updateInfo?.hasUpdate) {
-                downloadAndInstallLatestApk(updateInfo.apkUrl);
-                return;
-              }
 
-              // 1. Check for live OTA update first
+              // 1. Always check for live OTA update first
               try {
                 if (!__DEV__ && Updates.checkForUpdateAsync) {
                   const ota = await Updates.checkForUpdateAsync();
@@ -598,7 +594,12 @@ export default function MoreFeaturesScreen({ navigation }) {
                 console.log('OTA check error:', otaErr);
               }
 
-              // 2. Check for latest APK build
+              // 2. If no OTA, check for APK build
+              if (updateInfo?.hasUpdate) {
+                downloadAndInstallLatestApk(updateInfo.apkUrl);
+                return;
+              }
+
               const res = await checkAppVersion(false);
               if (res?.hasUpdate) {
                 downloadAndInstallLatestApk(res.apkUrl);
