@@ -417,33 +417,50 @@ export default function App() {
   }, [isAuthenticated, shakeSensitivity]);
 
   useEffect(() => {
-    const handleSilentUpdates = async () => {
-      // 1. Silent background OTA update: downloads quietly without any restart popups!
-      try {
-        if (!__DEV__) {
-          const update = await Updates.checkForUpdateAsync();
-          if (update.isAvailable) {
-            // Silently fetch update in background — seamlessly applies on next app launch without disturbing user!
-            await Updates.fetchUpdateAsync();
-          }
-        }
-      } catch (e) {}
+    let isUpdating = false;
 
-      // 2. Check for latest APK version (highlights in Menu tab if new APK exists)
+    const performAutoOTAUpdate = async () => {
+      if (isUpdating || __DEV__) return;
+      try {
+        if (!Updates.isEnabled || !Updates.checkForUpdateAsync) return;
+        const update = await Updates.checkForUpdateAsync();
+        if (update && update.isAvailable) {
+          isUpdating = true;
+          await Updates.fetchUpdateAsync();
+          // Automatically reload the application immediately so user doesn't have to restart manually!
+          await Updates.reloadAsync();
+        }
+      } catch (e) {
+        // Silently ignore network or offline errors during background checks
+      } finally {
+        isUpdating = false;
+      }
+
+      // Check for latest APK version (highlights in Menu tab if new APK exists)
       try {
         await checkAppVersion(true);
       } catch (e) {}
     };
 
-    handleSilentUpdates();
+    // 1. Check immediately on launch
+    performAutoOTAUpdate();
 
+    // 2. Check periodically every 30 seconds while the app is running
+    const timer = setInterval(() => {
+      if (AppState.currentState === 'active') {
+        performAutoOTAUpdate();
+      }
+    }, 30000);
+
+    // 3. Check every time the user brings the app to the foreground
     const sub = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
-        handleSilentUpdates();
+        performAutoOTAUpdate();
       }
     });
 
     return () => {
+      clearInterval(timer);
       sub.remove();
     };
   }, []);
