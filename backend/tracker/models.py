@@ -34,6 +34,20 @@ class UserProfile(models.Model):
     monthly_budget = models.DecimalField(max_digits=10, decimal_places=2, default=20000)
     budget_cycle_start_day = models.IntegerField(default=1)
 
+    # --- Phase 9: Daily Budget & Notification Preferences (Opt-in by default) ---
+    monthly_income = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    daily_budget_basis = models.CharField(max_length=20, default='budget') # 'budget' or 'income'
+    daily_budget_rollover = models.BooleanField(default=False)
+    live_budget_alerts = models.BooleanField(default=False)
+    morning_budget_push = models.BooleanField(default=False)
+    morning_push_time = models.CharField(max_length=5, default="08:00")
+    nightly_summary = models.BooleanField(default=False)
+    nightly_push_time = models.CharField(max_length=5, default="22:00")
+    notification_tone = models.CharField(max_length=20, default='normal') # 'normal' or 'roast'
+    repeat_nudges = models.BooleanField(default=False)
+    auto_capture_enabled = models.BooleanField(default=False)
+    timezone_name = models.CharField(max_length=50, default='Asia/Kolkata')
+
     # --- Verification ---
     email_verified = models.BooleanField(default=False)
 
@@ -122,6 +136,12 @@ class Expense(models.Model):
     icon = models.CharField(max_length=10, default="💸")
     # Agar AI description save karni hai toh ye line honi chahiye:
     description = models.CharField(max_length=255, blank=True, null=True)
+
+    # Phase 9: Auto-capture and bank sync additive fields
+    source = models.CharField(max_length=50, blank=True, null=True, default=None)
+    client_txn_id = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    is_reviewed = models.BooleanField(default=True)
+    dedupe_hash = models.CharField(max_length=64, blank=True, null=True, db_index=True)
 
     def __str__(self):
         return f"{self.category} - ₹{self.amount} ({self.user.username})"
@@ -310,3 +330,38 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.name} <{self.email}> at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+# ─── PHASE 9: Daily Notification Log for Idempotency ───
+class DailyNotificationLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='daily_notification_logs')
+    notification_type = models.CharField(max_length=50) # 'morning', 'night', 'repeat_nudge'
+    target_date = models.DateField(db_index=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'notification_type', 'target_date'], name='unique_daily_notification_per_user')
+        ]
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.notification_type} on {self.target_date}"
+
+
+# ─── PHASE 9: User Merchant Category Memory ───
+class UserMerchantCategory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='merchant_categories')
+    merchant = models.CharField(max_length=150, db_index=True)
+    category = models.CharField(max_length=100)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'merchant'], name='unique_user_merchant_category')
+        ]
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.merchant} -> {self.category}"

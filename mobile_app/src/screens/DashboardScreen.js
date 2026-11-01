@@ -89,6 +89,9 @@ export default function DashboardScreen({ navigation }) {
   const [fullName, setFullName] = useState('');
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
   const [newBudget, setNewBudget] = useState('');
+  const [newMonthlyIncome, setNewMonthlyIncome] = useState('');
+  const [dailyBudgetBasis, setDailyBudgetBasis] = useState('budget');
+  const [dailyBudgetRollover, setDailyBudgetRollover] = useState(false);
   const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
   const [shakeBannerVisible, setShakeBannerVisible] = useState(true);
@@ -433,7 +436,19 @@ export default function DashboardScreen({ navigation }) {
     setBudgetSubmitting(true);
     try {
       const parsedCycleDay = parseInt(newBudgetCycleDay, 10);
-      const payload = { budget: parsedBudget };
+      const payload = { 
+        budget: parsedBudget,
+        daily_budget_basis: dailyBudgetBasis,
+        daily_budget_rollover: dailyBudgetRollover,
+      };
+      if (newMonthlyIncome && newMonthlyIncome.trim()) {
+        const parsedIncome = parseFloat(newMonthlyIncome);
+        if (!isNaN(parsedIncome) && parsedIncome >= 0) {
+          payload.monthly_income = parsedIncome;
+        }
+      } else {
+        payload.monthly_income = null;
+      }
       if (!isNaN(parsedCycleDay) && parsedCycleDay >= 1 && parsedCycleDay <= 28) {
           payload.budget_cycle_start_day = parsedCycleDay;
       }
@@ -442,7 +457,7 @@ export default function DashboardScreen({ navigation }) {
       if (response.data.status === 'success') {
         setBudgetModalVisible(false);
         fetchDashboardData();
-        Alert.alert('Success', 'Monthly budget updated successfully! 🎉');
+        Alert.alert('Success', 'Monthly budget & income updated successfully! 🎉');
       } else {
         Alert.alert('Error', response.data.error || 'Failed to update budget');
       }
@@ -1386,6 +1401,110 @@ export default function DashboardScreen({ navigation }) {
               </View>
             </View>
 
+            {/* ── PHASE 9: AAJ KA BUDGET CARD ── */}
+            {stats?.daily_budget?.has_budget_set ? (
+              <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginBottom: 14 }]}>
+                {/* Header */}
+                <View style={styles.widgetHeaderRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(124, 111, 247, 0.2)' : 'rgba(124, 111, 247, 0.12)' }]}>
+                      <Text style={{ fontSize: 18 }}>📅</Text>
+                    </View>
+                    <View>
+                      <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Aaj Ka Budget</Text>
+                      <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]}>
+                        Day {stats.daily_budget.day_of_cycle} of {stats.daily_budget.total_days_in_cycle} • {stats.daily_budget.days_left}d left
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={[styles.widgetStatusBadge, { 
+                    backgroundColor: stats.daily_budget.status === 'ok' ? 'rgba(16, 185, 129, 0.15)' : (stats.daily_budget.status === 'warning' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)')
+                  }]}>
+                    <Text style={[styles.widgetStatusText, { 
+                      color: stats.daily_budget.status === 'ok' ? '#10B981' : (stats.daily_budget.status === 'warning' ? '#F59E0B' : '#EF4444')
+                    }]}>
+                      ● {stats.daily_budget.status === 'ok' ? 'On Track' : (stats.daily_budget.status === 'warning' ? 'Near Limit' : 'Over Limit')}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Big Remaining Amount */}
+                <View style={{ marginTop: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <View>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Aaj Ka Bacha
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 2 }}>
+                      <Text style={{ fontSize: 28, fontWeight: '900', color: stats.daily_budget.today_remaining >= 0 ? '#10B981' : '#EF4444' }}>
+                        ₹{Math.abs(Math.round(stats.daily_budget.today_remaining)).toLocaleString('en-IN')}
+                      </Text>
+                      {stats.daily_budget.today_remaining < 0 && (
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#EF4444', marginLeft: 4 }}>over</Text>
+                      )}
+                    </View>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={{ fontSize: 12, color: isDark ? colors.textSecondary : '#64748B' }}>
+                      Daily Budget: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>₹{Math.round(stats.daily_budget.daily_budget).toLocaleString('en-IN')}</Text>
+                    </Text>
+                    <Text style={{ fontSize: 12, color: isDark ? colors.textSecondary : '#64748B', marginTop: 2 }}>
+                      Spent Today: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>₹{Math.round(stats.daily_budget.spent_today).toLocaleString('en-IN')}</Text> ({stats.daily_budget.percent_used}%)
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={{ height: 8, backgroundColor: isDark ? colors.bgElevated : '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginTop: 10 }}>
+                  <View style={{ 
+                    height: '100%', 
+                    width: `${Math.min(100, Math.max(3, stats.daily_budget.percent_used))}%`, 
+                    backgroundColor: stats.daily_budget.status === 'ok' ? '#10B981' : (stats.daily_budget.status === 'warning' ? '#F59E0B' : '#EF4444'),
+                    borderRadius: 4
+                  }} />
+                </View>
+
+                {/* Today's Transactions Mini List */}
+                {stats.daily_budget.today_transactions && stats.daily_budget.today_transactions.length > 0 && (
+                  <View style={{ marginTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? colors.border : '#E2E8F0', paddingTop: 8 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, marginBottom: 6, textTransform: 'uppercase' }}>
+                      Today's Spends ({stats.daily_budget.today_transactions.length})
+                    </Text>
+                    {stats.daily_budget.today_transactions.slice(0, 3).map((tx, idx) => (
+                      <View key={tx.id || idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 3 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, marginRight: 8 }}>
+                          <Text style={{ fontSize: 13 }}>{tx.icon || '💸'}</Text>
+                          <Text style={{ fontSize: 13, color: isDark ? colors.textPrimary : '#0F172A', fontWeight: '500' }} numberOfLines={1}>
+                            {tx.description || tx.category}
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>
+                          -₹{Math.round(tx.amount).toLocaleString('en-IN')}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => {
+                  setNewBudget(budget.toString());
+                  setBudgetModalVisible(true);
+                }}
+                style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginBottom: 14, alignItems: 'center', paddingVertical: 16 }]}
+              >
+                <Text style={{ fontSize: 22, marginBottom: 4 }}>📅</Text>
+                <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Set Aapka Daily Budget</Text>
+                <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }, { textAlign: 'center', marginTop: 3, marginBottom: 10 }]}>
+                  Rozana kitna kharch karna hai jaan ne ke liye monthly budget ya income set karein.
+                </Text>
+                <View style={{ backgroundColor: '#7C6FF7', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Set Budget Now ⚡</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
             {/* WIDGET 1: SPENDING VELOCITY & RUNWAY FORECASTER */}
             <TouchableOpacity
               activeOpacity={0.9}
@@ -1908,6 +2027,19 @@ export default function DashboardScreen({ navigation }) {
             </View>
             
             <View style={[styles.inputContainer, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }, { marginTop: 15 }]}>
+              <Text style={styles.inputPrefix}>💼</Text>
+              <TextInput
+                style={[styles.budgetInput, isDark && { color: colors.textPrimary }]}
+                keyboardType="numeric"
+                value={newMonthlyIncome}
+                onChangeText={setNewMonthlyIncome}
+                placeholder="Monthly income (optional)"
+                placeholderTextColor={isDark ? colors.textSecondary : '#64748b'}
+                maxLength={10}
+              />
+            </View>
+            
+            <View style={[styles.inputContainer, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }, { marginTop: 15 }]}>
               <Text style={styles.inputPrefix}>📅</Text>
               <TextInput
                 style={[styles.budgetInput, isDark && { color: colors.textPrimary }]}
@@ -1918,6 +2050,19 @@ export default function DashboardScreen({ navigation }) {
                 placeholderTextColor={isDark ? colors.textSecondary : '#64748b'}
                 maxLength={2}
               />
+            </View>
+
+            {/* Live Daily Preview */}
+            <View style={{ marginTop: 14, padding: 12, borderRadius: 12, backgroundColor: isDark ? 'rgba(124, 111, 247, 0.15)' : 'rgba(124, 111, 247, 0.08)', borderWidth: 1, borderColor: isDark ? 'rgba(124, 111, 247, 0.3)' : 'rgba(124, 111, 247, 0.2)' }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#7C6FF7', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Rozana Ka Budget Preview
+              </Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? colors.textPrimary : '#0F172A', marginTop: 2 }}>
+                ≈ ₹{Math.round(((dailyBudgetBasis === 'income' && parseFloat(newMonthlyIncome) > 0 ? parseFloat(newMonthlyIncome) : (parseFloat(newBudget) || 20000)) / 30)).toLocaleString('en-IN')} / din
+              </Text>
+              <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 2 }}>
+                (Base: {dailyBudgetBasis === 'income' && parseFloat(newMonthlyIncome) > 0 ? 'Monthly Income' : 'Monthly Budget'} ÷ cycle days)
+              </Text>
             </View>
 
             <View style={styles.modalButtons}>

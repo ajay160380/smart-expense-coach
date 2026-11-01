@@ -94,6 +94,9 @@ urlpatterns = [
     # Safe-to-Spend dynamic daily allowance
     path('api/safe-to-spend/',         views.api_safe_to_spend,    name='api_safe_to_spend'),
     
+    # Phase 9.1: Daily Budget ('Aaj ka budget')
+    path('api/daily-budget/',          views.api_daily_budget,     name='api_daily_budget'),
+    
     # Custom history for any month
     path('api/transactions-history/',  views.api_transactions_history, name='api_transactions_history'),
 

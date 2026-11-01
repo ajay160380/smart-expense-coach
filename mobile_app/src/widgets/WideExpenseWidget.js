@@ -106,9 +106,11 @@ export function WideExpenseWidget({ stats = null }) {
           </FlexWidget>
         </FlexWidget>
 
-        {/* Subtitle: THIS MONTH · 6% */}
+        {/* Subtitle: THIS MONTH · 6% (or Today's Budget when enabled) */}
         <TextWidget
-          text={`THIS MONTH · ${budgetPct}%`}
+          text={stats?.show_daily_budget && stats?.daily_budget?.today_remaining !== undefined
+            ? `TODAY LEFT · ₹${Math.round(stats.daily_budget.today_remaining).toLocaleString('en-IN')}`
+            : `THIS MONTH · ${budgetPct}%`}
           style={{
             fontSize: 10,
             fontWeight: 'bold',

@@ -57,6 +57,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.throttling import ScopedRateThrottle
 from .serializers import RegisterSerializer
 from django.db.models import Sum
 
@@ -868,6 +870,126 @@ def calculate_safe_to_spend(user, target_date=None):
     }
 
 
+def calculate_daily_budget(user, target_date=None):
+    """
+    PHASE 9: Calculates the Daily Budget ('Aaj ka budget').
+    Daily budget = base (monthly_income if basis=='income' else monthly_budget) / total_days_in_cycle.
+    Today's remaining = daily budget - today's spend.
+    Optional rollover (daily_budget_rollover): unspent or overspent amounts from prior days carry forward.
+    Returns:
+      day_of_cycle, total_days_in_cycle, days_left, spent_today, daily_budget,
+      today_remaining, percent_used, status ("ok" <70%, "warning" 70-100%, "over" >100%).
+    """
+    if target_date is None:
+        target_date = timezone.localdate()
+
+    profile = getattr(user, 'profile', None)
+    monthly_budget = float(getattr(profile, 'monthly_budget', 20000) or 20000.0)
+    monthly_income = getattr(profile, 'monthly_income', None)
+    monthly_income_val = float(monthly_income) if monthly_income is not None else None
+    basis = getattr(profile, 'daily_budget_basis', 'budget') or 'budget'
+
+    if basis == 'income' and monthly_income_val is not None and monthly_income_val > 0:
+        base_amount = monthly_income_val
+    else:
+        base_amount = monthly_budget if monthly_budget > 0 else 20000.0
+
+    start_date, end_date = get_budget_cycle_dates(user, target_date)
+    total_days_in_cycle = max((end_date - start_date).days + 1, 1)
+    day_of_cycle = min(max((target_date - start_date).days + 1, 1), total_days_in_cycle)
+    days_left = max((end_date - target_date).days + 1, 1)
+
+    raw_daily_budget = round(base_amount / total_days_in_cycle, 2)
+
+    cycle_expenses = Expense.objects.filter(user=user, date__range=(start_date, end_date))
+    agg = cycle_expenses.aggregate(
+        cycle_total=Sum("amount"),
+        today_total=Sum("amount", filter=Q(date=target_date))
+    )
+    cycle_spent = float(agg["cycle_total"] or 0)
+    spent_today = float(agg["today_total"] or 0)
+    spent_before_today = max(0.0, cycle_spent - spent_today)
+
+    rollover_enabled = bool(getattr(profile, 'daily_budget_rollover', False))
+    if rollover_enabled:
+        expected_prior = raw_daily_budget * max(0, day_of_cycle - 1)
+        carryover = expected_prior - spent_before_today
+        effective_daily_budget = round(max(0.0, raw_daily_budget + carryover), 2)
+    else:
+        effective_daily_budget = raw_daily_budget
+        carryover = 0.0
+
+    today_remaining = round(effective_daily_budget - spent_today, 2)
+
+    if effective_daily_budget > 0:
+        percent_used = round((spent_today / effective_daily_budget) * 100, 1)
+    else:
+        percent_used = 100.0 if spent_today > 0 else 0.0
+
+    if percent_used < 70.0:
+        status = "ok"
+        status_label = "On Track"
+        status_color = "#10B981"
+    elif percent_used <= 100.0:
+        status = "warning"
+        status_label = "Near Limit"
+        status_color = "#F59E0B"
+    else:
+        status = "over"
+        status_label = "Over Budget"
+        status_color = "#EF4444"
+
+    # Today's transactions list
+    today_txs_qs = Expense.objects.filter(user=user, date=target_date).order_by('-id')[:25]
+    today_transactions = [
+        {
+            "id": tx.id,
+            "category": tx.category,
+            "amount": float(tx.amount),
+            "description": tx.description or tx.category,
+            "icon": tx.icon or "💸",
+            "source": tx.source or "manual",
+            "is_reviewed": tx.is_reviewed,
+        }
+        for tx in today_txs_qs
+    ]
+
+    # Friendly Hinglish message for WhatsApp and Notifications
+    user_name = user.first_name.title() if (user and user.first_name) else (user.username.title() if user else "Dost")
+    if status == "ok":
+        hinglish_message = f"Badhai ho {user_name}! Aaj ka budget ₹{effective_daily_budget:,.2f} me se sirf ₹{spent_today:,.2f} kharch hue hain. ₹{today_remaining:,.2f} bach gaye!"
+    elif status == "warning":
+        hinglish_message = f"Dhyan dein {user_name}, aaj ka budget ₹{effective_daily_budget:,.2f} me se ₹{spent_today:,.2f} ({percent_used}%) use ho chuka hai. Bach gaye sirf ₹{today_remaining:,.2f}."
+    else:
+        over_amt = abs(today_remaining)
+        hinglish_message = f"Savdhaan {user_name}! Aaj ka budget ₹{effective_daily_budget:,.2f} tha aur kharch ₹{spent_today:,.2f} ho gaya (₹{over_amt:,.2f} limit se zyada)."
+
+    return {
+        "daily_budget": effective_daily_budget,
+        "base_daily_budget": raw_daily_budget,
+        "base_amount": base_amount,
+        "basis": basis,
+        "monthly_budget": monthly_budget,
+        "monthly_income": monthly_income_val,
+        "spent_today": spent_today,
+        "today_remaining": today_remaining,
+        "percent_used": percent_used,
+        "status": status,
+        "status_label": status_label,
+        "status_color": status_color,
+        "day_of_cycle": day_of_cycle,
+        "total_days_in_cycle": total_days_in_cycle,
+        "days_left": days_left,
+        "cycle_start_date": start_date.isoformat(),
+        "cycle_end_date": end_date.isoformat(),
+        "rollover_enabled": rollover_enabled,
+        "carryover_amount": round(carryover, 2),
+        "has_budget_set": bool(profile and ((profile.monthly_budget and profile.monthly_budget > 0) or profile.monthly_income)),
+        "hinglish_message": hinglish_message,
+        "today_transactions": today_transactions,
+    }
+
+
 def get_filtered_expenses(user, filter_type: str, search_query: str = ""):
     qs = Expense.objects.filter(user=user)
 
@@ -1557,6 +1679,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "completed_goals_count": completed_goals,
         "active_splits":         active_splits,
         "safe_to_spend":         calculate_safe_to_spend(user, today),
+        "daily_budget":          calculate_daily_budget(user, today),
         **stats,  
     }
     return render(request, "tracker/dashboard.html", context)
@@ -3320,6 +3443,7 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
         "user_phone":        request.user.profile.phone_number if hasattr(request.user, 'profile') else "",
         "whatsapp_linked":   request.user.profile.whatsapp_linked if hasattr(request.user, 'profile') else False,
         "safe_to_spend":     calculate_safe_to_spend(request.user, today),
+        "daily_budget":      calculate_daily_budget(request.user, today),
         "days_left": (
             (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
         ).days,
@@ -3331,6 +3455,70 @@ def api_safe_to_spend(request: HttpRequest) -> JsonResponse:
     """REST endpoint returning current daily safe-to-spend allowance and metrics."""
     safe_data = calculate_safe_to_spend(request.user)
     return JsonResponse(safe_data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([ScopedRateThrottle])
+def api_daily_budget(request):
+    """
+    PHASE 9.1 & 9.2:
+    GET: Returns today's daily budget calculation, status, remaining, day of cycle, and transactions.
+    POST: Updates income/budget preferences:
+      - monthly_income (float/decimal or null)
+      - monthly_budget (float/decimal)
+      - daily_budget_basis ('budget' or 'income')
+      - daily_budget_rollover (bool)
+      - budget_cycle_start_day (int 1-28)
+    """
+    request.scope = 'authenticated'
+    user = request.user
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+
+    if request.method == 'POST':
+        data = request.data if hasattr(request, 'data') else {}
+        if 'monthly_income' in data:
+            inc = data.get('monthly_income')
+            if inc is None or inc == '':
+                profile.monthly_income = None
+            else:
+                try:
+                    val = float(inc)
+                    if val < 0:
+                        return Response({'error': 'Monthly income cannot be negative.'}, status=400)
+                    profile.monthly_income = val
+                except (ValueError, TypeError):
+                    return Response({'error': 'Invalid monthly income value.'}, status=400)
+
+        if 'monthly_budget' in data:
+            try:
+                b_val = float(data['monthly_budget'])
+                if b_val <= 0:
+                    return Response({'error': 'Monthly budget must be positive.'}, status=400)
+                profile.monthly_budget = b_val
+            except (ValueError, TypeError):
+                return Response({'error': 'Invalid monthly budget value.'}, status=400)
+
+        if 'daily_budget_basis' in data:
+            basis = str(data['daily_budget_basis']).lower().strip()
+            if basis in ('budget', 'income'):
+                profile.daily_budget_basis = basis
+
+        if 'daily_budget_rollover' in data:
+            profile.daily_budget_rollover = bool(data['daily_budget_rollover'])
+
+        if 'budget_cycle_start_day' in data:
+            try:
+                sd = int(data['budget_cycle_start_day'])
+                if 1 <= sd <= 28:
+                    profile.budget_cycle_start_day = sd
+            except (ValueError, TypeError):
+                pass
+
+        profile.save()
+
+    res_data = calculate_daily_budget(user)
+    return Response(res_data)
 
 
 @api_login_required
@@ -3642,13 +3830,32 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
             user.save()
             return JsonResponse({"status": "success", "message": "Profile updated successfully"})
 
-        if "budget" in body:
+        if "budget" in body or "monthly_income" in body:
             try:
-                nb = float(body["budget"])
-                if nb <= 0:
-                    raise ValueError
                 profile, _ = UserProfile.objects.get_or_create(user=user)
-                profile.monthly_budget = nb
+                if "budget" in body:
+                    nb = float(body["budget"])
+                    if nb <= 0:
+                        raise ValueError
+                    profile.monthly_budget = nb
+
+                if "monthly_income" in body:
+                    inc = body["monthly_income"]
+                    if inc is None or inc == "":
+                        profile.monthly_income = None
+                    else:
+                        val = float(inc)
+                        if val < 0:
+                            raise ValueError
+                        profile.monthly_income = val
+
+                if "daily_budget_basis" in body:
+                    basis = str(body["daily_budget_basis"]).lower().strip()
+                    if basis in ("budget", "income"):
+                        profile.daily_budget_basis = basis
+
+                if "daily_budget_rollover" in body:
+                    profile.daily_budget_rollover = bool(body["daily_budget_rollover"])
                 
                 if "budget_cycle_start_day" in body:
                     sd = int(body["budget_cycle_start_day"])
@@ -3656,9 +3863,9 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
                         profile.budget_cycle_start_day = sd
                         
                 profile.save()
-                return JsonResponse({"status": "success", "message": "Budget updated successfully"})
+                return JsonResponse({"status": "success", "message": "Budget settings updated successfully"})
             except ValueError:
-                return JsonResponse({"error": "Invalid budget value"}, status=400)
+                return JsonResponse({"error": "Invalid budget or income value"}, status=400)
 
     all_time = Expense.objects.filter(user=user)
     all_agg  = all_time.aggregate(
@@ -3691,6 +3898,9 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
         "first_expense":  all_agg["first_date"].isoformat() if all_agg["first_date"] else None,
         "last_expense":   all_agg["last_date"].isoformat()  if all_agg["last_date"]  else None,
         "budget":         get_user_budget(request),
+        "monthly_income": float(profile.monthly_income) if profile and profile.monthly_income is not None else None,
+        "daily_budget_basis": getattr(profile, 'daily_budget_basis', 'budget') if profile else 'budget',
+        "daily_budget_rollover": getattr(profile, 'daily_budget_rollover', False) if profile else False,
         "budget_cycle_start_day": getattr(profile, 'budget_cycle_start_day', 1) if profile else 1,
         "member_days":    (date.today() - user.date_joined.date()).days,
         "profile_picture": profile_pic_url,
