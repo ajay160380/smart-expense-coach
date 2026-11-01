@@ -39,9 +39,8 @@ class TokenAuthMiddleware:
             parts = auth_header.split()
             if len(parts) == 2 and parts[0].lower() in ('token', 'bearer'):
                 token_key = parts[1]
-                try:
-                    token = Token.objects.select_related('user').get(key=token_key)
-                    request.user = token.user
-                except Token.DoesNotExist:
-                    pass
+                from tracker.authentication import validate_and_touch_token
+                user, token = validate_and_touch_token(token_key)
+                if user and user.is_active:
+                    request.user = user
         return self.get_response(request)

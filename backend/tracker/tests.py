@@ -467,4 +467,5 @@ class ContactFormTests(TestCase):
 
 # Import baseline characterization test suite
 from tracker.tests_characterization import BaselineCharacterizationTests
+from tracker.tests_phase3_auth import AuthHardeningTests
 

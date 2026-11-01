@@ -288,6 +288,10 @@ MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 # ══════════════════════════════════════════════════════════════════════════════
 
 from rest_framework.authtoken.models import Token
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.decorators import throttle_classes
+from tracker.authentication import touch_token_activity, validate_and_touch_token
+import secrets
 from django.views.decorators.csrf import csrf_exempt
 
 def get_client_ip(request: HttpRequest) -> str:
@@ -353,12 +357,14 @@ def api_login_required(view_func):
         # 1. Token Authentication (Mobile / API)
         if auth_header and auth_header.startswith('Token '):
             token_key = auth_header.split(' ')[1].strip()
-            try:
-                token = Token.objects.select_related('user').get(key=token_key)
-                request.user = token.user
-                return view_func(request, *args, **kwargs)
-            except Token.DoesNotExist:
+            from tracker.authentication import validate_and_touch_token
+            user, result = validate_and_touch_token(token_key)
+            if result == "expired":
+                return JsonResponse({"error": "Token has expired after 30 days of inactivity. Please log in again."}, status=401)
+            if not user or not user.is_active:
                 return JsonResponse({"error": "Invalid token."}, status=401)
+            request.user = user
+            return view_func(request, *args, **kwargs)
         elif auth_header:
             return JsonResponse({"error": "Invalid token header format. Use 'Token <key>'."}, status=401)
 
@@ -2053,13 +2059,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             auth_header = request.headers.get('Authorization') or request.META.get('HTTP_AUTHORIZATION', '')
             if auth_header and 'Token ' in auth_header:
                 token_key = auth_header.split('Token ')[1].strip().split(' ')[0]
-                try:
-                    from rest_framework.authtoken.models import Token
-                    token_obj = Token.objects.select_related('user').get(key=token_key)
-                    target_user = token_obj.user
+                user_auth, res_token = validate_and_touch_token(token_key)
+                if user_auth and user_auth.is_active:
+                    target_user = user_auth
                     request.user = target_user
-                except Exception as e:
-                    logger.warning("Token auth in voice_expense failed: %s", e)
 
             if not target_user:
                 return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
@@ -5554,6 +5557,10 @@ def api_split_estimate(request: HttpRequest) -> JsonResponse:
 # ══════════════════════════════════════════════════════════════════════════════
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.decorators import throttle_classes
+from tracker.authentication import touch_token_activity, validate_and_touch_token
+import secrets
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
@@ -5562,6 +5569,8 @@ from rest_framework.permissions import AllowAny
 class CustomAuthToken(ObtainAuthToken):
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
     
     def post(self, request, *args, **kwargs):
         identifier = request.data.get('username') or request.data.get('email') or request.data.get('phone_number')
@@ -5585,20 +5594,18 @@ class CustomAuthToken(ObtainAuthToken):
                 if profile_qs.exists():
                     user = profile_qs.first().user
                     
+        generic_auth_err = 'Invalid credentials. Please check your username/email/phone and password.'
         if not user:
-            if '@' in str(identifier):
-                err_msg = 'No account found with this email ID. Please create an account to get started.'
-            elif str(identifier).replace('+', '').isdigit():
-                err_msg = 'No account found with this phone number. Please create an account to get started.'
-            else:
-                err_msg = 'No account found with this username. Please create an account to get started.'
-            return Response({'error': err_msg, 'code': 'ACCOUNT_NOT_FOUND'}, status=404)
+            # Timing-safe dummy calculation
+            User().set_password('timing_safety_dummy_password')
+            return Response({'error': generic_auth_err}, status=401)
             
         authenticated_user = authenticate(request=request, username=user.username, password=password)
         if not authenticated_user:
-            return Response({'error': 'Invalid password.'}, status=401)
+            return Response({'error': generic_auth_err}, status=401)
             
         token, created = Token.objects.get_or_create(user=authenticated_user)
+        touch_token_activity(token)
         
         # Auto-verify email and ensure profile exists on successful password login
         phone_dummy = f"g_{uuid.uuid4().hex[:12]}"
@@ -5734,6 +5741,7 @@ def api_google_login(request):
             profile.save()
             
             token, _ = Token.objects.get_or_create(user=user)
+            touch_token_activity(token)
         
         # Track login activity
         try:
@@ -5776,6 +5784,10 @@ def api_google_login(request):
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.decorators import throttle_classes
+from tracker.authentication import touch_token_activity, validate_and_touch_token
+import secrets
 from django.conf import settings
 from .models import AppAnalyticsEvent, AppErrorLog
 
@@ -5867,7 +5879,9 @@ def _verify_otp_record(record: OTPVerification, code: str, action: str = None) -
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def api_send_otp(request):
+    request.throttle_scope = 'otp'
     raw_identifier = request.data.get('identifier') or request.data.get('phone_number') or request.data.get('email')
     action = request.data.get('action') or 'general'
     email_param = request.data.get('email')
@@ -5940,10 +5954,8 @@ def api_send_otp(request):
                 user = User.objects.filter(email__iexact=str(raw_identifier).strip().lower()).first()
             
         if not user:
-            return Response({
-                'error': 'No account found with this identifier. Please create an account to get started.',
-                'code': 'ACCOUNT_NOT_FOUND'
-            }, status=404)
+            # AUTH-001: Generic response to prevent account enumeration
+            return Response({'status': 'success', 'message': 'If an account exists with this identifier, a verification code has been sent.'})
             
         if user.email and not email_target:
             email_target = user.email.strip().lower()
@@ -5968,6 +5980,13 @@ def api_send_otp(request):
     # AUTH-001: Rate limiting by IP + identifier + action
     ip = _get_client_ip(request)
     recent_check = phone_target or email_target
+
+    # Per-identifier hourly limit (max 5 OTP sends per hour per identifier)
+    hourly_key = f"otp_hourly_{recent_check}"
+    hourly_sent = cache.get(hourly_key, 0)
+    if hourly_sent >= 5:
+        return Response({'error': 'Too many OTP requests for this account. Please try again after 1 hour.'}, status=429)
+
     ident_otps = OTPVerification.objects.filter(
         identifier=recent_check,
         action=action,
@@ -5983,8 +6002,11 @@ def api_send_otp(request):
     if ip_otps >= 10:
         return Response({'error': 'Too many OTP requests from your network. Please wait a few minutes.'}, status=429)
 
-    # Generate 6-digit OTP
-    otp_code = str(random.randint(100000, 999999))
+    # Increment hourly counter
+    cache.set(hourly_key, hourly_sent + 1, timeout=3600)
+
+    # Generate 6-digit cryptographically secure OTP
+    otp_code = f"{secrets.randbelow(900000) + 100000}"
 
     # Save hashed OTP for all valid identifiers
     identifiers_to_store = []
@@ -6083,7 +6105,9 @@ def api_send_otp(request):
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def api_verify_otp(request):
+    request.throttle_scope = 'otp'
     raw_identifier = request.data.get('identifier')
     action = request.data.get('action') or 'register'
     if raw_identifier and len(str(raw_identifier)) == 10 and str(raw_identifier).isdigit():
@@ -6125,7 +6149,9 @@ def api_verify_otp(request):
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def api_login_otp(request):
+    request.throttle_scope = 'otp'
     raw_identifier = request.data.get('identifier') or request.data.get('username') or request.data.get('email') or request.data.get('phone_number')
     otp = request.data.get('otp')
     
@@ -6149,10 +6175,8 @@ def api_login_otp(request):
         user = User.objects.filter(email__iexact=identifier).first()
         
     if not user:
-        return Response({
-            'error': 'No account found with this identifier. Please create an account to get started.',
-            'code': 'ACCOUNT_NOT_FOUND'
-        }, status=404)
+        # AUTH-001: Generic response to prevent account enumeration
+        return Response({'error': 'Invalid credentials or expired OTP code. Please try again.'}, status=400)
         
     valid_idents = [identifier, user.username]
     if user.email:
@@ -6213,6 +6237,7 @@ def api_login_otp(request):
     profile.save()
         
     token, _ = Token.objects.get_or_create(user=user)
+    touch_token_activity(token)
     
     try:
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -6366,7 +6391,9 @@ def api_complete_google_profile(request):
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([ScopedRateThrottle])
 def api_reset_password(request):
+    request.throttle_scope = 'auth'
     identifier = request.data.get('identifier')
     if identifier and len(str(identifier)) == 10 and str(identifier).isdigit():
         identifier = f"91{identifier}"
@@ -6379,13 +6406,21 @@ def api_reset_password(request):
     if len(new_password) < 6:
         return Response({'error': 'Password must be at least 6 characters.'}, status=400)
         
-    otp_record = OTPVerification.objects.filter(
-        identifier=identifier, 
-        otp_code=otp_code,
-        is_verified=True
-    ).first()
-    
-    if not otp_record:
+    valid_record = None
+    records = OTPVerification.objects.filter(
+        identifier=identifier,
+        is_verified=True,
+        action__in=['reset', 'general'],
+        created_at__gte=timezone.now() - timedelta(minutes=10)
+    ).order_by('-created_at')
+
+    for r in records:
+        expected_hash = _hash_otp(identifier, r.action, str(otp_code).strip())
+        if hmac.compare_digest(str(r.otp_code), str(expected_hash)) or hmac.compare_digest(str(r.otp_code), str(otp_code).strip()):
+            valid_record = r
+            break
+
+    if not valid_record:
         return Response({'error': 'OTP not verified or invalid.'}, status=400)
         
     # Find user
@@ -6407,7 +6442,14 @@ def api_reset_password(request):
         
     user.set_password(new_password)
     user.save()
-    otp_record.delete()
+
+    # Rotate auth token on password reset
+    Token.objects.filter(user=user).delete()
+    new_token = Token.objects.create(user=user)
+    touch_token_activity(new_token)
+
+    # Delete all OTP records for this identifier after successful reset
+    OTPVerification.objects.filter(identifier=identifier).delete()
     
     return Response({'message': 'Password reset successfully. You can now login.'})
 
