@@ -222,28 +222,26 @@ export default function MoreFeaturesScreen({ navigation }) {
 
       {/* ── Top Bar ── */}
       <View style={[styles.topBar, isDark && { borderBottomColor: colors.border }]}>
-        <View>
+        <View style={{ flex: 1, paddingRight: 12 }}>
           <Text style={[styles.topBarTitle, isDark && { color: colors.textPrimary }]}>Menu & Features</Text>
           <Text style={[styles.topBarSub, isDark && { color: colors.textSecondary }]}>Explore tools, AI & utilities</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <ThemeToggle style={{ marginRight: 10 }} />
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('Profile');
-            }}
-            style={styles.topProfileBtn}
-            activeOpacity={0.8}
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate('Profile');
+          }}
+          style={styles.topProfileBtn}
+          activeOpacity={0.8}
+          accessibilityLabel="Open User Profile"
+        >
+          <LinearGradient
+            colors={['#7C3AED', '#6D28D9']}
+            style={styles.topProfileGrad}
           >
-            <LinearGradient
-              colors={['#7C3AED', '#6D28D9']}
-              style={styles.topProfileGrad}
-            >
-              <Text style={styles.topProfileInitial}>{initialLetter}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+            <Text style={styles.topProfileInitial}>{initialLetter}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
 
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -937,19 +935,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   topProfileBtn: {
-    borderRadius: 20,
-    padding: 2,
+    borderRadius: 22,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   topProfileGrad: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
   },
   topProfileInitial: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
   },
   scrollContent: {

@@ -418,60 +418,66 @@ export default function SavingsGoalsScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>GOAL NAME</Text>
-            <TextInput
-              style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="e.g., iPhone 16 Pro"
-              placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
-              value={goalName}
-              onChangeText={setGoalName}
-              maxLength={100}
-            />
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 30 }}
+            >
+              <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>GOAL NAME</Text>
+              <TextInput
+                style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
+                placeholder="e.g., iPhone 16 Pro"
+                placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
+                value={goalName}
+                onChangeText={setGoalName}
+                maxLength={100}
+              />
 
-            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>TARGET AMOUNT (₹)</Text>
-            <TextInput
-              style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="e.g., 50000"
-              placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
-              keyboardType="numeric"
-              value={goalTarget}
-              onChangeText={(v) => setGoalTarget(sanitizeAmount(v))}
-            />
+              <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>TARGET AMOUNT (₹)</Text>
+              <TextInput
+                style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
+                placeholder="e.g., 50000"
+                placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
+                keyboardType="numeric"
+                value={goalTarget}
+                onChangeText={(v) => setGoalTarget(sanitizeAmount(v))}
+              />
 
-            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>ICON</Text>
-            <View style={styles.iconGrid}>
-              {GOAL_ICONS.map((icon) => (
-                <TouchableOpacity
-                  key={icon}
-                  style={[
-                    styles.iconOption, 
-                    isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border },
-                    goalIcon === icon && styles.iconOptionSelected
-                  ]}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setGoalIcon(icon); }}
-                >
-                  <Text style={{ fontSize: 24 }}>{icon}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+              <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>ICON</Text>
+              <View style={styles.iconGrid}>
+                {GOAL_ICONS.map((icon) => (
+                  <TouchableOpacity
+                    key={icon}
+                    style={[
+                      styles.iconOption, 
+                      isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border },
+                      goalIcon === icon && styles.iconOptionSelected
+                    ]}
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setGoalIcon(icon); }}
+                  >
+                    <Text style={{ fontSize: 24 }}>{icon}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-            <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>DEADLINE (OPTIONAL)</Text>
-            <TextInput
-              style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
-              value={goalDeadline}
-              onChangeText={setGoalDeadline}
-            />
+              <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>DEADLINE (OPTIONAL)</Text>
+              <TextInput
+                style={[styles.input, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border, color: colors.textPrimary }]}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={isDark ? colors.textSecondary : THEME.textMuted}
+                value={goalDeadline}
+                onChangeText={setGoalDeadline}
+              />
 
-            <GradientButton
-              title="Create Goal"
-              onPress={handleAddGoal}
-              loading={submitting}
-              colors={THEME.gradNeon}
-              icon="🎯"
-              style={{ marginTop: 24 }}
-            />
+              <GradientButton
+                title="Create Goal"
+                onPress={handleAddGoal}
+                loading={submitting}
+                colors={THEME.gradNeon}
+                icon="🎯"
+                style={{ marginTop: 24 }}
+              />
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -854,7 +860,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 24,
-    maxHeight: '85%',
+    paddingBottom: 12,
+    maxHeight: '90%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.1,
