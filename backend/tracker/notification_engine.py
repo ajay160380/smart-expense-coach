@@ -300,3 +300,58 @@ def check_and_send_repeat_merchant_nudge(user, merchant: str, target_date=None) 
         return True
 
     return False
+
+
+def send_live_budget_alert(user, expense, current_time=None) -> tuple[bool, str]:
+    """
+    PHASE 9.4: Live Budget Feedback
+    When an expense is saved (auto or manual), optionally send a live alert:
+    'Coffee -₹250. Aaj ka bacha: ₹3,083.'
+    - Setting: live_budget_alerts (default OFF)
+    - Quiet hours: 11 PM to 7 AM (23:00 to 07:00)
+    - Max 10 per day
+    """
+    profile = getattr(user, 'profile', None)
+    if not profile or not profile.live_budget_alerts or not profile.fcm_token:
+        return False, "Feature disabled or no FCM token"
+
+    if current_time is None:
+        current_time = timezone.localtime()
+
+    # Quiet hours check: 23:00 to 07:00
+    hour = current_time.hour
+    if hour >= 23 or hour < 7:
+        return False, "Quiet hours active (11 PM - 7 AM)"
+
+    today = current_time.date()
+
+    # Max 10 per day check
+    alerts_today = DailyNotificationLog.objects.filter(
+        user=user,
+        notification_type='live_alert',
+        target_date=today
+    ).count()
+    if alerts_today >= 10:
+        return False, "Daily limit reached (max 10/day)"
+
+    from .views import calculate_daily_budget
+    daily_info = calculate_daily_budget(user, today)
+    desc = (expense.description or expense.category or "Kharcha").strip()
+    amt = float(expense.amount)
+    rem = daily_info['today_remaining']
+
+    alert_msg = f"{desc} -₹{amt:,.0f}. Aaj ka bacha: ₹{rem:,.0f}."
+
+    from .fcm_utils import send_push_notification
+    try:
+        send_push_notification(profile.fcm_token, "Rozana Budget Update 🎯", alert_msg, data={"type": "live_budget_alert"})
+    except Exception:
+        pass
+
+    DailyNotificationLog.objects.create(
+        user=user,
+        notification_type='live_alert',
+        target_date=today,
+        details={"expense_id": expense.id, "amount": amt, "remaining": rem, "message": alert_msg}
+    )
+    return True, alert_msg

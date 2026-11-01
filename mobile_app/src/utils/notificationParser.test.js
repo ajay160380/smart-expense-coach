@@ -1,92 +1,103 @@
 /**
- * Unit tests for Notification Parser
+ * Unit tests for Notification Parser (Phase 9.3)
+ * Compatible with node --test and Jest
  */
 
+let describeFn = typeof describe !== 'undefined' ? describe : null;
+let testFn = typeof test !== 'undefined' ? test : null;
+
+if (!describeFn) {
+  const nodeTest = require('node:test');
+  describeFn = nodeTest.describe;
+  testFn = nodeTest.it;
+}
+
+const assert = require('node:assert');
 const { parseNotification, isAllowedPaymentPackage, ALLOWED_PACKAGES } = require('./notificationParser');
 
-describe('Notification Parser (Phase 9.3)', () => {
-  test('validates allowed payment packages', () => {
-    expect(isAllowedPaymentPackage('com.google.android.apps.nbu.paisa.user')).toBe(true);
-    expect(isAllowedPaymentPackage('com.phonepe.app')).toBe(true);
-    expect(isAllowedPaymentPackage('com.whatsapp')).toBe(false);
+describeFn('Notification Parser (Phase 9.3)', () => {
+  testFn('validates allowed payment packages', () => {
+    assert.strictEqual(isAllowedPaymentPackage('com.google.android.apps.nbu.paisa.user'), true);
+    assert.strictEqual(isAllowedPaymentPackage('com.phonepe.app'), true);
+    assert.strictEqual(isAllowedPaymentPackage('com.whatsapp'), false);
   });
 
-  test('parses Google Pay debit notification with Rupee symbol and commas', () => {
+  testFn('parses Google Pay debit notification with Rupee symbol and commas', () => {
     const parsed = parseNotification(
       'com.google.android.apps.nbu.paisa.user',
       'Google Pay',
       'Paid ₹1,250.50 to Starbucks Coffee'
     );
-    expect(parsed).not.toBeNull();
-    expect(parsed.amount).toBe(1250.5);
-    expect(parsed.merchant).toBe('Starbucks Coffee');
-    expect(parsed.source).toBe('upi');
-    expect(parsed.client_txn_id).toBeDefined();
+    assert.notStrictEqual(parsed, null);
+    assert.strictEqual(parsed.amount, 1250.5);
+    assert.strictEqual(parsed.merchant, 'Starbucks Coffee');
+    assert.strictEqual(parsed.source, 'upi');
+    assert.ok(parsed.client_txn_id);
   });
 
-  test('parses PhonePe debit with Rs format', () => {
+  testFn('parses PhonePe debit with Rs format', () => {
     const parsed = parseNotification(
       'com.phonepe.app',
       'Payment Successful',
       'Paid Rs 400 to Zepto via UPI'
     );
-    expect(parsed).not.toBeNull();
-    expect(parsed.amount).toBe(400);
-    expect(parsed.merchant).toBe('Zepto');
+    assert.notStrictEqual(parsed, null);
+    assert.strictEqual(parsed.amount, 400);
+    assert.strictEqual(parsed.merchant, 'Zepto');
   });
 
-  test('parses Bank debit notification', () => {
+  testFn('parses Bank debit notification', () => {
     const parsed = parseNotification(
       'com.snapwork.hdfc',
       'HDFC Bank Alert',
       'Your account debited by INR 3,499.00 at Amazon India on 15-Nov'
     );
-    expect(parsed).not.toBeNull();
-    expect(parsed.amount).toBe(3499.0);
-    expect(parsed.merchant).toBe('Amazon India');
-    expect(parsed.source).toBe('bank');
+    assert.notStrictEqual(parsed, null);
+    assert.strictEqual(parsed.amount, 3499.0);
+    assert.strictEqual(parsed.merchant, 'Amazon India');
+    assert.strictEqual(parsed.source, 'bank');
   });
 
-  test('skips OTP messages', () => {
+  testFn('skips OTP messages', () => {
     const parsed = parseNotification(
       'com.snapwork.hdfc',
       'HDFC Bank OTP',
       'Your OTP for transaction of Rs 500 is 948210. Do not share with anyone.'
     );
-    expect(parsed).toBeNull();
+    assert.strictEqual(parsed, null);
   });
 
-  test('skips Credits and Refunds', () => {
+  testFn('skips Credits and Refunds', () => {
     const parsed1 = parseNotification(
       'com.phonepe.app',
       'Money Received',
       'Received ₹500 from Rohit Sharma via UPI'
     );
-    expect(parsed1).toBeNull();
+    assert.strictEqual(parsed1, null);
 
     const parsed2 = parseNotification(
       'net.one97.paytm',
       'Cashback Received',
       'Cashback of Rs 25 credited to your account'
     );
-    expect(parsed2).toBeNull();
+    assert.strictEqual(parsed2, null);
   });
 
-  test('skips Failed and Reversed transactions', () => {
+  testFn('skips Failed and Reversed transactions', () => {
     const parsed = parseNotification(
       'com.google.android.apps.nbu.paisa.user',
       'Payment Failed',
       'Payment of ₹350 to Swiggy failed. Any debited amount will be reversed.'
     );
-    expect(parsed).toBeNull();
+    assert.strictEqual(parsed, null);
   });
 
-  test('skips Promotional messages', () => {
+  testFn('skips Promotional messages', () => {
     const parsed = parseNotification(
       'com.phonepe.app',
       'Special Offer',
       'Congratulations! Win cashback of up to Rs 200 on recharge.'
     );
-    expect(parsed).toBeNull();
+    assert.strictEqual(parsed, null);
   });
 });

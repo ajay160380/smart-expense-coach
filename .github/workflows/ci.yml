@@ -2,9 +2,9 @@ name: Production Hardening CI
 
 on:
   push:
-    branches: [ main, prod-hardening ]
+    branches: [ main, prod-hardening, phase9-features ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, prod-hardening, phase9-features ]
 
 jobs:
   backend-test:

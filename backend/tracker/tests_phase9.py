@@ -121,6 +121,46 @@ class Phase9DailyBudgetTests(TestCase):
         self.assertTrue(self.profile.daily_budget_rollover)
         self.assertEqual(post_res.data['basis'], 'income')
 
+    def test_daily_budget_cycle_day_1_and_end(self):
+        """9.1: Test edge cases: day 1 of cycle and last day of cycle"""
+        start_date, end_date = get_budget_cycle_dates(self.user, date(2026, 11, 1))
+        # Day 1
+        data_day1 = calculate_daily_budget(self.user, target_date=start_date)
+        self.assertEqual(data_day1['day_of_cycle'], 1)
+        self.assertEqual(data_day1['days_left'], data_day1['total_days_in_cycle'])
+
+        # End of cycle
+        data_end = calculate_daily_budget(self.user, target_date=end_date)
+        self.assertEqual(data_end['day_of_cycle'], data_end['total_days_in_cycle'])
+        self.assertEqual(data_end['days_left'], 1)
+
+    def test_baseline_defaults_preserved(self):
+        """Rule: Every Phase 9 feature defaults to OFF, preserving 100% existing baseline behavior"""
+        fresh_user = User.objects.create_user(username='p9fresh', password='Password123!', email='p9fresh@test.com')
+        fresh_profile = UserProfile.objects.create(user=fresh_user, monthly_budget=20000)
+
+        # Verify all new fields default to OFF / None / safe values
+        self.assertFalse(fresh_profile.daily_budget_rollover)
+        self.assertEqual(fresh_profile.daily_budget_basis, 'budget')
+        self.assertIsNone(fresh_profile.monthly_income)
+        self.assertFalse(fresh_profile.auto_capture_enabled)
+        self.assertFalse(fresh_profile.live_budget_alerts)
+        self.assertFalse(fresh_profile.morning_budget_push)
+        self.assertFalse(fresh_profile.nightly_summary)
+        self.assertFalse(fresh_profile.repeat_nudges)
+        self.assertEqual(fresh_profile.notification_tone, 'normal')
+
+        # Existing safe-to-spend endpoint continues working unchanged
+        token = Token.objects.create(user=fresh_user)
+        c = APIClient()
+        c.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        res = c.get('/api/safe-to-spend/')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn('safe_limit_today', data)
+        self.assertIn('remaining_today', data)
+
+
 
 class Phase9AutoExpenseTests(TestCase):
     def setUp(self):
@@ -308,6 +348,36 @@ class Phase9NotificationsTests(TestCase):
         self.assertFalse(self.profile.morning_budget_push)
         self.assertEqual(self.profile.notification_tone, 'roast')
         self.assertEqual(self.profile.morning_push_time, '07:30')
+
+    def test_quiet_hours_and_live_budget_alerts(self):
+        """9.4: Live alerts respect quiet hours (11 PM - 7 AM) and max 10/day"""
+        from datetime import datetime
+        from tracker.notification_engine import send_live_budget_alert
+
+        self.profile.live_budget_alerts = True
+        self.profile.save()
+
+        exp = Expense.objects.create(user=self.user, amount=Decimal('250.00'), description='Coffee', category='food', date=date(2026, 11, 15))
+
+        # Quiet hour: 23:30 (11:30 PM) -> Should be blocked
+        dt_night = timezone.make_aware(datetime(2026, 11, 15, 23, 30))
+        sent, reason = send_live_budget_alert(self.user, exp, current_time=dt_night)
+        self.assertFalse(sent)
+        self.assertIn("Quiet hours", reason)
+
+        # Quiet hour: 05:00 (5 AM) -> Should be blocked
+        dt_early = timezone.make_aware(datetime(2026, 11, 15, 5, 0))
+        sent, reason = send_live_budget_alert(self.user, exp, current_time=dt_early)
+        self.assertFalse(sent)
+        self.assertIn("Quiet hours", reason)
+
+        # Daytime: 14:00 (2 PM) -> Allowed!
+        dt_day = timezone.make_aware(datetime(2026, 11, 15, 14, 0))
+        sent, msg = send_live_budget_alert(self.user, exp, current_time=dt_day)
+        self.assertTrue(sent)
+        self.assertIn("Coffee -₹250", msg)
+        self.assertIn("Aaj ka bacha", msg)
+
 
 
 class Phase9MoneyBreakdownTests(TestCase):
