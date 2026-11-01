@@ -463,3 +463,8 @@ class ContactFormTests(TestCase):
         })
         self.assertEqual(res.status_code, 200)
         self.assertEqual(ContactMessage.objects.filter(name='Pooja Sharma').count(), 0)
+
+
+# Import baseline characterization test suite
+from tracker.tests_characterization import BaselineCharacterizationTests
+
