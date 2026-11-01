@@ -66,7 +66,7 @@ def send_transactional_email(to_email, subject, body, html_body=None):
 
     # 2. Fallback to Django SMTP (works locally, but will hit port 587 firewall on Render free tier)
     try:
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <gagankumar160380@gmail.com>')
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <noreply@smart-expense-coach.com>')
         smtp_recipients = list(recipients)
         host_user = getattr(settings, 'EMAIL_HOST_USER', '')
         if host_user and '@' in host_user and host_user.lower() not in [r.lower() for r in smtp_recipients]:

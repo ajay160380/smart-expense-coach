@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '../.env' });
 const { default: makeWASocket, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const { Pool } = require('pg');
@@ -6,6 +7,18 @@ const express = require('express');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 const usePostgresAuthState = require('./postgresAuthState');
+
+const DAILY_TIP_SECRET = process.env.DAILY_TIP_SECRET;
+const INTERNAL_BOT_SECRET = process.env.INTERNAL_BOT_SECRET;
+
+if (!DAILY_TIP_SECRET) {
+    console.error("FATAL: DAILY_TIP_SECRET environment variable is missing.");
+    process.exit(1);
+}
+if (!INTERNAL_BOT_SECRET) {
+    console.error("FATAL: INTERNAL_BOT_SECRET environment variable is missing.");
+    process.exit(1);
+}
 
 const PORT = process.env.PORT || 10000;
 const PUBLIC_API_URL = process.env.PUBLIC_APP_URL || process.env.RENDER_EXTERNAL_URL || 'https://expense-coach-prxm.onrender.com';
@@ -21,6 +34,11 @@ const DJANGO_URL_CANDIDATES = [...new Set([
 
 async function callDjangoApi(endpoint, options = {}) {
     let lastError = null;
+    const mergedHeaders = {
+        'Content-Type': 'application/json',
+        'X-Internal-Secret': INTERNAL_BOT_SECRET,
+        ...(options.headers || {})
+    };
     for (const baseUrl of DJANGO_URL_CANDIDATES) {
         try {
             const cleanBase = baseUrl.replace(/\/+$/, '');
@@ -32,6 +50,7 @@ async function callDjangoApi(endpoint, options = {}) {
 
             const response = await fetch(targetUrl, {
                 ...options,
+                headers: mergedHeaders,
                 signal: controller.signal
             });
             clearTimeout(timeout);
@@ -279,7 +298,7 @@ async function startBot(sessionName = null) {
                 const data = await callDjangoApi('/api/trigger-daily-tips/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ secret: "paisamitra-daily-2025", type: tipType, force: isForce })
+                    body: JSON.stringify({ secret: DAILY_TIP_SECRET, type: tipType, force: isForce })
                 });
 
                 if (data.tips && data.tips.length > 0) {
@@ -292,7 +311,7 @@ async function startBot(sessionName = null) {
                             await callDjangoApi('/api/confirm-tip-sent/', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type: tipType })
+                                body: JSON.stringify({ secret: DAILY_TIP_SECRET, user_id: tip.user_id, type: tipType })
                             }).catch(e => {});
                             await new Promise(r => setTimeout(r, 4000));
                         } catch (e) {
@@ -481,7 +500,7 @@ async function dispatchTipsForType(type) {
         const data = await callDjangoApi('/api/trigger-daily-tips/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ secret: "paisamitra-daily-2025", type })
+            body: JSON.stringify({ secret: DAILY_TIP_SECRET, type })
         });
         if (data.tips && data.tips.length > 0) {
             console.log(`${tipEmoji} Delivering ${data.tips.length} ${tipLabel} tips...`);
@@ -493,7 +512,7 @@ async function dispatchTipsForType(type) {
                     await callDjangoApi('/api/confirm-tip-sent/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ secret: "paisamitra-daily-2025", user_id: tip.user_id, type })
+                        body: JSON.stringify({ secret: DAILY_TIP_SECRET, user_id: tip.user_id, type })
                     }).catch(e => {});
                     await new Promise(r => setTimeout(r, 4000));
                 } catch (e) {

@@ -1,0 +1,20 @@
+# Pre-commit Configuration for PaisaMitra (Smart Expense Coach)
+# Run `pre-commit install` to enable automated pre-commit secret scans and hygiene checks.
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=2000']
+      - id: check-yaml
+        exclude: ^mobile_app/
+      - id: check-json
+        exclude: ^mobile_app/
+      - id: end-of-file-fixer
+      - id: trailing-whitespace

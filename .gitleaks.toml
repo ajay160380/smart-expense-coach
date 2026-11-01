@@ -1,0 +1,12 @@
+# Gitleaks Configuration for PaisaMitra (Smart Expense Coach)
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for false positives, templates, and characterization test files"
+paths = [
+  '''^\.env\.example$''',
+  '''^mobile_app/google-services\.json$''',
+  '''^backend/tracker/tests.*\.py$''',
+  '''^BASELINE\.md$''',
+]

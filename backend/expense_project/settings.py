@@ -15,23 +15,34 @@ import os
 import sys
 from dotenv import load_dotenv
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(os.path.join(BASE_DIR, '../.env')) 
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
+IS_TESTING = 'test' in sys.argv
 
 is_hf = bool(os.environ.get('SPACE_ID') or os.environ.get('HF_SPACE') or any('7860' in arg for arg in sys.argv))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY') or 'django-insecure-w-w+e7iyxs@%$+*l-r7p@nn@c7+h1x6ena-1@l0&%dndd*g9d^'
+if IS_TESTING:
+    SECRET_KEY = os.getenv('DJANGO_SECRET_KEY') or 'django-insecure-test-key-only-not-for-prod'
+elif DEBUG:
+    SECRET_KEY = os.getenv('DJANGO_SECRET_KEY') or 'django-insecure-dev-only-local-environment-key'
+else:
+    raw_secret_key = os.getenv('DJANGO_SECRET_KEY')
+    if not raw_secret_key:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY environment variable is required when DEBUG is False.")
+    SECRET_KEY = raw_secret_key
 
 # SEC-003: Explicit allowed hosts
 raw_allowed_hosts = os.getenv('ALLOWED_HOSTS', '').strip()
@@ -49,10 +60,31 @@ else:
         '.hf.space',
     ]
 
-# SEC-001: Required internal secrets with safe defaults
-DAILY_TIP_SECRET = os.getenv('DAILY_TIP_SECRET', 'paisamitra-daily-2025')
-ADMIN_PUSH_SECRET = os.getenv('ADMIN_PUSH_SECRET', 'paisamitra-admin-push-2025')
-INTERNAL_BOT_SECRET = os.getenv('INTERNAL_BOT_SECRET', 'paisamitra-internal-bot-2025')
+# Internal secrets configuration
+if IS_TESTING:
+    DAILY_TIP_SECRET = os.getenv('DAILY_TIP_SECRET') or 'test-daily-tip-secret'
+    ADMIN_PUSH_SECRET = os.getenv('ADMIN_PUSH_SECRET') or 'test-admin-push-secret'
+    INTERNAL_BOT_SECRET = os.getenv('INTERNAL_BOT_SECRET') or 'test-internal-bot-secret'
+elif DEBUG:
+    DAILY_TIP_SECRET = os.getenv('DAILY_TIP_SECRET') or 'dev-daily-tip-secret'
+    ADMIN_PUSH_SECRET = os.getenv('ADMIN_PUSH_SECRET') or 'dev-admin-push-secret'
+    INTERNAL_BOT_SECRET = os.getenv('INTERNAL_BOT_SECRET') or 'dev-internal-bot-secret'
+else:
+    DAILY_TIP_SECRET = os.getenv('DAILY_TIP_SECRET')
+    ADMIN_PUSH_SECRET = os.getenv('ADMIN_PUSH_SECRET')
+    INTERNAL_BOT_SECRET = os.getenv('INTERNAL_BOT_SECRET')
+    missing_secrets = []
+    if not DAILY_TIP_SECRET:
+        missing_secrets.append('DAILY_TIP_SECRET')
+    if not ADMIN_PUSH_SECRET:
+        missing_secrets.append('ADMIN_PUSH_SECRET')
+    if not INTERNAL_BOT_SECRET:
+        missing_secrets.append('INTERNAL_BOT_SECRET')
+    if missing_secrets:
+        raise ImproperlyConfigured(
+            f"Missing required production internal secrets: {', '.join(missing_secrets)}. "
+            f"Please configure them in your production environment."
+        )
 
 raw_csrf_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '').strip()
 if raw_csrf_origins:
@@ -123,7 +155,7 @@ WSGI_APPLICATION = 'expense_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-if 'test' in sys.argv:
+if IS_TESTING:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -131,18 +163,24 @@ if 'test' in sys.argv:
         }
     }
 else:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL') or 'postgresql://postgres.glwfyengmazoxtxabydz:Ajay%401603801221@aws-1-ap-south-1.pooler.supabase.com:6543/postgres',
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-    if not DATABASES['default']:
-        DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=db_url,
+                conn_max_age=600,
+                conn_health_checks=True,
+            )
         }
+    elif DEBUG:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+    else:
+        raise ImproperlyConfigured("DATABASE_URL environment variable is required in production.")
 
 
 # Password validation
@@ -227,7 +265,7 @@ EMAIL_PORT = int(str(os.getenv('EMAIL_PORT', 587)).strip())
 EMAIL_USE_TLS = str(os.getenv('EMAIL_USE_TLS', 'True')).strip().lower() in ('true', '1', 't')
 EMAIL_HOST_USER = _raw_user
 EMAIL_HOST_PASSWORD = _raw_pass
-DEFAULT_FROM_EMAIL = (os.getenv('DEFAULT_FROM_EMAIL') or f'Expense Tracker <{_raw_user or "gagankumar160380@gmail.com"}>').strip()
+DEFAULT_FROM_EMAIL = (os.getenv('DEFAULT_FROM_EMAIL') or (f'Expense Tracker <{_raw_user}>' if _raw_user else 'Expense Tracker <noreply@smart-expense-coach.com>')).strip()
 EMAIL_TIMEOUT = 5
 
 # Resend HTTP Email API (Port 443 HTTPS - Works on Render Free Tier)
