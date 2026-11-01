@@ -31,6 +31,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/config';
 import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW } from '../utils/theme';
 import { EmptyState } from '../components/SharedComponents';
+import { formatApiError } from '../utils/errors';
 
 export default function HistoryScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
@@ -346,11 +347,14 @@ export default function HistoryScreen({ navigation }) {
                                       onPress: async () => {
                                         try {
                                           await api.post(`/delete-expense/${exp.id}/`);
-                                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                          fetchHistory();
                                           DeviceEventEmitter.emit('EXPENSE_UPDATED');
+                                          fetchHistory();
+                                          try {
+                                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                          } catch (e) {}
                                         } catch (e) {
-                                          Alert.alert('Error', 'Could not delete expense');
+                                          console.error(e);
+                                          Alert.alert('Error', formatApiError(e, 'Could not delete expense'));
                                         }
                                       }
                                     }

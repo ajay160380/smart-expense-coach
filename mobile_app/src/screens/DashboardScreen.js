@@ -29,6 +29,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import api, { BASE_URL } from '../api/config';
 import { getUsername, clearAuthData, getToken } from '../utils/auth';
 import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
+import { formatApiError } from '../utils/errors';
 
 const { width } = Dimensions.get('window');
 
@@ -155,7 +156,7 @@ export default function DashboardScreen({ navigation }) {
 
     // Listen for expense created / edited / deleted to refresh instantly
     const expSub = DeviceEventEmitter.addListener('EXPENSE_UPDATED', () => {
-      loadData(false);
+      fetchDashboardData(false);
     });
 
     // Fallback: if splash didn't run or finished earlier
@@ -458,14 +459,14 @@ export default function DashboardScreen({ navigation }) {
           onPress: async () => {
             try {
               const res = await api.post(`/delete-expense/${expenseId}/`);
-              if (res.data.status === 'success') {
-                fetchDashboardData();
-              } else {
-                Alert.alert("Error", res.data.message || "Failed to delete expense");
-              }
+              DeviceEventEmitter.emit('EXPENSE_UPDATED');
+              fetchDashboardData(false);
+              try {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch (e) {}
             } catch (err) {
               console.error(err);
-              Alert.alert("Error", "Could not delete expense.");
+              Alert.alert("Error", formatApiError(err, "Could not delete expense."));
             }
           }
         }
@@ -1758,10 +1759,14 @@ export default function DashboardScreen({ navigation }) {
                                       onPress: async () => {
                                         try {
                                           await api.post(`/delete-expense/${exp.id}/`);
-                                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                          loadData(false);
+                                          DeviceEventEmitter.emit('EXPENSE_UPDATED');
+                                          fetchDashboardData(false);
+                                          try {
+                                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                          } catch (e) {}
                                         } catch (e) {
-                                          Alert.alert('Error', 'Could not delete expense');
+                                          console.error(e);
+                                          Alert.alert('Error', formatApiError(e, 'Could not delete expense'));
                                         }
                                       }
                                     }
