@@ -76,15 +76,17 @@ export async function scheduleRandomNotifications() {
           content: {
             title: "Expense Tracker 💡",
             body: randomMessage,
-            sound: 'default',
             channelId: 'expense_tracker_alerts_v2',
           },
-          trigger: date,
+          trigger: {
+            date: date,
+            channelId: 'expense_tracker_alerts_v2',
+          },
         });
         console.log(`Scheduled notification for ${date.toLocaleString()}`);
       }
     }
   } catch (error) {
-    console.error('Error scheduling notifications:', error);
+    console.warn('Notice scheduling notifications:', error?.message || error);
   }
 }
