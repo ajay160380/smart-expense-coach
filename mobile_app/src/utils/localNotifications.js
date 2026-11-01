@@ -39,7 +39,6 @@ export async function scheduleRandomNotifications() {
         name: 'Expense Alerts & Reminders',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        sound: 'default',
         enableVibrate: true,
         showBadge: true,
         lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
@@ -48,7 +47,6 @@ export async function scheduleRandomNotifications() {
         name: 'Default Alerts',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        sound: 'default',
         enableVibrate: true,
         showBadge: true,
       });
