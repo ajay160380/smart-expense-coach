@@ -291,10 +291,14 @@ from rest_framework.authtoken.models import Token
 from django.views.decorators.csrf import csrf_exempt
 
 def get_client_ip(request: HttpRequest) -> str:
-    """Extract client IP address safely, respecting trusted reverse proxy headers."""
+    """Extract client IP address safely, respecting configured trusted reverse proxies."""
+    num_proxies = getattr(settings, 'NUM_PROXIES', 1)
     xff = request.META.get('HTTP_X_FORWARDED_FOR')
     if xff:
-        return xff.split(',')[0].strip()
+        parts = [p.strip() for p in xff.split(',') if p.strip()]
+        if len(parts) >= num_proxies:
+            return parts[-num_proxies]
+        return parts[0]
     return request.META.get('REMOTE_ADDR', '127.0.0.1')
 
 _get_client_ip = get_client_ip
@@ -1910,6 +1914,14 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     masked_phone = (incoming_phone[:3] + '***' + incoming_phone[-3:]) if len(incoming_phone) >= 7 else '***'
     logger.info("voice_expense request received for phone=%s", masked_phone)
 
+    # ── Authenticate WhatsApp Bot Requests ────────────────────────────────────
+    if incoming_phone:
+        incoming_secret = request.META.get('HTTP_X_INTERNAL_SECRET', '')
+        expected_bot_secret = getattr(settings, 'INTERNAL_BOT_SECRET', '')
+        if not (expected_bot_secret and incoming_secret and hmac.compare_digest(str(incoming_secret), str(expected_bot_secret))):
+            logger.warning("Unauthorized access to voice_expense WhatsApp bot mode (phone=%s)", masked_phone)
+            return JsonResponse({"status": "error", "message": "Unauthorized internal bot request."}, status=401)
+
     if not spoken_text:
         return JsonResponse({"status": "error", "message": "No text received."}, status=400)
 
@@ -1922,75 +1934,111 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "status": "error",
                 "message": (
                     "📲 *Link Your Expense Tracker*\n\n"
-                    "To link your account, reply with your registered mobile number:\n\n"
-                    "👉 *Example:* `link 917905398965`"
+                    "To link your account, generate a 6-digit Link Code in your app/web profile settings, then reply:\n\n"
+                    "👉 *Example:* `link 481920`"
                 )
             })
 
-        mobile_raw = parts[1].strip()
-        clean_phone = re.sub(r'[^0-9]', '', mobile_raw)
+        link_arg = parts[1].strip()
 
-        if not clean_phone or len(clean_phone) < 10:
+        # Rate limiting: max 5 link attempts per 15 minutes per incoming WhatsApp number
+        link_cache_key = f"wa_link_attempts_{incoming_phone}"
+        attempts = cache.get(link_cache_key, 0)
+        if attempts >= 5:
             return JsonResponse({
                 "status": "error",
-                "message": f"❌ *Invalid Mobile Number*\n\n`{mobile_raw}` is not a valid 10-digit number. Please send your registered number (e.g. `link 917905398965`)."
+                "message": "⚠️ Too many link attempts. Please wait 15 minutes before trying again."
             })
 
-        # 1. Match profile (exact, with/without country code, or last 10 digits)
-        profile = UserProfile.objects.filter(phone_number=clean_phone).select_related("user").first()
-        if not profile:
-            profile = UserProfile.objects.filter(phone_number='+' + clean_phone).select_related("user").first()
-        if not profile and len(clean_phone) >= 10:
-            profile = UserProfile.objects.filter(phone_number__endswith=clean_phone[-10:]).select_related("user").first()
+        # Step A: Check if link_arg is a valid one-time link code
+        code_hash = hashlib.sha256(link_arg.encode()).hexdigest()
+        profile = UserProfile.objects.filter(
+            whatsapp_link_token=code_hash,
+            whatsapp_link_expires__gte=timezone.now()
+        ).select_related("user").first()
 
-        if not profile:
-            return JsonResponse({
-                "status": "error",
-                "message": (
-                    f"❌ *Account Not Found*\n\n"
-                    f"No registered account found with mobile number `{clean_phone}`.\n\n"
-                    f"Please check your registered number in the app, or create a new account here:\n"
-                    f"https://expense-coach-prxm.onrender.com/register/"
-                )
-            })
+        if profile:
+            target_name = (profile.user.first_name or profile.user.username or "Dost").strip().title()
+            profile.whatsapp_number = incoming_phone
+            profile.whatsapp_linked = True
+            profile.whatsapp_link_token = None
+            profile.whatsapp_link_expires = None
+            profile.save(update_fields=['whatsapp_number', 'whatsapp_linked', 'whatsapp_link_token', 'whatsapp_link_expires'])
+            cache.delete(link_cache_key)
+            logger.info("WhatsApp linked via code for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
+            
+            if '_WA_AUTH_CACHE' in globals():
+                _WA_AUTH_CACHE[incoming_phone] = profile.user.id
 
-        target_name = (profile.user.first_name or profile.user.username or "Dost").strip().title()
-
-        # 2. Check if this profile is ALREADY linked to this incoming WhatsApp ID
-        if profile.whatsapp_linked and profile.whatsapp_number == incoming_phone:
             return JsonResponse({
                 "status": "success",
                 "message": (
-                    f"⚡ *Account Already Linked!*\n\n"
-                    f"Hello *{target_name}*! Your WhatsApp is already linked and active. 🎉\n\n"
-                    f"You can log expenses directly by messaging here:\n"
-                    f"• *500 petrol*\n"
-                    f"• *200 dinner*\n"
-                    f"• *today summary*\n\n"
-                    f"What would you like to track today? 💬"
+                    f"🎉 *WhatsApp Successfully Linked!*\n\n"
+                    f"Welcome *{target_name}*! Your Expense Tracker account is now linked. ✅\n\n"
+                    f"You can now track your expenses directly from WhatsApp:\n"
+                    f"• *'500 dinner'* ➔ Save expense instantly\n"
+                    f"• *'today summary'* ➔ View today's total\n"
+                    f"• *'budget'* ➔ Check remaining balance\n\n"
+                    f"Try it now! Send your first expense message. 🚀"
                 )
             })
 
-        # 3. Perform linking / re-linking
-        profile.whatsapp_number = incoming_phone
-        profile.whatsapp_linked = True
-        profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
-        logger.info("WhatsApp linked for uid=%s with WA ID=%s (phone=%s)", profile.user.id, incoming_phone, clean_phone)
+        # Step B: Backward compatibility for 'link <number>' ONLY when caller's WA ID matches the registered phone
+        clean_phone = re.sub(r'[^0-9]', '', link_arg)
+        clean_incoming = re.sub(r'[^0-9]', '', incoming_phone)
 
-        # Invalidate auth cache so future messages immediately resolve to this user
-        if '_WA_AUTH_CACHE' in globals():
-            _WA_AUTH_CACHE[incoming_phone] = profile.user.id
+        if len(clean_phone) >= 10 and (clean_phone == clean_incoming or clean_incoming.endswith(clean_phone) or clean_phone.endswith(clean_incoming[-10:])):
+            profile = UserProfile.objects.filter(phone_number=clean_phone).select_related("user").first()
+            if not profile:
+                profile = UserProfile.objects.filter(phone_number='+' + clean_phone).select_related("user").first()
+            if not profile and len(clean_phone) >= 10:
+                profile = UserProfile.objects.filter(phone_number__endswith=clean_phone[-10:]).select_related("user").first()
 
+            if profile:
+                target_name = (profile.user.first_name or profile.user.username or "Dost").strip().title()
+
+                # Prevent hijacking if already linked to a different WhatsApp ID
+                if profile.whatsapp_linked and profile.whatsapp_number and profile.whatsapp_number != incoming_phone:
+                    cache.set(link_cache_key, attempts + 1, timeout=900)
+                    return JsonResponse({
+                        "status": "error",
+                        "message": (
+                            "⚠️ *Account Already Linked to Another WhatsApp*\n\n"
+                            "This account is linked to another WhatsApp number. "
+                            "To switch to this number, please generate a secure Link Code in your app/web profile settings."
+                        )
+                    })
+
+                profile.whatsapp_number = incoming_phone
+                profile.whatsapp_linked = True
+                profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
+                cache.delete(link_cache_key)
+                logger.info("WhatsApp legacy linked for uid=%s with WA ID=%s (matched sender)", profile.user.id, incoming_phone)
+
+                if '_WA_AUTH_CACHE' in globals():
+                    _WA_AUTH_CACHE[incoming_phone] = profile.user.id
+
+                return JsonResponse({
+                    "status": "success",
+                    "message": (
+                        f"🎉 *WhatsApp Successfully Linked!*\n\n"
+                        f"Welcome *{target_name}*! Your Expense Tracker account is now linked. ✅\n\n"
+                        f"• *'500 dinner'* ➔ Save expense instantly\n"
+                        f"• *'today summary'* ➔ View today's total\n\n"
+                        f"What would you like to track today? 💬"
+                    )
+                })
+
+        cache.set(link_cache_key, attempts + 1, timeout=900)
         return JsonResponse({
-            "status": "success",
+            "status": "error",
             "message": (
-                f"🎉 *WhatsApp Successfully Linked!*\n\n"
-                f"Welcome *{target_name}*! Your Expense Tracker account is now linked. ✅\n\n"
-                f"You can now track your expenses directly from WhatsApp:\n"
-                f"• *'500 dinner'* ➔ Save expense instantly\n"
-                f"• *'today summary'* ➔ View today's total\n"
-                f"• *'budget'* ➔ Check remaining balance\n\n"
-                f"Try it now! Send your first expense message. 🚀"
+                "🔒 *Security Update*\n\n"
+                "Ab WhatsApp account link karne ke liye 6-digit Link Code ki zaroorat hoti hai:\n"
+                "1️⃣ Expense Tracker App ya Website me login karein.\n"
+                "2️⃣ Profile settings me jaakar *'Generate WhatsApp Link Code'* par tap karein.\n"
+                "3️⃣ Yahan bhejein: *link <CODE>*\n\n"
+                "_Example:_ `link 481920`"
             )
         })
 
@@ -3791,60 +3839,76 @@ def habit_warnings(request):
 
 @csrf_exempt
 def whatsapp_summary(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            phone = data.get("phone", "").strip()
-            
-            # WhatsApp format fix (919876543210 -> 9876543210)
-            clean_phone = phone[-10:] if len(phone) >= 10 else phone
-            profile = UserProfile.objects.filter(phone_number__icontains=clean_phone).first()
-            
-            if not profile:
-                return JsonResponse({"status": "error", "message": "Please register on the website first to link your WhatsApp number! 🚫"})
-            
-            user = profile.user
-            today = timezone.now().date()
-            budget = getattr(profile, 'monthly_budget', 20000)
-            
-            # 1. 🚨 AABI TAK KA POORA DATA (Lifetime)
-            all_expenses = Expense.objects.filter(user=user)
-            lifetime_spent = all_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
-            
-            # 2. IS MAHINE KA DATA
-            this_month_expenses = all_expenses.filter(date__year=today.year, date__month=today.month)
-            month_spent = this_month_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
-            remaining = max(budget - month_spent, 0)
-            
-            # 3. TOP 3 CATEGORIES (Kahan sabse zyada paisa gaya hai aaj tak)
-            top_cats = all_expenses.values('category').annotate(cat_total=Sum('amount')).order_by('-cat_total')[:3]
-            cat_breakdown = "\n".join([f"  🔸 {c['category'].title()}: ₹{c['cat_total']:,.0f}" for c in top_cats])
-            
-            if not cat_breakdown:
-                cat_breakdown = "  Koi kharcha nahi hai abhi tak!"
-            
-            # 4. WHATSAPP REPORT MESSAGE
-            report_msg = f"📊 *ExpenseTracker Lifetime Report*\n\n"
-            report_msg += f"💸 *Aabi Tak Ka Total Kharcha:* ₹{lifetime_spent:,.0f}\n"
-            report_msg += f"📅 *Is Mahine Ka Kharcha:* ₹{month_spent:,.0f} (Budget: ₹{budget:,.0f})\n"
-            report_msg += f"✅ *Bacha Hua Budget:* ₹{remaining:,.0f}\n\n"
-            report_msg += f"🔥 *Top 3 Kharcho Ki Jagah (Lifetime):*\n{cat_breakdown}\n\n"
-            
-            # 5. AI SUGGESTION (Groq API call)
-            try:
-                # Tumhara helper function AI insight lene ke liye
-                ai_suggestion = get_ai_insight(user.id, all_expenses, budget, lifetime_spent)
-            except Exception as e:
-                print(f"AI Insight fail hua: {e}")
-                ai_suggestion = "AI server is currently busy, but keep an eye on your top expenses! 💸"
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Only POST requests allowed"}, status=405)
 
-            report_msg += f"🤖 *AI Analysis:*\n_{ai_suggestion}_"
-            
-            return JsonResponse({"status": "success", "message": report_msg})
-            
+    incoming_secret = request.META.get('HTTP_X_INTERNAL_SECRET', '')
+    expected_secret = getattr(settings, 'INTERNAL_BOT_SECRET', '')
+    if not (expected_secret and incoming_secret and hmac.compare_digest(str(incoming_secret), str(expected_secret))):
+        logger.warning("Unauthorized access attempt to whatsapp_summary")
+        return JsonResponse({"status": "error", "message": "Unauthorized internal endpoint."}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        phone = data.get("phone", "").strip()
+
+        # Exact matching on normalized phone candidates, preferring linked whatsapp_number
+        digits = re.sub(r'\D', '', phone)
+        candidates = [phone, digits]
+        if len(digits) == 10:
+            candidates.extend([f"91{digits}", f"+91{digits}"])
+        elif digits.startswith('91') and len(digits) == 12:
+            candidates.extend([digits[2:], f"+{digits}"])
+
+        profile = UserProfile.objects.filter(whatsapp_linked=True, whatsapp_number__in=candidates).select_related('user').first()
+        if not profile:
+            profile = UserProfile.objects.filter(phone_number__in=candidates).select_related('user').first()
+        
+        if not profile:
+            return JsonResponse({"status": "error", "message": "Please register on the website first to link your WhatsApp number! 🚫"})
+
+        user = profile.user
+        today = timezone.now().date()
+        budget = getattr(profile, 'monthly_budget', 20000)
+        
+        # 1. 🚨 AABI TAK KA POORA DATA (Lifetime)
+        all_expenses = Expense.objects.filter(user=user)
+        lifetime_spent = all_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        # 2. IS MAHINE KA DATA
+        this_month_expenses = all_expenses.filter(date__year=today.year, date__month=today.month)
+        month_spent = this_month_expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+        remaining = max(budget - month_spent, 0)
+        
+        # 3. TOP 3 CATEGORIES (Kahan sabse zyada paisa gaya hai aaj tak)
+        top_cats = all_expenses.values('category').annotate(cat_total=Sum('amount')).order_by('-cat_total')[:3]
+        cat_breakdown = "\n".join([f"  🔸 {c['category'].title()}: ₹{c['cat_total']:,.0f}" for c in top_cats])
+        
+        if not cat_breakdown:
+            cat_breakdown = "  Koi kharcha nahi hai abhi tak!"
+        
+        # 4. WHATSAPP REPORT MESSAGE
+        report_msg = f"📊 *ExpenseTracker Lifetime Report*\n\n"
+        report_msg += f"💸 *Aabi Tak Ka Total Kharcha:* ₹{lifetime_spent:,.0f}\n"
+        report_msg += f"📅 *Is Mahine Ka Kharcha:* ₹{month_spent:,.0f} (Budget: ₹{budget:,.0f})\n"
+        report_msg += f"✅ *Bacha Hua Budget:* ₹{remaining:,.0f}\n\n"
+        report_msg += f"🔥 *Top 3 Kharcho Ki Jagah (Lifetime):*\n{cat_breakdown}\n\n"
+        
+        # 5. AI SUGGESTION (Groq API call)
+        try:
+            # Tumhara helper function AI insight lene ke liye
+            ai_suggestion = get_ai_insight(user.id, all_expenses, budget, lifetime_spent)
         except Exception as e:
-            print(f"WhatsApp Summary Error: {e}")
-            return JsonResponse({"status": "error", "message": f"Server mein gadbad hai: {str(e)}"})
+            print(f"AI Insight fail hua: {e}")
+            ai_suggestion = "AI server is currently busy, but keep an eye on your top expenses! 💸"
+
+        report_msg += f"🤖 *AI Analysis:*\n_{ai_suggestion}_"
+        
+        return JsonResponse({"status": "success", "message": report_msg})
+        
+    except Exception as e:
+        print(f"WhatsApp Summary Error: {e}")
+        return JsonResponse({"status": "error", "message": f"Server mein gadbad hai: {str(e)}"})
             
     return JsonResponse({"status": "error", "message": "Only POST requests allowed"}, status=405)
 
@@ -3941,7 +4005,7 @@ def contact_view(request: HttpRequest) -> HttpResponse:
 
     return render(request, "tracker/contact.html")
 
-@login_required(login_url="login")
+@api_login_required
 def wa_link_status(request: HttpRequest) -> JsonResponse:
     try:
         profile = request.user.profile
@@ -3951,6 +4015,32 @@ def wa_link_status(request: HttpRequest) -> JsonResponse:
         })
     except Exception:
         return JsonResponse({"linked": False, "whatsapp_number": None})
+
+
+@api_login_required
+def generate_wa_link_code(request: HttpRequest) -> JsonResponse:
+    """SEC-004: Generate a short-lived, timing-safe one-time code to link WhatsApp."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    profile = getattr(request.user, 'profile', None)
+    if not profile:
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    import secrets
+    raw_code = f"{secrets.randbelow(900000) + 100000}"
+    code_hash = hashlib.sha256(raw_code.encode()).hexdigest()
+
+    profile.whatsapp_link_token = code_hash
+    profile.whatsapp_link_expires = timezone.now() + timedelta(minutes=15)
+    profile.save(update_fields=['whatsapp_link_token', 'whatsapp_link_expires'])
+
+    return JsonResponse({
+        "status": "success",
+        "code": raw_code,
+        "expires_in_minutes": 15,
+        "message": f"Send 'link {raw_code}' to our WhatsApp bot within 15 minutes."
+    })
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -5173,6 +5263,17 @@ def api_public_split_data(request: HttpRequest, share_token: str) -> JsonRespons
         return JsonResponse({"error": "This split link has been revoked."}, status=403)
     if group.token_expires_at and timezone.now() > group.token_expires_at:
         return JsonResponse({"error": "This split link has expired."}, status=403)
+
+    # Rate limiting for public settle (generous: max 60 settlements per 5 min per IP, 120 per token)
+    client_ip = _get_client_ip(request)
+    cache_key_ip = f"throttle_pub_settle_ip_{client_ip}"
+    cache_key_token = f"throttle_pub_settle_token_{share_token}"
+    ip_count = cache.get(cache_key_ip, 0)
+    token_count = cache.get(cache_key_token, 0)
+    if ip_count >= 60 or token_count >= 120:
+        return JsonResponse({"error": "Too many requests. Please slow down and try again shortly."}, status=429)
+    cache.set(cache_key_ip, ip_count + 1, timeout=300)
+    cache.set(cache_key_token, token_count + 1, timeout=300)
     host_domain = request.build_absolute_uri('/')[:-1]
     settlement = compute_group_settlement(group, host_domain)
     return JsonResponse(settlement)
@@ -5189,17 +5290,30 @@ def api_public_add_expense(request: HttpRequest, share_token: str) -> JsonRespon
         return JsonResponse({"error": "This split link has been revoked."}, status=403)
     if group.token_expires_at and timezone.now() > group.token_expires_at:
         return JsonResponse({"error": "This split link has expired."}, status=403)
+
+    # Rate limiting for public settle (generous: max 60 settlements per 5 min per IP, 120 per token)
+    client_ip = _get_client_ip(request)
+    cache_key_ip = f"throttle_pub_settle_ip_{client_ip}"
+    cache_key_token = f"throttle_pub_settle_token_{share_token}"
+    ip_count = cache.get(cache_key_ip, 0)
+    token_count = cache.get(cache_key_token, 0)
+    if ip_count >= 60 or token_count >= 120:
+        return JsonResponse({"error": "Too many requests. Please slow down and try again shortly."}, status=429)
+    cache.set(cache_key_ip, ip_count + 1, timeout=300)
+    cache.set(cache_key_token, token_count + 1, timeout=300)
     if group.is_settled:
         return JsonResponse({"error": "This split group is already settled!"}, status=400)
 
-    # Rate limiting for public writes (max 30 writes per 5 minutes per IP)
+    # Rate limiting for public writes (generous: max 60 writes per 5 min per IP, 120 per token)
     client_ip = _get_client_ip(request)
-    recent_writes = SplitExpense.objects.filter(
-        group=group,
-        date=timezone.localdate()
-    ).count()
-    if recent_writes >= 50:
-        return JsonResponse({"error": "Too many recent additions. Please wait a moment."}, status=429)
+    cache_key_ip = f"throttle_pub_split_ip_{client_ip}"
+    cache_key_token = f"throttle_pub_split_token_{share_token}"
+    ip_count = cache.get(cache_key_ip, 0)
+    token_count = cache.get(cache_key_token, 0)
+    if ip_count >= 60 or token_count >= 120:
+        return JsonResponse({"error": "Too many requests. Please slow down and try again shortly."}, status=429)
+    cache.set(cache_key_ip, ip_count + 1, timeout=300)
+    cache.set(cache_key_token, token_count + 1, timeout=300)
 
     try:
         body = json.loads(request.body)
@@ -5260,6 +5374,17 @@ def api_public_settle_payment(request: HttpRequest, share_token: str) -> JsonRes
     if group.token_expires_at and timezone.now() > group.token_expires_at:
         return JsonResponse({"error": "This split link has expired."}, status=403)
 
+    # Rate limiting for public settle (generous: max 60 settlements per 5 min per IP, 120 per token)
+    client_ip = _get_client_ip(request)
+    cache_key_ip = f"throttle_pub_settle_ip_{client_ip}"
+    cache_key_token = f"throttle_pub_settle_token_{share_token}"
+    ip_count = cache.get(cache_key_ip, 0)
+    token_count = cache.get(cache_key_token, 0)
+    if ip_count >= 60 or token_count >= 120:
+        return JsonResponse({"error": "Too many requests. Please slow down and try again shortly."}, status=429)
+    cache.set(cache_key_ip, ip_count + 1, timeout=300)
+    cache.set(cache_key_token, token_count + 1, timeout=300)
+
     try:
         body = json.loads(request.body)
     except Exception:
@@ -5313,6 +5438,17 @@ def api_public_toggle_group_settled(request: HttpRequest, share_token: str) -> J
         return JsonResponse({"error": "This split link has been revoked."}, status=403)
     if group.token_expires_at and timezone.now() > group.token_expires_at:
         return JsonResponse({"error": "This split link has expired."}, status=403)
+
+    # Rate limiting for public settle (generous: max 60 settlements per 5 min per IP, 120 per token)
+    client_ip = _get_client_ip(request)
+    cache_key_ip = f"throttle_pub_settle_ip_{client_ip}"
+    cache_key_token = f"throttle_pub_settle_token_{share_token}"
+    ip_count = cache.get(cache_key_ip, 0)
+    token_count = cache.get(cache_key_token, 0)
+    if ip_count >= 60 or token_count >= 120:
+        return JsonResponse({"error": "Too many requests. Please slow down and try again shortly."}, status=429)
+    cache.set(cache_key_ip, ip_count + 1, timeout=300)
+    cache.set(cache_key_token, token_count + 1, timeout=300)
 
     # Require owner authorization
     if not request.user.is_authenticated:
@@ -6434,24 +6570,38 @@ def api_verify_email_otp(request):
 @permission_classes([AllowAny])
 def api_track_analytics(request):
     """Records user actions and screen view telemetry."""
+    # Body size limit (max 50KB)
+    if hasattr(request, 'body') and len(request.body) > 50 * 1024:
+        return Response({'error': 'Request body too large.'}, status=413)
+
+    client_ip = _get_client_ip(request)
+    cache_key = f"throttle_track_{client_ip}"
+    current_count = cache.get(cache_key, 0)
+    if current_count >= 150:
+        return Response({'error': 'Rate limit exceeded for analytics.'}, status=429)
+    cache.set(cache_key, current_count + 1, timeout=60)
+
     event_name = request.data.get('event_name')
     if not event_name:
         return Response({'error': 'event_name is required'}, status=400)
     
     user = request.user if request.user.is_authenticated else None
-    properties = request.data.get('properties', {})
+    raw_props = request.data.get('properties', {})
     
-    def get_client_ip(req):
-        xff = req.META.get('HTTP_X_FORWARDED_FOR')
-        if xff:
-            return xff.split(',')[0].strip()
-        return req.META.get('REMOTE_ADDR')
+    # Restrict properties size to ~4KB
+    properties = {}
+    if isinstance(raw_props, dict):
+        try:
+            props_json = json.dumps(raw_props)[:4096]
+            properties = json.loads(props_json)
+        except Exception:
+            properties = {}
 
     AppAnalyticsEvent.objects.create(
         user=user,
-        event_name=event_name[:100],
-        properties=properties if isinstance(properties, dict) else {},
-        ip_address=get_client_ip(request)
+        event_name=str(event_name)[:100],
+        properties=properties,
+        ip_address=client_ip
     )
     return Response({'status': 'success'})
 
@@ -6461,16 +6611,38 @@ def api_track_analytics(request):
 @permission_classes([AllowAny])
 def api_log_error(request):
     """Centralized client-side crash and exception reporter."""
-    error_message = request.data.get('error_message') or 'Unknown client error'
-    stack_trace = request.data.get('stack_trace', '')
-    device_info = request.data.get('device_info', {})
+    if hasattr(request, 'body') and len(request.body) > 50 * 1024:
+        return Response({'error': 'Request body too large.'}, status=413)
+
+    client_ip = _get_client_ip(request)
+    cache_key = f"throttle_log_error_{client_ip}"
+    current_count = cache.get(cache_key, 0)
+    if current_count >= 120:
+        return Response({'error': 'Too many error reports. Please slow down.'}, status=429)
+    cache.set(cache_key, current_count + 1, timeout=60)
+
+    raw_error = request.data.get('error_message') or 'Unknown client error'
+    raw_stack = request.data.get('stack_trace', '')
+    raw_device = request.data.get('device_info', {})
     user = request.user if request.user.is_authenticated else None
+
+    # Truncate fields
+    error_message = str(raw_error)[:2000]
+    stack_trace = str(raw_stack)[:10000]
+
+    device_info = {}
+    if isinstance(raw_device, dict):
+        try:
+            device_json = json.dumps(raw_device)[:4096]
+            device_info = json.loads(device_json)
+        except Exception:
+            device_info = {}
 
     AppErrorLog.objects.create(
         user=user,
-        error_message=str(error_message),
-        stack_trace=str(stack_trace),
-        device_info=device_info if isinstance(device_info, dict) else {}
+        error_message=error_message,
+        stack_trace=stack_trace,
+        device_info=device_info
     )
     return Response({'status': 'logged'})
 

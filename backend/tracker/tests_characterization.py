@@ -12,6 +12,7 @@ import json
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.conf import settings
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 
@@ -232,7 +233,8 @@ class BaselineCharacterizationTests(TestCase):
                 "message_id": "MSG_001",
                 "sender_id": f"{self.phone}@s.whatsapp.net"
             }),
-            content_type="application/json"
+            content_type="application/json",
+            HTTP_X_INTERNAL_SECRET=settings.INTERNAL_BOT_SECRET
         )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -456,7 +458,8 @@ class BaselineCharacterizationTests(TestCase):
         resp = self.client.post(
             "/api/whatsapp-summary/",
             data=json.dumps({"phone": self.phone}),
-            content_type="application/json"
+            content_type="application/json",
+            HTTP_X_INTERNAL_SECRET=settings.INTERNAL_BOT_SECRET
         )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
