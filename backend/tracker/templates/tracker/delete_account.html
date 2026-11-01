@@ -1,0 +1,155 @@
+{% extends "tracker/base.html" %}
+{% block title %}Delete Account — Expense Tracker{% endblock %}
+
+{% block extra_head %}
+<style>
+.delete-page {
+    max-width: 680px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+.delete-card {
+    background: var(--card-bg, #1e1e2d);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    color: var(--text-main, #f3f4f6);
+}
+.delete-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ef4444;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.warning-box {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 4px solid #ef4444;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 20px 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+.data-list {
+    margin: 20px 0;
+    padding-left: 20px;
+    line-height: 1.8;
+    color: var(--text-muted, #9ca3af);
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+.btn-danger {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+}
+.btn-danger:hover {
+    background: #dc2626;
+}
+.success-card {
+    text-align: center;
+    padding: 40px 20px;
+}
+.success-icon {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-page">
+    <div class="delete-card">
+        {% if deleted %}
+            <div class="success-card">
+                <div class="success-icon">✅</div>
+                <h2 style="color:#10b981; margin-bottom:15px;">Account Successfully Deleted</h2>
+                <p style="color:var(--text-muted, #9ca3af); line-height:1.6; margin-bottom:25px;">
+                    Your account and all associated personal financial records, expense logs, split groups, and active sessions have been permanently removed from our databases.
+                </p>
+                <a href="/" class="btn-primary" style="display:inline-block; padding:12px 24px; text-decoration:none; border-radius:10px; background:#7c6ff7; color:#fff;">Return to Home</a>
+            </div>
+        {% else %}
+            <h1 class="delete-title">
+                <span>⚠️</span> Delete Account & Data
+            </h1>
+
+            <p style="color:var(--text-muted, #9ca3af); line-height:1.6;">
+                In compliance with Google Play Store, Apple App Store, and global privacy standards (GDPR, CCPA, DPDP Act), you may permanently delete your Expense Tracker account and all stored personal data at any time.
+            </p>
+
+            <div class="warning-box">
+                <strong>Warning: This action is permanent and cannot be undone.</strong>
+                <ul class="data-list" style="margin-top:10px; margin-bottom:0;">
+                    <li>All logged expense records and income history</li>
+                    <li>All split groups, members, and settlement records</li>
+                    <li>Savings goals, notes, and subscription reminders</li>
+                    <li>Profile details, phone numbers, and WhatsApp bot links</li>
+                    <li>Active authentication tokens and push notification keys</li>
+                </ul>
+            </div>
+
+            {% if error %}
+                <div style="background:rgba(239, 68, 68, 0.2); border:1px solid #ef4444; color:#fca5a5; padding:12px; border-radius:8px; margin-bottom:20px;">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'delete_account' %}" onsubmit="return confirm('Are you completely sure you want to permanently delete your account and all data? This cannot be undone.');">
+                {% csrf_token %}
+                {% if user.is_authenticated %}
+                    <p style="margin-bottom:20px;">
+                        Logged in as: <strong>{{ user.username }}</strong> ({{ user.email|default:"No email" }})
+                    </p>
+                    {% if user.has_usable_password %}
+                        <div class="form-group">
+                            <label for="password">Confirm your password to proceed:</label>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Enter your current password" required>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="form-group">
+                        <label for="identifier">Username, Phone Number, or Email:</label>
+                        <input type="text" name="identifier" id="identifier" class="form-control" placeholder="Your username, phone, or email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" name="password" id="password" class="form-control" placeholder="Your account password" required>
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn-danger">
+                    Permanently Delete My Account & All Data
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

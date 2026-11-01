@@ -38,7 +38,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import cache_page
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.http import require_POST, require_GET
 from groq import Groq
 from django.http import JsonResponse
@@ -292,7 +292,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.decorators import throttle_classes
 from tracker.authentication import touch_token_activity, validate_and_touch_token
 import secrets
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 def get_client_ip(request: HttpRequest) -> str:
     """Extract client IP address safely, respecting configured trusted reverse proxies."""
@@ -1270,7 +1270,7 @@ class RegisterAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 @csrf_exempt
 @ratelimit(key='ip', rate='3/m', block=True)
@@ -3983,6 +3983,64 @@ def privacy_view(request: HttpRequest) -> HttpResponse:
 
 def terms_view(request: HttpRequest) -> HttpResponse:
     return render(request, "tracker/terms.html")
+
+@csrf_protect
+def delete_account_view(request: HttpRequest) -> HttpResponse:
+    """
+    Public web page for user account and data deletion compliance (Google Play / App Store).
+    Supports authenticated and unauthenticated credential verification.
+    """
+    context = {"deleted": False, "error": None}
+
+    if request.method == "POST":
+        target_user = None
+        if request.user.is_authenticated:
+            target_user = request.user
+            password = request.POST.get("password")
+            if target_user.has_usable_password() and password:
+                if not target_user.check_password(password):
+                    context["error"] = "Incorrect password. Account deletion aborted."
+                    return render(request, "tracker/delete_account.html", context, status=400)
+            elif target_user.has_usable_password() and not password:
+                context["error"] = "Password is required to confirm account deletion."
+                return render(request, "tracker/delete_account.html", context, status=400)
+        else:
+            identifier = request.POST.get("identifier", "").strip()
+            password = request.POST.get("password", "").strip()
+            if not identifier or not password:
+                context["error"] = "Both username/email and password are required."
+                return render(request, "tracker/delete_account.html", context, status=400)
+
+            from django.contrib.auth import authenticate
+            user_by_name = authenticate(request, username=identifier, password=password)
+            if user_by_name:
+                target_user = user_by_name
+            else:
+                matching = User.objects.filter(email__iexact=identifier)
+                for u in matching:
+                    if u.check_password(password):
+                        target_user = u
+                        break
+                if not target_user:
+                    profiles = UserProfile.objects.filter(phone_number__endswith=identifier[-10:] if len(identifier) >= 10 else identifier)
+                    for p in profiles:
+                        if p.user and p.user.check_password(password):
+                            target_user = p.user
+                            break
+
+            if not target_user:
+                context["error"] = "Invalid credentials. Account deletion aborted."
+                return render(request, "tracker/delete_account.html", context, status=400)
+
+        if request.user.is_authenticated:
+            from django.contrib.auth import logout
+            logout(request)
+
+        target_user.delete()
+        context["deleted"] = True
+        return render(request, "tracker/delete_account.html", context)
+
+    return render(request, "tracker/delete_account.html", context)
 
 def contact_view(request: HttpRequest) -> HttpResponse:
     """WEB-001: Real support contact form with persistence, CSRF, validation and rate-limiting."""
@@ -7054,7 +7112,7 @@ def api_trigger_test_push(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
 
 @api_view(['POST'])

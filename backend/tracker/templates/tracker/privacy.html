@@ -83,28 +83,38 @@
             </ul>
 
             <h3>2. AI & Third-Party Subprocessors</h3>
-            <p>To deliver real-time financial tracking and voice recognition, we utilize vetted industry-leading subprocessors:</p>
+            <p>To deliver real-time financial tracking, push alerts, and voice recognition, we utilize vetted industry-leading subprocessors:</p>
             <ul>
-                <li><strong>Groq Inc. (AI Processing):</strong> Powers Whisper audio transcription and Llama-3 NLP models for expense extraction. Audio data is processed in-memory for transcription and is not retained or used to train public foundation models.</li>
+                <li><strong>Groq Inc. (AI Processing):</strong> Powers Whisper audio transcription and AI natural language processing for expense extraction. Audio data is processed in-memory for transcription and is not retained or used to train public foundation models.</li>
+                <li><strong>Google Firebase / Cloud Messaging (Push Notifications):</strong> Securely delivers user-consented transaction reminders, daily budgets, and alert banners to mobile devices.</li>
                 <li><strong>Neon / PostgreSQL (Database Hosting):</strong> Encrypted PostgreSQL cloud database storing user profiles, hashed credentials, and transactions with automated snapshot backups.</li>
                 <li><strong>Meta / WhatsApp Business (Messaging Interface):</strong> Delivers conversational messaging and instant expense confirmations via WhatsApp.</li>
                 <li><strong>Render (Application Hosting):</strong> Secure container hosting running our hardened Django backend and Gunicorn application servers.</li>
-                <li><strong>Resend / Brevo:</strong> Delivers transactional OTP codes and account verification emails.</li>
+                <li><strong>Resend / Brevo (Email Delivery):</strong> Delivers transactional OTP codes, password resets, and account verification emails.</li>
             </ul>
 
             <h3>3. Data Retention & Deletion Policy</h3>
             <ul>
                 <li><strong>Active Accounts:</strong> User data and transaction records are retained as long as your account remains open to provide historical financial trends and budgeting insights.</li>
-                <li><strong>Account Deletion:</strong> When an account is deleted via the app or admin interface, all user-linked transactions, notes, split memberships, profiles, and tokens are permanently and immediately purged from active databases via cascading deletes.</li>
-                <li><strong>Analytics & Client Error Logs:</strong> Performance telemetry and client error traces are retained for a maximum of 90 days, after which they are systematically cleared.</li>
+                <li><strong>Account Deletion:</strong> When an account is deleted via the app or our public <a href="{% url 'delete_account' %}" style="color: var(--primary);">Account Deletion Page</a>, all user-linked transactions, notes, split memberships, profiles, and tokens are permanently and immediately purged from active databases via cascading deletes.</li>
+                <li><strong>One-Time Passwords & Tokens:</strong> Expired OTP codes and tokens inactive for over 30 days are automatically purged.</li>
+                <li><strong>Analytics & Client Error Logs:</strong> Performance telemetry and client error traces are retained for a maximum of 90 days, after which they are systematically purged.</li>
                 <li><strong>Database Backups:</strong> Automated database snapshots are encrypted at rest and retained on a rolling 7-to-30 day lifecycle for disaster recovery before permanent purging.</li>
             </ul>
 
             <h3>4. Security & Cryptography</h3>
-            <p>We enforce strict security boundaries: all data in transit is encrypted using TLS 1.3/HTTPS, authentication tokens are stored securely (using SecureStore on mobile), cookies are marked Secure and SameSite, and OTPs are hashed using HMAC-SHA256.</p>
+            <p>We enforce strict security boundaries: all data in transit is encrypted using TLS 1.3/HTTPS, authentication tokens are stored securely (using SecureStore on mobile), cookies are marked Secure and SameSite, and OTPs are hashed using salted SHA-256 digests.</p>
 
             <h3>5. Contact & Data Subject Rights</h3>
-            <p>You have the right to inspect, export, or request immediate deletion of your personal financial records. For data requests, contact our privacy officer at <a href="mailto:support@paisamitra.com" style="color: var(--primary);">support@paisamitra.com</a> or submit an inquiry through our <a href="/contact/" style="color: var(--primary);">Contact Support</a> page.</p>
+            <p>You have the right to inspect, export, or request immediate deletion of your personal financial records. You can delete your account directly via <a href="{% url 'delete_account' %}" style="color: var(--primary);">Delete Account</a>, contact our privacy team at <a href="mailto:support@paisamitra.com" style="color: var(--primary);">support@paisamitra.com</a>, or submit an inquiry through our <a href="/contact/" style="color: var(--primary);">Contact Support</a> page.</p>
+
+            <h3>6. Grievance Redressal Officer</h3>
+            <p>In accordance with the Information Technology Act, 2000 and the Digital Personal Data Protection (DPDP) Act, 2023, the details of the Grievance Officer are:</p>
+            <ul>
+                <li><strong>Designation:</strong> Grievance Redressal Officer (TODO: appoint designated officer)</li>
+                <li><strong>Email:</strong> <a href="mailto:grievance@smart-expense-coach.com" style="color: var(--primary);">grievance@smart-expense-coach.com</a></li>
+                <li><strong>Response Timeline:</strong> Acknowledgment within 24–48 hours, resolution within 15 business days.</li>
+            </ul>
         </div>
     </div>
 </div>
