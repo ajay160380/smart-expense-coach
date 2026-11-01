@@ -14,8 +14,10 @@ import { StatusBar } from 'expo-status-bar';
 
 import { COLORS, RADIUS } from '../utils/theme';
 import { getNotifications, clearNotifications } from '../utils/notifications';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function NotificationsScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [notifications, setNotifications] = useState([]);
 
   const loadNotifications = async () => {
@@ -33,14 +35,14 @@ export default function NotificationsScreen({ navigation }) {
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.notificationCard}>
-      <View style={styles.iconBoxSmall}>
-        <Ionicons name="notifications" size={24} color={COLORS.primary} />
+    <View style={[styles.notificationCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[styles.iconBoxSmall, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.18)' }]}>
+        <Ionicons name="notifications" size={24} color={isDark ? colors.primary : COLORS.primary} />
       </View>
       <View style={styles.notificationContent}>
-        <Text style={styles.notifTitle}>{item.title}</Text>
-        <Text style={styles.notifBody}>{item.body}</Text>
-        <Text style={styles.notifDate}>
+        <Text style={[styles.notifTitle, isDark && { color: colors.textPrimary }]}>{item.title}</Text>
+        <Text style={[styles.notifBody, isDark && { color: colors.textSecondary }]}>{item.body}</Text>
+        <Text style={[styles.notifDate, isDark && { color: colors.textMuted }]}>
           {new Date(item.date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
         </Text>
       </View>
@@ -48,26 +50,26 @@ export default function NotificationsScreen({ navigation }) {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
+      <View style={[styles.header, isDark && { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={22} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>Notifications</Text>
         <TouchableOpacity onPress={handleClear} style={styles.clearBtn} activeOpacity={0.7}>
-          <Text style={styles.clearText}>Clear</Text>
+          <Text style={[styles.clearText, isDark && { color: colors.primary }]}>Clear</Text>
         </TouchableOpacity>
       </View>
 
       {notifications.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <View style={styles.iconBox}>
-            <Ionicons name="notifications-off-outline" size={60} color={COLORS.primary} />
+          <View style={[styles.iconBox, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.18)' }]}>
+            <Ionicons name="notifications-off-outline" size={60} color={isDark ? colors.primary : COLORS.primary} />
           </View>
-          <Text style={styles.emptyTitle}>No new notifications</Text>
-          <Text style={styles.emptyDesc}>
+          <Text style={[styles.emptyTitle, isDark && { color: colors.textPrimary }]}>No new notifications</Text>
+          <Text style={[styles.emptyDesc, isDark && { color: colors.textSecondary }]}>
             When your friends split expenses with you, they will appear here!
           </Text>
         </View>

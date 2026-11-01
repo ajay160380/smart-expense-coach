@@ -32,8 +32,10 @@ import api from '../api/config';
 import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW } from '../utils/theme';
 import { EmptyState } from '../components/SharedComponents';
 import { formatApiError } from '../utils/errors';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function HistoryScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
@@ -184,26 +186,26 @@ export default function HistoryScreen({ navigation }) {
   const isFiltering = selectedCategory !== 'all' || searchQuery.trim().length > 0;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* ── Top Header ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, isDark && { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backBtn}
+          style={[styles.backBtn, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={22} color="#1F2937" />
+          <Ionicons name="chevron-back" size={22} color={isDark ? colors.textPrimary : "#1F2937"} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Expenses List</Text>
+        <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>Expenses List</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity
-            style={styles.headerActionBtn}
+            style={[styles.headerActionBtn, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}
             onPress={() => exportData('pdf')}
             activeOpacity={0.7}
           >
-            <Ionicons name="download-outline" size={20} color="#1F2937" />
+            <Ionicons name="download-outline" size={20} color={isDark ? colors.textPrimary : "#1F2937"} />
           </TouchableOpacity>
         </View>
       </View>
@@ -215,38 +217,38 @@ export default function HistoryScreen({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
+            tintColor={isDark ? colors.primary : COLORS.primary}
           />
         }
       >
         {/* ── Month Selector Card ── */}
-        <View style={styles.monthSelectorCard}>
-          <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.monthNavBtn}>
-            <Ionicons name="chevron-back" size={18} color="#FF6B35" />
+        <View style={[styles.monthSelectorCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TouchableOpacity onPress={() => changeMonth(-1)} style={[styles.monthNavBtn, isDark && { backgroundColor: colors.bgElevated }]}>
+            <Ionicons name="chevron-back" size={18} color={isDark ? colors.primary : "#FF6B35"} />
           </TouchableOpacity>
           <View style={{ alignItems: 'center' }}>
-            <Text style={styles.monthText}>
+            <Text style={[styles.monthText, isDark && { color: colors.textPrimary }]}>
               {data?.month || currentDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
             </Text>
             {data && (
-              <Text style={styles.monthTotalSub}>
+              <Text style={[styles.monthTotalSub, isDark && { color: colors.textSecondary }]}>
                 Total: ₹{Math.round(data.total_spent || 0).toLocaleString('en-IN')}
               </Text>
             )}
           </View>
-          <TouchableOpacity onPress={() => changeMonth(1)} style={styles.monthNavBtn}>
-            <Ionicons name="chevron-forward" size={18} color="#FF6B35" />
+          <TouchableOpacity onPress={() => changeMonth(1)} style={[styles.monthNavBtn, isDark && { backgroundColor: colors.bgElevated }]}>
+            <Ionicons name="chevron-forward" size={18} color={isDark ? colors.primary : "#FF6B35"} />
           </TouchableOpacity>
         </View>
 
         {/* ── Search Bar ── */}
         <View style={styles.searchWrapper}>
-          <View style={styles.searchBox}>
-            <Ionicons name="search" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
+          <View style={[styles.searchBox, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="search" size={18} color={isDark ? colors.textMuted : "#9CA3AF"} style={{ marginRight: 8 }} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, isDark && { color: colors.textPrimary }]}
               placeholder="Search expenses, notes, categories..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={isDark ? colors.textMuted : "#9CA3AF"}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -256,7 +258,7 @@ export default function HistoryScreen({ navigation }) {
                 onPress={() => setSearchQuery('')}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                <Ionicons name="close-circle" size={18} color={isDark ? colors.textMuted : "#9CA3AF"} />
               </TouchableOpacity>
             )}
           </View>
@@ -274,10 +276,18 @@ export default function HistoryScreen({ navigation }) {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setSelectedCategory(c.key);
                   }}
-                  style={[styles.filterChip, isSelected && styles.filterChipActive]}
+                  style={[
+                    styles.filterChip, 
+                    isDark && { backgroundColor: colors.surface, borderColor: colors.border },
+                    isSelected && (isDark ? { backgroundColor: colors.primary, borderColor: colors.primary } : styles.filterChipActive)
+                  ]}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                  <Text style={[
+                    styles.filterChipText, 
+                    isDark && { color: colors.textSecondary },
+                    isSelected && (isDark ? { color: '#FFFFFF', fontWeight: '800' } : styles.filterChipTextActive)
+                  ]}>
                     {c.label}
                   </Text>
                 </TouchableOpacity>
@@ -288,11 +298,11 @@ export default function HistoryScreen({ navigation }) {
 
         {/* ── Filter Stats Info ── */}
         {isFiltering && (
-          <View style={styles.filterStatsBar}>
-            <Text style={styles.filterStatsText}>
+          <View style={[styles.filterStatsBar, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)', borderColor: 'rgba(129, 140, 248, 0.3)' }]}>
+            <Text style={[styles.filterStatsText, isDark && { color: colors.textSecondary }]}>
               Showing {filteredTransactions.length} transaction{filteredTransactions.length === 1 ? '' : 's'}
             </Text>
-            <Text style={styles.filterStatsTotal}>
+            <Text style={[styles.filterStatsTotal, isDark && { color: colors.primary }]}>
               Total: ₹{Math.round(filteredTotal).toLocaleString('en-IN')}
             </Text>
           </View>
@@ -300,18 +310,18 @@ export default function HistoryScreen({ navigation }) {
 
         {/* ── Grouped Expenses by "Today", "Yesterday" ── */}
         {loading ? (
-          <ActivityIndicator color={COLORS.primary} size="large" style={{ marginTop: 40 }} />
+          <ActivityIndicator color={isDark ? colors.primary : COLORS.primary} size="large" style={{ marginTop: 40 }} />
         ) : groupedTransactions.length > 0 ? (
           groupedTransactions.map((group, gIdx) => (
             <View key={gIdx} style={styles.groupSection}>
               {/* Group Section Header */}
               <View style={styles.groupHeaderRow}>
-                <Text style={styles.groupTitle}>{group.title}</Text>
-                <Text style={styles.viewAllOrange}>View All &gt;</Text>
+                <Text style={[styles.groupTitle, isDark && { color: colors.textPrimary }]}>{group.title}</Text>
+                <Text style={[styles.viewAllOrange, isDark && { color: colors.primary }]}>View All &gt;</Text>
               </View>
 
               {/* White Card Container */}
-              <View style={styles.whiteListCard}>
+              <View style={[styles.whiteListCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 {group.items.map((exp, idx) => {
                   const catKey = (exp.category || 'other').toLowerCase();
                   const catColor = CAT_COLORS[catKey] || '#7C3AED';
@@ -322,7 +332,7 @@ export default function HistoryScreen({ navigation }) {
                       key={exp.id || idx}
                       style={[
                         styles.expenseItem,
-                        idx < group.items.length - 1 && styles.expenseBorder,
+                        idx < group.items.length - 1 && [styles.expenseBorder, isDark && { borderBottomColor: colors.border }],
                       ]}
                       onPress={() => navigation.navigate('AddExpense', { expense: exp })}
                       onLongPress={() => {
@@ -375,12 +385,12 @@ export default function HistoryScreen({ navigation }) {
 
                       {/* Title + Time Below */}
                       <View style={{ flex: 1, marginLeft: 12 }}>
-                        <Text style={styles.expTitle} numberOfLines={1}>
+                        <Text style={[styles.expTitle, isDark && { color: colors.textPrimary }]} numberOfLines={1}>
                           {exp.description
                             ? exp.description.charAt(0).toUpperCase() + exp.description.slice(1)
                             : catKey.charAt(0).toUpperCase() + catKey.slice(1)}
                         </Text>
-                        <Text style={styles.expTime}>
+                        <Text style={[styles.expTime, isDark && { color: colors.textMuted }]}>
                           {group.title === 'Today' || group.title === 'Yesterday'
                             ? `${group.title}, ${formatItemTime(exp.date)}`
                             : `${group.title}`}
@@ -388,7 +398,7 @@ export default function HistoryScreen({ navigation }) {
                       </View>
 
                       {/* Amount Bold on Right */}
-                      <Text style={styles.expAmountBold}>
+                      <Text style={[styles.expAmountBold, isDark && { color: colors.textPrimary }]}>
                         ₹{Number(exp.amount).toLocaleString('en-IN')}
                       </Text>
                     </TouchableOpacity>

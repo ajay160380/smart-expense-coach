@@ -21,8 +21,10 @@ import * as Haptics from 'expo-haptics';
 
 import api from '../api/config';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function NotepadScreen({ navigation }) {
+  const { isDark, colors } = useTheme();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -107,12 +109,12 @@ export default function NotepadScreen({ navigation }) {
   };
 
   const renderNote = ({ item }) => (
-    <View style={styles.noteCard}>
-      <Text style={styles.noteText}>{item.text}</Text>
-      <View style={styles.noteFooter}>
+    <View style={[styles.noteCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Text style={[styles.noteText, isDark && { color: colors.textPrimary }]}>{item.text}</Text>
+      <View style={[styles.noteFooter, isDark && { borderTopColor: colors.border }]}>
         <View style={styles.dateRow}>
-          <Ionicons name="time-outline" size={12} color="#64748B" style={{ marginRight: 4 }} />
-          <Text style={styles.noteDate}>
+          <Ionicons name="time-outline" size={12} color={isDark ? colors.textMuted : "#64748B"} style={{ marginRight: 4 }} />
+          <Text style={[styles.noteDate, isDark && { color: colors.textMuted }]}>
             {item.created_at ? new Date(item.created_at).toLocaleDateString('en-IN', {
               day: 'numeric',
               month: 'short',
@@ -122,39 +124,39 @@ export default function NotepadScreen({ navigation }) {
         </View>
         <TouchableOpacity
           onPress={() => handleDeleteNote(item.id)}
-          style={styles.deleteButton}
+          style={[styles.deleteButton, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.3)' }]}
           activeOpacity={0.7}
         >
-          <Ionicons name="trash-outline" size={15} color="#F43F5E" />
+          <Ionicons name="trash-outline" size={15} color={isDark ? "#F87171" : "#F43F5E"} />
         </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       {/* ── Top Bar ── */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, isDark && { borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.goBack();
           }}
-          style={styles.backBtn}
+          style={[styles.backBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={20} color="#1F2937" />
+          <Ionicons name="arrow-back" size={20} color={isDark ? colors.textPrimary : "#1F2937"} />
         </TouchableOpacity>
 
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.headerTitle}>Personal Notepad</Text>
-          <Text style={styles.headerSub}>Memos, plans & checklists</Text>
+          <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>Personal Notepad</Text>
+          <Text style={[styles.headerSub, isDark && { color: colors.textSecondary }]}>Memos, plans & checklists</Text>
         </View>
 
-        <View style={styles.countBadge}>
-          <Text style={styles.countBadgeText}>{notes.length} Notes</Text>
+        <View style={[styles.countBadge, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.18)', borderColor: 'rgba(129, 140, 248, 0.3)' }]}>
+          <Text style={[styles.countBadgeText, isDark && { color: colors.primary }]}>{notes.length} Notes</Text>
         </View>
       </View>
 
@@ -163,18 +165,18 @@ export default function NotepadScreen({ navigation }) {
         style={{ flex: 1 }}
       >
         {/* ── Create Note Box ── */}
-        <View style={styles.inputCard}>
+        <View style={[styles.inputCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
             placeholder="Write a note, shopping list, or plan..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={isDark ? colors.textMuted : "#9CA3AF"}
             multiline
             numberOfLines={3}
             value={newNote}
             onChangeText={setNewNote}
           />
           <View style={styles.inputActionsRow}>
-            <Text style={styles.charCount}>{newNote.length} characters</Text>
+            <Text style={[styles.charCount, isDark && { color: colors.textMuted }]}>{newNote.length} characters</Text>
             <TouchableOpacity
               style={[styles.saveButton, saving && { opacity: 0.7 }]}
               onPress={handleSaveNote}
@@ -182,7 +184,7 @@ export default function NotepadScreen({ navigation }) {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#7C3AED', '#6D28D9']}
+                colors={isDark ? ['#818CF8', '#6366F1'] : ['#7C3AED', '#6D28D9']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.saveBtnGrad}
@@ -203,16 +205,16 @@ export default function NotepadScreen({ navigation }) {
         {/* ── Notes List ── */}
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color="#7C3AED" />
-            <Text style={styles.loadingText}>Loading notes...</Text>
+            <ActivityIndicator size="large" color={isDark ? colors.primary : "#7C3AED"} />
+            <Text style={[styles.loadingText, isDark && { color: colors.textSecondary }]}>Loading notes...</Text>
           </View>
         ) : notes.length === 0 ? (
           <View style={styles.center}>
-            <View style={styles.emptyIconBox}>
-              <Ionicons name="document-text-outline" size={40} color="#7C3AED" />
+            <View style={[styles.emptyIconBox, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.18)', borderColor: 'rgba(129, 140, 248, 0.3)' }]}>
+              <Ionicons name="document-text-outline" size={40} color={isDark ? colors.primary : "#7C3AED"} />
             </View>
-            <Text style={styles.emptyText}>No Notes Yet</Text>
-            <Text style={styles.emptySubtext}>
+            <Text style={[styles.emptyText, isDark && { color: colors.textPrimary }]}>No Notes Yet</Text>
+            <Text style={[styles.emptySubtext, isDark && { color: colors.textSecondary }]}>
               Keep reminders, planned purchases, or bill checklists here!
             </Text>
           </View>
@@ -226,7 +228,7 @@ export default function NotepadScreen({ navigation }) {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor="#06B6D4"
+                tintColor={isDark ? colors.primary : "#06B6D4"}
               />
             }
             showsVerticalScrollIndicator={false}
