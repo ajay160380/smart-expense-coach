@@ -376,7 +376,7 @@ export default function CustomAlertModal() {
                   return (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.cancelBtn, (!shouldStack && numButtons > 1) && { flex: 1 }]}
+                      style={[styles.cancelBtn, (!shouldStack && numButtons > 1) ? { flex: 1 } : { width: '100%' }]}
                       onPress={() => handleClose(btn.onPress)}
                       activeOpacity={0.7}
                     >
@@ -394,27 +394,20 @@ export default function CustomAlertModal() {
                     return (
                       <TouchableOpacity
                         key={index}
-                        style={[styles.primaryBtnTouch, (!shouldStack && numButtons > 1) && { flex: 1 }]}
+                        style={[styles.primaryDestructiveBtn, (!shouldStack && numButtons > 1) ? { flex: 1 } : { width: '100%' }]}
                         onPress={() => handleClose(btn.onPress)}
                         activeOpacity={0.8}
                       >
-                        <LinearGradient
-                          colors={['#EF4444', '#DC2626']}
-                          style={styles.primaryBtnGrad}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                        >
-                          <Text style={styles.primaryBtnText} numberOfLines={1} ellipsizeMode="tail">
-                            {btn.text || 'Delete'}
-                          </Text>
-                        </LinearGradient>
+                        <Text style={styles.primaryDestructiveBtnText} numberOfLines={1} ellipsizeMode="tail">
+                          {btn.text || 'Delete'}
+                        </Text>
                       </TouchableOpacity>
                     );
                   } else {
                     return (
                       <TouchableOpacity
                         key={index}
-                        style={[styles.destructiveBtn, (!shouldStack && numButtons > 1) && { flex: 1 }]}
+                        style={[styles.destructiveBtn, (!shouldStack && numButtons > 1) ? { flex: 1 } : { width: '100%' }]}
                         onPress={() => handleClose(btn.onPress)}
                         activeOpacity={0.7}
                       >
@@ -433,27 +426,24 @@ export default function CustomAlertModal() {
                   return (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.primaryBtnTouch, (!shouldStack && numButtons > 1) && { flex: 1 }]}
+                      style={[
+                        styles.primaryActionBtn,
+                        meta.btnGrad && meta.btnGrad[0] ? { backgroundColor: meta.btnGrad[0] } : null,
+                        (!shouldStack && numButtons > 1) ? { flex: 1 } : { width: '100%' }
+                      ]}
                       onPress={() => handleClose(btn.onPress)}
                       activeOpacity={0.8}
                     >
-                      <LinearGradient
-                        colors={meta.btnGrad}
-                        style={styles.primaryBtnGrad}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                      >
-                        <Text style={styles.primaryBtnText} numberOfLines={1} ellipsizeMode="tail">
-                          {btn.text || 'OK'}
-                        </Text>
-                      </LinearGradient>
+                      <Text style={styles.primaryActionBtnText} numberOfLines={1} ellipsizeMode="tail">
+                        {btn.text || 'OK'}
+                      </Text>
                     </TouchableOpacity>
                   );
                 } else {
                   return (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.secondaryBtn, (!shouldStack && numButtons > 1) && { flex: 1 }]}
+                      style={[styles.secondaryBtn, (!shouldStack && numButtons > 1) ? { flex: 1 } : { width: '100%' }]}
                       onPress={() => handleClose(btn.onPress)}
                       activeOpacity={0.75}
                     >
@@ -578,18 +568,41 @@ const styles = StyleSheet.create({
   buttonSingle: {
     width: '100%',
   },
+  primaryDestructiveBtn: {
+    height: 48,
+    backgroundColor: '#EF4444',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryDestructiveBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  primaryActionBtn: {
+    height: 48,
+    backgroundColor: '#7C3AED',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
   primaryBtnTouch: {
     borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-    width: '100%',
   },
   primaryBtnGrad: {
     height: 48,
+    width: '100%',
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -609,7 +622,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
   },
   secondaryBtnText: {
     color: '#374151',
@@ -626,7 +638,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
   },
   destructiveBtnText: {
     color: '#EF4444',
@@ -643,7 +654,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
   },
   cancelBtnText: {
     color: '#6B7280',

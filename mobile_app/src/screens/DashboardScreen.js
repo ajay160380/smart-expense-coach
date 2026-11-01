@@ -10,6 +10,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Keyb
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Logo from '../components/Logo';
 import { GlassCard, AnimatedNumber, EmptyState, StatCard, SectionHeader } from '../components/SharedComponents';
@@ -74,6 +75,8 @@ const ALL_ACTION_SHORTCUTS = [
 
 export default function DashboardScreen({ navigation }) {
   const { isDark, colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [isScrolled, setIsScrolled] = useState(false);
   const [stats, setStats] = useState(null);
   const [dailyTip, setDailyTip] = useState(null);
   const [comparison, setComparison] = useState(null);
@@ -799,11 +802,33 @@ export default function DashboardScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style={isScrolled ? (isDark ? 'light' : 'dark') : 'light'} />
+
+      {/* Sticky status bar backdrop to prevent content bleed under clock & battery */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: insets.top || (Platform.OS === 'android' ? 36 : 44),
+          backgroundColor: isScrolled ? (isDark ? colors.bg : '#F8FAFC') : 'transparent',
+          borderBottomWidth: isScrolled ? StyleSheet.hairlineWidth : 0,
+          borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+          zIndex: 9999,
+        }}
+      />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
+        onScroll={(e) => {
+          const offsetY = e.nativeEvent.contentOffset.y;
+          if (offsetY > 40 && !isScrolled) setIsScrolled(true);
+          else if (offsetY <= 40 && isScrolled) setIsScrolled(false);
+        }}
+        scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />}
         showsVerticalScrollIndicator={false}
       >
@@ -812,7 +837,10 @@ export default function DashboardScreen({ navigation }) {
           colors={['#8B5CF6', '#9333EA', '#A855F7']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.heroHeaderContainer}
+          style={[
+            styles.heroHeaderContainer,
+            { paddingTop: (insets.top > 0 ? insets.top : (Platform.OS === 'ios' ? 44 : 36)) + 12 }
+          ]}
         >
           {/* Subtle Ambient Radial Glows */}
           <View style={styles.heroGlowCircle} />
