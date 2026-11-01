@@ -436,8 +436,17 @@ _groq_client_instance = None
 def _groq_client() -> Groq:
     global _groq_client_instance
     if _groq_client_instance is None:
-        _groq_client_instance = Groq(api_key=settings.GROQ_API_KEY)
+        timeout = float(os.getenv('GROQ_TIMEOUT', '30.0'))
+        max_retries = int(os.getenv('GROQ_MAX_RETRIES', '1'))
+        _groq_client_instance = Groq(
+            api_key=settings.GROQ_API_KEY,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
     return _groq_client_instance
+
+def _get_groq_model(fallback="qwen/qwen3.8-27b") -> str:
+    return getattr(settings, 'GROQ_MODEL', None) or fallback
 
 
 def _cache_key(*parts) -> str:
@@ -1130,7 +1139,7 @@ def get_ai_insight(user_id: int, expenses, budget: float, total_spent: float) ->
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.8-27b",
+            model=_get_groq_model(),
             temperature=0.85,
             max_tokens=1000,
         )
@@ -1165,7 +1174,7 @@ def get_category_ai_tip(user_id: int, category: str, cat_total: float,
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.8-27b",
+            model=_get_groq_model(),
             temperature=0.85,
             max_tokens=1000,
         )
@@ -1200,7 +1209,7 @@ def get_monthly_ai_report(user_id: int, month_data: dict) -> str:
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.8-27b",
+            model=_get_groq_model(),
             temperature=0.75,
             max_tokens=1000,
         )
@@ -2561,8 +2570,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         if chat_history and len(chat_history) > 0 and chat_history[-1].get("role") == "assistant":
             try:
                 last_bot_action = json.loads(chat_history[-1]["content"]).get("action")
-            except:
-                pass
+            except (json.JSONDecodeError, TypeError, AttributeError, KeyError):
+                last_bot_action = None
 
         if (is_query or is_past_query or target_month is not None) and last_bot_action != "ask_clarification":
             if target_month is not None:
@@ -2745,7 +2754,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         try:
             response = _groq_client().chat.completions.create(
                 messages=messages,
-                model="qwen/qwen3.8-27b",
+                model=_get_groq_model(),
                 temperature=0.7,
                 max_tokens=800,
             )
@@ -3103,7 +3112,7 @@ TOP SPENDING CATEGORIES:
     try:
         resp = _groq_client().chat.completions.create(
             messages=messages_payload,
-            model="qwen/qwen3.8-27b",
+            model=_get_groq_model(),
             temperature=0.7,
             max_tokens=1000,
         )
@@ -3865,7 +3874,7 @@ def habit_warnings(request):
     try:
         response = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.8-27b",
+            model=_get_groq_model(),
             temperature=0.8,
             max_tokens=1000,
         )
@@ -4382,7 +4391,7 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
 
         r = _groq_client().chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="qwen/qwen3.8-27b",
+            model=_get_groq_model(),
             temperature=0.8,
             max_tokens=250,
         )
@@ -5075,7 +5084,7 @@ def parse_and_handle_split_message(target_user, text: str, host_domain: str = No
     try:
         r = _groq_client().chat.completions.create(
             messages=messages,
-            model="qwen/qwen3.8-27b",
+            model=_get_groq_model(),
             temperature=0.1,
             max_tokens=500,
         )
@@ -5570,7 +5579,7 @@ def api_split_estimate(request: HttpRequest) -> JsonResponse:
                 },
                 {"role": "user", "content": prompt}
             ],
-            model="qwen/qwen3.8-27b",
+            model=_get_groq_model(),
             temperature=0.7,
             max_tokens=250
         )
