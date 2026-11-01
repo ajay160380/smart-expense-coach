@@ -15,7 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import { COLORS, RADIUS } from '../utils/theme';
 import { getNotifications, clearNotifications } from '../utils/notifications';
 import { useTheme } from '../theme/ThemeContext';
-import api from '../services/api';
+import api from '../api/config';
 
 export default function NotificationsScreen({ navigation }) {
   const { isDark, colors } = useTheme();

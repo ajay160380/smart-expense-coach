@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 
 import DonutChart from '../components/DonutChart';
 import { useTheme } from '../theme/ThemeContext';
-import api from '../services/api';
+import api from '../api/config';
 
 export default function MoneyBreakdownScreen({ navigation }) {
   const { isDark, colors } = useTheme();
