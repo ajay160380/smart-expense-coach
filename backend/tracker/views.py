@@ -3642,6 +3642,74 @@ def api_auto_expense_review(request):
     return Response({'error': f'Invalid action: {action}'}, status=400)
 
 
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([ScopedRateThrottle])
+def api_notification_settings(request):
+    """
+    PHASE 9.8:
+    GET: Returns user notification & budget preferences.
+    POST: Updates preferences (live_budget_alerts, morning_budget_push, morning_push_time,
+          nightly_summary, nightly_push_time, notification_tone, repeat_nudges,
+          daily_budget_rollover, daily_budget_basis, auto_capture_enabled, timezone_name).
+    """
+    request.scope = 'authenticated'
+    user = request.user
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+
+    if request.method == 'POST':
+        data = request.data if hasattr(request, 'data') else {}
+        if 'live_budget_alerts' in data:
+            profile.live_budget_alerts = bool(data['live_budget_alerts'])
+        if 'morning_budget_push' in data:
+            profile.morning_budget_push = bool(data['morning_budget_push'])
+        if 'morning_push_time' in data:
+            t = str(data['morning_push_time']).strip()
+            if len(t) == 5 and ':' in t:
+                profile.morning_push_time = t
+        if 'nightly_summary' in data:
+            profile.nightly_summary = bool(data['nightly_summary'])
+        if 'nightly_push_time' in data:
+            t = str(data['nightly_push_time']).strip()
+            if len(t) == 5 and ':' in t:
+                profile.nightly_push_time = t
+        if 'notification_tone' in data:
+            tone = str(data['notification_tone']).strip().lower()
+            if tone in ('normal', 'roast'):
+                profile.notification_tone = tone
+        if 'repeat_nudges' in data:
+            profile.repeat_nudges = bool(data['repeat_nudges'])
+        if 'daily_budget_rollover' in data:
+            profile.daily_budget_rollover = bool(data['daily_budget_rollover'])
+        if 'daily_budget_basis' in data:
+            basis = str(data['daily_budget_basis']).strip().lower()
+            if basis in ('budget', 'income'):
+                profile.daily_budget_basis = basis
+        if 'auto_capture_enabled' in data:
+            profile.auto_capture_enabled = bool(data['auto_capture_enabled'])
+        if 'timezone_name' in data:
+            tz = str(data['timezone_name']).strip()
+            if tz:
+                profile.timezone_name = tz
+
+        profile.save()
+
+    return Response({
+        "status": "success",
+        "live_budget_alerts": profile.live_budget_alerts,
+        "morning_budget_push": profile.morning_budget_push,
+        "morning_push_time": profile.morning_push_time,
+        "nightly_summary": profile.nightly_summary,
+        "nightly_push_time": profile.nightly_push_time,
+        "notification_tone": profile.notification_tone,
+        "repeat_nudges": profile.repeat_nudges,
+        "daily_budget_rollover": profile.daily_budget_rollover,
+        "daily_budget_basis": profile.daily_budget_basis,
+        "auto_capture_enabled": profile.auto_capture_enabled,
+        "timezone_name": profile.timezone_name,
+    })
+
+
 @api_login_required
 def api_transactions_history(request: HttpRequest) -> JsonResponse:
     today = date.today()

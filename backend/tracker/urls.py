@@ -100,6 +100,9 @@ urlpatterns = [
     # Phase 9.3: Auto-Capture & Bank Sync Ingestion
     path('api/auto-expense/',          views.api_auto_expense,     name='api_auto_expense'),
     path('api/auto-expense/review/',   views.api_auto_expense_review, name='api_auto_expense_review'),
+
+    # Phase 9.8: Notification & Budget Settings
+    path('api/notification-settings/', views.api_notification_settings, name='api_notification_settings'),
     
     # Custom history for any month
     path('api/transactions-history/',  views.api_transactions_history, name='api_transactions_history'),

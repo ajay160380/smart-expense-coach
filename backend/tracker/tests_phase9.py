@@ -210,3 +210,102 @@ class Phase9AutoExpenseTests(TestCase):
         self.assertEqual(undo_res.status_code, 200)
         self.assertFalse(Expense.objects.filter(id=expense_id).exists())
 
+
+class Phase9NotificationsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='p9notifuser', password='Password123!', email='p9notif@test.com')
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            phone_number='9876543212',
+            monthly_budget=30000,
+            fcm_token='test-fcm-token-xyz',
+            morning_budget_push=True,
+            nightly_summary=True,
+            repeat_nudges=True,
+            notification_tone='normal'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+
+    def test_morning_and_night_message_generation(self):
+        """9.5: Test generation of morning & night messages with numbers"""
+        from tracker.notification_engine import build_morning_message, build_night_message
+        target_date = date(2026, 11, 10)
+
+        # Morning message
+        morning_msg = build_morning_message(self.user, target_date)
+        self.assertIn("1,000", morning_msg) # 30000 / 30 = 1000
+
+        # Roast morning message
+        self.profile.notification_tone = 'roast'
+        self.profile.save()
+        roast_morning = build_morning_message(self.user, target_date)
+        self.assertIn("1,000", roast_morning)
+
+        # Night message under budget
+        Expense.objects.create(user=self.user, amount=Decimal('300.00'), category='food', date=target_date)
+        night_msg, status = build_night_message(self.user, target_date)
+        self.assertEqual(status, 'ok')
+        self.assertIn("700", night_msg) # 1000 - 300 = 700 saved
+
+    def test_push_idempotency_sent_once_per_day(self):
+        """9.5: Morning & Night pushes must be sent exactly once per user per day"""
+        from tracker.notification_engine import send_morning_budget_push_to_user, send_night_summary_push_to_user
+        target_date = date(2026, 11, 10)
+
+        # First morning send
+        sent1 = send_morning_budget_push_to_user(self.user, target_date=target_date)
+        self.assertTrue(sent1)
+        self.assertEqual(DailyNotificationLog.objects.filter(user=self.user, notification_type='morning').count(), 1)
+
+        # Duplicate morning send on same day blocked by idempotency
+        sent2 = send_morning_budget_push_to_user(self.user, target_date=target_date)
+        self.assertFalse(sent2)
+        self.assertEqual(DailyNotificationLog.objects.filter(user=self.user, notification_type='morning').count(), 1)
+
+        # Night push
+        sent_night1 = send_night_summary_push_to_user(self.user, target_date=target_date)
+        self.assertTrue(sent_night1)
+
+        sent_night2 = send_night_summary_push_to_user(self.user, target_date=target_date)
+        self.assertFalse(sent_night2)
+
+    def test_repeat_merchant_nudge(self):
+        """9.5: Repeat merchant nudge triggers on 2+ same merchant transactions"""
+        from tracker.notification_engine import check_and_send_repeat_merchant_nudge
+        target_date = date(2026, 11, 10)
+
+        # 1 transaction: should not trigger
+        Expense.objects.create(user=self.user, amount=Decimal('250.00'), category='food', description='Zepto order', date=target_date)
+        res1 = check_and_send_repeat_merchant_nudge(self.user, 'Zepto', target_date)
+        self.assertFalse(res1)
+
+        # 2nd transaction: triggers nudge!
+        Expense.objects.create(user=self.user, amount=Decimal('400.00'), category='food', description='Zepto snacks', date=target_date)
+        res2 = check_and_send_repeat_merchant_nudge(self.user, 'Zepto', target_date)
+        self.assertTrue(res2)
+
+        # 3rd transaction on same day: blocked by max 1 per merchant per day
+        res3 = check_and_send_repeat_merchant_nudge(self.user, 'Zepto', target_date)
+        self.assertFalse(res3)
+
+    def test_notification_settings_api(self):
+        """9.8: GET and POST /api/notification-settings/"""
+        get_res = self.client.get('/api/notification-settings/')
+        self.assertEqual(get_res.status_code, 200)
+        self.assertTrue(get_res.data['morning_budget_push'])
+        self.assertTrue(get_res.data['nightly_summary'])
+
+        post_res = self.client.post('/api/notification-settings/', {
+            'morning_budget_push': False,
+            'notification_tone': 'roast',
+            'morning_push_time': '07:30'
+        }, format='json')
+        self.assertEqual(post_res.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertFalse(self.profile.morning_budget_push)
+        self.assertEqual(self.profile.notification_tone, 'roast')
+        self.assertEqual(self.profile.morning_push_time, '07:30')
+
+
