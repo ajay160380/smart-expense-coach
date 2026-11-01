@@ -309,3 +309,74 @@ class Phase9NotificationsTests(TestCase):
         self.assertEqual(self.profile.morning_push_time, '07:30')
 
 
+class Phase9MoneyBreakdownTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='p9breakdownuser', password='Password123!', email='p9breakdown@test.com')
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            phone_number='9876543213',
+            monthly_budget=60000,
+            budget_cycle_start_day=1
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+
+    def test_money_breakdown_categories_and_top_merchants(self):
+        """9.6: Test GET /api/money-breakdown/ returns 7 buckets, top 5 merchants, and daily status"""
+        today = date.today()
+        # Create expenses across categories
+        Expense.objects.create(user=self.user, amount=Decimal('500.00'), category='food', description='Swiggy lunch', date=today)
+        Expense.objects.create(user=self.user, amount=Decimal('400.00'), category='food', description='Swiggy dinner', date=today)
+        Expense.objects.create(user=self.user, amount=Decimal('600.00'), category='groceries', description='Blinkit veggies', date=today)
+        Expense.objects.create(user=self.user, amount=Decimal('1500.00'), category='shopping', description='Amazon headphones', date=today)
+        Expense.objects.create(user=self.user, amount=Decimal('300.00'), category='transport', description='Uber cab', date=today)
+        Expense.objects.create(user=self.user, amount=Decimal('200.00'), category='other', description='Chai tapri UPI', date=today)
+
+        res = self.client.get('/api/money-breakdown/?period=today')
+        self.assertEqual(res.status_code, 200)
+        data = res.data
+
+        self.assertEqual(data['period'], 'today')
+        self.assertEqual(Decimal(str(data['total_spent'])), Decimal('3500.00'))
+
+        # Check buckets
+        categories = {c['key']: c for c in data['categories']}
+        self.assertEqual(Decimal(str(categories['food']['amount'])), Decimal('900.00'))
+        self.assertEqual(Decimal(str(categories['groceries']['amount'])), Decimal('600.00'))
+        self.assertEqual(Decimal(str(categories['shopping']['amount'])), Decimal('1500.00'))
+        self.assertEqual(Decimal(str(categories['transport']['amount'])), Decimal('300.00'))
+        self.assertEqual(Decimal(str(categories['other']['amount'])), Decimal('200.00'))
+
+        # Check top merchants
+        top_merchants = data['top_merchants']
+        self.assertTrue(len(top_merchants) > 0)
+        top_names = [m['merchant'].lower() for m in top_merchants]
+        self.assertIn('amazon headphones', top_names)
+        self.assertIn('swiggy lunch', top_names)
+
+        # Check daily budget status
+        self.assertIn('daily_budget_status', data)
+        self.assertEqual(data['daily_budget_status']['daily_budget'], 2000.0) # 60000 / 30 = 2000
+        self.assertEqual(data['daily_budget_status']['spent_today'], 3500.0)
+        self.assertEqual(data['daily_budget_status']['status'], 'over')
+
+    def test_recurring_payments_detection(self):
+        """9.6: Test automatic recurring payment detection (Netflix 3 months in a row)"""
+        today = date.today()
+        from datetime import timedelta
+        # 3 charges roughly 30 days apart
+        Expense.objects.create(user=self.user, amount=Decimal('649.00'), category='entertainment', description='Netflix Subscription', date=today - timedelta(days=60))
+        Expense.objects.create(user=self.user, amount=Decimal('649.00'), category='entertainment', description='Netflix Subscription', date=today - timedelta(days=30))
+        Expense.objects.create(user=self.user, amount=Decimal('649.00'), category='entertainment', description='Netflix Subscription', date=today)
+
+        res = self.client.get('/api/money-breakdown/?period=month')
+        self.assertEqual(res.status_code, 200)
+        recurring = res.data.get('recurring_candidates', [])
+        self.assertTrue(len(recurring) >= 1)
+        netflix_candidate = next((r for r in recurring if 'netflix' in r['merchant'].lower()), None)
+        self.assertIsNotNone(netflix_candidate)
+        self.assertEqual(Decimal(str(netflix_candidate['amount'])), Decimal('649.00'))
+
+
+

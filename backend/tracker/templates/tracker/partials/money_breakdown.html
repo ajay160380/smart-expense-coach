@@ -1,0 +1,92 @@
+<!-- PHASE 9.6: "MERA PAISA KAHAN GAYA?" (WHERE DID MY MONEY GO) BREAKDOWN -->
+<div class="money-breakdown-card" style="margin: 20px 0; background: var(--surface, rgba(255, 255, 255, 0.8)); border: 1px solid var(--border, rgba(148, 163, 184, 0.25)); border-radius: var(--radius, 20px); padding: 22px; box-shadow: var(--shadow, 0 8px 30px rgba(0,0,0,0.06)); backdrop-filter: var(--glass-filter, blur(20px));">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #EC4899, #8B5CF6); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);">
+        🔍
+      </div>
+      <div>
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #EC4899;">Deep Dive Analytics</div>
+        <div style="font-size: 16px; font-weight: 700; color: var(--text, #0F172A);">Mera Paisa Kahan Gaya?</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 6px;" id="breakdown-filter-tabs">
+      <button onclick="loadMoneyBreakdown('today')" class="period-pill" id="mb-tab-today" style="padding: 4px 12px; border-radius: 100px; border: 1px solid var(--border, #CBD5E1); background: transparent; font-size: 11px; font-weight: 600; cursor: pointer;">Today</button>
+      <button onclick="loadMoneyBreakdown('week')" class="period-pill" id="mb-tab-week" style="padding: 4px 12px; border-radius: 100px; border: 1px solid var(--border, #CBD5E1); background: transparent; font-size: 11px; font-weight: 600; cursor: pointer;">7 Days</button>
+      <button onclick="loadMoneyBreakdown('month')" class="period-pill active" id="mb-tab-month" style="padding: 4px 12px; border-radius: 100px; border: 1px solid #7C6FF7; background: rgba(124, 111, 247, 0.15); color: #7C6FF7; font-size: 11px; font-weight: 700; cursor: pointer;">Cycle</button>
+    </div>
+  </div>
+
+  <div id="money-breakdown-content">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
+      <span style="font-size: 13px; color: var(--text3, #94A3B8); font-weight: 600;">Total Spending</span>
+      <span style="font-size: 24px; font-weight: 800; color: var(--text, #0F172A);" id="mb-total">₹0</span>
+    </div>
+
+    <!-- Category Progress Bars -->
+    <div id="mb-categories-list" style="display: flex; flex-direction: column; gap: 10px;">
+      <!-- Populated via AJAX / API -->
+    </div>
+
+    <!-- Top 5 Merchants -->
+    <div style="margin-top: 18px; border-top: 1px solid var(--border, rgba(148, 163, 184, 0.2)); padding-top: 14px;">
+      <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text3, #94A3B8); margin-bottom: 8px;">Top Spends by Merchant</div>
+      <div id="mb-top-merchants" style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadMoneyBreakdown(period) {
+  try {
+    document.querySelectorAll('#breakdown-filter-tabs .period-pill').forEach(btn => {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text2, #475569)';
+      btn.style.borderColor = 'var(--border, #CBD5E1)';
+    });
+    const activeBtn = document.getElementById('mb-tab-' + period);
+    if (activeBtn) {
+      activeBtn.style.background = 'rgba(124, 111, 247, 0.15)';
+      activeBtn.style.color = '#7C6FF7';
+      activeBtn.style.borderColor = '#7C6FF7';
+    }
+
+    const res = await fetch('/api/money-breakdown/?period=' + period, { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const data = await res.json();
+    
+    document.getElementById('mb-total').innerText = '₹' + Math.round(data.total_spent || 0).toLocaleString('en-IN');
+    
+    const catList = document.getElementById('mb-categories-list');
+    catList.innerHTML = '';
+    (data.breakdown || []).forEach(item => {
+      if (item.total <= 0) return;
+      const row = document.createElement('div');
+      row.innerHTML = `
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px;">
+          <span>${item.icon} <strong>${item.name}</strong></span>
+          <span>₹${Math.round(item.total).toLocaleString('en-IN')} <span style="color: var(--text3, #94A3B8);">(${item.percent}%)</span></span>
+        </div>
+        <div style="height: 6px; background: var(--surface3, #E2E8F0); border-radius: 6px; overflow: hidden;">
+          <div style="height: 100%; width: ${Math.min(100, item.percent)}%; background: ${item.color}; border-radius: 6px;"></div>
+        </div>
+      `;
+      catList.appendChild(row);
+    });
+
+    const merchBox = document.getElementById('mb-top-merchants');
+    merchBox.innerHTML = '';
+    (data.top_merchants || []).forEach(m => {
+      const pill = document.createElement('div');
+      pill.style.cssText = 'padding: 4px 10px; background: rgba(124, 111, 247, 0.08); border-radius: 8px; font-size: 11px; color: var(--text, #0F172A);';
+      pill.innerHTML = `<strong>${m.merchant}</strong>: ₹${Math.round(m.total).toLocaleString('en-IN')}`;
+      merchBox.appendChild(pill);
+    });
+  } catch (err) {
+    console.error('Error loading money breakdown', err);
+  }
+}
+document.addEventListener('DOMContentLoaded', () => { loadMoneyBreakdown('month'); });
+</script>

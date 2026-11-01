@@ -1403,7 +1403,14 @@ export default function DashboardScreen({ navigation }) {
 
             {/* ── PHASE 9: AAJ KA BUDGET CARD ── */}
             {stats?.daily_budget?.has_budget_set ? (
-              <View style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginBottom: 14 }]}>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate('MoneyBreakdown');
+                }}
+                style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginBottom: 14 }]}
+              >
                 {/* Header */}
                 <View style={styles.widgetHeaderRow}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -1484,7 +1491,7 @@ export default function DashboardScreen({ navigation }) {
                     ))}
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 activeOpacity={0.85}

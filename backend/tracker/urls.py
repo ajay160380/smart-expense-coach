@@ -103,6 +103,9 @@ urlpatterns = [
 
     # Phase 9.8: Notification & Budget Settings
     path('api/notification-settings/', views.api_notification_settings, name='api_notification_settings'),
+
+    # Phase 9.6: "Where Did My Money Go" Breakdown & Recurring Subscriptions
+    path('api/money-breakdown/',       views.api_money_breakdown,       name='api_money_breakdown'),
     
     # Custom history for any month
     path('api/transactions-history/',  views.api_transactions_history, name='api_transactions_history'),

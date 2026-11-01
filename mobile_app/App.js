@@ -59,6 +59,7 @@ import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 // ── Main Screens ──
 import DashboardScreen from './src/screens/DashboardScreen';
 import AnalyticsScreen from './src/screens/AnalyticsScreen';
+import MoneyBreakdownScreen from './src/screens/MoneyBreakdownScreen';
 import AddExpenseScreen from './src/screens/AddExpenseScreen';
 import SavingsGoalsScreen from './src/screens/SavingsGoalsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
@@ -106,6 +107,8 @@ function HomeStackScreen() {
       <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
       <HomeStack.Screen name="Notepad" component={NotepadScreen} />
       <HomeStack.Screen name="History" component={HistoryScreen} />
+      <HomeStack.Screen name="Analytics" component={AnalyticsScreen} />
+      <HomeStack.Screen name="MoneyBreakdown" component={MoneyBreakdownScreen} />
       <HomeStack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
       <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <HomeStack.Screen name="Terms" component={TermsScreen} />
@@ -137,6 +140,7 @@ function MoreStackScreen() {
       <MoreStack.Screen name="Profile" component={ProfileScreen} />
       <MoreStack.Screen name="AIChat" component={AIChatScreen} />
       <MoreStack.Screen name="Analytics" component={AnalyticsScreen} />
+      <MoreStack.Screen name="MoneyBreakdown" component={MoneyBreakdownScreen} />
       <MoreStack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
       <MoreStack.Screen name="ExpenseSplit" component={ExpenseSplitScreen} />
       <MoreStack.Screen name="Subscriptions" component={SubscriptionsScreen} />
@@ -178,6 +182,7 @@ const HIDE_TAB_BAR_SCREENS = [
   'Notifications',
   'Notepad',
   'History',
+  'MoneyBreakdown',
   'PrivacyPolicy',
   'Terms',
   'NotFound',

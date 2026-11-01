@@ -3710,6 +3710,159 @@ def api_notification_settings(request):
     })
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@throttle_classes([ScopedRateThrottle])
+def api_money_breakdown(request):
+    """
+    PHASE 9.6: "Where Did My Money Go" breakdown endpoint.
+    GET /api/money-breakdown/?period=today|week|month
+    Returns:
+      - totals and percentages by:
+          * Food & drink
+          * Groceries & quick-commerce
+          * Shopping
+          * Subscriptions
+          * Transport
+          * Bills & Utilities
+          * Other UPI & random payments
+      - top 5 merchants
+      - daily-budget status for the period
+      - suggested subscriptions (detected recurring payments)
+    """
+    request.scope = 'authenticated'
+    user = request.user
+    today = timezone.localdate()
+
+    period = str(request.GET.get('period', 'month')).lower().strip()
+    if period == 'today':
+        qs = Expense.objects.filter(user=user, date=today)
+    elif period == 'week':
+        qs = Expense.objects.filter(user=user, date__gte=today - timedelta(days=7), date__lte=today)
+    else:
+        period = 'month'
+        start_date, end_date = get_budget_cycle_dates(user, today)
+        qs = Expense.objects.filter(user=user, date__range=(start_date, end_date))
+
+    total_spent = float(qs.aggregate(t=Sum('amount'))['t'] or 0)
+
+    # Defined breakdown buckets
+    buckets = {
+        "food": {"name": "Food & Drink", "icon": "🍜", "color": "#6C5CE7", "total": 0.0, "count": 0},
+        "groceries": {"name": "Groceries & Quick-Commerce", "icon": "🛒", "color": "#10B981", "total": 0.0, "count": 0},
+        "shopping": {"name": "Shopping", "icon": "🛍️", "color": "#EC4899", "total": 0.0, "count": 0},
+        "subscriptions": {"name": "Subscriptions", "icon": "🎬", "color": "#F59E0B", "total": 0.0, "count": 0},
+        "transport": {"name": "Transport", "icon": "🚗", "color": "#06B6D4", "total": 0.0, "count": 0},
+        "bills": {"name": "Bills & Utilities", "icon": "⚡", "color": "#8B5CF6", "total": 0.0, "count": 0},
+        "other": {"name": "Other UPI & Random Payments", "icon": "📦", "color": "#94A3B8", "total": 0.0, "count": 0},
+    }
+
+    grocery_keywords = {"blinkit", "zepto", "instamart", "bigbasket", "bb daily", "dmart", "grocery", "sabzi"}
+
+    for exp in qs:
+        amt = float(exp.amount)
+        cat = (exp.category or 'other').lower()
+        desc = (exp.description or '').lower()
+
+        if any(gk in desc for gk in grocery_keywords):
+            b_key = "groceries"
+        elif cat in ("food", "dining", "restaurant"):
+            b_key = "food"
+        elif cat == "shopping":
+            b_key = "shopping"
+        elif cat in ("entertainment", "subscription", "ott"):
+            b_key = "subscriptions"
+        elif cat in ("transport", "travel", "fuel"):
+            b_key = "transport"
+        elif cat in ("utilities", "bills", "rent"):
+            b_key = "bills"
+        else:
+            b_key = "other"
+
+        buckets[b_key]["total"] += amt
+        buckets[b_key]["count"] += 1
+
+    breakdown_list = []
+    for k, v in buckets.items():
+        pct = round((v["total"] / total_spent * 100), 1) if total_spent > 0 else 0.0
+        breakdown_list.append({
+            "key": k,
+            "name": v["name"],
+            "icon": v["icon"],
+            "color": v["color"],
+            "total": round(v["total"], 2),
+            "amount": round(v["total"], 2),
+            "count": v["count"],
+            "percent": pct,
+        })
+    breakdown_list.sort(key=lambda x: x["total"], reverse=True)
+
+    # Top 5 merchants
+    merchant_map = {}
+    for exp in qs:
+        m_name = (exp.description or exp.category).strip()
+        if m_name.lower().startswith('auto-paid at '):
+            m_name = m_name[13:].strip()
+        merchant_map[m_name] = merchant_map.get(m_name, 0.0) + float(exp.amount)
+
+    top_merchants = [
+        {"merchant": m, "total": round(amt, 2)}
+        for m, amt in sorted(merchant_map.items(), key=lambda x: x[1], reverse=True)[:5]
+    ]
+
+    # Recurring payment detection over last 90 days
+    existing_sub_names = set(Subscription.objects.filter(user=user).values_list('name', flat=True))
+    existing_sub_names_clean = {s.lower().strip() for s in existing_sub_names}
+
+    three_months_ago = today - timedelta(days=90)
+    history_expenses = Expense.objects.filter(user=user, date__gte=three_months_ago)
+
+    rec_candidates = {}
+    for exp in history_expenses:
+        m_name = (exp.description or exp.category).strip()
+        if m_name.lower().startswith('auto-paid at '):
+            m_name = m_name[13:].strip()
+        clean_m = m_name.lower()
+        if clean_m not in rec_candidates:
+            rec_candidates[clean_m] = {"display_name": m_name, "txs": [], "category": exp.category}
+        rec_candidates[clean_m]["txs"].append((exp.date, float(exp.amount)))
+
+    suggested_subscriptions = []
+    for clean_m, info in rec_candidates.items():
+        if clean_m in existing_sub_names_clean:
+            continue
+        txs = info["txs"]
+        if len(txs) >= 2:
+            dates = [t[0] for t in txs]
+            months_seen = {d.strftime('%Y-%m') for d in dates}
+            if len(months_seen) >= 2:
+                avg_amt = sum(t[1] for t in txs) / len(txs)
+                suggested_subscriptions.append({
+                    "name": info["display_name"],
+                    "merchant": info["display_name"],
+                    "amount": round(avg_amt, 2),
+                    "suggested_amount": round(avg_amt, 2),
+                    "category": info["category"],
+                    "frequency": "Monthly",
+                    "reason": f"Detected in {len(months_seen)} separate months"
+                })
+
+    daily_status = calculate_daily_budget(user, today)
+
+    return Response({
+        "status": "success",
+        "period": period,
+        "total_spent": round(total_spent, 2),
+        "breakdown": breakdown_list,
+        "categories": breakdown_list,
+        "top_merchants": top_merchants,
+        "suggested_subscriptions": suggested_subscriptions[:5],
+        "recurring_candidates": suggested_subscriptions[:5],
+        "daily_budget": daily_status,
+        "daily_budget_status": daily_status,
+    })
+
+
 @api_login_required
 def api_transactions_history(request: HttpRequest) -> JsonResponse:
     today = date.today()
