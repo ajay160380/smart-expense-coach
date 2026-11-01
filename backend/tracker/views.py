@@ -974,17 +974,21 @@ def calculate_daily_budget(user, target_date=None):
         "monthly_income": monthly_income_val,
         "spent_today": spent_today,
         "today_remaining": today_remaining,
+        "remaining_today": today_remaining,
         "percent_used": percent_used,
         "status": status,
         "status_label": status_label,
         "status_color": status_color,
         "day_of_cycle": day_of_cycle,
+        "cycle_day": day_of_cycle,
         "total_days_in_cycle": total_days_in_cycle,
+        "cycle_days": total_days_in_cycle,
         "days_left": days_left,
         "cycle_start_date": start_date.isoformat(),
         "cycle_end_date": end_date.isoformat(),
         "rollover_enabled": rollover_enabled,
         "carryover_amount": round(carryover, 2),
+        "has_budget": bool(profile and ((profile.monthly_budget and profile.monthly_budget > 0) or profile.monthly_income)),
         "has_budget_set": bool(profile and ((profile.monthly_budget and profile.monthly_budget > 0) or profile.monthly_income)),
         "hinglish_message": hinglish_message,
         "today_transactions": today_transactions,
@@ -2275,6 +2279,66 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     try:
         normalized_text = normalize_hinglish_numbers(spoken_text)
         lower_text = normalized_text.lower().strip()
+
+        # ── 0. PHASE 9.7: DAILY BUDGET COMMANDS ("aaj ka budget", "today budget") ──
+        is_daily_budget_cmd = bool(
+            re.search(r'^(aaj\s*ka\s*budget|today\'?s?\s*budget|daily\s*budget|rozana\s*ka\s*budget|mera\s*aaj\s*ka\s*budget)[\s\?\.]*$', lower_text)
+            or lower_text in ['aaj ka budget', 'today budget', "today's budget", 'daily budget', 'aajka budget', 'aaj ka budget kitna hai']
+        )
+        if is_daily_budget_cmd:
+            daily_info = calculate_daily_budget(target_user, today)
+            if not daily_info.get("has_budget") or daily_info.get("daily_budget", 0) <= 0:
+                budget_msg = (
+                    "⚠️ *Aapka monthly budget set nahi hai!*\n\n"
+                    "Rozana ka budget dekhne ke liye pehle apna budget ya income set karein:\n"
+                    "👉 Link: https://expense-coach-prxm.onrender.com/dashboard/\n"
+                    "Ya app ke Profile me jakar Monthly Budget set karein. 🎯"
+                )
+            else:
+                db_amt = daily_info["daily_budget"]
+                sp_amt = daily_info["spent_today"]
+                rem_amt = daily_info["remaining_today"]
+                status = daily_info["status"]
+                c_day = daily_info["cycle_day"]
+                c_days = daily_info["cycle_days"]
+                days_left = daily_info["days_left"]
+
+                status_emoji = {"ok": "✅", "warning": "⚠️", "over": "🚨"}.get(status, "📊")
+                if status == "ok":
+                    advice = "Sab control me hai! Aise hi balance banaye rakhein. 👍"
+                elif status == "warning":
+                    advice = "70% se zyada kharch ho chuka hai, thoda hath kheench ke chalein! ⚠️"
+                else:
+                    over_by = abs(rem_amt)
+                    advice = f"Aaj ka budget over ho gaya hai (₹{over_by:,.0f} zyada kharch). Kal balance maintain karna hoga! 🛑"
+
+                budget_msg = (
+                    f"📊 *Aaj Ka Budget (Day {c_day}/{c_days})*\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"🎯 *Daily Budget:* ₹{db_amt:,.0f}\n"
+                    f"💸 *Spent Today:* ₹{sp_amt:,.0f}\n"
+                    f"💰 *Bacha Hua:* ₹{rem_amt:,.0f} ({status}) {status_emoji}\n"
+                    f"⏳ *Mahine ke din bache hain:* {days_left} din\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"💡 {advice}"
+                )
+
+            if provider_message_id and sender_id:
+                try:
+                    WhatsAppProcessedMessage.objects.update_or_create(
+                        provider_message_id=provider_message_id,
+                        sender_id=sender_id,
+                        defaults={'status': 'success', 'response_text': budget_msg}
+                    )
+                except Exception:
+                    pass
+
+            return JsonResponse({
+                "status": "success",
+                "message": budget_msg,
+                "action": "daily_budget",
+                "daily_budget": daily_info
+            })
 
         # ── 1. SMART CONVERSATIONAL GREETINGS (0.001s) ──
         greeting_reply = _get_smart_greeting_response(normalized_text, user_name, target_user, today, budget, spent)

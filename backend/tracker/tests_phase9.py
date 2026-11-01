@@ -1,6 +1,7 @@
+import json
 from decimal import Decimal
 from datetime import date, timedelta
-from django.test import TestCase
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -377,6 +378,89 @@ class Phase9MoneyBreakdownTests(TestCase):
         netflix_candidate = next((r for r in recurring if 'netflix' in r['merchant'].lower()), None)
         self.assertIsNotNone(netflix_candidate)
         self.assertEqual(Decimal(str(netflix_candidate['amount'])), Decimal('649.00'))
+
+
+class Phase9WhatsAppCommandsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='p9wauser', password='Password123!', email='p9wa@test.com', first_name='Rohan')
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            phone_number='919876543210',
+            whatsapp_number='919876543210',
+            whatsapp_linked=True,
+            monthly_budget=30000,
+            budget_cycle_start_day=1
+        )
+        self.client = Client()
+        self.secret = 'test-internal-bot-secret'
+
+    @override_settings(INTERNAL_BOT_SECRET='test-internal-bot-secret')
+    def test_aaj_ka_budget_command(self):
+        """9.7: Test 'aaj ka budget' returns daily budget, spent, remaining, days left, advice"""
+        today = date.today()
+        Expense.objects.create(user=self.user, amount=Decimal('500.00'), category='food', date=today)
+
+        res = self.client.post(
+            '/api/voice-expense/',
+            data=json.dumps({
+                'phone': '919876543210',
+                'text': 'aaj ka budget',
+                'message_id': 'msg_wa_001',
+                'sender_id': '919876543210'
+            }),
+            content_type='application/json',
+            HTTP_X_INTERNAL_SECRET=self.secret
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertIn('Daily Budget', data['message'])
+        self.assertIn('Spent Today', data['message'])
+        self.assertIn('500', data['message'])
+        self.assertEqual(data['daily_budget']['spent_today'], 500.0)
+
+    @override_settings(INTERNAL_BOT_SECRET='test-internal-bot-secret')
+    def test_today_budget_case_insensitive(self):
+        """9.7: Test 'Today Budget' works case-insensitively"""
+        res = self.client.post(
+            '/api/voice-expense/',
+            data=json.dumps({
+                'phone': '919876543210',
+                'text': 'Today Budget?',
+                'message_id': 'msg_wa_002',
+                'sender_id': '919876543210'
+            }),
+            content_type='application/json',
+            HTTP_X_INTERNAL_SECRET=self.secret
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertIn('Daily Budget', data['message'])
+
+    @override_settings(INTERNAL_BOT_SECRET='test-internal-bot-secret')
+    def test_aaj_ka_budget_no_budget_prompt(self):
+        """9.7: When no budget or income is set, reply asking to set it"""
+        self.profile.monthly_budget = 0
+        self.profile.monthly_income = None
+        self.profile.save()
+
+        res = self.client.post(
+            '/api/voice-expense/',
+            data=json.dumps({
+                'phone': '919876543210',
+                'text': 'aaj ka budget',
+                'message_id': 'msg_wa_003',
+                'sender_id': '919876543210'
+            }),
+            content_type='application/json',
+            HTTP_X_INTERNAL_SECRET=self.secret
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertIn('monthly budget set nahi hai', data['message'])
+
 
 
 
