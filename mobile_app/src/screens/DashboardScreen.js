@@ -472,16 +472,35 @@ export default function DashboardScreen({ navigation }) {
 
   const fetchDashboardData = async (isInitial = false) => {
     try {
-      const name = await getUsername();
-      if (name) setUsername(name);
-
+      // ── 1. LOAD CACHED DATA IMMEDIATELY (Instant 0.01s Offline-First Render) ──
       try {
-        const cachedProfile = await AsyncStorage.getItem('user_profile');
+        const cachedDashboard = await AsyncStorage.getItem('dashboard_cache');
+        if (cachedDashboard) {
+          const parsed = JSON.parse(cachedDashboard);
+          if (parsed.stats) setStats(parsed.stats);
+          if (parsed.tip) setDailyTip(parsed.tip);
+          if (parsed.comp) setComparison(parsed.comp);
+          if (parsed.anom) setAnomalies(parsed.anom);
+          if (parsed.goals) setGoals(parsed.goals);
+          if (parsed.subs) setSubsData(parsed.subs);
+          if (isInitial) setLoading(false); // Stop loading spinner in 1 millisecond!
+        } else if (isInitial) {
+          setLoading(true);
+        } else {
+          setRefreshing(true);
+        }
+      } catch (cacheErr) {
+        if (isInitial) setLoading(false);
+      }
+
+      // ── 2. QUICK USER & PREFERENCES SYNC (Parallel) ──
+      getUsername().then(name => { if (name) setUsername(name); }).catch(() => {});
+      AsyncStorage.getItem('user_profile').then(cachedProfile => {
         if (cachedProfile) {
           const parsed = JSON.parse(cachedProfile);
           if (parsed.full_name) setFullName(parsed.full_name);
         }
-      } catch (e) {}
+      }).catch(() => {});
 
       api.get('/profile/').then(res => {
         if (res.data?.full_name) {
@@ -493,66 +512,41 @@ export default function DashboardScreen({ navigation }) {
       loadCustomShortcuts();
       loadCustomActionDock();
 
-      const shakeDismissed = await AsyncStorage.getItem('shake_banner_dismissed');
-      if (shakeDismissed === 'true') {
-        setShakeBannerVisible(false);
-      }
+      AsyncStorage.getItem('shake_banner_dismissed').then(val => {
+        if (val === 'true') setShakeBannerVisible(false);
+      }).catch(() => {});
 
-      const microDismissed = await AsyncStorage.getItem('hide_micro_savings_widget');
-      if (microDismissed === 'true') {
-        setHideMicroSavingsWidget(true);
-      }
-
-      // ── 1. LOAD CACHED DATA IMMEDIATELY (Offline-First) ──
-      const cachedDashboard = await AsyncStorage.getItem('dashboard_cache');
-      if (cachedDashboard) {
-        const parsed = JSON.parse(cachedDashboard);
-        if (parsed.stats) setStats(parsed.stats);
-        if (parsed.tip) setDailyTip(parsed.tip);
-        if (parsed.comp) setComparison(parsed.comp);
-        if (parsed.anom) setAnomalies(parsed.anom);
-        if (parsed.goals) setGoals(parsed.goals);
-        if (parsed.subs) setSubsData(parsed.subs);
-        if (isInitial) setLoading(false); // Stop loading spinner instantly!
-      } else if (isInitial) {
-        setLoading(true); // Only show loader if no cache exists
-      } else {
-        setRefreshing(true);
-      }
+      AsyncStorage.getItem('hide_micro_savings_widget').then(val => {
+        if (val === 'true') setHideMicroSavingsWidget(true);
+      }).catch(() => {});
 
       const localHour = new Date().getHours();
       const localType = (localHour >= 18 || localHour < 5) ? 'night' : 'morning';
 
-      // ── 2. FETCH FRESH DATA IN BACKGROUND (Instant unblocked UI update) ──
-      api.get('/summary-stats/').then(res => {
-        if (res.data) {
-          setStats(res.data);
-          setLoading(false);
+      // ── 3. ASYNC BACKGROUND AI TIP (Non-blocking, never stalls dashboard!) ──
+      api.get(`/daily-tip/?type=${localType}&hour=${localHour}`).then(tipRes => {
+        if (tipRes.data?.tip) {
+          setDailyTip(tipRes.data.tip);
         }
-      }).catch(err => {
-        if (err.response?.status === 401) navigation.replace('Login');
-      });
+      }).catch(() => {});
 
-      const [statsRes, tipRes, compRes, anomRes, goalsRes, subsRes] = await Promise.allSettled([
+      // ── 4. FETCH FAST CORE STATS (Concurrent & Lightning fast) ──
+      const [statsRes, compRes, anomRes, goalsRes, subsRes] = await Promise.allSettled([
         api.get('/summary-stats/'),
-        api.get(`/daily-tip/?type=${localType}&hour=${localHour}`),
         api.get('/monthly-comparison/'),
         api.get('/anomalies/'),
         api.get('/savings-goals/'),
         api.get('/subscriptions/'),
       ]);
 
-      let newStats, newTip, newComp, newAnom = [];
+      let newStats, newComp, newAnom = [];
       let newGoals = [];
       let newSubs = null;
       
       if (statsRes.status === 'fulfilled') {
         newStats = statsRes.value.data;
         setStats(newStats);
-      }
-      if (tipRes.status === 'fulfilled') {
-        newTip = tipRes.value.data?.tip;
-        setDailyTip(newTip);
+        setLoading(false);
       }
       if (compRes.status === 'fulfilled') {
         newComp = compRes.value.data;
@@ -571,17 +565,17 @@ export default function DashboardScreen({ navigation }) {
         setSubsData(newSubs);
       }
 
-      // ── 3. SAVE FRESH DATA TO CACHE ──
+      // ── 5. SAVE FRESH DATA TO CACHE ──
       await AsyncStorage.setItem('dashboard_cache', JSON.stringify({
         stats: newStats || stats,
-        tip: newTip || dailyTip,
+        tip: dailyTip,
         comp: newComp || comparison,
         anom: newAnom || anomalies,
         goals: newGoals.length > 0 ? newGoals : goals,
         subs: newSubs || subsData,
       }));
 
-      // ── 4. UPDATE ANDROID HOME SCREEN WIDGETS ──
+      // ── 6. UPDATE ANDROID HOME SCREEN WIDGETS ──
       try {
         const liveStats = newStats || stats;
         if (liveStats) {
