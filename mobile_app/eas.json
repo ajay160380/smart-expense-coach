@@ -11,6 +11,10 @@
     },
     "production": {
       "channel": "production",
+      "env": {
+        "ORG_GRADLE_PROJECT_reactNativeArchitectures": "arm64-v8a,armeabi-v7a",
+        "ORG_GRADLE_PROJECT_expo.useLegacyPackaging": "true"
+      },
       "android": {
         "buildType": "apk"
       }
