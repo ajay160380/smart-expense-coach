@@ -63,7 +63,7 @@ class PaymentAccessibilityService : AccessibilityService() {
             "paid", "completed", "successful", "transferred", "received", "debited",
             "credited", "payment", "transaction", "google pay", "phonepe", "paytm",
             "bhim", "kotak811", "kotak", "navi", "show menu", "view", "menu",
-            "sponsored", "rewards", "earn rewards"
+            "sponsored", "rewards", "earn rewards", "powered by"
         )
 
         // Cache recently captured payments to prevent rapid-fire duplicates
@@ -82,12 +82,23 @@ class PaymentAccessibilityService : AccessibilityService() {
         val pkgName = event.packageName?.toString() ?: return
 
         try {
-            val rootNode = rootInActiveWindow ?: return
             val screenTexts = mutableListOf<String>()
-            traverseNode(rootNode, screenTexts)
+            val root = rootInActiveWindow
+            if (root != null) {
+                traverseNode(root, screenTexts)
+            }
+            if (screenTexts.isEmpty()) {
+                try {
+                    windows?.forEach { win ->
+                        win.root?.let { traverseNode(it, screenTexts) }
+                    }
+                } catch (e: Exception) {}
+            }
 
             if (screenTexts.isEmpty()) return
             val joinedText = screenTexts.joinToString(" ").lowercase(Locale.US)
+
+            Log.i(TAG, "🔍 [$pkgName] EventType: ${event.eventType} | Texts: ${screenTexts.joinToString(" | ")}")
 
             // 1. Must NOT be an input/pending/failed screen
             if (REJECT_INPUT_KEYWORDS.any { joinedText.contains(it) }) {
@@ -97,46 +108,77 @@ class PaymentAccessibilityService : AccessibilityService() {
             var detectedAmount = 0.0
             var detectedMerchant = ""
 
-            // MODE A: Google Pay Payment Success Receipt Screen (Exactly as shown in user photo)
-            // Characteristics: "Paid to <Name>", "₹1", "Done" button, "Share screenshot", "Powered by UPI"
+            // MODE A: Google Pay Payment Success Receipt Screen
+            // (Contains "Paid to", "Done" or "Share screenshot" or "Powered by UPI")
             if (pkgName == "com.google.android.apps.nbu.paisa.user") {
                 val hasDone = screenTexts.any { it.trim().equals("Done", ignoreCase = true) }
                 val hasShare = joinedText.contains("share screenshot") || joinedText.contains("powered by upi") || joinedText.contains("google transaction id")
-                val hasPaidTo = joinedText.contains("paid to") || joinedText.contains("payment to")
+                val hasPaidTo = joinedText.contains("paid to") || joinedText.contains("payment to") || joinedText.contains("paid")
 
                 if ((hasDone || hasShare) && hasPaidTo) {
-                    // 1. Extract Merchant: node right after "Paid to" or regex match
-                    for (i in screenTexts.indices) {
-                        val text = screenTexts[i].trim()
-                        if (text.equals("Paid to", ignoreCase = true) && i + 1 < screenTexts.size) {
-                            val candidate = screenTexts[i + 1].trim()
-                            if (candidate.length in 2..40 && !UI_IGNORE_WORDS.contains(candidate.lowercase(Locale.US))) {
-                                detectedMerchant = candidate
-                                break
+                    // 1. Extract Amount: check text before "sponsored" (handles ₹ and amount in same or adjacent nodes)
+                    val textBeforeSponsored = if (joinedText.contains("sponsored")) {
+                        joinedText.substringBefore("sponsored")
+                    } else {
+                        joinedText
+                    }
+
+                    val amountMatcher = AMOUNT_PATTERN.matcher(textBeforeSponsored)
+                    if (amountMatcher.find()) {
+                        val rawStr = amountMatcher.group(1)?.replace(",", "") ?: ""
+                        detectedAmount = rawStr.toDoubleOrNull() ?: 0.0
+                    }
+
+                    // Fallback for amount split across nodes (Node i = "₹", Node i+1 = "1")
+                    if (detectedAmount <= 0.0) {
+                        for (i in screenTexts.indices) {
+                            val t = screenTexts[i].trim()
+                            if (t.contains("sponsored", ignoreCase = true)) break
+                            if (t == "₹" || t.equals("rs", ignoreCase = true) || t.equals("rs.", ignoreCase = true)) {
+                                if (i + 1 < screenTexts.size) {
+                                    val next = screenTexts[i + 1].trim().replace(",", "")
+                                    val parsed = next.toDoubleOrNull() ?: 0.0
+                                    if (parsed > 0.0 && parsed < 10000000.0) {
+                                        detectedAmount = parsed
+                                        break
+                                    }
+                                }
                             }
                         }
-                        val m = Pattern.compile("""(?:paid to|payment to)\s+([A-Za-z0-9\s&'.-]+)""", Pattern.CASE_INSENSITIVE).matcher(text)
+                    }
+
+                    // 2. Extract Merchant: text right after "Paid to" or right before UPI ID
+                    for (i in screenTexts.indices) {
+                        val t = screenTexts[i].trim()
+                        if (t.equals("Paid to", ignoreCase = true) || t.equals("Payment to", ignoreCase = true)) {
+                            if (i + 1 < screenTexts.size) {
+                                val cand = screenTexts[i + 1].trim()
+                                if (cand.length in 2..40 && !UI_IGNORE_WORDS.contains(cand.lowercase(Locale.US))) {
+                                    detectedMerchant = cand
+                                    break
+                                }
+                            }
+                        }
+                        val m = Pattern.compile("""(?:paid to|payment to)\s+([A-Za-z0-9\s&'.-]+)""", Pattern.CASE_INSENSITIVE).matcher(t)
                         if (m.find()) {
-                            val candidate = m.group(1)?.trim() ?: ""
-                            if (candidate.length in 2..40 && !UI_IGNORE_WORDS.contains(candidate.lowercase(Locale.US))) {
-                                detectedMerchant = candidate
+                            val cand = m.group(1)?.trim() ?: ""
+                            if (cand.length in 2..40 && !UI_IGNORE_WORDS.contains(cand.lowercase(Locale.US))) {
+                                detectedMerchant = cand
                                 break
                             }
                         }
                     }
 
-                    // 2. Extract Amount: extract the payment amount BEFORE the "Sponsored" section
-                    for (text in screenTexts) {
-                        if (text.contains("sponsored", ignoreCase = true)) {
-                            break // Stop before ad cards!
-                        }
-                        val matcher = AMOUNT_PATTERN.matcher(text)
-                        if (matcher.find()) {
-                            val rawStr = matcher.group(1)?.replace(",", "") ?: ""
-                            val parsed = rawStr.toDoubleOrNull() ?: 0.0
-                            if (parsed > 0.0 && parsed < 10000000.0) {
-                                detectedAmount = parsed
-                                break // Primary transaction amount
+                    // Fallback: look for recipient text right before the UPI ID (e.g. "AJAY VISHWAKARMA" before "7905398965@kotakbank")
+                    if (detectedMerchant.isBlank()) {
+                        for (i in screenTexts.indices) {
+                            val t = screenTexts[i].trim()
+                            if (t.contains("@") && i > 0) {
+                                val prev = screenTexts[i - 1].trim()
+                                if (prev.length in 2..40 && !UI_IGNORE_WORDS.contains(prev.lowercase(Locale.US)) && !prev.contains("₹")) {
+                                    detectedMerchant = prev
+                                    break
+                                }
                             }
                         }
                     }
@@ -155,20 +197,11 @@ class PaymentAccessibilityService : AccessibilityService() {
                 }
 
                 if ((hasReceiptConfirm || hasDone) && !hasChatBar) {
-                    // Extract amount before sponsored/promo section
-                    for (text in screenTexts) {
-                        if (text.contains("sponsored", ignoreCase = true) || text.contains("rewards", ignoreCase = true)) {
-                            continue
-                        }
-                        val matcher = AMOUNT_PATTERN.matcher(text)
-                        if (matcher.find()) {
-                            val rawStr = matcher.group(1)?.replace(",", "") ?: ""
-                            val parsed = rawStr.toDoubleOrNull() ?: 0.0
-                            if (parsed > 0.0 && parsed < 10000000.0) {
-                                detectedAmount = parsed
-                                break
-                            }
-                        }
+                    val textBeforePromo = if (joinedText.contains("sponsored")) joinedText.substringBefore("sponsored") else joinedText
+                    val matcher = AMOUNT_PATTERN.matcher(textBeforePromo)
+                    if (matcher.find()) {
+                        val rawStr = matcher.group(1)?.replace(",", "") ?: ""
+                        detectedAmount = rawStr.toDoubleOrNull() ?: 0.0
                     }
 
                     detectedMerchant = extractMerchantFromTexts(screenTexts, pkgName)
