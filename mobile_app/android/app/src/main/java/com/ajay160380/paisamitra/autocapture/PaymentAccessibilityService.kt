@@ -39,13 +39,12 @@ class PaymentAccessibilityService : AccessibilityService() {
         private val REJECT_INPUT_KEYWORDS = listOf(
             "enter upi pin",
             "enter pin",
-            "pay now",
-            "request payment",
-            "failed",
-            "declined",
-            "cancelled",
-            "retry",
-            "split with friends"
+            "payment failed",
+            "transaction failed",
+            "payment declined",
+            "transaction declined",
+            "incorrect upi pin",
+            "wrong upi pin"
         )
 
         private val AMOUNT_PATTERN = Pattern.compile(
@@ -112,10 +111,11 @@ class PaymentAccessibilityService : AccessibilityService() {
             // (Contains "Paid to", "Done" or "Share screenshot" or "Powered by UPI")
             if (pkgName == "com.google.android.apps.nbu.paisa.user") {
                 val hasDone = screenTexts.any { it.trim().equals("Done", ignoreCase = true) }
-                val hasShare = joinedText.contains("share screenshot") || joinedText.contains("powered by upi") || joinedText.contains("google transaction id")
+                val hasShare = joinedText.contains("share") || joinedText.contains("screenshot") || joinedText.contains("powered by upi") || joinedText.contains("google transaction id")
                 val hasPaidTo = joinedText.contains("paid to") || joinedText.contains("payment to") || joinedText.contains("paid")
+                val isChatBar = screenTexts.any { it.trim().lowercase(Locale.US) == "request" }
 
-                if ((hasDone || hasShare) && hasPaidTo) {
+                if (hasPaidTo && !isChatBar && (hasDone || hasShare)) {
                     // 1. Extract Amount: check text before "sponsored" (handles ₹ and amount in same or adjacent nodes)
                     val textBeforeSponsored = if (joinedText.contains("sponsored")) {
                         joinedText.substringBefore("sponsored")
@@ -142,6 +142,14 @@ class PaymentAccessibilityService : AccessibilityService() {
                                         detectedAmount = parsed
                                         break
                                     }
+                                }
+                            }
+                            val m = AMOUNT_PATTERN.matcher(t)
+                            if (m.find()) {
+                                val parsed = m.group(1)?.replace(",", "")?.toDoubleOrNull() ?: 0.0
+                                if (parsed > 0.0 && parsed < 10000000.0) {
+                                    detectedAmount = parsed
+                                    break
                                 }
                             }
                         }
