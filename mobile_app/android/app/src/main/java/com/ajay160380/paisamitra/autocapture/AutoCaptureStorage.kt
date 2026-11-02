@@ -36,12 +36,13 @@ object AutoCaptureStorage {
         try {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-            // 1. Deduplication: ignore duplicate captures of same amount within 15 seconds (e.g. App notif + Bank SMS)
-            val dedupKey = "last_capture_amount_${amount.toLong()}"
+            // 1. Deduplication: ignore duplicate captures of same amount within 10 seconds (e.g. App notif + Bank SMS)
+            val formattedKeyAmount = String.format(Locale.US, "%.2f", amount)
+            val dedupKey = "last_capture_amount_$formattedKeyAmount"
             val lastCaptureTime = prefs.getLong(dedupKey, 0L)
             val now = System.currentTimeMillis()
-            if ((now - lastCaptureTime) < 15000L) {
-                Log.d(TAG, "⚡ Debounce: Ignoring duplicate capture for ₹$amount within 15s")
+            if ((now - lastCaptureTime) < 10000L) {
+                Log.d(TAG, "⚡ Debounce: Ignoring duplicate capture for ₹$amount within 10s")
                 return
             }
             prefs.edit().putLong(dedupKey, now).apply()

@@ -134,15 +134,21 @@ class PaymentNotificationListener : NotificationListenerService() {
 
         try {
             val extras = sbn.notification.extras ?: return
-            val title = extras.getString("android.title") ?: ""
+            val title = extras.getCharSequence("android.title")?.toString() ?: ""
             val text = extras.getCharSequence("android.text")?.toString() ?: ""
             val bigText = extras.getCharSequence("android.bigText")?.toString() ?: ""
-            val fullContent = "$title $text $bigText".trim()
+            val subText = extras.getCharSequence("android.subText")?.toString() ?: ""
+            val titleBig = extras.getCharSequence("android.title.big")?.toString() ?: ""
+            val summaryText = extras.getCharSequence("android.summaryText")?.toString() ?: ""
+            val textLines = (extras.getCharSequenceArray("android.textLines") ?: emptyArray()).joinToString(" ")
+            val ticker = sbn.notification.tickerText?.toString() ?: ""
+
+            val fullContent = "$title $text $bigText $subText $titleBig $summaryText $textLines $ticker".trim()
 
             if (fullContent.isEmpty()) return
 
             // Check if this package is a bank, payment app, or bank debit SMS
-            val isKnown = ALLOWED_PACKAGES.contains(pkgName.lowercase())
+            val isKnown = ALLOWED_PACKAGES.contains(pkgName.lowercase(java.util.Locale.US))
             val isFinApp = pkgName.contains("bank", ignoreCase = true) ||
                            pkgName.contains("upi", ignoreCase = true) ||
                            pkgName.contains("wallet", ignoreCase = true) ||
@@ -155,7 +161,7 @@ class PaymentNotificationListener : NotificationListenerService() {
                 return
             }
 
-            val lowerContent = fullContent.lowercase()
+            val lowerContent = fullContent.lowercase(java.util.Locale.US)
 
             // 1. MUST contain an explicit DEBIT keyword (rejects all general ads, offers, updates)
             val isDebit = DEBIT_KEYWORDS.any { lowerContent.contains(it) }
@@ -163,14 +169,57 @@ class PaymentNotificationListener : NotificationListenerService() {
                 return
             }
 
-            // 2. Reject OTPs, credits, failed transactions, loans, recharge ads, coupons
-            for (pattern in REJECT_PATTERNS) {
-                if (pattern.matcher(fullContent).find()) {
-                    return
-                }
+            // 2. Reject OTPs, verification codes
+            val isOtp = lowerContent.contains("otp") ||
+                        lowerContent.contains("one time password") ||
+                        lowerContent.contains("verification code") ||
+                        lowerContent.contains("secret code") ||
+                        lowerContent.contains("do not share")
+            if (isOtp) return
+
+            // 3. Reject failed transactions
+            val isFailed = lowerContent.contains("failed") ||
+                           lowerContent.contains("declined") ||
+                           lowerContent.contains("unsuccessful") ||
+                           lowerContent.contains("cancelled") ||
+                           lowerContent.contains("reversed") ||
+                           lowerContent.contains("rejected")
+            if (isFailed) return
+
+            // 4. Pure incoming credit check (e.g. received from, credited to)
+            val hasCreditWord = lowerContent.contains("credited") ||
+                                lowerContent.contains("received from") ||
+                                lowerContent.contains("credit alert") ||
+                                lowerContent.contains("deposited")
+            val hasExplicitDebit = lowerContent.contains("debited") ||
+                                   lowerContent.contains("debit") ||
+                                   lowerContent.contains("sent to") ||
+                                   lowerContent.contains("sent rs") ||
+                                   lowerContent.contains("sent ₹") ||
+                                   lowerContent.contains("sent inr") ||
+                                   lowerContent.contains("paid to") ||
+                                   lowerContent.contains("paid rs") ||
+                                   lowerContent.contains("paid ₹") ||
+                                   lowerContent.contains("paid inr") ||
+                                   lowerContent.contains("transferred to") ||
+                                   lowerContent.contains("spent") ||
+                                   lowerContent.contains("deducted") ||
+                                   lowerContent.contains("auto-debited")
+            if (hasCreditWord && !hasExplicitDebit) {
+                return
             }
 
-            // 3. Extract amount
+            // 5. Reject bill payment reminders or loan offers that do NOT have debited confirmation
+            val isPurePromo = (lowerContent.contains("bill due") ||
+                               lowerContent.contains("due date") ||
+                               lowerContent.contains("pay before") ||
+                               lowerContent.contains("pre-approved") ||
+                               lowerContent.contains("apply now") ||
+                               lowerContent.contains("recharge now")) &&
+                              !hasExplicitDebit
+            if (isPurePromo) return
+
+            // 6. Extract amount
             val amountMatcher = AMOUNT_PATTERN.matcher(fullContent)
             if (!amountMatcher.find()) return
 
@@ -178,7 +227,7 @@ class PaymentNotificationListener : NotificationListenerService() {
             val amount = rawAmountStr.toDoubleOrNull() ?: return
             if (amount <= 0.0) return
 
-            // 4. Extract merchant
+            // 7. Extract merchant
             var merchant = extractMerchant(fullContent)
             if (merchant.isEmpty()) {
                 merchant = getAppName(pkgName)

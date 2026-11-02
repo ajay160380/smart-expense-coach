@@ -8,6 +8,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import com.facebook.react.ReactApplication
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import java.util.Locale
 import java.util.regex.Pattern
 
 /**
@@ -54,6 +55,18 @@ class PaymentAccessibilityService : AccessibilityService() {
             Pattern.CASE_INSENSITIVE
         )
 
+        // UI action and navigation words that MUST NOT be treated as merchant/payee
+        private val UI_IGNORE_WORDS = setOf(
+            "back", "navigate up", "close", "done", "cancel", "help", "search",
+            "more options", "details", "split", "split with friends", "share",
+            "pay", "request", "send", "chat", "message", "view history",
+            "payment details", "transaction details", "view balance", "check balance",
+            "repeat", "send again", "pay again", "upi id", "google transaction id",
+            "upi transaction id", "banking name", "paid", "completed", "successful",
+            "transferred", "received", "debited", "credited", "payment", "transaction",
+            "google pay", "phonepe", "paytm", "bhim", "kotak811", "kotak"
+        )
+
         // Cache recently captured payments to prevent rapid-fire duplicates on screen animations
         private var lastCapturedHash = ""
         private var lastCapturedTime = 0L
@@ -70,7 +83,7 @@ class PaymentAccessibilityService : AccessibilityService() {
             traverseNode(rootNode, screenTexts)
 
             if (screenTexts.isEmpty()) return
-            val joinedText = screenTexts.joinToString(" ").lowercase()
+            val joinedText = screenTexts.joinToString(" ").lowercase(Locale.US)
 
             // 1. Must NOT be an input/pending screen
             if (REJECT_SCREEN_KEYWORDS.any { joinedText.contains(it) }) {
@@ -87,31 +100,32 @@ class PaymentAccessibilityService : AccessibilityService() {
                                       joinedText.contains("upi transaction id") ||
                                       joinedText.contains("google transaction id") ||
                                       joinedText.contains("paid to") ||
-                                      (joinedText.contains("paid") && (joinedText.contains("upi") || joinedText.contains("to")))
+                                      (joinedText.contains("paid") && (joinedText.contains("upi") || joinedText.contains("to") || joinedText.contains("₹") || joinedText.contains("rs")))
                 if (!isGPayConfirmed) return
             }
 
-            // 3. Extract Amount
-            var extractedAmount = 0.0
+            // 3. Extract Amount - COLLECT ALL and take the LAST (bottom-most / latest payment card in chat feeds)
+            val foundAmounts = mutableListOf<Double>()
             for (text in screenTexts) {
                 val matcher = AMOUNT_PATTERN.matcher(text)
-                if (matcher.find()) {
+                while (matcher.find()) {
                     val rawStr = matcher.group(1)?.replace(",", "") ?: ""
                     val parsed = rawStr.toDoubleOrNull() ?: 0.0
-                    if (parsed > 0.0) {
-                        extractedAmount = parsed
-                        break
+                    if (parsed > 0.0 && parsed < 10000000.0) {
+                        foundAmounts.add(parsed)
                     }
                 }
             }
 
+            val extractedAmount = foundAmounts.lastOrNull() ?: 0.0
             if (extractedAmount <= 0.0) return
 
             // 4. Extract Merchant/Payee
             val merchant = extractMerchantFromTexts(screenTexts, pkgName)
 
             // 5. Memory deduplication (15-second debounce for same amount on same screen)
-            val currentHash = "$pkgName:$extractedAmount:$merchant"
+            val formattedAmount = String.format(Locale.US, "%.2f", extractedAmount)
+            val currentHash = "$pkgName:$formattedAmount:$merchant"
             val now = System.currentTimeMillis()
             if (currentHash == lastCapturedHash && (now - lastCapturedTime) < 15000L) {
                 return
@@ -164,27 +178,29 @@ class PaymentAccessibilityService : AccessibilityService() {
                 if (m.find()) {
                     val candidate = m.group(1)?.trim() ?: ""
                     if (candidate.length in 2..40 &&
-                        !candidate.equals("paid", ignoreCase = true) &&
-                        !candidate.equals("completed", ignoreCase = true) &&
-                        !candidate.equals("successful", ignoreCase = true)) {
+                        !UI_IGNORE_WORDS.contains(candidate.lowercase(Locale.US))) {
                         return candidate
                     }
                 }
             }
         }
 
-        // For Google Pay: if node right before or after amount is a candidate name
+        // For Google Pay: scan texts from top to bottom, finding first legitimate recipient name
         if (pkg == "com.google.android.apps.nbu.paisa.user") {
             for (t in texts) {
                 val clean = t.trim()
-                if (clean.length in 3..30 &&
+                val lower = clean.lowercase(Locale.US)
+                if (clean.length in 2..35 &&
+                    !UI_IGNORE_WORDS.contains(lower) &&
                     !clean.contains("₹") &&
                     !clean.contains("rs", ignoreCase = true) &&
-                    !clean.equals("paid", ignoreCase = true) &&
-                    !clean.equals("completed", ignoreCase = true) &&
-                    !clean.contains("upi", ignoreCase = true) &&
-                    !clean.contains("transaction", ignoreCase = true) &&
-                    !clean.contains("bank", ignoreCase = true)) {
+                    !clean.matches(Regex("""^[+\d\s-]{8,20}$""")) &&
+                    !clean.matches(Regex("""^\d{1,2}\s+[A-Za-z]{3}.*""")) &&
+                    !lower.contains("pm") && !lower.contains("am") &&
+                    !lower.contains("google pay") &&
+                    !lower.contains("upi") &&
+                    !lower.contains("yesterday") &&
+                    !lower.contains("today")) {
                     return clean
                 }
             }
