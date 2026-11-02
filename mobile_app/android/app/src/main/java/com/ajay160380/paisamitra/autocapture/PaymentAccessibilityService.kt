@@ -88,7 +88,10 @@ class PaymentAccessibilityService : AccessibilityService() {
 
             Log.d(TAG, "🎯 Payment Detected from Screen: ₹$extractedAmount at $merchant")
 
-            // 5. Emit event to React Native UI
+            // Always persist locally and show system heads-up notification (works even when app is killed)
+            AutoCaptureStorage.saveCapturedPayment(applicationContext, extractedAmount, merchant, "screen_detect", pkgName)
+
+            // 5. Emit event to React Native UI if app is foreground/alive
             emitEventToReactNative(applicationContext, "onPaymentScreenDetected", Arguments.createMap().apply {
                 putDouble("amount", extractedAmount)
                 putString("merchant", merchant)

@@ -88,7 +88,10 @@ class PaymentNotificationListener : NotificationListenerService() {
 
             Log.d(TAG, "⚡ Payment Captured from Notification: ₹$amount at $merchant")
 
-            // 4. Emit to React Native JavaScript layer
+            // Always persist locally and show system heads-up notification (works even when app is killed)
+            AutoCaptureStorage.saveCapturedPayment(applicationContext, amount, merchant, "notification", pkgName)
+
+            // Emit to React Native JavaScript layer if app is foreground/alive
             emitEventToReactNative(applicationContext, "onPaymentCaptured", Arguments.createMap().apply {
                 putDouble("amount", amount)
                 putString("merchant", merchant)

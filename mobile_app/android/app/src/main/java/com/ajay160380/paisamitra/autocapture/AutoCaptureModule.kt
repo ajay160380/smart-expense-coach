@@ -108,5 +108,15 @@ class AutoCaptureModule(private val reactContext: ReactApplicationContext) : Rea
             } catch (e2: Exception) {}
         }
     }
+
+    @ReactMethod
+    fun getAndClearPendingExpenses(promise: Promise) {
+        try {
+            val json = AutoCaptureStorage.popPendingExpenses(reactContext)
+            promise.resolve(json)
+        } catch (e: Exception) {
+            promise.reject("ERR_PENDING_EXPENSES", e.message)
+        }
+    }
 }
 

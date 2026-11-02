@@ -56,6 +56,20 @@ export function useAutoCapture(onCaptureSuccess) {
   useEffect(() => {
     if (Platform.OS !== 'android') return;
 
+    // Process any payments captured while app was closed / killed
+    if (AutoCaptureModule?.getAndClearPendingExpenses) {
+      AutoCaptureModule.getAndClearPendingExpenses().then(json => {
+        try {
+          const list = JSON.parse(json || '[]');
+          if (Array.isArray(list) && list.length > 0) {
+            list.forEach(item => {
+              handleCapturedPayment(item);
+            });
+          }
+        } catch (e) {}
+      }).catch(() => {});
+    }
+
     const notifSub = DeviceEventEmitter.addListener('onPaymentCaptured', handleCapturedPayment);
     const screenSub = DeviceEventEmitter.addListener('onPaymentScreenDetected', handleCapturedPayment);
 
