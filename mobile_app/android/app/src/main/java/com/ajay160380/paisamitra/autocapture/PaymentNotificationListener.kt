@@ -30,8 +30,12 @@ class PaymentNotificationListener : NotificationListenerService() {
             "com.sbi.upi",                           // SBI YONO / Pay
             "com.csam.icici.bank.imobile",           // ICICI iMobile
             "com.axis.mobile",                       // Axis Mobile
-            "com.msf.kopl",                          // Kotak 811
-            "com.dreamplug.androidapp"               // CRED
+            "com.msf.kopl",                          // Kotak (legacy)
+            "com.kotak811mobilebankingapp.instantsavingsupiscanandpayrecharge", // Kotak 811 (new)
+            "com.dreamplug.androidapp",              // CRED
+            "com.google.android.apps.messaging",     // Google Messages (Bank SMS)
+            "com.android.mms",                       // Android MMS (Bank SMS)
+            "com.coloros.mms"                        // ColorOS Messages (Bank SMS)
         )
 
         private val AMOUNT_PATTERN = Pattern.compile(
@@ -64,6 +68,17 @@ class PaymentNotificationListener : NotificationListenerService() {
             val fullContent = "$title $text $bigText".trim()
 
             if (fullContent.isEmpty()) return
+
+            // If it's an SMS app, only process if it is a debit/payment transaction
+            val isSMS = pkgName.contains("messaging") || pkgName.contains("mms")
+            if (isSMS) {
+                val isDebitSMS = fullContent.contains("debited", ignoreCase = true) ||
+                                 fullContent.contains("spent", ignoreCase = true) ||
+                                 fullContent.contains("sent rs", ignoreCase = true) ||
+                                 fullContent.contains("paid rs", ignoreCase = true) ||
+                                 fullContent.contains("withdrawn", ignoreCase = true)
+                if (!isDebitSMS) return
+            }
 
             // 1. Skip OTPs, credits, cashbacks, failed transactions
             for (pattern in REJECT_PATTERNS) {
@@ -107,8 +122,8 @@ class PaymentNotificationListener : NotificationListenerService() {
 
     private fun extractMerchant(text: String): String {
         val patterns = listOf(
-            Pattern.compile("""(?:paid to|to|at)\s+([A-Za-z0-9\s&'.-]+?)(?=\s+on|\s+via|\.|\s*$|\s+using)""", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("""sent to\s+([A-Za-z0-9\s&'.-]+?)(?=\s+on|\s+via|\.|\s*$)""", Pattern.CASE_INSENSITIVE)
+            Pattern.compile("""(?:paid to|to|at)\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$|\s+using)""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""sent to\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$)""", Pattern.CASE_INSENSITIVE)
         )
         for (p in patterns) {
             val m = p.matcher(text)
@@ -132,7 +147,9 @@ class PaymentNotificationListener : NotificationListenerService() {
             "com.sbi.upi" -> "SBI Bank"
             "com.csam.icici.bank.imobile" -> "ICICI Bank"
             "com.axis.mobile" -> "Axis Bank"
+            "com.msf.kopl", "com.kotak811mobilebankingapp.instantsavingsupiscanandpayrecharge" -> "Kotak 811"
             "com.dreamplug.androidapp" -> "CRED"
+            "com.google.android.apps.messaging", "com.android.mms", "com.coloros.mms" -> "Bank SMS"
             else -> "UPI Payment"
         }
     }
