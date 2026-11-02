@@ -52,38 +52,22 @@ export async function scheduleRandomNotifications() {
       });
     }
 
-    // Cancel all previously scheduled local notifications so we don't spam
+    // Cancel all previously scheduled notifications so there is never duplicate spam
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    // Schedule for the next 7 days: strictly 1 random notification per day
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      
-      // Random hour between 18:00 (6 PM) and 21:59 (10 PM)
-      const randomHour = 18 + Math.floor(Math.random() * 4);
-      const randomMinute = Math.floor(Math.random() * 60);
-      
-      date.setHours(randomHour, randomMinute, 0, 0);
-
-      // Don't schedule in the past
-      if (date.getTime() > Date.now()) {
-        const randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
-        
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Expense Tracker 💡",
-            body: randomMessage,
-            channelId: 'expense_tracker_alerts_v2',
-          },
-          trigger: {
-            date: date,
-            channelId: 'expense_tracker_alerts_v2',
-          },
-        });
-        console.log(`Scheduled notification for ${date.toLocaleString()}`);
-      }
-    }
+    // Schedule strictly ONE daily reminder every evening at 8:30 PM
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Expense Tracker 💡",
+        body: "Time for a quick daily budget check! 📊",
+        channelId: 'expense_tracker_alerts_v2',
+      },
+      trigger: {
+        hour: 20,
+        minute: 30,
+        repeats: true,
+      },
+    });
   } catch (error) {
     console.warn('Notice scheduling notifications:', error?.message || error);
   }
