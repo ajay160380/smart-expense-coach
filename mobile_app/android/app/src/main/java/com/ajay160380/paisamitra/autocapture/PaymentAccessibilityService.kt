@@ -8,21 +8,19 @@ import android.view.accessibility.AccessibilityNodeInfo
 import com.facebook.react.ReactApplication
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.modules.core.DeviceEventManagerModule
-import java.util.Calendar
 import java.util.Locale
 import java.util.regex.Pattern
 
 /**
- * Intelligent Accessibility Service for UPI & Bank Payment Screens.
- * Accurately captures real-time payments from Google Pay, PhonePe, Paytm, Navi, and Banks.
- * Strictly ignores chat scrolling, old chat history, and incoming money.
+ * Intelligent Accessibility Service for Payment Confirmation Screens.
+ * Specifically targets the final receipt screen (with "Done" button, checkmark, and "Paid to").
+ * Automatically ignores sponsored ads, chat feeds, and scrolling.
  */
 class PaymentAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "PaymentAccessibility"
 
-        // Explicit confirmation indicators on dedicated receipt screens
         private val RECEIPT_CONFIRM_KEYWORDS = listOf(
             "payment successful",
             "paid successfully",
@@ -55,26 +53,20 @@ class PaymentAccessibilityService : AccessibilityService() {
             Pattern.CASE_INSENSITIVE
         )
 
-        // Patterns to match outgoing GPay chat bubble: "Payment to AJAY"
-        private val GPAY_OUTGOING_BUBBLE_PATTERN = Pattern.compile(
-            """(?:Payment to|Paid to)\s+([A-Za-z0-9\s&'.-]+)""",
-            Pattern.CASE_INSENSITIVE
-        )
-
-        // UI action and navigation words that MUST NOT be treated as merchant/payee
         private val UI_IGNORE_WORDS = setOf(
             "back", "navigate up", "close", "done", "cancel", "help", "search",
             "more options", "details", "split", "split with friends", "share",
-            "pay", "request", "send", "chat", "message", "view history",
-            "payment details", "transaction details", "view balance", "check balance",
-            "repeat", "send again", "pay again", "upi id", "google transaction id",
-            "upi transaction id", "banking name", "paid", "completed", "successful",
-            "transferred", "received", "debited", "credited", "payment", "transaction",
-            "google pay", "phonepe", "paytm", "bhim", "kotak811", "kotak", "navi",
-            "show menu", "view", "menu", "avatar", "profile", "call", "audio call", "video call"
+            "share screenshot", "powered by upi", "pay", "request", "send", "chat",
+            "message", "view history", "payment details", "transaction details",
+            "view balance", "check balance", "repeat", "send again", "pay again",
+            "upi id", "google transaction id", "upi transaction id", "banking name",
+            "paid", "completed", "successful", "transferred", "received", "debited",
+            "credited", "payment", "transaction", "google pay", "phonepe", "paytm",
+            "bhim", "kotak811", "kotak", "navi", "show menu", "view", "menu",
+            "sponsored", "rewards", "earn rewards"
         )
 
-        // Deduplication cache
+        // Cache recently captured payments to prevent rapid-fire duplicates
         private var lastCapturedHash = ""
         private var lastCapturedTime = 0L
     }
@@ -82,7 +74,7 @@ class PaymentAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        // 1. Strictly ignore scroll events — scrolling through chat/history must NEVER trigger capture
+        // Ignore scrolling events
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
             return
         }
@@ -97,7 +89,7 @@ class PaymentAccessibilityService : AccessibilityService() {
             if (screenTexts.isEmpty()) return
             val joinedText = screenTexts.joinToString(" ").lowercase(Locale.US)
 
-            // 2. Reject input/PIN/failed screens
+            // 1. Must NOT be an input/pending/failed screen
             if (REJECT_INPUT_KEYWORDS.any { joinedText.contains(it) }) {
                 return
             }
@@ -105,54 +97,88 @@ class PaymentAccessibilityService : AccessibilityService() {
             var detectedAmount = 0.0
             var detectedMerchant = ""
 
-            // MODE A: Google Pay Chat Conversation View
-            if (pkgName == "com.google.android.apps.nbu.paisa.user" &&
-                joinedText.contains("payment to") &&
-                !joinedText.contains("payment to you")) {
+            // MODE A: Google Pay Payment Success Receipt Screen (Exactly as shown in user photo)
+            // Characteristics: "Paid to <Name>", "₹1", "Done" button, "Share screenshot", "Powered by UPI"
+            if (pkgName == "com.google.android.apps.nbu.paisa.user") {
+                val hasDone = screenTexts.any { it.trim().equals("Done", ignoreCase = true) }
+                val hasShare = joinedText.contains("share screenshot") || joinedText.contains("powered by upi") || joinedText.contains("google transaction id")
+                val hasPaidTo = joinedText.contains("paid to") || joinedText.contains("payment to")
 
-                val (amount, merchant) = extractFreshGPayBubble(screenTexts)
-                if (amount > 0.0 && merchant.isNotBlank()) {
-                    detectedAmount = amount
-                    detectedMerchant = merchant
+                if ((hasDone || hasShare) && hasPaidTo) {
+                    // 1. Extract Merchant: node right after "Paid to" or regex match
+                    for (i in screenTexts.indices) {
+                        val text = screenTexts[i].trim()
+                        if (text.equals("Paid to", ignoreCase = true) && i + 1 < screenTexts.size) {
+                            val candidate = screenTexts[i + 1].trim()
+                            if (candidate.length in 2..40 && !UI_IGNORE_WORDS.contains(candidate.lowercase(Locale.US))) {
+                                detectedMerchant = candidate
+                                break
+                            }
+                        }
+                        val m = Pattern.compile("""(?:paid to|payment to)\s+([A-Za-z0-9\s&'.-]+)""", Pattern.CASE_INSENSITIVE).matcher(text)
+                        if (m.find()) {
+                            val candidate = m.group(1)?.trim() ?: ""
+                            if (candidate.length in 2..40 && !UI_IGNORE_WORDS.contains(candidate.lowercase(Locale.US))) {
+                                detectedMerchant = candidate
+                                break
+                            }
+                        }
+                    }
+
+                    // 2. Extract Amount: extract the payment amount BEFORE the "Sponsored" section
+                    for (text in screenTexts) {
+                        if (text.contains("sponsored", ignoreCase = true)) {
+                            break // Stop before ad cards!
+                        }
+                        val matcher = AMOUNT_PATTERN.matcher(text)
+                        if (matcher.find()) {
+                            val rawStr = matcher.group(1)?.replace(",", "") ?: ""
+                            val parsed = rawStr.toDoubleOrNull() ?: 0.0
+                            if (parsed > 0.0 && parsed < 10000000.0) {
+                                detectedAmount = parsed
+                                break // Primary transaction amount
+                            }
+                        }
+                    }
                 }
             }
 
-            // MODE B: Dedicated Payment Success Receipt Screen (PhonePe, Paytm, Navi, GPay Receipt, Bank Apps)
+            // MODE B: Universal Receipt Screen (PhonePe, Paytm, Navi UPI, Bank Apps)
             if (detectedAmount <= 0.0) {
+                val hasDone = screenTexts.any { it.trim().equals("Done", ignoreCase = true) }
                 val hasReceiptConfirm = RECEIPT_CONFIRM_KEYWORDS.any { joinedText.contains(it) }
-                if (!hasReceiptConfirm) return
 
-                // Reject if this is a chat feed with "Pay" or "Request" buttons
+                // Must NOT have chat buttons ("Pay", "Request", "Message")
                 val hasChatBar = screenTexts.any {
                     val clean = it.trim().lowercase(Locale.US)
                     clean == "pay" || clean == "request" || clean == "start a payment or"
                 }
-                if (hasChatBar) return
 
-                // Extract single amount on screen
-                val foundAmounts = mutableListOf<Double>()
-                for (text in screenTexts) {
-                    val matcher = AMOUNT_PATTERN.matcher(text)
-                    while (matcher.find()) {
-                        val rawStr = matcher.group(1)?.replace(",", "") ?: ""
-                        val parsed = rawStr.toDoubleOrNull() ?: 0.0
-                        if (parsed > 0.0 && parsed < 10000000.0) {
-                            foundAmounts.add(parsed)
+                if ((hasReceiptConfirm || hasDone) && !hasChatBar) {
+                    // Extract amount before sponsored/promo section
+                    for (text in screenTexts) {
+                        if (text.contains("sponsored", ignoreCase = true) || text.contains("rewards", ignoreCase = true)) {
+                            continue
+                        }
+                        val matcher = AMOUNT_PATTERN.matcher(text)
+                        if (matcher.find()) {
+                            val rawStr = matcher.group(1)?.replace(",", "") ?: ""
+                            val parsed = rawStr.toDoubleOrNull() ?: 0.0
+                            if (parsed > 0.0 && parsed < 10000000.0) {
+                                detectedAmount = parsed
+                                break
+                            }
                         }
                     }
+
+                    detectedMerchant = extractMerchantFromTexts(screenTexts, pkgName)
                 }
-
-                val distinctAmounts = foundAmounts.distinct()
-                if (distinctAmounts.size != 1) return
-
-                detectedAmount = distinctAmounts.first()
-                detectedMerchant = extractMerchantFromTexts(screenTexts, pkgName)
             }
 
             if (detectedAmount <= 0.0 || detectedMerchant.isBlank()) return
             if (UI_IGNORE_WORDS.contains(detectedMerchant.lowercase(Locale.US))) return
 
-            // 3. Memory deduplication (15-second debounce for same payment)
+            // 3. Memory deduplication (15-second debounce)
             val formattedAmount = String.format(Locale.US, "%.2f", detectedAmount)
             val currentHash = "$pkgName:$formattedAmount:$detectedMerchant"
             val now = System.currentTimeMillis()
@@ -162,9 +188,9 @@ class PaymentAccessibilityService : AccessibilityService() {
             lastCapturedHash = currentHash
             lastCapturedTime = now
 
-            Log.d(TAG, "🎯 Verified Payment Captured from Screen: ₹$detectedAmount at $detectedMerchant (pkg: $pkgName)")
+            Log.d(TAG, "🎯 Payment Confirmed: ₹$detectedAmount paid to $detectedMerchant (pkg: $pkgName)")
 
-            // Persist locally and show system heads-up notification (works even when app is killed)
+            // Persist locally, sync to backend, and show instant heads-up alert
             AutoCaptureStorage.saveCapturedPayment(applicationContext, detectedAmount, detectedMerchant, "screen_detect", pkgName)
 
             // Emit to React Native UI if app is open
@@ -179,90 +205,6 @@ class PaymentAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             Log.e(TAG, "Error in accessibility reader", e)
         }
-    }
-
-    /**
-     * Inspects Google Pay screen texts to find the latest OUTGOING payment bubble
-     * that was created right now (within 3 minutes of current wall-clock time).
-     */
-    private fun extractFreshGPayBubble(texts: List<String>): Pair<Double, String> {
-        // Iterate backwards from bottom (latest messages) to top
-        for (i in texts.indices.reversed()) {
-            val t = texts[i]
-            val bubbleMatcher = GPAY_OUTGOING_BUBBLE_PATTERN.matcher(t)
-            if (bubbleMatcher.find()) {
-                val candidateMerchant = bubbleMatcher.group(1)?.trim() ?: ""
-
-                // Must be outgoing to a person/merchant, NOT "you"
-                if (candidateMerchant.equals("you", ignoreCase = true)) {
-                    continue
-                }
-
-                // Look at nearby texts (within 3 nodes around this bubble) for amount and timestamp
-                var bubbleAmount = 0.0
-                var isFresh = false
-
-                val startIdx = Math.max(0, i - 1)
-                val endIdx = Math.min(texts.size - 1, i + 4)
-
-                for (j in startIdx..endIdx) {
-                    val subText = texts[j]
-
-                    // Check amount
-                    if (bubbleAmount <= 0.0) {
-                        val mAmount = AMOUNT_PATTERN.matcher(subText)
-                        if (mAmount.find()) {
-                            val raw = mAmount.group(1)?.replace(",", "") ?: ""
-                            bubbleAmount = raw.toDoubleOrNull() ?: 0.0
-                        }
-                    }
-
-                    // Check freshness timestamp (e.g. "Paid • 6:26 pm" or "Just now")
-                    if (!isFresh && isTimestampFresh(subText)) {
-                        isFresh = true
-                    }
-                }
-
-                if (bubbleAmount > 0.0 && isFresh && candidateMerchant.length in 2..40) {
-                    return Pair(bubbleAmount, candidateMerchant)
-                }
-            }
-        }
-        return Pair(0.0, "")
-    }
-
-    /**
-     * Checks if a timestamp string is within the last 3 minutes of current wall-clock time.
-     */
-    private fun isTimestampFresh(text: String): Boolean {
-        if (text.contains("just now", ignoreCase = true)) {
-            return true
-        }
-
-        // Match "Paid • 6:26 pm" or "6:26 pm"
-        val timeMatcher = Pattern.compile("""\b(\d{1,2}):(\d{2})\s*(am|pm)\b""", Pattern.CASE_INSENSITIVE).matcher(text)
-        if (timeMatcher.find()) {
-            try {
-                var hours = timeMatcher.group(1)?.toIntOrNull() ?: return false
-                val minutes = timeMatcher.group(2)?.toIntOrNull() ?: return false
-                val ampm = timeMatcher.group(3)?.lowercase(Locale.US) ?: ""
-
-                if (ampm == "pm" && hours < 12) hours += 12
-                if (ampm == "am" && hours == 12) hours = 0
-
-                val bubbleMinutesOfDay = hours * 60 + minutes
-
-                val cal = Calendar.getInstance()
-                val nowMinutesOfDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
-
-                val diff = Math.abs(nowMinutesOfDay - bubbleMinutesOfDay)
-                // Within 3 minutes of current time
-                return diff <= 3 || diff >= (24 * 60 - 3)
-            } catch (e: Exception) {
-                return false
-            }
-        }
-        return false
     }
 
     private fun traverseNode(node: AccessibilityNodeInfo?, result: MutableList<String>) {
