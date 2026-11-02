@@ -20,7 +20,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer, createNavigationContainerRef, getFocusedRouteNameFromRoute, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid, DeviceEventEmitter, Vibration, AppState, Modal, NativeModules } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -617,6 +617,10 @@ export default function App() {
           setIsAuthenticated(true);
           setupFCM(token);
           scheduleRandomNotifications();
+          if (Platform.OS === 'android' && NativeModules.AutoCaptureModule) {
+            NativeModules.AutoCaptureModule.saveAuthToken?.(String(token));
+            NativeModules.AutoCaptureModule.saveBackendUrl?.(BASE_URL);
+          }
         } else {
           setIsAuthenticated(false);
           setupFCM(null);

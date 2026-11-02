@@ -118,5 +118,25 @@ class AutoCaptureModule(private val reactContext: ReactApplicationContext) : Rea
             promise.reject("ERR_PENDING_EXPENSES", e.message)
         }
     }
+
+    @ReactMethod
+    fun saveAuthToken(token: String) {
+        try {
+            val prefs = reactContext.getSharedPreferences("paisamitra_autocapture_store", Context.MODE_PRIVATE)
+            prefs.edit().putString("auth_token", token.trim()).apply()
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
+
+    @ReactMethod
+    fun saveBackendUrl(url: String) {
+        try {
+            val prefs = reactContext.getSharedPreferences("paisamitra_autocapture_store", Context.MODE_PRIVATE)
+            prefs.edit().putString("api_base_url", url.trim()).apply()
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
 }
 

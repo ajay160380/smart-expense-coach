@@ -7,7 +7,9 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
+
+const { AutoCaptureModule } = NativeModules;
 
 // ── Token Keys ──
 const TOKEN_KEY = 'userToken';
@@ -39,6 +41,11 @@ export async function saveAuthData(token, userId, username) {
       [USERNAME_KEY, String(username || 'User')],
       [LOGIN_TIME_KEY, String(Date.now())],
     ]);
+
+    // 3. Keep native Kotlin auto-capture engine synced with active user token
+    if (Platform.OS === 'android' && AutoCaptureModule?.saveAuthToken) {
+      AutoCaptureModule.saveAuthToken(String(token));
+    }
     return true;
   } catch (e) {
     console.error('Failed to save auth data:', e);
@@ -72,6 +79,9 @@ export async function getToken() {
       return null;
     }
 
+    if (token && Platform.OS === 'android' && AutoCaptureModule?.saveAuthToken) {
+      AutoCaptureModule.saveAuthToken(String(token));
+    }
     return token;
   } catch (e) {
     console.error('Failed to get token:', e);
@@ -101,6 +111,9 @@ export async function clearAuthData() {
       await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
     }
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_ID_KEY, USERNAME_KEY, LOGIN_TIME_KEY]);
+    if (Platform.OS === 'android' && AutoCaptureModule?.saveAuthToken) {
+      AutoCaptureModule.saveAuthToken('');
+    }
     return true;
   } catch (e) {
     console.error('Failed to clear auth data:', e);
