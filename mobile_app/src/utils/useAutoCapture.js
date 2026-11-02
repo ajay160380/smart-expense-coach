@@ -33,20 +33,24 @@ export function useAutoCapture(onCaptureSuccess) {
       try {
         res = await api.post('/api/auto-expense/', payload);
       } catch (postErr) {
-        // Fallback to local Django backend if remote host doesn't have Phase 9 yet
-        const token = await getToken();
-        const headers = token ? { Authorization: `Token ${token}` } : {};
+        // Fallback to live /api/quick-add/ which saves directly to user's database
         try {
-          res = await axios.post('http://192.168.1.61:8000/api/auto-expense/', payload, { headers, timeout: 4000 });
-        } catch (localErr) {
-          res = await axios.post('http://localhost:8000/api/auto-expense/', payload, { headers, timeout: 4000 });
+          res = await api.post('/api/quick-add/', {
+            amount: data.amount,
+            category: 'other',
+            description: `⚡ ${data.merchant || 'UPI Payment'}`,
+            date: new Date().toISOString().split('T')[0],
+          });
+        } catch (quickErr) {
+          console.log('Quick add fallback error:', quickErr.message);
         }
       }
 
-      if (res && res.data && res.data.status === 'success') {
-        if (onCaptureSuccess) {
-          onCaptureSuccess(res.data);
-        }
+      // Trigger dashboard to refresh spent, budget, and transaction list immediately
+      DeviceEventEmitter.emit('EXPENSE_UPDATED');
+
+      if (onCaptureSuccess) {
+        onCaptureSuccess(res?.data);
       }
     } catch (err) {
       console.log('Auto-capture sync error:', err.message);
