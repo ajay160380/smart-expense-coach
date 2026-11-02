@@ -12,32 +12,33 @@ import java.util.Locale
 import java.util.regex.Pattern
 
 /**
- * Ultra-efficient Accessibility Service for payment success screens.
- * STRICTLY FILTERED by packageNames in payment_accessibility_config.xml.
- * Never called when user is in WhatsApp, YouTube, etc. Zero battery drain.
+ * Ultra-efficient Accessibility Service for payment success screens ONLY.
+ * Listens ONLY to TYPE_WINDOW_STATE_CHANGED (new screen opened).
+ * NEVER triggers on scrolling, chat conversations, passbooks, or message lists.
+ * Zero battery drain.
  */
 class PaymentAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "PaymentAccessibility"
 
-        private val SUCCESS_KEYWORDS = listOf(
+        // Explicit confirmation indicators required on a genuine receipt screen
+        private val RECEIPT_CONFIRM_KEYWORDS = listOf(
             "payment successful",
             "paid successfully",
-            "payment of",
-            "paid to",
-            "transaction successful",
-            "money sent",
-            "sent successfully",
             "transfer successful",
             "payment completed",
-            "payment done",
+            "transaction successful",
+            "successful payment",
+            "money sent successfully",
             "upi transaction id",
             "google transaction id",
-            "completed",
-            "paid"
+            "utr",
+            "upi ref",
+            "reference no"
         )
 
+        // If the screen contains ANY of these, it is a chat, passbook, message thread, or input screen -> REJECT!
         private val REJECT_SCREEN_KEYWORDS = listOf(
             "enter upi pin",
             "enter pin",
@@ -47,7 +48,23 @@ class PaymentAccessibilityService : AccessibilityService() {
             "declined",
             "cancelled",
             "retry",
-            "split with friends"
+            "split with friends",
+            "payment to you",     // Incoming payment in chat
+            "received from",      // Incoming payment
+            "money received",     // Incoming payment
+            "credited to",        // Incoming credit
+            "passbook",           // Passbook / history list
+            "transaction history",// Transaction list
+            "payment history",    // Transaction list
+            "statement",          // Bank / account statement
+            "all transactions",   // History list
+            "recent transactions",// History list
+            "type a message",     // Chat text field
+            "send a message",     // Chat text field
+            "message...",         // Chat text field
+            "start a payment or", // GPay chat bar
+            "start a chat",       // Chat screen
+            "show menu"           // Chat top-right overflow menu
         )
 
         private val AMOUNT_PATTERN = Pattern.compile(
@@ -64,16 +81,22 @@ class PaymentAccessibilityService : AccessibilityService() {
             "repeat", "send again", "pay again", "upi id", "google transaction id",
             "upi transaction id", "banking name", "paid", "completed", "successful",
             "transferred", "received", "debited", "credited", "payment", "transaction",
-            "google pay", "phonepe", "paytm", "bhim", "kotak811", "kotak"
+            "google pay", "phonepe", "paytm", "bhim", "kotak811", "kotak", "navi",
+            "show menu", "view", "menu", "avatar", "profile", "call", "audio call", "video call"
         )
 
-        // Cache recently captured payments to prevent rapid-fire duplicates on screen animations
+        // Cache recently captured payments to prevent rapid-fire duplicates
         private var lastCapturedHash = ""
         private var lastCapturedTime = 0L
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
+
+        // 1. Strictly ignore scroll events and micro content changes
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            return
+        }
 
         val pkgName = event.packageName?.toString() ?: return
 
@@ -85,26 +108,27 @@ class PaymentAccessibilityService : AccessibilityService() {
             if (screenTexts.isEmpty()) return
             val joinedText = screenTexts.joinToString(" ").lowercase(Locale.US)
 
-            // 1. Must NOT be an input/pending screen
+            // 2. Must NOT be an input, chat, conversation feed, or passbook screen
             if (REJECT_SCREEN_KEYWORDS.any { joinedText.contains(it) }) {
                 return
             }
 
-            // 2. Must contain payment success keywords
-            val hasSuccess = SUCCESS_KEYWORDS.any { joinedText.contains(it) }
-            if (!hasSuccess) return
-
-            // For Google Pay specifically: must have confirmation of completed payment
-            if (pkgName == "com.google.android.apps.nbu.paisa.user") {
-                val isGPayConfirmed = joinedText.contains("completed") ||
-                                      joinedText.contains("upi transaction id") ||
-                                      joinedText.contains("google transaction id") ||
-                                      joinedText.contains("paid to") ||
-                                      (joinedText.contains("paid") && (joinedText.contains("upi") || joinedText.contains("to") || joinedText.contains("₹") || joinedText.contains("rs")))
-                if (!isGPayConfirmed) return
+            // 3. Must contain an explicit receipt confirmation indicator
+            val hasReceiptConfirm = RECEIPT_CONFIRM_KEYWORDS.any { joinedText.contains(it) }
+            if (!hasReceiptConfirm) {
+                return
             }
 
-            // 3. Extract Amount - COLLECT ALL and take the LAST (bottom-most / latest payment card in chat feeds)
+            // 4. Must NOT have interactive chat buttons like "Pay" or "Request" or "Message"
+            val hasChatButtons = screenTexts.any {
+                val clean = it.trim().lowercase(Locale.US)
+                clean == "pay" || clean == "request" || clean == "message" || clean == "show menu"
+            }
+            if (hasChatButtons) {
+                return
+            }
+
+            // 5. Extract Amount: A genuine payment receipt displays EXACTLY ONE amount
             val foundAmounts = mutableListOf<Double>()
             for (text in screenTexts) {
                 val matcher = AMOUNT_PATTERN.matcher(text)
@@ -117,13 +141,20 @@ class PaymentAccessibilityService : AccessibilityService() {
                 }
             }
 
-            val extractedAmount = foundAmounts.lastOrNull() ?: 0.0
-            if (extractedAmount <= 0.0) return
+            // If there are multiple different amounts on screen, it's a list or history view
+            val distinctAmounts = foundAmounts.distinct()
+            if (distinctAmounts.size != 1) {
+                return
+            }
+            val extractedAmount = distinctAmounts.first()
 
-            // 4. Extract Merchant/Payee
+            // 6. Extract Merchant/Payee
             val merchant = extractMerchantFromTexts(screenTexts, pkgName)
+            if (merchant.isBlank() || UI_IGNORE_WORDS.contains(merchant.lowercase(Locale.US))) {
+                return
+            }
 
-            // 5. Memory deduplication (15-second debounce for same amount on same screen)
+            // 7. Memory deduplication (15-second debounce)
             val formattedAmount = String.format(Locale.US, "%.2f", extractedAmount)
             val currentHash = "$pkgName:$formattedAmount:$merchant"
             val now = System.currentTimeMillis()
@@ -138,7 +169,7 @@ class PaymentAccessibilityService : AccessibilityService() {
             // Always persist locally and show system heads-up notification (works even when app is killed)
             AutoCaptureStorage.saveCapturedPayment(applicationContext, extractedAmount, merchant, "screen_detect", pkgName)
 
-            // 6. Emit event to React Native UI if app is foreground/alive
+            // 8. Emit event to React Native UI if app is foreground/alive
             emitEventToReactNative(applicationContext, "onPaymentScreenDetected", Arguments.createMap().apply {
                 putDouble("amount", extractedAmount)
                 putString("merchant", merchant)
@@ -210,6 +241,7 @@ class PaymentAccessibilityService : AccessibilityService() {
         return when (pkg) {
             "com.phonepe.app" -> "PhonePe"
             "net.one97.paytm" -> "Paytm"
+            "com.naviapp" -> "Navi UPI"
             else -> "UPI Payment"
         }
     }
