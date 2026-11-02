@@ -1,7 +1,6 @@
 package com.ajay160380.paisamitra.autocapture
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -13,7 +12,7 @@ import java.util.regex.Pattern
 
 /**
  * Ultra-lightweight Silent Notification Listener.
- * Wakes up ONLY when an allow-listed payment app issues a notification.
+ * Wakes up ONLY when an allow-listed payment app issues a verified debit notification.
  * Zero polling, 0% idle battery consumption.
  */
 class PaymentNotificationListener : NotificationListenerService() {
@@ -76,7 +75,7 @@ class PaymentNotificationListener : NotificationListenerService() {
 
             // Universal Bank SMS Messaging Apps
             "com.google.android.apps.messaging",     // Google Messages
-            "com.android.mms",                       // Android Default SMS
+            "com.android.mms",                       // Android Default SMS (Oppo / ColorOS / Samsung)
             "com.coloros.mms",                       // Oppo / Realme ColorOS SMS
             "com.samsung.android.messaging",         // Samsung Messages
             "com.xiaomi.mms",                        // Xiaomi MIUI SMS
@@ -89,11 +88,42 @@ class PaymentNotificationListener : NotificationListenerService() {
             Pattern.CASE_INSENSITIVE
         )
 
+        // Strict positive debit indicators — required for ALL apps to prevent capturing ads/offers
+        private val DEBIT_KEYWORDS = listOf(
+            "debited",
+            "debit",
+            "sent to",
+            "paid to",
+            "spent",
+            "transferred to",
+            "transfer to",
+            "withdrawn",
+            "paid rs",
+            "sent rs",
+            "paid inr",
+            "sent inr",
+            "paid ₹",
+            "sent ₹",
+            "payment of",
+            "payment to",
+            "payment successful",
+            "auto-debited",
+            "deducted",
+            "successful payment",
+            "txn of rs",
+            "transaction of rs"
+        )
+
+        // Strict reject patterns — filters out loan offers, credit alerts, recharge ads, OTPs, bill reminders
         private val REJECT_PATTERNS = listOf(
-            Pattern.compile("""\botp\b""", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("""\bcredited\b|\breceived\b|\bcashback\b""", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("""\bfailed\b|\breversed\b|\bdeclined\b""", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("""\boffer\b|\bdiscount\b|\bwin\b""", Pattern.CASE_INSENSITIVE)
+            Pattern.compile("""\b(?:otp|one time password|code|verification)\b""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""\b(?:credited|credit alert|has been credited|is credited|received from|credited to|credited with|deposited)\b""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""\b(?:failed|declined|unsuccessful|cancelled|expired|reversed|rejected)\b""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""\b(?:loan|pre-approved|apply now|instant loan|credit limit|card offer|avail)\b""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""\b(?:recharge now|recharge for|invest|mutual fund|sip|fixed deposit|fd|insurance|policy)\b""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""\b(?:due on|bill due|due date|pay before|reminder|outstanding|upcoming)\b""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""\b(?:requested|request from|request to pay|mandate request)\b""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""\b(?:save up to|upto|flat\s+(?:rs\.?|inr|₹)|discount|cashback offer|coupon|voucher|win|won|jackpot|bonus|rewards)\b""", Pattern.CASE_INSENSITIVE)
         )
     }
 
@@ -125,23 +155,22 @@ class PaymentNotificationListener : NotificationListenerService() {
                 return
             }
 
-            if (isSMS) {
-                val isDebitSMS = fullContent.contains("debited", ignoreCase = true) ||
-                                 fullContent.contains("spent", ignoreCase = true) ||
-                                 fullContent.contains("sent rs", ignoreCase = true) ||
-                                 fullContent.contains("paid rs", ignoreCase = true) ||
-                                 fullContent.contains("withdrawn", ignoreCase = true)
-                if (!isDebitSMS) return
+            val lowerContent = fullContent.lowercase()
+
+            // 1. MUST contain an explicit DEBIT keyword (rejects all general ads, offers, updates)
+            val isDebit = DEBIT_KEYWORDS.any { lowerContent.contains(it) }
+            if (!isDebit) {
+                return
             }
 
-            // 1. Skip OTPs, credits, cashbacks, failed transactions
+            // 2. Reject OTPs, credits, failed transactions, loans, recharge ads, coupons
             for (pattern in REJECT_PATTERNS) {
                 if (pattern.matcher(fullContent).find()) {
                     return
                 }
             }
 
-            // 2. Extract amount
+            // 3. Extract amount
             val amountMatcher = AMOUNT_PATTERN.matcher(fullContent)
             if (!amountMatcher.find()) return
 
@@ -149,15 +178,15 @@ class PaymentNotificationListener : NotificationListenerService() {
             val amount = rawAmountStr.toDoubleOrNull() ?: return
             if (amount <= 0.0) return
 
-            // 3. Extract merchant
+            // 4. Extract merchant
             var merchant = extractMerchant(fullContent)
             if (merchant.isEmpty()) {
                 merchant = getAppName(pkgName)
             }
 
-            Log.d(TAG, "⚡ Payment Captured from Notification: ₹$amount at $merchant")
+            Log.d(TAG, "⚡ Verified Debit Captured from Notification: ₹$amount at $merchant (pkg: $pkgName)")
 
-            // Always persist locally and show system heads-up notification (works even when app is killed)
+            // Always persist locally, sync directly in background, and show heads-up alert
             AutoCaptureStorage.saveCapturedPayment(applicationContext, amount, merchant, "notification", pkgName)
 
             // Emit to React Native JavaScript layer if app is foreground/alive
@@ -177,7 +206,9 @@ class PaymentNotificationListener : NotificationListenerService() {
     private fun extractMerchant(text: String): String {
         val patterns = listOf(
             Pattern.compile("""(?:paid to|to|at)\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$|\s+using)""", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("""sent to\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$)""", Pattern.CASE_INSENSITIVE)
+            Pattern.compile("""sent to\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$)""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""transferred to\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$)""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""Info:\s*UPI/[^/]+/([^/]+)""", Pattern.CASE_INSENSITIVE)
         )
         for (p in patterns) {
             val m = p.matcher(text)
@@ -234,8 +265,7 @@ class PaymentNotificationListener : NotificationListenerService() {
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
                 .emit(eventName, params)
         } catch (e: Exception) {
-            Log.w(TAG, "Could not emit to JS context (app may be backgrounded)", e)
+            Log.w(TAG, "Could not emit to JS context", e)
         }
     }
 }
-

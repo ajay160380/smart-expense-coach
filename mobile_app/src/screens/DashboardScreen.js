@@ -499,25 +499,25 @@ export default function DashboardScreen({ navigation }) {
 
   const fetchDashboardData = async (isInitial = false) => {
     try {
-      // ── 1. LOAD CACHED DATA IMMEDIATELY (Instant 0.01s Offline-First Render) ──
-      try {
-        const cachedDashboard = await AsyncStorage.getItem('dashboard_cache');
-        if (cachedDashboard) {
-          const parsed = JSON.parse(cachedDashboard);
-          if (parsed.stats) setStats(parsed.stats);
-          if (parsed.tip) setDailyTip(parsed.tip);
-          if (parsed.comp) setComparison(parsed.comp);
-          if (parsed.anom) setAnomalies(parsed.anom);
-          if (parsed.goals) setGoals(parsed.goals);
-          if (parsed.subs) setSubsData(parsed.subs);
-          if (isInitial) setLoading(false); // Stop loading spinner in 1 millisecond!
-        } else if (isInitial) {
-          setLoading(true);
-        } else {
-          setRefreshing(true);
+      // ── 1. LOAD CACHED DATA IMMEDIATELY (Only on cold start initial render) ──
+      if (isInitial) {
+        try {
+          const cachedDashboard = await AsyncStorage.getItem('dashboard_cache');
+          if (cachedDashboard) {
+            const parsed = JSON.parse(cachedDashboard);
+            if (parsed.stats) setStats(parsed.stats);
+            if (parsed.tip) setDailyTip(parsed.tip);
+            if (parsed.comp) setComparison(parsed.comp);
+            if (parsed.anom) setAnomalies(parsed.anom);
+            if (parsed.goals) setGoals(parsed.goals);
+            if (parsed.subs) setSubsData(parsed.subs);
+            setLoading(false);
+          } else {
+            setLoading(true);
+          }
+        } catch (cacheErr) {
+          setLoading(false);
         }
-      } catch (cacheErr) {
-        if (isInitial) setLoading(false);
       }
 
       // ── 2. QUICK USER & PREFERENCES SYNC (Parallel) ──

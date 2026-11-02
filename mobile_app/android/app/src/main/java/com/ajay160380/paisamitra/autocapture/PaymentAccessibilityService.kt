@@ -28,7 +28,25 @@ class PaymentAccessibilityService : AccessibilityService() {
             "transaction successful",
             "money sent",
             "sent successfully",
-            "transfer successful"
+            "transfer successful",
+            "payment completed",
+            "payment done",
+            "upi transaction id",
+            "google transaction id",
+            "completed",
+            "paid"
+        )
+
+        private val REJECT_SCREEN_KEYWORDS = listOf(
+            "enter upi pin",
+            "enter pin",
+            "pay now",
+            "request payment",
+            "failed",
+            "declined",
+            "cancelled",
+            "retry",
+            "split with friends"
         )
 
         private val AMOUNT_PATTERN = Pattern.compile(
@@ -54,11 +72,26 @@ class PaymentAccessibilityService : AccessibilityService() {
             if (screenTexts.isEmpty()) return
             val joinedText = screenTexts.joinToString(" ").lowercase()
 
-            // 1. Must contain payment success keywords
+            // 1. Must NOT be an input/pending screen
+            if (REJECT_SCREEN_KEYWORDS.any { joinedText.contains(it) }) {
+                return
+            }
+
+            // 2. Must contain payment success keywords
             val hasSuccess = SUCCESS_KEYWORDS.any { joinedText.contains(it) }
             if (!hasSuccess) return
 
-            // 2. Extract Amount
+            // For Google Pay specifically: must have confirmation of completed payment
+            if (pkgName == "com.google.android.apps.nbu.paisa.user") {
+                val isGPayConfirmed = joinedText.contains("completed") ||
+                                      joinedText.contains("upi transaction id") ||
+                                      joinedText.contains("google transaction id") ||
+                                      joinedText.contains("paid to") ||
+                                      (joinedText.contains("paid") && (joinedText.contains("upi") || joinedText.contains("to")))
+                if (!isGPayConfirmed) return
+            }
+
+            // 3. Extract Amount
             var extractedAmount = 0.0
             for (text in screenTexts) {
                 val matcher = AMOUNT_PATTERN.matcher(text)
@@ -74,24 +107,24 @@ class PaymentAccessibilityService : AccessibilityService() {
 
             if (extractedAmount <= 0.0) return
 
-            // 3. Extract Merchant/Payee
+            // 4. Extract Merchant/Payee
             val merchant = extractMerchantFromTexts(screenTexts, pkgName)
 
-            // 4. Memory deduplication (10-second debounce for same amount on same screen)
+            // 5. Memory deduplication (15-second debounce for same amount on same screen)
             val currentHash = "$pkgName:$extractedAmount:$merchant"
             val now = System.currentTimeMillis()
-            if (currentHash == lastCapturedHash && (now - lastCapturedTime) < 10000L) {
+            if (currentHash == lastCapturedHash && (now - lastCapturedTime) < 15000L) {
                 return
             }
             lastCapturedHash = currentHash
             lastCapturedTime = now
 
-            Log.d(TAG, "🎯 Payment Detected from Screen: ₹$extractedAmount at $merchant")
+            Log.d(TAG, "🎯 Payment Detected from Screen: ₹$extractedAmount at $merchant (pkg: $pkgName)")
 
             // Always persist locally and show system heads-up notification (works even when app is killed)
             AutoCaptureStorage.saveCapturedPayment(applicationContext, extractedAmount, merchant, "screen_detect", pkgName)
 
-            // 5. Emit event to React Native UI if app is foreground/alive
+            // 6. Emit event to React Native UI if app is foreground/alive
             emitEventToReactNative(applicationContext, "onPaymentScreenDetected", Arguments.createMap().apply {
                 putDouble("amount", extractedAmount)
                 putString("merchant", merchant)
@@ -121,24 +154,47 @@ class PaymentAccessibilityService : AccessibilityService() {
     }
 
     private fun extractMerchantFromTexts(texts: List<String>, pkg: String): String {
-        val pattern = Pattern.compile(
-            """(?:paid to|to|sent to)\s+([A-Za-z0-9\s&'.-]+?)(?=\s+on|\s+via|\.|\s*$|\s+using)""",
-            Pattern.CASE_INSENSITIVE
+        val patterns = listOf(
+            Pattern.compile("""(?:paid to|to:|sent to|banking name:?)\s+([A-Za-z0-9\s&'.-]+?)(?=\s+on|\s+via|\.|\s*$|\s+using|\s+upi)""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""to\s+([A-Za-z0-9\s&'.-]+?)(?=\s+on|\s+via|\.|\s*$)""", Pattern.CASE_INSENSITIVE)
         )
-        for (t in texts) {
-            val m = pattern.matcher(t)
-            if (m.find()) {
-                val candidate = m.group(1)?.trim() ?: ""
-                if (candidate.length in 2..40) {
-                    return candidate
+        for (p in patterns) {
+            for (t in texts) {
+                val m = p.matcher(t)
+                if (m.find()) {
+                    val candidate = m.group(1)?.trim() ?: ""
+                    if (candidate.length in 2..40 &&
+                        !candidate.equals("paid", ignoreCase = true) &&
+                        !candidate.equals("completed", ignoreCase = true) &&
+                        !candidate.equals("successful", ignoreCase = true)) {
+                        return candidate
+                    }
                 }
             }
         }
+
+        // For Google Pay: if node right before or after amount is a candidate name
+        if (pkg == "com.google.android.apps.nbu.paisa.user") {
+            for (t in texts) {
+                val clean = t.trim()
+                if (clean.length in 3..30 &&
+                    !clean.contains("₹") &&
+                    !clean.contains("rs", ignoreCase = true) &&
+                    !clean.equals("paid", ignoreCase = true) &&
+                    !clean.equals("completed", ignoreCase = true) &&
+                    !clean.contains("upi", ignoreCase = true) &&
+                    !clean.contains("transaction", ignoreCase = true) &&
+                    !clean.contains("bank", ignoreCase = true)) {
+                    return clean
+                }
+            }
+            return "Google Pay"
+        }
+
         return when (pkg) {
-            "com.google.android.apps.nbu.paisa.user" -> "Google Pay Merchant"
-            "com.phonepe.app" -> "PhonePe Merchant"
-            "net.one97.paytm" -> "Paytm Merchant"
-            else -> "UPI Merchant"
+            "com.phonepe.app" -> "PhonePe"
+            "net.one97.paytm" -> "Paytm"
+            else -> "UPI Payment"
         }
     }
 
@@ -159,4 +215,3 @@ class PaymentAccessibilityService : AccessibilityService() {
         Log.d(TAG, "Accessibility service interrupted")
     }
 }
-
