@@ -22,20 +22,66 @@ class PaymentNotificationListener : NotificationListenerService() {
         private const val TAG = "PaymentNotifListener"
 
         val ALLOWED_PACKAGES = setOf(
+            // Top UPI Apps
             "com.google.android.apps.nbu.paisa.user", // Google Pay
             "com.phonepe.app",                       // PhonePe
             "net.one97.paytm",                       // Paytm
             "in.org.npci.upiapp",                    // BHIM
-            "com.snapwork.hdfc",                     // HDFC
+            "com.dreamplug.androidapp",              // CRED
+            "in.amazon.mShop.android.shopping",      // Amazon Pay
+            "com.whatsapp",                          // WhatsApp Pay
+            "com.mobikwik_new",                      // MobiKwik
+            "com.freecharge.android",                // Freecharge
+            "com.naviapp",                           // Navi
+            "com.fivehundredrishabh.slice",          // Slice
+            "money.jupiter",                         // Jupiter
+            "money.fi",                              // Fi Money
+            "com.bharatpe.postpe",                   // PostPe
+            "com.bajajfinserv.direct",               // Bajaj Finserv
+
+            // Major Public Sector Banks
             "com.sbi.upi",                           // SBI YONO / Pay
+            "com.sbi.lotusintouch",                  // YONO SBI
+            "com.bankofbaroda.mconnect",             // bob World (Bank of Baroda)
+            "com.pnb.mb",                            // PNB ONE
+            "com.canarabank.mobility",               // Canara ai1
+            "com.infrasofttech.uboi",                // Union Bank (Vyom)
+            "com.infrasofttech.indianbankmbs",       // IndOASIS (Indian Bank)
+            "com.boi.mobile",                        // BOI Mobile
+            "com.cbi.mobile",                        // Cent Mobile
+            "com.iob.mconnect",                      // IOB Mobile
+            "com.uco.ucobank",                       // UCO Bank
+
+            // Major Private Sector Banks
+            "com.snapwork.hdfc",                     // HDFC Bank
+            "com.hdfcbank.payzapp",                  // PayZapp
             "com.csam.icici.bank.imobile",           // ICICI iMobile
             "com.axis.mobile",                       // Axis Mobile
             "com.msf.kopl",                          // Kotak (legacy)
-            "com.kotak811mobilebankingapp.instantsavingsupiscanandpayrecharge", // Kotak 811 (new)
-            "com.dreamplug.androidapp",              // CRED
-            "com.google.android.apps.messaging",     // Google Messages (Bank SMS)
-            "com.android.mms",                       // Android MMS (Bank SMS)
-            "com.coloros.mms"                        // ColorOS Messages (Bank SMS)
+            "com.kotak811mobilebankingapp.instantsavingsupiscanandpayrecharge", // Kotak 811
+            "com.idfcfirstbank.optimus",             // IDFC FIRST Bank
+            "com.indusind.mpassbook",                // IndusInd Bank
+            "com.yesbank",                           // YES Bank
+            "com.fedmobile",                         // Federal Bank
+            "com.rblbank.mobank",                    // RBL MoBank
+            "com.bandhan.mBandhan",                  // Bandhan Bank
+            "com.aubank.aubankapp",                  // AU Small Finance Bank
+            "com.equitasbank.equitasmobile",         // Equitas Small Finance Bank
+            "com.idbi.idbimbank",                    // IDBI Bank
+
+            // Payments Banks
+            "com.myairtelapp",                       // Airtel Thanks / Payments Bank
+            "com.jio.myjio",                         // MyJio / Jio Payments
+            "com.ippb.mbanking",                     // IPPB (India Post)
+
+            // Universal Bank SMS Messaging Apps
+            "com.google.android.apps.messaging",     // Google Messages
+            "com.android.mms",                       // Android Default SMS
+            "com.coloros.mms",                       // Oppo / Realme ColorOS SMS
+            "com.samsung.android.messaging",         // Samsung Messages
+            "com.xiaomi.mms",                        // Xiaomi MIUI SMS
+            "com.vivo.mms",                          // Vivo Funtouch SMS
+            "com.oneplus.mms"                        // OnePlus OxygenOS SMS
         )
 
         private val AMOUNT_PATTERN = Pattern.compile(
@@ -55,10 +101,6 @@ class PaymentNotificationListener : NotificationListenerService() {
         if (sbn == null) return
 
         val pkgName = sbn.packageName ?: return
-        if (!ALLOWED_PACKAGES.contains(pkgName)) {
-            // Immediate return: Zero CPU usage for non-payment apps
-            return
-        }
 
         try {
             val extras = sbn.notification.extras ?: return
@@ -69,8 +111,20 @@ class PaymentNotificationListener : NotificationListenerService() {
 
             if (fullContent.isEmpty()) return
 
-            // If it's an SMS app, only process if it is a debit/payment transaction
-            val isSMS = pkgName.contains("messaging") || pkgName.contains("mms")
+            // Check if this package is a bank, payment app, or bank debit SMS
+            val isKnown = ALLOWED_PACKAGES.contains(pkgName.lowercase())
+            val isFinApp = pkgName.contains("bank", ignoreCase = true) ||
+                           pkgName.contains("upi", ignoreCase = true) ||
+                           pkgName.contains("wallet", ignoreCase = true) ||
+                           pkgName.contains("pay", ignoreCase = true)
+            val isSMS = pkgName.contains("messaging", ignoreCase = true) ||
+                        pkgName.contains("mms", ignoreCase = true) ||
+                        pkgName.contains("sms", ignoreCase = true)
+
+            if (!isKnown && !isFinApp && !isSMS) {
+                return
+            }
+
             if (isSMS) {
                 val isDebitSMS = fullContent.contains("debited", ignoreCase = true) ||
                                  fullContent.contains("spent", ignoreCase = true) ||
@@ -138,19 +192,36 @@ class PaymentNotificationListener : NotificationListenerService() {
     }
 
     private fun getAppName(pkg: String): String {
-        return when (pkg) {
-            "com.google.android.apps.nbu.paisa.user" -> "Google Pay"
-            "com.phonepe.app" -> "PhonePe"
-            "net.one97.paytm" -> "Paytm"
-            "in.org.npci.upiapp" -> "BHIM UPI"
-            "com.snapwork.hdfc" -> "HDFC Bank"
-            "com.sbi.upi" -> "SBI Bank"
-            "com.csam.icici.bank.imobile" -> "ICICI Bank"
-            "com.axis.mobile" -> "Axis Bank"
-            "com.msf.kopl", "com.kotak811mobilebankingapp.instantsavingsupiscanandpayrecharge" -> "Kotak 811"
-            "com.dreamplug.androidapp" -> "CRED"
-            "com.google.android.apps.messaging", "com.android.mms", "com.coloros.mms" -> "Bank SMS"
-            else -> "UPI Payment"
+        val lower = pkg.lowercase()
+        return when {
+            lower.contains("kotak") -> "Kotak Bank"
+            lower.contains("sbi") -> "State Bank of India"
+            lower.contains("hdfc") -> "HDFC Bank"
+            lower.contains("icici") -> "ICICI Bank"
+            lower.contains("axis") -> "Axis Bank"
+            lower.contains("baroda") -> "Bank of Baroda"
+            lower.contains("pnb") -> "PNB Bank"
+            lower.contains("canara") -> "Canara Bank"
+            lower.contains("uboi") || lower.contains("union") -> "Union Bank"
+            lower.contains("indianbank") -> "Indian Bank"
+            lower.contains("idfc") -> "IDFC FIRST Bank"
+            lower.contains("indusind") -> "IndusInd Bank"
+            lower.contains("yesbank") -> "YES Bank"
+            lower.contains("fedmobile") || lower.contains("federal") -> "Federal Bank"
+            lower.contains("rbl") -> "RBL Bank"
+            lower.contains("bandhan") -> "Bandhan Bank"
+            lower.contains("aubank") -> "AU Bank"
+            lower.contains("paisa") -> "Google Pay"
+            lower.contains("phonepe") -> "PhonePe"
+            lower.contains("paytm") -> "Paytm"
+            lower.contains("upiapp") -> "BHIM UPI"
+            lower.contains("dreamplug") -> "CRED"
+            lower.contains("jupiter") -> "Jupiter"
+            lower.contains("fi") -> "Fi Money"
+            lower.contains("slice") -> "Slice"
+            lower.contains("navi") -> "Navi"
+            lower.contains("messaging") || lower.contains("mms") || lower.contains("sms") -> "Bank SMS"
+            else -> "Bank / UPI"
         }
     }
 
