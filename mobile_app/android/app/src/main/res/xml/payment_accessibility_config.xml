@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/accessibility_service_description"
-    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeWindowsChanged|typeViewClicked"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews|flagReportViewIds"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:notificationTimeout="100"
+    android:notificationTimeout="50"
     android:canRetrieveWindowContent="true"
     android:settingsActivity="com.ajay160380.paisamitra.MainActivity"
-    android:packageNames="com.google.android.apps.nbu.paisa.user,com.phonepe.app,net.one97.paytm,in.org.npci.upiapp,com.snapwork.hdfc,com.hdfcbank.payzapp,com.sbi.upi,com.sbi.lotusintouch,com.csam.icici.bank.imobile,com.axis.mobile,com.msf.kopl,com.kotak811mobilebankingapp.instantsavingsupiscanandpayrecharge,com.bankofbaroda.mconnect,com.pnb.mb,com.canarabank.mobility,com.infrasofttech.uboi,com.infrasofttech.indianbankmbs,com.idfcfirstbank.optimus,com.indusind.mpassbook,com.yesbank,com.fedmobile,com.rblbank.mobank,com.bandhan.mBandhan,com.aubank.aubankapp,com.dreamplug.androidapp,com.naviapp,com.fivehundredrishabh.slice,money.jupiter,money.fi,com.myairtelapp,com.jio.myjio"
 />
-
