@@ -7867,12 +7867,11 @@ def api_send_admin_push(request):
         return Response({"status": "error", "message": str(e)}, status=500)
 
 GITHUB_APK_CDN_URL = "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
-LATEST_EXPO_APK_URL = os.getenv('LATEST_EXPO_APK_URL', GITHUB_APK_CDN_URL)
+LATEST_EXPO_APK_URL = GITHUB_APK_CDN_URL
 
 def get_apk_response():
     from django.http import HttpResponseRedirect
-    target = os.getenv('LATEST_EXPO_APK_URL', LATEST_EXPO_APK_URL) or GITHUB_APK_CDN_URL
-    return HttpResponseRedirect(target)
+    return HttpResponseRedirect(GITHUB_APK_CDN_URL)
 
 def download_apk(request):
     return get_apk_response()
@@ -7885,14 +7884,13 @@ def get_app_version(request):
     """
     base = request.build_absolute_uri('/')[:-1] if request else 'https://expense-coach-prxm.onrender.com'
     direct_url = f"{base}/download-apk/"
-    target = os.getenv('LATEST_EXPO_APK_URL', LATEST_EXPO_APK_URL)
     return JsonResponse({
         "status": "success",
-        "latest_version": "1.3.6",
-        "latest_version_code": 9,
+        "latest_version": "1.4.0",
+        "latest_version_code": 10,
         "apk_url": direct_url,
-        "direct_expo_url": target,
-        "release_notes": "Connected to fast live cloud server with sound and banner notifications!",
+        "direct_expo_url": GITHUB_APK_CDN_URL,
+        "release_notes": "Connected to fast live cloud server with zero-battery payment auto-capture!",
         "published_at": "2026-11-11",
     })
 
