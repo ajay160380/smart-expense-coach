@@ -7849,15 +7849,17 @@ def get_app_version(request):
     Returns latest app version information so the mobile app can notify users
     when a new APK build is available and provide 1-tap download.
     """
-    target = os.getenv('LATEST_EXPO_APK_URL', LATEST_EXPO_APK_URL) or GITHUB_APK_CDN_URL
+    base = request.build_absolute_uri('/')[:-1] if request else 'https://expense-coach-prxm.onrender.com'
+    direct_url = f"{base}/download-apk/"
+    target = os.getenv('LATEST_EXPO_APK_URL', LATEST_EXPO_APK_URL)
     return JsonResponse({
         "status": "success",
-        "latest_version": "1.3.2",
-        "latest_version_code": 8,
-        "apk_url": target,
+        "latest_version": "1.3.6",
+        "latest_version_code": 9,
+        "apk_url": direct_url,
         "direct_expo_url": target,
         "release_notes": "Connected to fast live cloud server with sound and banner notifications!",
-        "published_at": "2026-10-26",
+        "published_at": "2026-11-11",
     })
 
 
