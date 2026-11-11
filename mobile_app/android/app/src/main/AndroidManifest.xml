@@ -23,41 +23,27 @@
     <meta-data android:name="expo.modules.updates.ENABLE_BSDIFF_PATCH_SUPPORT" android:value="true"/>
     <meta-data android:name="expo.modules.updates.EXPO_RUNTIME_VERSION" android:value="@string/expo_runtime_version"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
-    <meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="3000"/>
+    <meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="5000"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATE_URL" android:value="https://u.expo.dev/4159228e-c70e-46d2-a231-eda454c6eb0d"/>
     <meta-data android:name="expo.modules.updates.EXPO_CHANNEL_NAME" android:value="production"/>
-    <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="expense_tracker_alerts_v2" tools:replace="android:value" />
-    <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@mipmap/ic_launcher" tools:replace="android:resource" />
+    <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="expense_tracker_alerts_v2" tools:replace="android:value"/>
+    <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@mipmap/ic_launcher" tools:replace="android:resource"/>
     <service android:name="com.reactnativeandroidwidget.RNWidgetCollectionService" android:permission="android.permission.BIND_REMOTEVIEWS"/>
     <service android:name="expo.modules.audio.service.AudioControlsService" android:exported="false" android:foregroundServiceType="mediaPlayback">
       <intent-filter>
         <action android:name="androidx.media3.session.MediaSessionService"/>
       </intent-filter>
     </service>
-
-    <!-- Ultra-lightweight Silent Notification Listener (0% battery drain) -->
-    <service
-      android:name=".autocapture.PaymentNotificationListener"
-      android:label="PaisaMitra Payment Listener"
-      android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-      android:exported="true">
+    <service android:name=".autocapture.PaymentNotificationListener" android:label="PaisaMitra Payment Listener" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" android:exported="true">
       <intent-filter>
-        <action android:name="android.service.notification.NotificationListenerService" />
+        <action android:name="android.service.notification.NotificationListenerService"/>
       </intent-filter>
     </service>
-
-    <!-- Zero-Battery-Drain Payment Screen Detector -->
-    <service
-      android:name=".autocapture.PaymentAccessibilityService"
-      android:label="PaisaMitra Payment Screen Detector"
-      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-      android:exported="true">
+    <service android:name=".autocapture.PaymentAccessibilityService" android:label="PaisaMitra Payment Screen Detector" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true">
       <intent-filter>
-        <action android:name="android.accessibilityservice.AccessibilityService" />
+        <action android:name="android.accessibilityservice.AccessibilityService"/>
       </intent-filter>
-      <meta-data
-        android:name="android.accessibilityservice"
-        android:resource="@xml/payment_accessibility_config" />
+      <meta-data android:name="android.accessibilityservice" android:resource="@xml/payment_accessibility_config"/>
     </service>
     <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize|assetsPaths" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true" android:screenOrientation="portrait">
       <intent-filter>
