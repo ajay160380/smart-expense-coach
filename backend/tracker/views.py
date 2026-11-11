@@ -7803,37 +7803,8 @@ def api_send_admin_push(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/DNLSo1EArtJkOGZg8anzFx5oOlrSa-CWngD1Nn5iX-g.apk"
-
-def ensure_apk_cached_on_disk():
-    import os
-    from django.conf import settings
-
-    apk_path = os.path.join(settings.BASE_DIR, 'tracker', 'static', 'downloads', 'ExpenseTracker.apk')
-    os.makedirs(os.path.dirname(apk_path), exist_ok=True)
-
-    # 1. If committed/built APK exists on disk and is > 10MB, always prefer and serve it!
-    if os.path.exists(apk_path) and os.path.getsize(apk_path) > 10 * 1024 * 1024:
-        return apk_path
-
-    # 2. Fallback: Download from EAS artifact if missing
-    temp_path = apk_path + ".tmp"
-    try:
-        import urllib.request
-        urllib.request.urlretrieve(LATEST_EXPO_APK_URL, temp_path)
-        if os.path.exists(temp_path) and os.path.getsize(temp_path) > 10 * 1024 * 1024:
-            os.replace(temp_path, apk_path)
-            return apk_path
-    except Exception:
-        if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except Exception:
-                pass
-
-    return apk_path
-
-GITHUB_APK_CDN_URL = "https://github.com/ajay160380/smart-expense-coach/raw/main/backend/tracker/static/downloads/ExpenseTracker.apk"
+GITHUB_APK_CDN_URL = "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
+LATEST_EXPO_APK_URL = os.getenv('LATEST_EXPO_APK_URL', GITHUB_APK_CDN_URL)
 
 def get_apk_response():
     from django.http import HttpResponseRedirect
