@@ -1945,6 +1945,47 @@ def _extract_single_expense(text: str):
     return None, None
 
 
+def _is_apk_download_request(text: str) -> bool:
+    """Detect whether user text is asking to download the Android APK / App."""
+    if not text:
+        return False
+    t = text.strip().lower()
+
+    exact_keywords = {
+        'apk', 'app', 'download', 'app link', 'apk link', 'download app', 'download apk',
+        'app download', 'apk download', 'app link please', 'apk link please',
+        'application', 'download link', 'app download link', 'apk download link',
+        'get app', 'get apk', 'app bhej do', 'apk bhej do', 'app bhejo', 'apk bhejo'
+    }
+    if t in exact_keywords:
+        return True
+
+    # Account linking code command like "link 123456" must NOT be treated as download
+    if t.startswith('link ') and any(c.isdigit() for c in t):
+        return False
+
+    has_apk = bool(re.search(r'\bapk\b', t))
+    has_app = bool(re.search(r'\b(app|application|applicaion)\b', t))
+    has_download = bool(re.search(r'\b(download|dawnload|downlod|install|insttall)\b', t))
+    has_link = bool(re.search(r'\b(link|linck)\b', t))
+    has_request_verb = bool(re.search(r'\b(bhejo|bhej|do|de|dedo|chahiye|mang|mange|send|kahan|kaise|milega|karo)\b', t))
+    has_digits = bool(re.search(r'\d+', t))
+
+    if has_apk:
+        if has_link or has_download or has_request_verb or not has_digits:
+            return True
+
+    if has_app:
+        if has_download or has_link:
+            return True
+        if has_request_verb and not has_digits:
+            return True
+
+    if has_download and not has_digits:
+        return True
+
+    return False
+
 
 @csrf_exempt
 @ai_rate_limited
@@ -2067,6 +2108,26 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
     if not spoken_text:
         return JsonResponse({"status": "error", "message": "No text received."}, status=400)
+
+    # ── Check for APK / App Download Requests ─────────────────────────────────
+    if _is_apk_download_request(spoken_text):
+        apk_msg = (
+            "📱 *PaisaMitra / Expense Tracker Android App* 🚀\n\n"
+            "Aap latest Android App neeche diye gaye official direct link se download kar sakte hain:\n\n"
+            "📥 *Universal Download Link:*\n"
+            "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\n\n"
+            "🌐 *Alternate Web Link:*\n"
+            "https://expense-coach-prxm.onrender.com/download-apk/\n\n"
+            "✨ *Features:*\n"
+            "• Auto-capture payments (GPay, PhonePe, Paytm, Navi & Banks)\n"
+            "• Instant Voice & Text expense tracking\n"
+            "• Daily smart alerts & Home screen widgets\n\n"
+            "💡 *Install Karne Ka Tarika:*\n"
+            "1️⃣ Upar diye gaye link par tap karke APK download karein.\n"
+            "2️⃣ Download complete hone par file open karke *Install* karein.\n"
+            "3️⃣ App me apna WhatsApp number daalkar OTP se login karein! 😊"
+        )
+        return JsonResponse({"status": "success", "message": apk_msg})
 
     # ── Handle special "link" command ─────────────────────────────────────────
     spoken_stripped = spoken_text.strip()
@@ -2254,7 +2315,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                             "1️⃣ Reply with: *link <your registered mobile number>*\n"
                             "   _Example:_ *link 917905398965*\n\n"
                             "📱 Don't have an account yet? Register here:\n"
-                            "https://expense-coach-prxm.onrender.com/register/"
+                            "https://expense-coach-prxm.onrender.com/register/\n\n"
+                            "📥 Download Android App:\n"
+                            "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
                         )
                     })
             target_user = profile.user

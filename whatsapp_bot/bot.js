@@ -130,6 +130,54 @@ function normalizeJid(jid) {
     return `${clean}@s.whatsapp.net`;
 }
 
+// ── Helper: Detect APK / App Download Requests ──
+function isApkDownloadRequest(text) {
+    if (!text || typeof text !== 'string') return false;
+    const t = text.trim().toLowerCase();
+
+    // Exact matches
+    const exactMatches = [
+        'apk', 'app', 'download', 'app link', 'apk link', 'download app', 'download apk',
+        'app download', 'apk download', 'app link please', 'apk link please',
+        'application', 'download link', 'app download link', 'apk download link',
+        'get app', 'get apk', 'app bhej do', 'apk bhej do', 'app bhejo', 'apk bhejo'
+    ];
+    if (exactMatches.includes(t)) return true;
+
+    // Account linking code command like "link 123456" must NOT be treated as download
+    if (t.startsWith('link ') && /\d+/.test(t)) {
+        return false;
+    }
+
+    const hasApk = /\bapk\b/i.test(t);
+    const hasApp = /\b(app|application|applicaion)\b/i.test(t);
+    const hasDownload = /\b(download|dawnload|downlod|install|insttall)\b/i.test(t);
+    const hasLink = /\b(link|linck)\b/i.test(t);
+    const hasRequestVerb = /\b(bhejo|bhej|do|de|dedo|chahiye|mang|mange|send|kahan|kaise|milega|karo)\b/i.test(t);
+    const hasDigits = /\d+/.test(t);
+
+    if (hasApk) {
+        if (hasLink || hasDownload || hasRequestVerb || !hasDigits) {
+            return true;
+        }
+    }
+
+    if (hasApp) {
+        if (hasDownload || hasLink) {
+            return true;
+        }
+        if (hasRequestVerb && !hasDigits) {
+            return true;
+        }
+    }
+
+    if (hasDownload && !hasDigits) {
+        return true;
+    }
+
+    return false;
+}
+
 // ── Helper: Safe Reply ──
 async function safeReply(jid, text, quotedMsg = null) {
     if (!globalSock) throw new Error("WhatsApp socket not ready");
@@ -354,7 +402,7 @@ async function startBot(sessionName = null) {
         }
 
         if (isAllowedAdmin && lowerBody.startsWith('!broadcast_update')) {
-            const downloadLink = "https://github.com/ajay160380/smart-expense-coach/raw/main/backend/tracker/static/downloads/ExpenseTracker.apk";
+            const downloadLink = "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk";
             const defaultMsg = `🚀 *Expense Tracker - Update Available!*\n\n✨ *What's New:*\n• Smart Notepad\n• Refreshed Branding\n\n📲 *Download Now:* ${downloadLink}`;
             const customMessage = text.replace(/^!broadcast_update/i, '').trim() || defaultMsg;
 
@@ -428,6 +476,25 @@ async function startBot(sessionName = null) {
             } catch (err) {
                 await safeReply(remoteJid, `❌ Error triggering push: ${err.message}`, msg);
             }
+            return;
+        }
+
+        // ── APK / APP DOWNLOAD INTENT ──
+        if (isApkDownloadRequest(text)) {
+            const apkMessage = `📱 *PaisaMitra / Expense Tracker Android App* 🚀\n\n` +
+                `Aap latest Android App neeche diye gaye official direct link se download kar sakte hain:\n\n` +
+                `📥 *Universal Download Link:*\nhttps://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\n\n` +
+                `🌐 *Alternate Web Link:*\nhttps://expense-coach-prxm.onrender.com/download-apk/\n\n` +
+                `✨ *Features:*\n` +
+                `• Auto-capture payments (GPay, PhonePe, Paytm, Navi & Banks)\n` +
+                `• Instant Voice & Text expense tracking\n` +
+                `• Daily smart alerts & Home screen widgets\n\n` +
+                `💡 *Install Karne Ka Tarika:*\n` +
+                `1️⃣ Upar diye gaye link par tap karke APK download karein.\n` +
+                `2️⃣ Download complete hone par notification ya Downloads folder se file open karein.\n` +
+                `3️⃣ *Install* par tap karein aur app open karke apne WhatsApp number se login karein! 😊`;
+
+            await safeReply(remoteJid, apkMessage, msg);
             return;
         }
 

@@ -45,7 +45,7 @@ export async function checkAppVersion(silent = true) {
     }
 
     const data = await response.json();
-const GITHUB_APK_CDN_URL = 'https://github.com/ajay160380/smart-expense-coach/raw/main/backend/tracker/static/downloads/ExpenseTracker.apk';
+const GITHUB_APK_CDN_URL = 'https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk';
 
     const latestCode = Number(data.latest_version_code || 0);
     const latestVersion = data.latest_version || CURRENT_APP_VERSION;
@@ -80,7 +80,7 @@ const GITHUB_APK_CDN_URL = 'https://github.com/ajay160380/smart-expense-coach/ra
  * Initiates the 1-tap download and installation of the latest APK.
  */
 export function downloadAndInstallLatestApk(apkUrl) {
-  const targetUrl = apkUrl || 'https://github.com/ajay160380/smart-expense-coach/raw/main/backend/tracker/static/downloads/ExpenseTracker.apk';
+  const targetUrl = apkUrl || GITHUB_APK_CDN_URL;
 
   Alert.alert(
     'Download Latest APK 🚀',

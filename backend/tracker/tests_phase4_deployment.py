@@ -39,3 +39,19 @@ class HealthCheckAndDeploymentTests(TestCase):
                 resp.headers.get('Location', '').startswith('https://') or
                 resp.headers.get('Location', '').startswith('http://')
             )
+
+    def test_voice_expense_apk_download_intent(self):
+        """Verify that voice_expense immediately detects APK download intent."""
+        from tracker.views import _is_apk_download_request
+        
+        # Valid intents
+        self.assertTrue(_is_apk_download_request("apk"))
+        self.assertTrue(_is_apk_download_request("app link"))
+        self.assertTrue(_is_apk_download_request("apk link bhejo"))
+        self.assertTrue(_is_apk_download_request("app download kaise kare"))
+        self.assertTrue(_is_apk_download_request("kahan se download kare"))
+
+        # Non-intents (expenses or linking)
+        self.assertFalse(_is_apk_download_request("500 petrol"))
+        self.assertFalse(_is_apk_download_request("link 123456"))
+        self.assertFalse(_is_apk_download_request("apple 50"))
