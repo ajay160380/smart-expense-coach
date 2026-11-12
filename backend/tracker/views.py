@@ -2112,20 +2112,21 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     # ── Check for APK / App Download Requests ─────────────────────────────────
     if _is_apk_download_request(spoken_text):
         apk_msg = (
-            "📱 *PaisaMitra / Expense Tracker Android App* 🚀\n\n"
-            "Aap latest Android App neeche diye gaye official direct link se download kar sakte hain:\n\n"
-            "📥 *Universal Download Link:*\n"
-            "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\n\n"
-            "🌐 *Alternate Web Link:*\n"
+            "📱 *Expense Tracker (PaisaMitra) Android App* 🚀\n\n"
+            "You can download the official latest Android App from the links below:\n\n"
+            "📥 *Universal Download Link (All Phones):*\n"
             "https://expense-coach-prxm.onrender.com/download-apk/\n\n"
-            "✨ *Features:*\n"
-            "• Auto-capture payments (GPay, PhonePe, Paytm, Navi & Banks)\n"
+            "⚡ *Direct APK Download:*\n"
+            "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\n\n"
+            "✨ *Key Features:*\n"
+            "• Auto-capture payments (Google Pay, PhonePe, Paytm, Navi & Banking SMS)\n"
             "• Instant Voice & Text expense tracking\n"
-            "• Daily smart alerts & Home screen widgets\n\n"
-            "💡 *Install Karne Ka Tarika:*\n"
-            "1️⃣ Upar diye gaye link par tap karke APK download karein.\n"
-            "2️⃣ Download complete hone par file open karke *Install* karein.\n"
-            "3️⃣ App me apna WhatsApp number daalkar OTP se login karein! 😊"
+            "• Real-time budget alerts & Home screen widgets\n\n"
+            "💡 *How to Install:*\n"
+            "1️⃣ Tap the download link above to get the APK file.\n"
+            "2️⃣ Once downloaded, open the file from notifications or your Downloads folder.\n"
+            "3️⃣ Tap *Install* (if prompted, enable 'Allow from this source' in Settings).\n"
+            "4️⃣ Open the app and log in with your WhatsApp number! 😊"
         )
         return JsonResponse({"status": "success", "message": apk_msg})
 
