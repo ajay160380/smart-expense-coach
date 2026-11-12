@@ -1908,8 +1908,8 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
         'kya chal raha hai', 'kya ho raha hai', 'sab theek', 'sab theek hai', 'sab badhiya',
         'aur batao', 'aur bhai', 'aur sunao', 'kya chal rha h'
     ]
-    if clean in how_are_you_triggers or any(clean.startswith(t + ' ') for t in ['kaise ho', 'kya haal hai', 'how are you', 'aur batao', 'aur sunao']):
-        if any(w in clean for w in ['how are you', 'how r u', 'how are u']):
+    if clean in how_are_you_triggers or any(t in clean for t in ['how are you', 'how r u', 'how are u', 'kaise ho', 'kya haal hai', 'kya hal hai', 'kya haal', 'sab kaisa hai', 'kya chal raha hai', 'aur batao', 'aur bhai', 'aur sunao']):
+        if any(w in clean for w in ['how are you', 'how r u', 'how are u', 'how do you do']):
             return f"I'm doing great, *{display_name}*! How are you doing today? 😊"
         return f"Main bilkul badhiya hoon, *{display_name}*! Aap kaise hain? Sab theek chal raha hai? 😊"
 
@@ -2318,7 +2318,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 pass
                 
         if not target_user:
-            # Try exact match first (supports raw LIDs or unformatted numbers)
+            # 1. Try exact match on whatsapp_number (supports raw LIDs or unformatted numbers)
             profile = UserProfile.objects.filter(whatsapp_number=incoming_phone).select_related("user").first()
             
             if not profile:
@@ -2331,19 +2331,48 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 except phonenumbers.NumberParseException:
                     pass
 
+            # 2. Automatic Baileys LID resolution (resolves WhatsApp multi-device LIDs to phone numbers)
             if not profile or not profile.user:
-                # Last resort: try matching by phone_number (registration number)
-                clean_phone = incoming_phone.lstrip('+').lstrip('0')
-                # Try last 10 digits match for Indian numbers
+                clean_raw = re.sub(r'\D', '', incoming_phone)
+                resolved_phone = None
+                try:
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT data FROM baileys_auth WHERE key_id = %s", [f'lid-mapping-{clean_raw}_reverse'])
+                        row = cursor.fetchone()
+                        if row and row[0]:
+                            resolved_phone = str(row[0]).strip('"').strip()
+                        if not resolved_phone:
+                            cursor.execute("SELECT key_id FROM baileys_auth WHERE key_id LIKE 'lid-mapping-%' AND data::text LIKE %s", [f'%{clean_raw}%'])
+                            row = cursor.fetchone()
+                            if row and row[0]:
+                                resolved_phone = row[0].replace('lid-mapping-', '').replace('_reverse', '').strip()
+                except Exception as e_lid:
+                    logger.debug("LID lookup error: %s", e_lid)
+
+                if resolved_phone:
+                    res_digits = re.sub(r'\D', '', resolved_phone)
+                    if len(res_digits) >= 10:
+                        last10_res = res_digits[-10:]
+                        profile = UserProfile.objects.filter(phone_number__endswith=last10_res).select_related("user").first()
+                        if not profile:
+                            profile = UserProfile.objects.filter(whatsapp_number__endswith=last10_res).select_related("user").first()
+                        if profile:
+                            profile.whatsapp_number = incoming_phone
+                            profile.whatsapp_linked = True
+                            profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
+                            logger.info("Auto-linked WhatsApp LID %s to user %s (%s)", incoming_phone, profile.user.id, profile.phone_number)
+
+            # 3. Match by phone_number (registration number)
+            if not profile or not profile.user:
+                clean_phone = re.sub(r'\D', '', incoming_phone)
                 if len(clean_phone) >= 10:
                     last10 = clean_phone[-10:]
                     profile = UserProfile.objects.filter(phone_number__endswith=last10).select_related("user").first()
-                    
-                    # 🚀 CRITICAL FIX: If we found them using the slow method, SAVE the whatsapp_number permanently!
-                    # This ensures all future lookups are exact matches taking 0.001s
                     if profile:
                         profile.whatsapp_number = incoming_phone
-                        profile.save(update_fields=['whatsapp_number'])
+                        profile.whatsapp_linked = True
+                        profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
                 
                 if not profile or not profile.user:
                     return JsonResponse({
@@ -7402,8 +7431,18 @@ def api_complete_google_profile(request):
             defaults={'phone_number': phone_target, 'email_verified': True}
         )
         profile.phone_number = phone_target
-        profile.whatsapp_number = phone_target
-        profile.whatsapp_linked = True
+        # Check if an existing profile had a linked WhatsApp LID or number for this phone
+        existing_wa = UserProfile.objects.filter(
+            phone_number__endswith=phone_target[-10:],
+            whatsapp_linked=True
+        ).exclude(whatsapp_number__isnull=True).exclude(whatsapp_number='').values_list('whatsapp_number', flat=True).first()
+
+        if existing_wa:
+            profile.whatsapp_number = existing_wa
+            profile.whatsapp_linked = True
+        elif not profile.whatsapp_number:
+            profile.whatsapp_number = phone_target
+            profile.whatsapp_linked = True
         profile.email_verified = True
         if monthly_budget:
             try:

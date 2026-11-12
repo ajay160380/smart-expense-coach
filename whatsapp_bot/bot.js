@@ -22,13 +22,16 @@ if (!INTERNAL_BOT_SECRET) {
 
 const PORT = process.env.PORT || 10000;
 const PUBLIC_API_URL = process.env.PUBLIC_APP_URL || process.env.RENDER_EXTERNAL_URL || 'https://expense-coach-prxm.onrender.com';
-const INTERNAL_API_URL = process.env.DJANGO_URL || `http://127.0.0.1:${PORT}`;
+const INTERNAL_API_URL = `http://127.0.0.1:${PORT}`;
 
+let cachedWorkingBaseUrl = null;
+
+// Prioritize ultra-fast local loopback (2ms) over slow public URLs that may hairpin/timeout
 const DJANGO_URL_CANDIDATES = [...new Set([
-    process.env.DJANGO_URL,
     `http://127.0.0.1:${PORT}`,
     'http://127.0.0.1:10000',
     'http://127.0.0.1:8000',
+    process.env.DJANGO_URL,
     PUBLIC_API_URL
 ].filter(Boolean))];
 
@@ -39,14 +42,21 @@ async function callDjangoApi(endpoint, options = {}) {
         'X-Internal-Secret': INTERNAL_BOT_SECRET,
         ...(options.headers || {})
     };
-    for (const baseUrl of DJANGO_URL_CANDIDATES) {
+
+    // If we have a verified working base URL, try it first for instant response
+    const candidates = cachedWorkingBaseUrl
+        ? [cachedWorkingBaseUrl, ...DJANGO_URL_CANDIDATES.filter(u => u !== cachedWorkingBaseUrl)]
+        : DJANGO_URL_CANDIDATES;
+
+    for (const baseUrl of candidates) {
         try {
             const cleanBase = baseUrl.replace(/\/+$/, '');
             const cleanEndpoint = '/' + endpoint.replace(/^\/+/, '');
             const targetUrl = `${cleanBase}${cleanEndpoint}`;
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 25000);
+            const timeoutMs = baseUrl.includes('127.0.0.1') ? 5000 : 15000;
+            const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
             const response = await fetch(targetUrl, {
                 ...options,
@@ -62,9 +72,13 @@ async function callDjangoApi(endpoint, options = {}) {
             }
 
             const data = await response.json();
+            cachedWorkingBaseUrl = baseUrl; // Remember working endpoint
             return data;
         } catch (err) {
             lastError = err;
+            if (cachedWorkingBaseUrl === baseUrl) {
+                cachedWorkingBaseUrl = null; // Invalidate cache on failure
+            }
             console.warn(`[API Candidate] ${baseUrl} failed: ${err.message}. Trying next candidate...`);
         }
     }
