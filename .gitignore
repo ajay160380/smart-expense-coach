@@ -28,3 +28,4 @@ backend/staticfiles/
 *.idsig
 backend/tracker/static/downloads/*.apk
 backend/tracker/static/downloads/*.idsig
+!backend/tracker/static/downloads/ExpenseTracker.apk
