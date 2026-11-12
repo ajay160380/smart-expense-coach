@@ -7868,7 +7868,7 @@ def api_send_admin_push(request):
         return Response({"status": "error", "message": str(e)}, status=500)
 
 GITHUB_APK_CDN_URL = "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
-LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/k7SqI-6nvwck26Cv82RJK38Da1E2nD_e0syCYfBiYn0.apk"
+LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/XmpFE8ks54B2zzMtDDIS7wO-2ikUOkqq9VhfTqVd5Wg.apk"
 
 def get_apk_response():
     from django.http import HttpResponseRedirect
