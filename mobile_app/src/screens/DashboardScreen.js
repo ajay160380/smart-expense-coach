@@ -96,6 +96,8 @@ export default function DashboardScreen({ navigation }) {
   const [newBudgetCycleDay, setNewBudgetCycleDay] = useState('1');
   const [budgetSubmitting, setBudgetSubmitting] = useState(false);
   const [shakeBannerVisible, setShakeBannerVisible] = useState(true);
+  const [dismissWhatsAppBanner, setDismissWhatsAppBanner] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   const [goals, setGoals] = useState([]);
   const [subsData, setSubsData] = useState(null);
   const [quickSavingGoalId, setQuickSavingGoalId] = useState(null);
@@ -526,18 +528,24 @@ export default function DashboardScreen({ navigation }) {
         if (cachedProfile) {
           const parsed = JSON.parse(cachedProfile);
           if (parsed.full_name) setFullName(parsed.full_name);
+          setUserProfile(parsed);
         }
       }).catch(() => {});
 
       api.get('/profile/').then(res => {
-        if (res.data?.full_name) {
-          setFullName(res.data.full_name);
+        if (res.data) {
+          if (res.data.full_name) setFullName(res.data.full_name);
+          setUserProfile(res.data);
           AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
         }
       }).catch(() => {});
       
       loadCustomShortcuts();
       loadCustomActionDock();
+
+      AsyncStorage.getItem('dismiss_wa_banner').then(val => {
+        if (val === 'true') setDismissWhatsAppBanner(true);
+      }).catch(() => {});
 
       AsyncStorage.getItem('shake_banner_dismissed').then(val => {
         if (val === 'true') setShakeBannerVisible(false);
@@ -698,10 +706,13 @@ export default function DashboardScreen({ navigation }) {
 
   const openWhatsApp = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (stats?.whatsapp_linked) {
+    const isLinked = stats?.whatsapp_linked || userProfile?.whatsapp_linked;
+    if (isLinked) {
       Linking.openURL('https://wa.me/917379053923?text=Hi');
     } else {
-      const phoneParam = stats?.user_phone ? `Link ${stats.user_phone}` : 'Link 91';
+      const rawPhone = userProfile?.phone_number || stats?.user_phone || '';
+      const cleanDigits = rawPhone.replace(/[^0-9]/g, '');
+      const phoneParam = cleanDigits.length === 10 ? `Link 91${cleanDigits}` : (cleanDigits ? `Link ${cleanDigits}` : 'Link 91');
       Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(phoneParam)}`);
     }
   };
@@ -1001,6 +1012,61 @@ export default function DashboardScreen({ navigation }) {
 
         {/* ── CURVED WHITE SHEET CONTAINER ── */}
         <View style={[styles.sheetContainer, isDark && { backgroundColor: colors.bg }]}>
+
+          {/* ── WHATSAPP BOT PROMO / LINK BANNER (FOR NEW / UNLINKED USERS) ── */}
+          {(!stats?.whatsapp_linked && !userProfile?.whatsapp_linked && !dismissWhatsAppBanner) && (
+            <Animated.View style={[styles.waPromoCard, { opacity: animGreetingOpacity }]}>
+              <LinearGradient
+                colors={['#064E3B', '#065F46', '#047857']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.waPromoGradient}
+              >
+                <View style={styles.waPromoHeaderRow}>
+                  <View style={styles.waPromoIconBox}>
+                    <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.waPromoTitle}>Link through WhatsApp</Text>
+                      <View style={styles.waPromoBadge}>
+                        <Text style={styles.waPromoBadgeText}>⚡ 10X FASTER</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.waPromoSubtitle}>
+                      Send &quot;₹150 Chai&quot; or voice notes on WhatsApp to log expenses automatically!
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setDismissWhatsAppBanner(true);
+                      AsyncStorage.setItem('dismiss_wa_banner', 'true');
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={styles.waPromoCloseBtn}
+                  >
+                    <Ionicons name="close" size={16} color="rgba(255,255,255,0.7)" />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  onPress={openWhatsApp}
+                  style={styles.waPromoActionBtn}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="logo-whatsapp" size={17} color="#064E3B" style={{ marginRight: 7 }} />
+                  <Text style={styles.waPromoActionBtnText}>
+                    {userProfile?.phone_number || stats?.user_phone
+                      ? `1-Tap Link WhatsApp (+${userProfile?.phone_number || stats?.user_phone})`
+                      : 'Connect WhatsApp Bot'}
+                  </Text>
+                  <Ionicons name="arrow-forward" size={14} color="#064E3B" style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animated.View>
+          )}
+
           {/* ── ANOMALY SPENDING INSIGHT (AI COACH) ── */}
           {anomalies.filter((_, i) => !dismissedAnomalies[i]).length > 0 && (
             <Animated.View style={[styles.aiInsightCard, isDark && styles.aiInsightCardDark, { opacity: animGreetingOpacity }]}>
@@ -4636,5 +4702,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
+  },
+  // ── WhatsApp Top Banner Styles ──
+  waPromoCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 16,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  waPromoGradient: {
+    padding: 16,
+    borderRadius: 20,
+  },
+  waPromoHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  waPromoIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(37, 211, 102, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 211, 102, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waPromoTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  waPromoBadge: {
+    backgroundColor: 'rgba(37, 211, 102, 0.25)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: 'rgba(37, 211, 102, 0.5)',
+  },
+  waPromoBadgeText: {
+    color: '#6EE7B7',
+    fontSize: 9.5,
+    fontWeight: '800',
+  },
+  waPromoSubtitle: {
+    color: '#D1FAE5',
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 3,
+    fontWeight: '500',
+  },
+  waPromoCloseBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 6,
+    alignSelf: 'flex-start',
+  },
+  waPromoActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#34D399',
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  waPromoActionBtnText: {
+    color: '#064E3B',
+    fontSize: 13.5,
+    fontWeight: '800',
   },
 });

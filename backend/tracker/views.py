@@ -6852,7 +6852,7 @@ def _verify_otp_record(record: OTPVerification, code: str, action: str = None) -
         return False
     if record.attempts >= record.max_attempts:
         return False
-    if timezone.now() - record.created_at > timedelta(minutes=10):
+    if record.created_at and timezone.now() - record.created_at > timedelta(minutes=10):
         return False
 
     clean_code = str(code).strip()
@@ -7362,12 +7362,32 @@ def api_complete_google_profile(request):
         }, status=400)
         
     # Verify OTP
-    otp_record = OTPVerification.objects.filter(
+    records = OTPVerification.objects.filter(
         identifier__in=[phone_target, p_alt],
-        otp_code=str(otp_code).strip(),
         created_at__gte=timezone.now() - timedelta(minutes=10)
-    ).first()
-    
+    ).order_by('-created_at')
+
+    otp_record = None
+    for r in records:
+        if r.attempts >= r.max_attempts:
+            continue
+        if _verify_otp_record(r, str(otp_code).strip(), 'link_phone'):
+            otp_record = r
+            r.is_verified = True
+            r.save(update_fields=['is_verified'])
+            break
+        else:
+            r.attempts += 1
+            r.save(update_fields=['attempts'])
+
+    if not otp_record:
+        # Fallback check if verified in this 10m window
+        otp_record = OTPVerification.objects.filter(
+            identifier__in=[phone_target, p_alt],
+            is_verified=True,
+            created_at__gte=timezone.now() - timedelta(minutes=10)
+        ).first()
+
     if not otp_record:
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
         
@@ -7377,6 +7397,8 @@ def api_complete_google_profile(request):
             defaults={'phone_number': phone_target, 'email_verified': True}
         )
         profile.phone_number = phone_target
+        profile.whatsapp_number = phone_target
+        profile.whatsapp_linked = True
         profile.email_verified = True
         if monthly_budget:
             try:
@@ -7638,11 +7660,23 @@ def api_verify_email_otp(request):
     if not email or not otp_code:
         return Response({'error': 'Email and 6-digit OTP code are required.'}, status=400)
         
-    otp_record = OTPVerification.objects.filter(
+    records = OTPVerification.objects.filter(
         identifier=email,
-        otp_code=otp_code,
-        created_at__gte=timezone.now() - timedelta(minutes=5)
-    ).first()
+        created_at__gte=timezone.now() - timedelta(minutes=10)
+    ).order_by('-created_at')
+    
+    otp_record = None
+    for r in records:
+        if r.attempts >= r.max_attempts:
+            continue
+        if _verify_otp_record(r, str(otp_code).strip(), 'general'):
+            otp_record = r
+            r.is_verified = True
+            r.save(update_fields=['is_verified'])
+            break
+        else:
+            r.attempts += 1
+            r.save(update_fields=['attempts'])
     
     if not otp_record:
         return Response({'error': 'Invalid or expired OTP code.'}, status=400)
