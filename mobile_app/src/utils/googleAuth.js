@@ -13,6 +13,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import api from '../api/config';
 import { saveAuthData } from './auth';
 import analytics from './analytics';
+import { formatApiError } from './errors';
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
@@ -104,7 +105,7 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
     } catch (err) {
       console.warn('Google backend verification failed:', err);
       const errCode = err.response?.data?.code;
-      const msg = err.response?.data?.error || err.message || 'Google Sign-In failed.';
+      const msg = err.response?.data?.error || formatApiError(err, 'Google Sign-In failed. Please try again.');
       
       if (errCode === 'ACCOUNT_NOT_FOUND' && onAccountNotFoundRef.current) {
         onAccountNotFoundRef.current(err.response?.data?.email, err.response?.data?.name);

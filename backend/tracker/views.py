@@ -1371,25 +1371,39 @@ class RegisterAPIView(APIView):
             
         # Verify OTP against phone_number OR email
         identifiers = [phone_number]
+        if str(phone_number).startswith('91') and len(str(phone_number)) == 12:
+            identifiers.append(str(phone_number)[2:])
+        elif len(str(phone_number)) == 10:
+            identifiers.append(f"91{phone_number}")
         if email:
-            identifiers.append(email)
-            
-        otp_record = OTPVerification.objects.filter(
-            identifier__in=identifiers,
-            otp_code=otp,
+            identifiers.append(email.strip().lower())
+
+        records = OTPVerification.objects.filter(
+            identifier__in=list(set(identifiers)),
+            is_verified=False,
             created_at__gte=timezone.now() - timedelta(minutes=10)
-        ).first()
-        if not otp_record:
+        ).order_by('-created_at')
+
+        matched_record = None
+        for r in records:
+            if _verify_otp_record(r, str(otp).strip(), 'register'):
+                matched_record = r
+                break
+
+        if not matched_record:
             return Response({"error": "Invalid or expired OTP. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data.copy()
         if 'phone_number' in data:
             data['phone_number'] = phone_number
-            
+
         serializer = RegisterSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            otp_record.delete() # Cleanup OTP after successful registration
+            try:
+                matched_record.delete()  # Cleanup OTP after successful registration
+            except Exception:
+                pass
             return Response({
                 "status": "success", 
                 "message": "Registration done! You can now track your expenses using your WhatsApp number."
@@ -1415,22 +1429,34 @@ def register(request: HttpRequest) -> HttpResponse:
             return render(request, "tracker/register.html", {"form": form})
             
         check_phone = phone_number
+        identifiers = [check_phone] if check_phone else []
         if check_phone and len(str(check_phone)) == 10 and str(check_phone).isdigit():
-            check_phone = f"91{check_phone}"
-            
-        otp_record = OTPVerification.objects.filter(
-            identifier=check_phone, 
-            otp_code=otp,
-            created_at__gte=timezone.now() - timedelta(minutes=5)
-        ).first()
-        
-        if not otp_record:
+            identifiers.append(f"91{check_phone}")
+        elif check_phone and str(check_phone).startswith('91') and len(str(check_phone)) == 12:
+            identifiers.append(str(check_phone)[2:])
+
+        records = OTPVerification.objects.filter(
+            identifier__in=list(set(identifiers)),
+            is_verified=False,
+            created_at__gte=timezone.now() - timedelta(minutes=10)
+        ).order_by('-created_at')
+
+        matched_record = None
+        for r in records:
+            if _verify_otp_record(r, str(otp).strip(), 'register'):
+                matched_record = r
+                break
+
+        if not matched_record:
             messages.error(request, "Invalid or expired OTP.")
             return render(request, "tracker/register.html", {"form": form})
 
         if form.is_valid():
             user = form.save()
-            otp_record.delete()
+            try:
+                matched_record.delete()
+            except Exception:
+                pass
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             request.session['show_wa_banner'] = True
             logger.info("New user registered uid=%s username=%s", user.id, user.username)
@@ -6683,13 +6709,29 @@ def _verify_otp_record(record: OTPVerification, code: str, action: str = None) -
         return False
     if timezone.now() - record.created_at > timedelta(minutes=10):
         return False
-    if action and record.action and record.action != 'general' and record.action != action:
-        return False
-    expected = _hash_otp(record.identifier, record.action, code)
+
+    clean_code = str(code).strip()
+
+    # 1. Match hash with record's own stored action
+    expected = _hash_otp(record.identifier, record.action or 'general', clean_code)
     if hmac.compare_digest(record.otp_code, expected):
         return True
-    if hmac.compare_digest(record.otp_code, str(code).strip()):
+
+    # 2. Match hash with caller's requested action
+    if action:
+        expected_act = _hash_otp(record.identifier, action, clean_code)
+        if hmac.compare_digest(record.otp_code, expected_act):
+            return True
+
+    # 3. Match hash across standard actions to ensure inter-compatibility
+    for act in ['login', 'register', 'general', 'reset', 'link_phone']:
+        if hmac.compare_digest(record.otp_code, _hash_otp(record.identifier, act, clean_code)):
+            return True
+
+    # 4. Fallback: direct plain text comparison (if stored unhashed in legacy/fallback scenarios)
+    if hmac.compare_digest(record.otp_code, clean_code):
         return True
+
     return False
 
 
@@ -6927,39 +6969,46 @@ def api_verify_otp(request):
     request.throttle_scope = 'otp'
     raw_identifier = request.data.get('identifier')
     action = request.data.get('action') or 'register'
-    if raw_identifier and len(str(raw_identifier)) == 10 and str(raw_identifier).isdigit():
-        identifier = f"91{raw_identifier}"
-    else:
-        identifier = str(raw_identifier).strip() if raw_identifier else ''
+    identifiers = []
+    if raw_identifier:
+        s = str(raw_identifier).strip()
+        identifiers.append(s)
+        digits = ''.join(ch for ch in s if ch.isdigit())
+        if digits:
+            identifiers.append(digits)
+            identifiers.append(f"91{digits}")
+            if digits.startswith('91') and len(digits) == 12:
+                identifiers.append(digits[2:])
     otp_code = request.data.get('otp')
-    
-    if not identifier or not otp_code:
+
+    if not identifiers or not otp_code:
         return Response({'error': 'Identifier and OTP are required.'}, status=400)
-        
+
     records = OTPVerification.objects.filter(
-        identifier=identifier,
+        identifier__in=list(set(identifiers)),
         is_verified=False,
-        created_at__gte=timezone.now() - timedelta(minutes=5)
+        created_at__gte=timezone.now() - timedelta(minutes=10)
     ).order_by('-created_at')
-    
+
     if not records.exists():
         return Response({'error': 'Invalid or expired OTP.'}, status=400)
 
     matched_record = None
     for r in records:
         if r.attempts >= r.max_attempts:
-            return Response({'error': 'Maximum verification attempts exceeded. Please request a new OTP.'}, status=400)
-        r.attempts += 1
+            continue
         if _verify_otp_record(r, otp_code, action):
             matched_record = r
             r.is_verified = True
             r.save()
             break
-        r.save()
+        else:
+            r.attempts += 1
+            r.save()
 
     if not matched_record:
         return Response({'error': 'Invalid or expired OTP.'}, status=400)
-        
+
     return Response({'message': 'OTP verified successfully.'})
 
 
@@ -6996,6 +7045,15 @@ def api_login_otp(request):
         return Response({'error': 'Invalid credentials or expired OTP code. Please try again.'}, status=400)
         
     valid_idents = [identifier, user.username]
+    if clean_digits:
+        valid_idents.append(clean_digits)
+        valid_idents.append(f"91{clean_digits}")
+        if clean_digits.startswith('91') and len(clean_digits) == 12:
+            valid_idents.append(clean_digits[2:])
+    if phone_candidate:
+        valid_idents.append(phone_candidate)
+        if phone_candidate.startswith('91') and len(phone_candidate) == 12:
+            valid_idents.append(phone_candidate[2:])
     if user.email:
         valid_idents.append(user.email.strip().lower())
     if hasattr(user, 'profile') and user.profile.phone_number:
@@ -7005,14 +7063,13 @@ def api_login_otp(request):
             valid_idents.append(p[2:])
         else:
             valid_idents.append(f"91{p}")
-            
+
     records = OTPVerification.objects.filter(
         identifier__in=list(set(valid_idents)),
         is_verified=False,
-        action__in=['login', 'general'],
         created_at__gte=timezone.now() - timedelta(minutes=10)
     ).order_by('-created_at')
-    
+
     if not records.exists():
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
 
@@ -7021,14 +7078,15 @@ def api_login_otp(request):
     for r in records:
         if r.attempts >= r.max_attempts:
             continue
-        r.attempts += 1
         if _verify_otp_record(r, str(otp).strip(), 'login'):
             matched = True
             matched_record = r
             r.is_verified = True
             r.save()
             break
-        r.save()
+        else:
+            r.attempts += 1
+            r.save()
 
     if not matched:
         return Response({'error': 'Invalid or expired OTP code. Please try again.'}, status=400)
