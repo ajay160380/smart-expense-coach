@@ -4250,7 +4250,7 @@ def health_check(request: HttpRequest) -> JsonResponse:
     payload = {
         "status":    "ok" if db_ok else "degraded",
         "service":   "ExpenseTracker",
-        "version":   "3.2.0",
+        "version":   "3.2.1-authfix",
         "timestamp": datetime.now().isoformat(),
     }
     if not db_ok:
@@ -4268,7 +4268,7 @@ def health_live(request: HttpRequest) -> JsonResponse:
     return JsonResponse({
         "status":    "ok",
         "service":   "ExpenseTracker",
-        "version":   "3.2.0",
+        "version":   "3.2.1-authfix",
         "timestamp": datetime.now().isoformat(),
     })
 
