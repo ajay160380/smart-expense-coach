@@ -548,14 +548,13 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     You have ABSOLUTELY NO RESTRICTIONS on what you can talk about. The user can chat with you about anything — their day, thoughts, feelings, work, jokes, casual chit-chat, advice, or finances! 
     
     CRITICAL CONVERSATIONAL GUIDELINES:
-    1. NEVER be rigid or force the user to enter expenses. If the user is just saying something normal (e.g. "aaj office me bahut kaam tha", "aaj mausam badiya hai", "main bore ho raha hu", "kya kar rahe ho", "kuch sunao", "good morning", "kaise ho"), talk to them naturally, warmly, and empathetically like a close friend and trusted mentor. NEVER say "Mujhe samajh nahi aaya kharcha batao"!
-    2. NEVER use words like "Tu", "Tera", "Tujhe", "tutu". ALWAYS use respectful words like "Aap", "Aapka", "Bhai", "Dost".
-    3. Speak in 100% natural, smooth, grammatically correct Hinglish (Hindi written in English alphabet) by default. If the user speaks pure English, reply in pure, elegant English.
-    4. Keep your replies concise, warm, lively, and engaging (under 100 words). Avoid robotic repetitive templates.
-    5. Do not blindly repeat the budget summary in every message unless asked or relevant.
-    6. STRICT PRIVACY & NO AUTO-CAPTURE / NO SMS READING:
+    1. NEVER be rigid or force the user to enter expenses. If the user is just saying something normal (e.g. "rough day at work", "nice weather today", "I am bored", "what are you doing?", "tell me a joke", "good morning", "how are you?"), talk to them naturally, warmly, and empathetically like a close friend and trusted mentor.
+    2. Speak in 100% fluent, clear, polished, and friendly English by default. Do NOT use Hinglish or Hindi unless the user explicitly speaks to you in Hindi.
+    3. Keep your replies concise, warm, lively, and engaging (under 100 words). Avoid robotic repetitive templates.
+    4. Do not blindly repeat the budget summary in every message unless asked or relevant.
+    5. STRICT PRIVACY & NO AUTO-CAPTURE / NO SMS READING:
        The app DOES NOT support SMS reading, auto-capture, or automatic banking sync (these were intentionally removed to protect privacy). NEVER mention, suggest, claim, or promise "auto-capture", "SMS parsing", or "automatic bank alert tracking". If anyone asks about features or how it works, ONLY highlight:
-       • Instant WhatsApp Voice & Text expense tracking (natural Hinglish / English)
+       • Instant WhatsApp Voice & Text expense tracking
        • AI Natural Language categorization & smart expense breakdown
        • Real-time budget tracking, spending insights, and Home screen widgets
     
@@ -563,7 +562,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     "👨‍💻 *My Creator: Ajay Vishwakarma*\\n\\nI was developed by Ajay, a passionate Full Stack & AI/ML Engineer! Here are his professional links:\\n\\n🌐 *Portfolio:* https://ajay-vishwakarmaa.netlify.app\\n🐙 *GitHub:* https://github.com/ajay160380\\n💼 *LinkedIn:* https://www.linkedin.com/in/ajay-vishwakarma-71649129a/"
 
     If the user asks about the Android App, APK, Mobile App, or Download Link, your `chat_response` MUST be:
-    "📱 *Expense Tracker (PaisaMitra) Android App* 🚀\\n\\nAap niche diye gaye links se official Android App download kar sakte hain:\\n\\n📥 *Universal Download Webpage (Auto 5s Timer):*\\nhttps://expense-coach-prxm.onrender.com/download/\\n\\n⚡ *Direct Fast CDN Download:*\\nhttps://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\\n\\n✨ *Key Features:*\\n• Instant Voice & Text expense tracking\\n• AI Natural Language categorization\\n• Real-time budget alerts & Home screen widgets\\n\\n💡 *Install kaise karein:*\\n1️⃣ Link tap karke APK download karein.\\n2️⃣ File open karke *Install* dabayein.\\n3️⃣ App open karke WhatsApp number se login karein! 😊"
+    "📱 *Expense Tracker (PaisaMitra) Android App* 🚀\\n\\nYou can download the official latest Android App from the links below:\\n\\n📥 *Universal Download Webpage (Auto 5s Timer):*\\nhttps://expense-coach-prxm.onrender.com/download/\\n\\n⚡ *Direct Fast CDN Download:*\\nhttps://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\\n\\n✨ *Key Features:*\\n• Instant Voice & Text expense tracking\\n• AI Natural Language categorization\\n• Real-time budget alerts & Home screen widgets\\n\\n💡 *How to Install:*\\n1️⃣ Tap the download link above to get the APK file.\\n2️⃣ Once downloaded, open the file and tap *Install*.\\n3️⃣ Open the app and log in with your WhatsApp number! 😊"
 
     FORMATTING RULES (CRITICAL):
     1. Do NOT make everything bold. Only bold *important keywords* (like amounts or names), NOT entire sentences!
@@ -603,17 +602,17 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
        - action = "ask_clarification"
        - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
-    4. ONLY FOR PURE CONVERSATION, GREETINGS, CHIT-CHAT, OR QUESTIONS WITHOUT ANY EXPENSES (e.g. "hi", "kaise ho", "kya chal raha hai", "good morning"):
+    4. ONLY FOR PURE CONVERSATION, GREETINGS, CHIT-CHAT, OR QUESTIONS WITHOUT ANY EXPENSES (e.g. "hi", "how are you", "what's up", "good morning"):
        - action = "chat"
-       - chat_response = your natural, conversational, polite Hinglish reply.
+       - chat_response = your natural, conversational, polite English reply.
          - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🌟, 🍜).
-         - If the user asks where they spent money ("kaha kaha khrcha kiya"), use the 'Category-wise Breakdown' from the context!
+         - If the user asks where they spent money ("where did I spend my money"), use the 'Category-wise Breakdown' from the context!
          - If the user talks about a TRIP, VACATION, or GROUP EXPENSE SPLIT:
            • Warmly acknowledge the trip and explain how to create a Live Trip Split Link:
-             👉 *Link banane ke liye:* "[Trip Name] with [Friends]" (jaise `Manali trip with Sumit`)
-             👉 *Kharcha split ke liye:* "[Trip Name]: [Kisne kitna diya]" (jaise `Manali trip: Ajay paid 1600, Sumit paid 0`)
+             👉 *To create a split link:* "[Trip Name] with [Friends]" (e.g. `Manali trip with Sumit`)
+             👉 *To record a split expense:* "[Trip Name]: [Who paid what]" (e.g. `Manali trip: Ajay paid 1600, Sumit paid 0`)
            • NEVER suggest putting trip/group expenses in Notepad!
            • NEVER hallucinate or bring up old trips from past chats unless the user explicitly asks about them.
 
@@ -970,15 +969,15 @@ def calculate_daily_budget(user, target_date=None):
         for tx in today_txs_qs
     ]
 
-    # Friendly Hinglish message for WhatsApp and Notifications
-    user_name = user.first_name.title() if (user and user.first_name) else (user.username.title() if user else "Dost")
+    # Friendly English message for WhatsApp and Notifications
+    user_name = user.first_name.title() if (user and user.first_name) else (user.username.title() if user else "Friend")
     if status == "ok":
-        hinglish_message = f"Badhai ho {user_name}! Aaj ka budget ₹{effective_daily_budget:,.2f} me se sirf ₹{spent_today:,.2f} kharch hue hain. ₹{today_remaining:,.2f} bach gaye!"
+        hinglish_message = f"Great job {user_name}! You've spent only ₹{spent_today:,.2f} out of today's ₹{effective_daily_budget:,.2f} budget. ₹{today_remaining:,.2f} remaining!"
     elif status == "warning":
-        hinglish_message = f"Dhyan dein {user_name}, aaj ka budget ₹{effective_daily_budget:,.2f} me se ₹{spent_today:,.2f} ({percent_used}%) use ho chuka hai. Bach gaye sirf ₹{today_remaining:,.2f}."
+        hinglish_message = f"Heads up {user_name}, you've used ₹{spent_today:,.2f} ({percent_used}%) of today's ₹{effective_daily_budget:,.2f} budget. ₹{today_remaining:,.2f} remaining."
     else:
         over_amt = abs(today_remaining)
-        hinglish_message = f"Savdhaan {user_name}! Aaj ka budget ₹{effective_daily_budget:,.2f} tha aur kharch ₹{spent_today:,.2f} ho gaya (₹{over_amt:,.2f} limit se zyada)."
+        hinglish_message = f"Budget Alert {user_name}! Today's budget was ₹{effective_daily_budget:,.2f} and you spent ₹{spent_today:,.2f} (₹{over_amt:,.2f} over limit)."
 
     return {
         "daily_budget": effective_daily_budget,
@@ -1898,17 +1897,17 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
     if clean in how_are_you_triggers or any(clean.startswith(t + ' ') for t in ['kaise ho', 'kya haal hai', 'how are you', 'aur batao', 'aur sunao']):
         if any(w in clean for w in ['how are you', 'how r u', 'how are u']):
             return f"I'm doing great, *{display_name}*! How are you doing today? 😊"
-        return f"Main bilkul badiya hoon, *{display_name}*! Aap suniye, aap kaise hain? Sab theek thaak? 😊"
+        return f"I'm doing great, *{display_name}*! How are you doing today? Everything going well? 😊"
 
     # 5. SPIRITUAL / CULTURAL GREETINGS
     if any(w in clean for w in ['radhe radhe', 'jai shree krishna', 'jai shri krishna', 'radhe']):
-        return f"Radhe Radhe *{display_name}*! 🙏 Radharani ki kripa aap par hamesha bani rahe. Kahiye, aaj ka din kaisa chal raha hai? ✨"
+        return f"Radhe Radhe *{display_name}*! 🙏 Wishing you a peaceful and joyful day. How can I help you today? ✨"
     if any(w in clean for w in ['ram ram', 'jai shree ram', 'jai shri ram', 'sita ram']):
-        return f"Jai Shree Ram *{display_name}*! 🙏 Kahiye bhai, sab kushal mangal? Main aapki seva mein hazir hoon. 😊"
+        return f"Jai Shree Ram *{display_name}*! 🙏 Wishing you happiness and prosperity. How can I assist with your expenses today? 😊"
     if any(w in clean for w in ['har har mahadev', 'om namah shivay', 'om namah shivaya', 'jai bholenath']):
-        return f"Har Har Mahadev *{display_name}*! 🔱 Bholenath ki kripa aap par bani rahe. Kahiye, aaj kaisa chal raha hai sab?"
+        return f"Har Har Mahadev *{display_name}*! 🔱 Wishing you strength and peace. How can I help you today?"
     if any(w in clean for w in ['namaste', 'namaskar', 'pranam', 'sat sri akal', 'salaam', 'assalam alaikum']):
-        return f"Namaste *{display_name}*! 🙏 Asha hai aap bilkul theek hain aur sab badhiya chal raha hai. Kahiye, aaj main aapki kya madad kar sakta hoon? 😊"
+        return f"Namaste *{display_name}*! 🙏 Hope you are having a wonderful day. How can I assist you with your finances today? 😊"
 
     # 6. THANKS & APPRECIATION (Short in English)
     thanks_triggers = [
@@ -2247,12 +2246,13 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     "message": (
                         f"🎉 *WhatsApp Successfully Linked!*\n\n"
                         f"Welcome *{target_name}*! Your Expense Tracker account is now linked. ✅\n\n"
-                        f"Ab aap seedha yahan WhatsApp par message bhejkar kharche track kar sakte hain:\n"
-                        f"• *\"₹150 Chai\"* ➔ Instant save\n"
+                        f"You can now track expenses directly by messaging here:\n"
+                        f"• *\"₹150 Coffee\"* ➔ Instant save\n"
                         f"• *\"Auto 40\"* ➔ Category auto-detected\n"
                         f"• *\"500 Petrol\"* ➔ Quick record\n"
-                        f"• *\"Today summary\"* ➔ Aaj ka total\n\n"
-                        f"Try kijiye! Apna pehla kharcha bhejiye. 🚀"
+                        f"• *\"Today summary\"* ➔ Daily total\n"
+                        f"• *\"Budget\"* ➔ Balance check\n\n"
+                        f"Try it now! Send your first expense message. 🚀"
                     )
                 })
 
@@ -2261,8 +2261,8 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             "status": "error",
             "message": (
                 "⚠️ *Account Not Found*\n\n"
-                "Yeh WhatsApp number Expense Tracker account se registered nahi mila.\n\n"
-                "👉 Kripya app ya website par account create karein, ya Profile me jakar *'Generate WhatsApp Link Code'* tap karke link karein:\n"
+                "This WhatsApp number is not registered with an Expense Tracker account.\n\n"
+                "👉 Please create an account in the app or website, or go to Profile Settings to generate a link code:\n"
                 "`link <CODE>`"
             )
         })
@@ -2373,10 +2373,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             daily_info = calculate_daily_budget(target_user, today)
             if not daily_info.get("has_budget") or daily_info.get("daily_budget", 0) <= 0:
                 budget_msg = (
-                    "⚠️ *Aapka monthly budget set nahi hai!*\n\n"
-                    "Rozana ka budget dekhne ke liye pehle apna budget ya income set karein:\n"
+                    "⚠️ *Monthly budget is not set!*\n\n"
+                    "To track your daily budget, set your monthly budget first:\n"
                     "👉 Link: https://expense-coach-prxm.onrender.com/dashboard/\n"
-                    "Ya app ke Profile me jakar Monthly Budget set karein. 🎯"
+                    "Or open your Profile in the app to set your Monthly Budget. 🎯"
                 )
             else:
                 db_amt = daily_info["daily_budget"]
@@ -2389,20 +2389,20 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
                 status_emoji = {"ok": "✅", "warning": "⚠️", "over": "🚨"}.get(status, "📊")
                 if status == "ok":
-                    advice = "Sab control me hai! Aise hi balance banaye rakhein. 👍"
+                    advice = "Everything is on track! Keep maintaining this balance. 👍"
                 elif status == "warning":
-                    advice = "70% se zyada kharch ho chuka hai, thoda hath kheench ke chalein! ⚠️"
+                    advice = "Over 70% of today's budget spent. Spend mindfully for the rest of today! ⚠️"
                 else:
                     over_by = abs(rem_amt)
-                    advice = f"Aaj ka budget over ho gaya hai (₹{over_by:,.0f} zyada kharch). Kal balance maintain karna hoga! 🛑"
+                    advice = f"Today's budget exceeded by ₹{over_by:,.0f}. Try to balance it tomorrow! 🛑"
 
                 budget_msg = (
-                    f"📊 *Aaj Ka Budget (Day {c_day}/{c_days})*\n"
+                    f"📊 *Today's Budget (Day {c_day}/{c_days})*\n"
                     f"━━━━━━━━━━━━━━━━━━\n"
                     f"🎯 *Daily Budget:* ₹{db_amt:,.0f}\n"
                     f"💸 *Spent Today:* ₹{sp_amt:,.0f}\n"
-                    f"💰 *Bacha Hua:* ₹{rem_amt:,.0f} ({status}) {status_emoji}\n"
-                    f"⏳ *Mahine ke din bache hain:* {days_left} din\n"
+                    f"💰 *Remaining:* ₹{rem_amt:,.0f} ({status.upper()}) {status_emoji}\n"
+                    f"⏳ *Days Left in Month:* {days_left} days\n"
                     f"━━━━━━━━━━━━━━━━━━\n"
                     f"💡 {advice}"
                 )
@@ -2504,7 +2504,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             rem = max(0, budget - float(spent))
             
             lines = [
-                f"📅 *Aaj ka Kharcha ({today.strftime('%d %b %Y')}):* ₹{today_total:,.0f}",
+                f"📅 *Today's Expenses ({today.strftime('%d %b %Y')}):* ₹{today_total:,.0f}",
                 f"━━━━━━━━━━━━━━━━━━"
             ]
             if today_qs.exists():
@@ -2512,7 +2512,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     icon = CAT_ICONS.get(exp.category, "📦")
                     lines.append(f"• {icon} *₹{exp.amount:,.0f}* - {exp.description or exp.category.title()}")
             else:
-                lines.append("Aaj abhi tak koi kharcha add nahi kiya gaya hai. 👍")
+                lines.append("No expenses recorded for today yet. 👍")
                 
             lines.append(f"━━━━━━━━━━━━━━━━━━")
             lines.append(f"🎯 *Remaining Budget:* ₹{rem:,.0f}")
@@ -2530,7 +2530,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     f"💰 *Total Spent:* ₹{float(spent):,.0f}\n"
                     f"💸 *Remaining Balance:* ₹{rem:,.0f}\n"
                     f"━━━━━━━━━━━━━━━━━━\n"
-                    f"{'⚠️ Budget limit reached! 🛑' if rem == 0 else '✅ Budget control me hai! 👍'}"
+                    f"{'⚠️ Budget limit reached! 🛑' if rem == 0 else '✅ Budget is on track! 👍'}"
                 )
             })
 
@@ -2620,16 +2620,16 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 return JsonResponse({
                     "status": "success",
                     "message": (
-                        "❌ *Koi Active Trip/Split Nahi Mila*\n\n"
-                        "Naya trip shuru karne ke liye WhatsApp par message bhejein:\n"
+                        "❌ *No Active Trips Found*\n\n"
+                        "To start a new trip split, send a message like:\n"
                         "👉 *Goa trip: Ajay 2000, Aman 2000*\n\n"
-                        "Ya PaisaMitra App me *Expense Split* tab me jakar *Create Group* karein! 🏖️"
+                        "Or open the *Expense Split* tab in the app to create a group! 🏖️"
                     )
                 })
 
         # ── Intercept Trip History / Split History ──
         trip_history_triggers = [
-            "trip history", "split history", "my trips", "mere trips", "all trips", "show my trips"
+            "trip history", "split history", "my trips", "all trips", "show my trips"
         ]
         if any(trg in lower_text for trg in trip_history_triggers) and not any(char.isdigit() for char in lower_text):
             host_domain = request.build_absolute_uri('/')[:-1]
@@ -2638,7 +2638,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             splits_url = f"{host_domain}/splits/"
             return JsonResponse({
                 "status": "success", 
-                "message": f"✈️ *Your Trip & Split History*\n\nAap is link par click karke apni saari trips manage, delete, ya dekh sakte hain:\n🔗 {splits_url}\n\n_(Kripya login karein jo number apne use kiya hai)_"
+                "message": f"✈️ *Your Trip & Split History*\n\nView and manage all your group trips and splits here:\n🔗 {splits_url}\n\n_(Log in with your registered phone number)_"
             })
 
         # ── Intercept Trip Format Guide / General Trip Inquiry ──
@@ -3158,7 +3158,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             if not created_expenses:
                 return JsonResponse({
                     "status": "error", 
-                    "message": "Amount samajh nahi aaya! Kripya amount ke saath bolein (Jaise: '500 petrol' ya '200 chai'). 🎙️"
+                    "message": "Could not detect the expense amount. Please include the amount (e.g. '500 petrol' or '200 coffee'). 🎙️"
                 })
 
             new_spent = float(spent) + float(total_logged)
@@ -3268,7 +3268,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         else:
             chat_response = ai_data.get("chat_response")
             if not chat_response or not str(chat_response).strip():
-                chat_response = f"Haanji *{user_name}*, bataiye! Sab kaisa chal raha hai? Koi kharcha note karna hai ya koi baat karni hai? 😊"
+                chat_response = f"Hello *{user_name}*! How is your day going? Would you like to log an expense or check your budget? 😊"
             
             final_chat_msg = str(chat_response).strip()
             if provider_message_id and sender_id:
@@ -3291,11 +3291,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
     except json.JSONDecodeError as e:
         logger.error("Voice expense JSON parse error: %s", e)
-        return JsonResponse({"status": "error", "message": "AI ka jawab samajh nahi aaya. Ek baar phir try karo! 🔄"})
+        return JsonResponse({"status": "error", "message": "Could not understand the AI response. Please try again! 🔄"})
     except Exception as e:
         user_id = target_user.id if target_user else "unknown"
         logger.error("Voice expense error uid=%s error=%s", user_id, e, exc_info=True)
-        return JsonResponse({"status": "error", "message": "😅 Server mein thodi gadbad hui. Thoda baad mein try karo!"})
+        return JsonResponse({"status": "error", "message": "😅 A momentary server glitch occurred. Please try again in a few moments."})
 
 
 def _keyword_category_fallback(text: str) -> str:
@@ -3390,7 +3390,7 @@ TOP SPENDING CATEGORIES:
         )
         reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
         if not reply:
-            reply = f"Bhai, is mahine aapka total kharcha ₹{stats['total_spent']:,.0f} hua hai aur ₹{stats['remaining_budget']:,.0f} bache hain. Koi specific hisaab jaanna hai toh batayein! 📊"
+            reply = f"This month your total spend is ₹{stats['total_spent']:,.0f} with ₹{stats['remaining_budget']:,.0f} remaining from your budget. Let me know if you need specific insights! 📊"
         logger.info("AI chat uid=%s msg_len=%d", request.user.id, len(user_msg))
         return JsonResponse({"reply": reply, "status": "success"})
 
@@ -3405,11 +3405,11 @@ TOP SPENDING CATEGORIES:
             )
             reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
             if not reply:
-                reply = f"Bhai, is mahine aapka ₹{stats['total_spent']:,.0f} kharch hua hai aur ₹{stats['remaining_budget']:,.0f} budget remaining hai! 📊"
+                reply = f"This month your total spend is ₹{stats['total_spent']:,.0f} with ₹{stats['remaining_budget']:,.0f} remaining in your budget! 📊"
             return JsonResponse({"reply": reply, "status": "success"})
         except Exception as e2:
             logger.error("AI chat fallback uid=%s error=%s", request.user.id, e2)
-            fallback_text = f"Bhai, is mahine aapka total kharcha ₹{stats['total_spent']:,.0f} hua hai (Budget: ₹{budget:,.0f}). Abhi ₹{stats['remaining_budget']:,.0f} bache hain. 📊"
+            fallback_text = f"This month your total spend is ₹{stats['total_spent']:,.0f} (Budget: ₹{budget:,.0f}). You have ₹{stats['remaining_budget']:,.0f} remaining. 📊"
             return JsonResponse({
                 "reply":  fallback_text,
                 "status": "success",
@@ -4761,14 +4761,14 @@ def whatsapp_summary(request):
         cat_breakdown = "\n".join([f"  🔸 {c['category'].title()}: ₹{c['cat_total']:,.0f}" for c in top_cats])
         
         if not cat_breakdown:
-            cat_breakdown = "  Koi kharcha nahi hai abhi tak!"
+            cat_breakdown = "  No expenses logged yet!"
         
         # 4. WHATSAPP REPORT MESSAGE
         report_msg = f"📊 *ExpenseTracker Lifetime Report*\n\n"
-        report_msg += f"💸 *Aabi Tak Ka Total Kharcha:* ₹{lifetime_spent:,.0f}\n"
-        report_msg += f"📅 *Is Mahine Ka Kharcha:* ₹{month_spent:,.0f} (Budget: ₹{budget:,.0f})\n"
-        report_msg += f"✅ *Bacha Hua Budget:* ₹{remaining:,.0f}\n\n"
-        report_msg += f"🔥 *Top 3 Kharcho Ki Jagah (Lifetime):*\n{cat_breakdown}\n\n"
+        report_msg += f"💸 *All-Time Total Spent:* ₹{lifetime_spent:,.0f}\n"
+        report_msg += f"📅 *This Month Spent:* ₹{month_spent:,.0f} (Budget: ₹{budget:,.0f})\n"
+        report_msg += f"✅ *Remaining Budget:* ₹{remaining:,.0f}\n\n"
+        report_msg += f"🔥 *Top 3 Categories (Lifetime):*\n{cat_breakdown}\n\n"
         
         # 5. AI SUGGESTION (Groq API call)
         try:

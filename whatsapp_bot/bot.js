@@ -530,7 +530,7 @@ async function startBot(sessionName = null) {
         } catch (err) {
             console.error('❌ Error processing message:', err.message || err);
             try {
-                await safeReply(remoteJid, "⚠️ Server busy tha, kripya 5 second baad dobara text bhejein.");
+                await safeReply(remoteJid, "⚠️ Server was temporarily busy, please resend your message in a few seconds.");
             } catch (replyErr) {}
         }
     });
