@@ -8233,12 +8233,12 @@ def get_app_version(request):
     direct_url = f"{base}/download-apk/"
     return JsonResponse({
         "status": "success",
-        "latest_version": "1.4.1",
-        "latest_version_code": 11,
+        "latest_version": "1.4.2",
+        "latest_version_code": 12,
         "apk_url": direct_url,
         "direct_expo_url": GITHUB_APK_CDN_URL,
-        "release_notes": "Standard clean release: 100% Play Protect verified & instant 1-tap install on all Android devices!",
-        "published_at": "2026-11-12",
+        "release_notes": "Interactive Feature Tour, Keyboard Safe Area fixes, and smoother animations!",
+        "published_at": "2026-11-13",
     })
 
 
