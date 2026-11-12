@@ -6546,15 +6546,17 @@ class CustomAuthToken(ObtainAuthToken):
                 if profile_qs.exists():
                     user = profile_qs.first().user
                     
-        generic_auth_err = 'Invalid credentials. Please check your username/email/phone and password.'
         if not user:
             # Timing-safe dummy calculation
             User().set_password('timing_safety_dummy_password')
-            return Response({'error': generic_auth_err}, status=401)
+            return Response({
+                'error': 'No account found with this username, email or mobile number.',
+                'code': 'ACCOUNT_NOT_FOUND'
+            }, status=404)
             
         authenticated_user = authenticate(request=request, username=user.username, password=password)
         if not authenticated_user:
-            return Response({'error': generic_auth_err}, status=401)
+            return Response({'error': 'Incorrect password. Please check your password.'}, status=401)
             
         token, created = Token.objects.get_or_create(user=authenticated_user)
         touch_token_activity(token)
@@ -6892,22 +6894,9 @@ def api_send_otp(request):
     phone_param = request.data.get('phone_number')
 
     if not raw_identifier and not phone_param and not email_param:
-        return Response({'error': 'Phone number or email is required.'}, status=400)
+        return Response({'error': 'Username, phone number or email is required.'}, status=400)
 
-    # 1. Identify Phone Target
-    phone_target = None
-    candidates = [phone_param, raw_identifier]
-    for c in candidates:
-        if c and '@' not in str(c):
-            digits = ''.join(ch for ch in str(c) if ch.isdigit())
-            if len(digits) == 10:
-                phone_target = f"91{digits}"
-                break
-            elif len(digits) >= 11:
-                phone_target = digits
-                break
-
-    # 2. Identify Email Target
+    # 1. Identify Email Target
     email_target = None
     candidates_email = [email_param, raw_identifier]
     for e in candidates_email:
@@ -6915,35 +6904,34 @@ def api_send_otp(request):
             email_target = str(e).strip().lower()
             break
 
-    if not phone_target and not email_target:
-        return Response({'error': 'A valid phone number or email is required.'}, status=400)
+    # 2. Identify Phone Target (only if pure digits or formatted phone)
+    phone_target = None
+    candidates_phone = [phone_param, raw_identifier]
+    for c in candidates_phone:
+        if c and '@' not in str(c):
+            s = str(c).strip()
+            digits = ''.join(ch for ch in s if ch.isdigit())
+            if digits and (s.startswith('+') or s.isdigit() or (len(digits) in [10, 12] and digits == s)):
+                if len(digits) == 10:
+                    phone_target = f"91{digits}"
+                    break
+                elif len(digits) >= 11:
+                    phone_target = digits
+                    break
 
-    # Validation based on action
+    # Validation and Resolution based on action
     if action == 'register':
+        if not phone_target and not email_target:
+            return Response({'error': 'Please enter a valid 10-digit mobile number or email address.'}, status=400)
         if phone_target:
             p_alt = phone_target[2:] if phone_target.startswith('91') and len(phone_target) == 12 else phone_target
             if UserProfile.objects.filter(phone_number__in=[phone_target, p_alt]).exists():
-                return Response({'error': 'An account with this phone number already exists.'}, status=400)
+                return Response({'error': 'An account with this phone number already exists.', 'code': 'PHONE_ALREADY_EXISTS'}, status=400)
         if email_target:
             if User.objects.filter(email__iexact=email_target).exists():
-                return Response({'error': 'An account with this email already exists.'}, status=400)
-    elif action == 'reset':
-        user_found = False
-        if email_target and User.objects.filter(email__iexact=email_target).exists():
-            user_found = True
-        if not user_found and phone_target:
-            p_alt = phone_target[2:] if phone_target.startswith('91') and len(phone_target) == 12 else phone_target
-            profile = UserProfile.objects.filter(phone_number__in=[phone_target, p_alt]).first()
-            if profile:
-                user_found = True
-                if not email_target and profile.user.email:
-                    email_target = profile.user.email.strip().lower()
-            elif User.objects.filter(username__iexact=phone_target).exists():
-                user_found = True
-        if not user_found:
-            # AUTH-001: Generic response to prevent account enumeration
-            return Response({'status': 'success', 'message': 'If an account exists with this phone number or email, a verification code has been sent.'})
-    elif action == 'login':
+                return Response({'error': 'An account with this email already exists.', 'code': 'EMAIL_ALREADY_EXISTS'}, status=400)
+
+    elif action in ['login', 'reset']:
         user = None
         if email_target:
             user = User.objects.filter(email__iexact=email_target).first()
@@ -6952,24 +6940,38 @@ def api_send_otp(request):
             profile = UserProfile.objects.filter(phone_number__in=[phone_target, p_alt]).first()
             if profile:
                 user = profile.user
+            else:
+                user = User.objects.filter(username__in=[phone_target, p_alt]).first()
         if not user and raw_identifier:
-            user = User.objects.filter(username__iexact=raw_identifier).first()
-            if not user and '@' in str(raw_identifier):
-                user = User.objects.filter(email__iexact=str(raw_identifier).strip().lower()).first()
-            
+            s_raw = str(raw_identifier).strip()
+            user = User.objects.filter(username__iexact=s_raw).first()
+            if not user and '@' in s_raw:
+                user = User.objects.filter(email__iexact=s_raw.lower()).first()
+
         if not user:
-            # AUTH-001: Generic response to prevent account enumeration
-            return Response({'status': 'success', 'message': 'If an account exists with this identifier, a verification code has been sent.'})
-            
+            return Response({
+                'error': 'No account found with this username, email or mobile number. Please check or register first.',
+                'code': 'ACCOUNT_NOT_FOUND'
+            }, status=404)
+
+        # Populate targets from existing user profile
         if user.email and not email_target:
             email_target = user.email.strip().lower()
         if hasattr(user, 'profile') and user.profile.phone_number and not phone_target:
-            p = user.profile.phone_number
-            if not str(p).startswith('g_'):
-                if p.startswith('91') or len(p) >= 11:
-                    phone_target = p
-                elif len(p) == 10:
-                    phone_target = f"91{p}"
+            p = str(user.profile.phone_number)
+            if not p.startswith('g_'):
+                digits = ''.join(ch for ch in p if ch.isdigit())
+                if len(digits) == 10:
+                    phone_target = f"91{digits}"
+                elif len(digits) >= 11:
+                    phone_target = digits
+
+        if not phone_target and not email_target:
+            return Response({
+                'error': 'No registered mobile number or email found on this account to receive OTP.',
+                'code': 'NO_CONTACT_METHOD'
+            }, status=400)
+
     elif action == 'link_phone':
         if not phone_target:
             return Response({'error': 'A valid 10-digit mobile number is required.'}, status=400)
@@ -6980,6 +6982,10 @@ def api_send_otp(request):
                 'error': 'This mobile number is already registered with another account.',
                 'code': 'PHONE_ALREADY_EXISTS'
             }, status=400)
+
+    else:
+        if not phone_target and not email_target:
+            return Response({'error': 'A valid phone number or email is required.'}, status=400)
 
     # AUTH-001: Rate limiting by IP + identifier + action
     ip = _get_client_ip(request)
@@ -7186,8 +7192,10 @@ def api_login_otp(request):
         user = User.objects.filter(email__iexact=identifier).first()
         
     if not user:
-        # AUTH-001: Generic response to prevent account enumeration
-        return Response({'error': 'Invalid credentials or expired OTP code. Please try again.'}, status=400)
+        return Response({
+            'error': 'No account found with this username, email or mobile number.',
+            'code': 'ACCOUNT_NOT_FOUND'
+        }, status=404)
         
     valid_idents = [identifier, user.username]
     if clean_digits:
