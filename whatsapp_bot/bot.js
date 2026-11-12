@@ -486,8 +486,8 @@ async function startBot(sessionName = null) {
                 `📥 *Universal Download Webpage (Auto 5s Timer):*\nhttps://expense-coach-prxm.onrender.com/download/\n\n` +
                 `⚡ *Direct Fast CDN Download:*\nhttps://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\n\n` +
                 `✨ *Key Features:*\n` +
-                `• Auto-capture payments (Google Pay, PhonePe, Paytm & Banking SMS)\n` +
                 `• Instant Voice & Text expense tracking\n` +
+                `• AI Natural Language expense categorization\n` +
                 `• Real-time budget alerts & Home screen widgets\n\n` +
                 `💡 *How to Install:*\n` +
                 `1️⃣ Tap the download link above to get the APK file.\n` +

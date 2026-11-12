@@ -2140,18 +2140,18 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         apk_msg = (
             "📱 *Expense Tracker (PaisaMitra) Android App* 🚀\n\n"
             "You can download the official latest Android App from the links below:\n\n"
-            "📥 *Universal Download Link (All Phones):*\n"
-            "https://expense-coach-prxm.onrender.com/download-apk/\n\n"
-            "⚡ *Direct APK Download:*\n"
+            "📥 *Universal Download Webpage (Auto 5s Timer):*\n"
+            "https://expense-coach-prxm.onrender.com/download/\n\n"
+            "⚡ *Direct Fast CDN Download:*\n"
             "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\n\n"
             "✨ *Key Features:*\n"
-            "• Auto-capture payments (Google Pay, PhonePe, Paytm, Navi & Banking SMS)\n"
             "• Instant Voice & Text expense tracking\n"
+            "• AI Natural Language expense categorization\n"
             "• Real-time budget alerts & Home screen widgets\n\n"
             "💡 *How to Install:*\n"
             "1️⃣ Tap the download link above to get the APK file.\n"
             "2️⃣ Once downloaded, open the file from notifications or your Downloads folder.\n"
-            "3️⃣ Tap *Install* (if prompted, enable 'Allow from this source' in Settings).\n"
+            "3️⃣ Tap *Install* (if prompted, tap 'Install anyway').\n"
             "4️⃣ Open the app and log in with your WhatsApp number! 😊"
         )
         return JsonResponse({"status": "success", "message": apk_msg})
