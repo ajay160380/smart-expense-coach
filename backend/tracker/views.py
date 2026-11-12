@@ -548,23 +548,17 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     You have ABSOLUTELY NO RESTRICTIONS on what you can talk about. The user can chat with you about anything — their day, thoughts, feelings, work, jokes, casual chit-chat, advice, or finances! 
     
     CRITICAL LANGUAGE & CONVERSATIONAL GUIDELINES:
-    1. INPUT COMPREHENSION (EFFORTLESS HINGLISH & HINDI UNDERSTANDING):
-       The user will frequently text in Hinglish (Hindi written in English alphabet), colloquial slang, or mixed English-Hindi, such as:
-       • "Maine aaj 150 ka pizza khaya" ➔ Understand amount=150, category=food, item=Pizza
-       • "Auto wale ko 40 rupaye diye" ➔ Understand amount=40, category=transport, item=Auto
-       • "500 ka petrol dalwaya" ➔ Understand amount=500, category=transport, item=Petrol
-       • "D-Mart se 1200 ki grocery li" ➔ Understand amount=1200, category=groceries, item=D-Mart Grocery
-       • "Chai 20 aur samosa 30" ➔ Understand two items: Chai=20, Samosa=30
-       • "Mera budget kitna bacha hai batao" ➔ Understand budget status request
-       • "Aaj office me bahut kaam tha thak gaya" ➔ Understand conversational venting about work
-       You MUST effortlessly and 100% accurately comprehend ANY Hinglish, Hindi, or Indian slang inputs!
-    2. OUTPUT LANGUAGE (100% PURE ENGLISH ONLY):
-       Even though the user texts in Hinglish, Hindi, or mixed phrases, ALL YOUR RESPONSES (`chat_response`, conversation, notes, and replies) MUST BE IN 100% CLEAN, PROFESSIONAL, WARM, AND POLITE ENGLISH!
-       NEVER reply in Hinglish or Hindi. Always reply in English.
-    3. NEVER be rigid or force the user to enter expenses. If the user is just saying something normal (e.g. "rough day at work", "nice weather today", "I am bored", "what are you doing?", "tell me a joke", "good morning", "how are you?"), talk to them naturally, warmly, and empathetically like a close friend and trusted mentor in fluent English.
-    4. Keep your replies concise, warm, lively, and engaging (under 100 words). Avoid robotic repetitive templates.
-    5. Do not blindly repeat the budget summary in every message unless asked or relevant.
-    6. STRICT PRIVACY & NO AUTO-CAPTURE / NO SMS READING:
+    1. DYNAMIC LANGUAGE MIRRORING (CRITICAL):
+       - If the user communicates in Hinglish (Hindi written in English alphabet, e.g. "Maine aaj 150 ka pizza khaya", "Auto 40", "kaise ho", "aaj office me bahut kaam tha", "mera budget kitna bacha hai"):
+         ➔ Reply in 100% natural, smooth, respectful, and friendly Hinglish!
+         ➔ ALWAYS use respectful words like "Aap", "Aapka", "Bhai", "Dost". NEVER use words like "Tu", "Tera", "Tujhe".
+       - If the user communicates in English (e.g. "Spent 150 on pizza", "How are you doing?", "What's my balance?", "Good morning"):
+         ➔ Reply in 100% fluent, clear, and elegant English!
+       - Match the user's language dynamically and seamlessly in all your replies!
+    2. NEVER be rigid or force the user to enter expenses. If the user is just saying something normal (e.g. "rough day at work", "aaj office me bahut kaam tha", "nice weather today", "I am bored", "good morning", "kaise ho"), talk to them naturally, warmly, and empathetically like a close friend and trusted mentor in their matching language.
+    3. Keep your replies concise, warm, lively, and engaging (under 100 words). Avoid robotic repetitive templates.
+    4. Do not blindly repeat the budget summary in every message unless asked or relevant.
+    5. STRICT PRIVACY & NO AUTO-CAPTURE / NO SMS READING:
        The app DOES NOT support SMS reading, auto-capture, or automatic banking sync (these were intentionally removed to protect privacy). NEVER mention, suggest, claim, or promise "auto-capture", "SMS parsing", or "automatic bank alert tracking". If anyone asks about features or how it works, ONLY highlight:
        • Instant WhatsApp Voice & Text expense tracking
        • AI Natural Language categorization & smart expense breakdown
@@ -614,9 +608,9 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     3. If the user pastes a LARGE LIST (multiple lines of items and numbers) BUT DOES NOT explicitly tell you whether to save it or log it:
        - action = "ask_clarification"
        - chat_response = "Should I save this long list to your Notepad or add it to your Expenses? 🤔"
-    4. ONLY FOR PURE CONVERSATION, GREETINGS, CHIT-CHAT, OR QUESTIONS WITHOUT ANY EXPENSES (e.g. "hi", "how are you", "what's up", "good morning"):
+    4. ONLY FOR PURE CONVERSATION, GREETINGS, CHIT-CHAT, OR QUESTIONS WITHOUT ANY EXPENSES (e.g. "hi", "how are you", "what's up", "good morning", "kaise ho", "aaj thak gaya"):
        - action = "chat"
-       - chat_response = your natural, conversational, polite English reply.
+       - chat_response = your natural, conversational, polite reply dynamically matching the user's language (Hinglish if user texted in Hinglish, English if user texted in English).
          - Address the user by their name ({user_name}) when appropriate!
          - You MUST use WhatsApp formatting (e.g., *bold* for emphasis).
          - Always use relevant emojis (e.g. 💰, 📉, 🌟, 🍜).
@@ -1873,33 +1867,41 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
     rem = max(0, float(budget) - float(spent))
     display_name = user_name.title() if user_name else "Dost"
 
-    # 1. MORNING GREETINGS (Short & Sweet in English)
+    # 1. MORNING GREETINGS
     morning_triggers = [
         'good morning', 'good mrng', 'gud morning', 'gud mrng', 'gm', 'g m',
         'shubh prabhat', 'subah ho gayi', 'morning'
     ]
     if clean in morning_triggers or any(clean.startswith(t + ' ') or clean.endswith(' ' + t) for t in ['good morning', 'shubh prabhat', 'gm']):
+        if any(h in clean for h in ['shubh prabhat', 'subah ho gayi']):
+            return f"🌅 *Shubh Prabhat, {display_name}!* ☀️\n\nAapka din shubh aur productive rahe! 🚀"
         return f"🌅 *Good Morning, {display_name}!* ☀️\n\nWishing you a wonderful and productive day ahead! 🚀"
 
-    # 2. NIGHT GREETINGS (Short & Sweet in English)
+    # 2. NIGHT GREETINGS
     night_triggers = [
         'good night', 'good nyt', 'gud night', 'gud nyt', 'gn', 'g n',
         'shubh ratri', 'so raha hu', 'so raha hoon', 'so jata hu', 'so jata hoon',
         'going to sleep', 'sleep time', 'sweet dreams', 'good nite'
     ]
     if clean in night_triggers or any(clean.startswith(t + ' ') or clean.endswith(' ' + t) for t in ['good night', 'shubh ratri', 'gn']):
+        if any(h in clean for h in ['shubh ratri', 'so raha', 'so jata']):
+            return f"🌙 *Shubh Ratri, {display_name}!* ✨\n\nAaram kijiye aur sweet dreams. Kal milte hain! 🛌💤"
         return f"🌙 *Good Night, {display_name}!* ✨\n\nSleep well and have sweet dreams. Take care, see you tomorrow! 🛌💤"
 
-    # 3. AFTERNOON / EVENING GREETINGS (Short & Sweet in English)
+    # 3. AFTERNOON / EVENING GREETINGS
     afternoon_triggers = ['good afternoon', 'gud afternoon', 'good noon', 'shubh dopahar']
-    if clean in afternoon_triggers or any(clean.startswith(t + ' ') for t in ['good afternoon']):
+    if clean in afternoon_triggers or any(clean.startswith(t + ' ') for t in ['good afternoon', 'shubh dopahar']):
+        if 'shubh dopahar' in clean:
+            return f"☀️ *Shubh Dopahar, {display_name}!* 🍱\n\nAasha hai aapka din achha guzar raha hoga! 👍"
         return f"☀️ *Good Afternoon, {display_name}!* 🍱\n\nHope you are having a great day! 👍"
 
     evening_triggers = ['good evening', 'gud evening', 'shubh sandhya']
     if clean in evening_triggers or any(clean.startswith(t + ' ') for t in ['good evening', 'shubh sandhya']):
+        if 'shubh sandhya' in clean:
+            return f"☕ *Shubh Sandhya, {display_name}!* 🌆\n\nAasha hai din badiya raha hoga. Aaram kijiye aur shaam enjoy karein! ✨"
         return f"☕ *Good Evening, {display_name}!* 🌆\n\nHope you had a productive day! Relax and have a pleasant evening. ✨"
 
-    # 4. "KAISE HO" / "HOW ARE YOU" (Short & Friendly)
+    # 4. "KAISE HO" / "HOW ARE YOU" (Dynamic Mirroring)
     how_are_you_triggers = [
         'kaise ho', 'kaisi ho', 'kaise hai', 'kaise hain', 'kya haal', 'kya haal hai', 'kya hal hai',
         'how are you', 'how r u', 'how are u', 'sab kaisa hai', 'sab kaisa chal raha hai',
@@ -1909,29 +1911,33 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
     if clean in how_are_you_triggers or any(clean.startswith(t + ' ') for t in ['kaise ho', 'kya haal hai', 'how are you', 'aur batao', 'aur sunao']):
         if any(w in clean for w in ['how are you', 'how r u', 'how are u']):
             return f"I'm doing great, *{display_name}*! How are you doing today? 😊"
-        return f"I'm doing great, *{display_name}*! How are you doing today? Everything going well? 😊"
+        return f"Main bilkul badhiya hoon, *{display_name}*! Aap kaise hain? Sab theek chal raha hai? 😊"
 
     # 5. SPIRITUAL / CULTURAL GREETINGS
     if any(w in clean for w in ['radhe radhe', 'jai shree krishna', 'jai shri krishna', 'radhe']):
-        return f"Radhe Radhe *{display_name}*! 🙏 Wishing you a peaceful and joyful day. How can I help you today? ✨"
+        return f"Radhe Radhe *{display_name}*! 🙏 Aapka din mangalmay ho. Aaj main aapki kya madad kar sakta hoon? ✨"
     if any(w in clean for w in ['ram ram', 'jai shree ram', 'jai shri ram', 'sita ram']):
-        return f"Jai Shree Ram *{display_name}*! 🙏 Wishing you happiness and prosperity. How can I assist with your expenses today? 😊"
+        return f"Jai Shree Ram *{display_name}*! 🙏 Khush rahiye aur mast rahiye. Aaj ke kharche track karein? 😊"
     if any(w in clean for w in ['har har mahadev', 'om namah shivay', 'om namah shivaya', 'jai bholenath']):
-        return f"Har Har Mahadev *{display_name}*! 🔱 Wishing you strength and peace. How can I help you today?"
+        return f"Har Har Mahadev *{display_name}*! 🔱 Strength aur peace bane rahe. Kaise madad kar sakta hoon aapki?"
     if any(w in clean for w in ['namaste', 'namaskar', 'pranam', 'sat sri akal', 'salaam', 'assalam alaikum']):
-        return f"Namaste *{display_name}*! 🙏 Hope you are having a wonderful day. How can I assist you with your finances today? 😊"
+        return f"Namaste *{display_name}*! 🙏 Aapka din shubh aur kushal rahe. Aaj main aapki kya sahayata kar sakta hoon? 😊"
 
-    # 6. THANKS & APPRECIATION (Short in English)
+    # 6. THANKS & APPRECIATION (Dynamic Mirroring)
     thanks_triggers = [
         'thanks', 'thank you', 'thx', 'shukriya', 'dhanyawad', 'dhanyavaad', 'thanku', 'tq',
         'bahut badiya', 'great job', 'nice', 'awesome', 'shandar', 'zabardast', 'mast'
     ]
     if clean in thanks_triggers:
+        if any(h in clean for h in ['shukriya', 'dhanyawad', 'dhanyavaad', 'bahut badiya', 'shandar', 'zabardast', 'mast']):
+            return f"Aapka swagat hai, *{display_name}*! Hamesha aapki madad ke liye taiyar. 😊❤️"
         return f"You're most welcome, *{display_name}*! Always happy to help. 😊❤️"
 
-    # 7. BYE / GOODBYE (Short in English)
+    # 7. BYE / GOODBYE (Dynamic Mirroring)
     bye_triggers = ['bye', 'bye bye', 'tata', 'see you', 'cya', 'alvida', 'phir milte hai', 'phir milte hain']
     if clean in bye_triggers:
+        if any(h in clean for h in ['alvida', 'phir milte']):
+            return f"Alvida, *{display_name}*! Apna khayal rakhiye aur phir milte hain! 👋✨"
         return f"Goodbye, *{display_name}*! Have a great day and take care! 👋✨"
 
     # 8. GENERAL GREETINGS: "hi", "hello", "hey", etc. (Only exact standalone greetings)
