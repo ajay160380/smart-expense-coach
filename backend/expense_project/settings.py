@@ -188,7 +188,7 @@ else:
             'default': dj_database_url.config(
                 default=db_url,
                 conn_max_age=600,
-                conn_health_checks=True,
+                conn_health_checks=False,
             )
         }
     elif DEBUG:
@@ -354,7 +354,11 @@ LOGGING = {
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'django_cache_table',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'expense_tracker_fast_cache',
+        'TIMEOUT': 300,
+        'OPTIONS': {
+            'MAX_ENTRIES': 2500,
+        }
     }
 }

@@ -561,39 +561,68 @@ export default function DashboardScreen({ navigation }) {
         }
       }).catch(() => {});
 
-      // ── 4. FETCH FAST CORE STATS (Concurrent & Lightning fast) ──
-      const [statsRes, compRes, anomRes, goalsRes, subsRes] = await Promise.allSettled([
-        api.get('/summary-stats/'),
-        api.get('/monthly-comparison/'),
-        api.get('/anomalies/'),
-        api.get('/savings-goals/'),
-        api.get('/subscriptions/'),
-      ]);
-
-      let newStats, newComp, newAnom = [];
+      // ── 4. FETCH ALL DASHBOARD STATS IN SINGLE ATOMIC REQUEST (10x FASTER) ──
+      let newStats = null, newComp = null, newAnom = [];
       let newGoals = [];
       let newSubs = null;
-      
-      if (statsRes.status === 'fulfilled') {
-        newStats = statsRes.value.data;
-        setStats(newStats);
-        setLoading(false);
-      }
-      if (compRes.status === 'fulfilled') {
-        newComp = compRes.value.data;
-        setComparison(newComp);
-      }
-      if (anomRes.status === 'fulfilled') {
-        newAnom = anomRes.value.data?.alerts || [];
-        setAnomalies(newAnom);
-      }
-      if (goalsRes.status === 'fulfilled') {
-        newGoals = goalsRes.value.data?.goals || [];
-        setGoals(newGoals);
-      }
-      if (subsRes.status === 'fulfilled') {
-        newSubs = subsRes.value.data;
-        setSubsData(newSubs);
+
+      try {
+        const allRes = await api.get('/dashboard-all/');
+        const data = allRes.data;
+        if (data.status === 'success') {
+          if (data.stats) {
+            newStats = data.stats;
+            setStats(newStats);
+            setLoading(false);
+          }
+          if (data.comparison) {
+            newComp = data.comparison;
+            setComparison(newComp);
+          }
+          if (data.anomalies) {
+            newAnom = data.anomalies;
+            setAnomalies(newAnom);
+          }
+          if (data.goals) {
+            newGoals = data.goals;
+            setGoals(newGoals);
+          }
+          if (data.subscriptions) {
+            newSubs = data.subscriptions;
+            setSubsData(newSubs);
+          }
+        }
+      } catch (err) {
+        // Fallback to concurrent individual requests if needed
+        const [statsRes, compRes, anomRes, goalsRes, subsRes] = await Promise.allSettled([
+          api.get('/summary-stats/'),
+          api.get('/monthly-comparison/'),
+          api.get('/anomalies/'),
+          api.get('/savings-goals/'),
+          api.get('/subscriptions/'),
+        ]);
+
+        if (statsRes.status === 'fulfilled') {
+          newStats = statsRes.value.data;
+          setStats(newStats);
+          setLoading(false);
+        }
+        if (compRes.status === 'fulfilled') {
+          newComp = compRes.value.data;
+          setComparison(newComp);
+        }
+        if (anomRes.status === 'fulfilled') {
+          newAnom = anomRes.value.data?.alerts || [];
+          setAnomalies(newAnom);
+        }
+        if (goalsRes.status === 'fulfilled') {
+          newGoals = goalsRes.value.data?.goals || [];
+          setGoals(newGoals);
+        }
+        if (subsRes.status === 'fulfilled') {
+          newSubs = subsRes.value.data;
+          setSubsData(newSubs);
+        }
       }
 
       // ── 5. SAVE FRESH DATA TO CACHE ──

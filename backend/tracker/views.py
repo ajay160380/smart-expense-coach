@@ -3574,8 +3574,24 @@ def api_anomalies(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"alerts": alerts, "count": len(alerts)})
 
 
+def invalidate_user_caches(user):
+    """PERF-001: Instant RAM cache invalidation for user metrics."""
+    if not user or not getattr(user, 'is_authenticated', False):
+        return
+    try:
+        cache.delete(f"summary_stats_u_{user.id}")
+        cache.delete(f"dash_all_{user.id}")
+    except Exception:
+        pass
+
+
 @api_login_required
 def api_summary_stats(request: HttpRequest) -> JsonResponse:
+    cache_key = f"summary_stats_u_{request.user.id}"
+    cached = cache.get(cache_key)
+    if cached is not None and not request.GET.get('fresh'):
+        return JsonResponse(cached)
+
     budget   = get_user_budget(request)
     month_qs = get_filtered_expenses(request.user, "month")
     stats    = calculate_stats(month_qs, budget)
@@ -3583,7 +3599,7 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
 
     recent_qs = month_qs.values('id', 'title', 'category', 'amount', 'date', 'icon', 'description') if hasattr(Expense, 'title') else month_qs.values('id', 'category', 'amount', 'date', 'icon', 'description')
     
-    return JsonResponse({
+    payload = {
         "budget":            budget,
         "budget_cycle_start_day": getattr(request.user.profile, 'budget_cycle_start_day', 1) if hasattr(request.user, 'profile') else 1,
         "total_spent":       round(stats["total_spent"], 2),
@@ -3602,7 +3618,118 @@ def api_summary_stats(request: HttpRequest) -> JsonResponse:
         "days_left": (
             (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
         ).days,
-    })
+    }
+    cache.set(cache_key, payload, timeout=10)
+    return JsonResponse(payload)
+
+
+@api_login_required
+def api_dashboard_all(request: HttpRequest) -> JsonResponse:
+    """
+    PERF-001: Consolidated mega-endpoint for Mobile App Dashboard.
+    Fetches stats, monthly comparison, anomalies, goals, and subscriptions in a single
+    HTTP round-trip with in-memory caching to eliminate multi-request queue delay.
+    """
+    user = request.user
+    cache_key = f"dash_all_{user.id}"
+    cached = cache.get(cache_key)
+    if cached is not None and not request.GET.get('fresh'):
+        return JsonResponse(cached)
+
+    today = date.today()
+    budget = get_user_budget(request)
+    month_qs = get_filtered_expenses(user, "month")
+    stats = calculate_stats(month_qs, budget)
+
+    recent_qs = month_qs.values('id', 'title', 'category', 'amount', 'date', 'icon', 'description') if hasattr(Expense, 'title') else month_qs.values('id', 'category', 'amount', 'date', 'icon', 'description')
+
+    summary_stats = {
+        "budget": budget,
+        "budget_cycle_start_day": getattr(user.profile, 'budget_cycle_start_day', 1) if hasattr(user, 'profile') else 1,
+        "total_spent": round(stats["total_spent"], 2),
+        "remaining": round(stats["remaining_budget"], 2),
+        "budget_percent": round(stats["budget_percent"], 1),
+        "transaction_count": stats["transaction_count"],
+        "avg_per_day": round(stats["avg_per_day"], 2),
+        "savings_rate": round(stats["savings_rate"], 1),
+        "overspent": stats["overspent"],
+        "month": today.strftime("%B %Y"),
+        "recent_expenses": list(recent_qs),
+        "user_phone": user.profile.phone_number if hasattr(user, 'profile') else "",
+        "whatsapp_linked": user.profile.whatsapp_linked if hasattr(user, 'profile') else False,
+        "safe_to_spend": calculate_safe_to_spend(user, today),
+        "daily_budget": calculate_daily_budget(user, today),
+        "days_left": ((today.replace(day=1) + timedelta(days=32)).replace(day=1) - today).days,
+    }
+
+    try:
+        comparison = build_monthly_comparison(user)
+    except Exception:
+        comparison = {}
+
+    try:
+        anomalies_list = detect_anomalies(user, budget)
+    except Exception:
+        anomalies_list = []
+
+    try:
+        goals = SavingsGoal.objects.filter(user=user)
+        monthly_savings = max(budget - float(stats["total_spent"]), 0)
+        goals_data = []
+        for g in goals:
+            rem = max(float(g.target_amount) - float(g.saved_amount), 0)
+            months_needed = math_ceil(rem / monthly_savings) if monthly_savings > 0 and rem > 0 else None
+            goals_data.append({
+                "id": g.pk,
+                "name": g.name,
+                "icon": g.icon,
+                "target_amount": float(g.target_amount),
+                "saved_amount": float(g.saved_amount),
+                "progress_percent": round(g.progress_percent, 1),
+                "deadline": g.deadline.isoformat() if g.deadline else None,
+                "is_completed": g.is_completed,
+                "months_needed": months_needed,
+                "created_at": g.created_at.isoformat(),
+            })
+    except Exception:
+        goals_data = []
+
+    try:
+        subs = Subscription.objects.filter(user=user).order_by("next_billing_date")
+        subs_data = []
+        for s in subs:
+            days_until = (s.next_billing_date - today).days
+            subs_data.append({
+                "id": s.pk,
+                "category": s.category,
+                "icon": CAT_ICONS.get(s.category, "📦"),
+                "color": CAT_COLORS.get(s.category, "#888"),
+                "amount": float(s.amount),
+                "next_billing": s.next_billing_date.isoformat(),
+                "days_until": days_until,
+                "due_soon": days_until <= 3,
+                "yearly_cost": float(s.amount) * 12,
+            })
+        tot_m = sum(d["amount"] for d in subs_data)
+        subs_payload = {
+            "subscriptions": subs_data,
+            "count": len(subs_data),
+            "total_monthly": tot_m,
+            "total_yearly": tot_m * 12,
+        }
+    except Exception:
+        subs_payload = {"subscriptions": [], "count": 0, "total_monthly": 0, "total_yearly": 0}
+
+    payload = {
+        "status": "success",
+        "stats": summary_stats,
+        "comparison": comparison,
+        "anomalies": anomalies_list,
+        "goals": goals_data,
+        "subscriptions": subs_payload,
+    }
+    cache.set(cache_key, payload, timeout=10)
+    return JsonResponse(payload)
 
 
 @api_login_required
@@ -4250,7 +4377,7 @@ def health_check(request: HttpRequest) -> JsonResponse:
     payload = {
         "status":    "ok" if db_ok else "degraded",
         "service":   "ExpenseTracker",
-        "version":   "3.2.1-authfix",
+        "version":   "3.3.0-turbo",
         "timestamp": datetime.now().isoformat(),
     }
     if not db_ok:
@@ -4268,7 +4395,7 @@ def health_live(request: HttpRequest) -> JsonResponse:
     return JsonResponse({
         "status":    "ok",
         "service":   "ExpenseTracker",
-        "version":   "3.2.1-authfix",
+        "version":   "3.3.0-turbo",
         "timestamp": datetime.now().isoformat(),
     })
 
@@ -4467,6 +4594,7 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
         description=validated.get("description", "") or "",
     )
     update_user_gamification(request.user, validated["date"])
+    invalidate_user_caches(request.user)
 
     return JsonResponse({
         "status":     "success",
@@ -4515,6 +4643,7 @@ def api_edit_expense(request: HttpRequest, pk: int) -> JsonResponse:
             pass
 
     expense.save()
+    invalidate_user_caches(request.user)
 
     return JsonResponse({
         "status": "success",
@@ -4534,6 +4663,7 @@ def api_delete_expense(request: HttpRequest, pk: int) -> JsonResponse:
         
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
     expense.delete()
+    invalidate_user_caches(request.user)
     return JsonResponse({"status": "success", "message": "Expense deleted."})
 
 
@@ -4967,22 +5097,22 @@ def api_monthly_comparison(request: HttpRequest) -> JsonResponse:
 @api_login_required
 def api_savings_goals(request: HttpRequest) -> JsonResponse:
     goals = SavingsGoal.objects.filter(user=request.user)
+    budget = float(getattr(request.user.profile, 'monthly_budget', 20000)) if hasattr(request.user, 'profile') else 20000.0
+    month_qs = Expense.objects.filter(
+        user=request.user,
+        date__year=date.today().year,
+        date__month=date.today().month
+    )
+    month_spent = _safe_float(month_qs.aggregate(t=Sum("amount"))["t"])
+    monthly_savings = max(budget - month_spent, 0)
+
     data = []
     for g in goals:
-        # Estimate months to complete
-        budget = float(getattr(request.user.profile, 'monthly_budget', 20000))
-        month_qs = Expense.objects.filter(
-            user=request.user,
-            date__year=date.today().year,
-            date__month=date.today().month
-        )
-        month_spent = _safe_float(month_qs.aggregate(t=Sum("amount"))["t"])
-        monthly_savings = max(budget - month_spent, 0)
         remaining = max(float(g.target_amount) - float(g.saved_amount), 0)
-
         if monthly_savings > 0 and remaining > 0:
             months_needed = math_ceil(remaining / monthly_savings)
         else:
+            months_needed = None
             months_needed = None
 
         data.append({
@@ -7349,7 +7479,7 @@ def api_logout(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def api_delete_account(request):
-    """Real permanent account deletion (GDPR & CCPA compliant)."""
+    """Real permanent account deletion (GDPR & CCPA compliant) - Ultra-fast atomic execution."""
     user = request.user
     password = request.data.get('password')
     
@@ -7359,8 +7489,40 @@ def api_delete_account(request):
             return Response({'error': 'Incorrect password. Account deletion aborted.'}, status=400)
 
     username = user.username
-    # Cascade delete deletes user, UserProfile, Expenses, Goals, Splits, Notes, Tokens
-    user.delete()
+    uid = user.id
+
+    from django.db import connection, transaction
+    fast_delete_sql = """
+    DELETE FROM authtoken_token WHERE user_id = %(uid)s;
+    DELETE FROM tracker_expense WHERE user_id = %(uid)s;
+    DELETE FROM tracker_savingsgoal WHERE user_id = %(uid)s;
+    DELETE FROM tracker_subscription WHERE user_id = %(uid)s;
+    DELETE FROM tracker_note WHERE user_id = %(uid)s;
+    DELETE FROM tracker_splitsettlement WHERE group_id IN (SELECT id FROM tracker_splitgroup WHERE creator_id = %(uid)s);
+    DELETE FROM tracker_splitexpense WHERE group_id IN (SELECT id FROM tracker_splitgroup WHERE creator_id = %(uid)s);
+    DELETE FROM tracker_splitmember WHERE group_id IN (SELECT id FROM tracker_splitgroup WHERE creator_id = %(uid)s);
+    DELETE FROM tracker_splitgroup WHERE creator_id = %(uid)s;
+    DELETE FROM tracker_feedback WHERE user_id = %(uid)s;
+    DELETE FROM tracker_userloginactivity WHERE user_id = %(uid)s;
+    DELETE FROM tracker_dailynotificationlog WHERE user_id = %(uid)s;
+    DELETE FROM tracker_appanalyticsevent WHERE user_id = %(uid)s;
+    DELETE FROM tracker_apperrorlog WHERE user_id = %(uid)s;
+    DELETE FROM tracker_usermerchantcategory WHERE user_id = %(uid)s;
+    DELETE FROM tracker_whatsappsession WHERE user_id = %(uid)s;
+    DELETE FROM tracker_userprofile WHERE user_id = %(uid)s;
+    DELETE FROM django_admin_log WHERE user_id = %(uid)s;
+    DELETE FROM auth_user_groups WHERE user_id = %(uid)s;
+    DELETE FROM auth_user_user_permissions WHERE user_id = %(uid)s;
+    DELETE FROM auth_user WHERE id = %(uid)s;
+    """
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(fast_delete_sql, {'uid': uid})
+    except Exception as e:
+        logger.warning("Fast delete fallback to ORM delete: %s", e)
+        user.delete()
+
     return Response({
         'status': 'success',
         'message': f'Account @{username} and all associated financial records have been permanently deleted.'
