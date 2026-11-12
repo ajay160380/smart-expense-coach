@@ -549,9 +549,16 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     
     CRITICAL LANGUAGE & CONVERSATIONAL GUIDELINES:
     1. DYNAMIC LANGUAGE MIRRORING (CRITICAL):
-       - If the user communicates in Hinglish (Hindi written in English alphabet, e.g. "Maine aaj 150 ka pizza khaya", "Auto 40", "kaise ho", "aaj office me bahut kaam tha", "mera budget kitna bacha hai"):
-         ➔ Reply in 100% natural, smooth, respectful, and friendly Hinglish!
-         ➔ ALWAYS use respectful words like "Aap", "Aapka", "Bhai", "Dost". NEVER use words like "Tu", "Tera", "Tujhe".
+       - If the user communicates in Hinglish (Hindi written in English alphabet, e.g. "Maine aaj 150 ka pizza khaya", "Auto 40", "kaise ho", "Or btvo kya kr rahe ho", "aaj office me bahut kaam tha", "mera budget kitna bacha hai"):
+         ➔ Reply in 100% authentic, natural, smooth, respectful, and friendly urban Hinglish (the way real friends chat on WhatsApp in Delhi/Mumbai/Lucknow/Bangalore)!
+         ➔ TONE: Warm, friendly, cheerful, like a helpful close friend ("Bhai", "Dost", "Aap").
+         ➔ GRAMMAR: Always maintain respectful address. Never mix "Aap" with "ho" (e.g. use "Aap kaise hain?", "Aap bataiye", not "Aap chahte ho"). NEVER use "Tu", "Tera", "Tujhe".
+         ➔ FORBIDDEN: NEVER use bizarre literal translations or robotic Hindi words (e.g. NEVER say "rozmarra howa hai", "vyay ka aakalan", "samagri", etc.).
+         ➔ AUTHENTIC HINGLISH EXAMPLES:
+           • User: "Or btvo kya kr rahe ho" ➔ "Bas badhiya {user_name} bhai! Main toh yahan aapke kharche aur hisaab-kitaab sambhalne ke liye taiyaar baitha hoon. Aap batao, aaj ka din kaisa raha? Koi naya kharcha hua kya? 😊"
+           • User: "Aaj office me bahut kaam tha thak gaya" ➔ "Arre yaar, lagta hai kaafi thaka dene wala din raha! Ab shaam ko aaram se chai piyo aur chill karo. Shaam ka koi chai-nashta ka kharcha note karna hai kya? ☕"
+           • User: "Bore ho raha hu" ➔ "Arre re! Koi achhi movie dekh lo ya favorite gaane sun lo. Ya fir batao, is mahine ka budget check karein? Abhi bhi kaafi paise bache hain! 🎬💰"
+           • User: "Khana kha liya?" ➔ "Main toh AI hoon dost, mera khana toh bas aapka hisaab aur data hai! 😄 Aapne dinner/lunch kar liya? Aaj kya special khaya?"
        - If the user communicates in English (e.g. "Spent 150 on pizza", "How are you doing?", "What's my balance?", "Good morning"):
          ➔ Reply in 100% fluent, clear, and elegant English!
        - Match the user's language dynamically and seamlessly in all your replies!
@@ -1864,6 +1871,13 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
     if any(c.isdigit() for c in clean):
         return None
 
+    # Normalize informal chat abbreviations & Hinglish slang
+    clean = re.sub(r'\b(btvo|btao|btaye|btado)\b', 'batao', clean)
+    clean = re.sub(r'\b(kr|krr)\b', 'kar', clean)
+    clean = re.sub(r'\b(rhe|rh)\b', 'rahe', clean)
+    clean = re.sub(r'\b(bdiya|bdia)\b', 'badhiya', clean)
+    clean = re.sub(r'\b(kch|kchh)\b', 'kuch', clean)
+
     rem = max(0, float(budget) - float(spent))
     display_name = user_name.title() if user_name else "Dost"
 
@@ -1901,14 +1915,27 @@ def _get_smart_greeting_response(text: str, user_name: str, target_user=None, to
             return f"☕ *Shubh Sandhya, {display_name}!* 🌆\n\nAasha hai din badiya raha hoga. Aaram kijiye aur shaam enjoy karein! ✨"
         return f"☕ *Good Evening, {display_name}!* 🌆\n\nHope you had a productive day! Relax and have a pleasant evening. ✨"
 
-    # 4. "KAISE HO" / "HOW ARE YOU" (Dynamic Mirroring)
+    # 4. "KYA KAR RAHE HO" / "WHAT ARE YOU DOING" (Instant Response)
+    doing_triggers = [
+        'kya kar rahe ho', 'kya kar rahe', 'kya kar rhe', 'what are you doing', 'what r u doing', 'what you doing'
+    ]
+    if any(t in clean for t in doing_triggers):
+        if any(w in clean for w in ['what are you doing', 'what r u doing', 'what you doing']):
+            return f"Just here and ready to help manage your expenses, *{display_name}*! How is your day going? 😊"
+        return f"Bas badhiya, *{display_name}*! Main toh yahan aapke kharche aur hisaab-kitaab sambhalne ke liye taiyaar baitha hoon. Aap batao, aaj ka din kaisa raha? Koi naya kharcha hua kya? 😊"
+
+    # 5. "AUR BATAO" / "AUR SUNAO" (Instant Response)
+    aur_batao_triggers = ['aur batao', 'or batao', 'aur sunao', 'or sunao', 'kuch sunao']
+    if any(t in clean for t in aur_batao_triggers) and not any(t in clean for t in ['how are you', 'how r u']):
+        return f"Sab ekdum badhiya, *{display_name}*! Aap sunao, aaj ka din kaisa chal raha hai? Koi naya kharcha add karna hai? 📝"
+
+    # 6. "KAISE HO" / "HOW ARE YOU" (Dynamic Mirroring)
     how_are_you_triggers = [
         'kaise ho', 'kaisi ho', 'kaise hai', 'kaise hain', 'kya haal', 'kya haal hai', 'kya hal hai',
         'how are you', 'how r u', 'how are u', 'sab kaisa hai', 'sab kaisa chal raha hai',
-        'kya chal raha hai', 'kya ho raha hai', 'sab theek', 'sab theek hai', 'sab badhiya',
-        'aur batao', 'aur bhai', 'aur sunao', 'kya chal rha h'
+        'kya chal raha hai', 'kya ho raha hai', 'sab theek', 'sab theek hai', 'sab badhiya'
     ]
-    if clean in how_are_you_triggers or any(t in clean for t in ['how are you', 'how r u', 'how are u', 'kaise ho', 'kya haal hai', 'kya hal hai', 'kya haal', 'sab kaisa hai', 'kya chal raha hai', 'aur batao', 'aur bhai', 'aur sunao']):
+    if clean in how_are_you_triggers or any(t in clean for t in ['how are you', 'how r u', 'how are u', 'kaise ho', 'kya haal hai', 'kya hal hai', 'kya haal', 'sab kaisa hai', 'kya chal raha hai']):
         if any(w in clean for w in ['how are you', 'how r u', 'how are u', 'how do you do']):
             return f"I'm doing great, *{display_name}*! How are you doing today? 😊"
         return f"Main bilkul badhiya hoon, *{display_name}*! Aap kaise hain? Sab theek chal raha hai? 😊"
