@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Download Expense Tracker (PaisaMitra) Android App</title>
-    <meta name="description" content="Download official PaisaMitra / Expense Tracker Android App APK. Free, secure, auto-tracks payments via WhatsApp & SMS.">
-    <link rel="icon" type="image/png" href="/static/images/logo.png">
+    <title>Download Expense Tracker (PaisaMitra) APK • Official</title>
+    <meta name="description" content="Download official Expense Tracker (PaisaMitra) v1.4.0 APK for Android. 100% free, safe, zero-battery tracking.">
+    <link rel="icon" type="image/png" href="/static/tracker/images/app-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366F1;
-            --primary-dark: #4F46E5;
-            --primary-glow: rgba(99, 102, 241, 0.35);
+            --primary-glow: #4F46E5;
             --accent: #10B981;
-            --bg-dark: #0B0F19;
-            --card-bg: rgba(22, 27, 46, 0.85);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --text-main: #F3F4F6;
-            --text-muted: #9CA3AF;
+            --accent-glow: rgba(16, 185, 129, 0.4);
+            --bg-dark: #080B14;
+            --card-surface: rgba(18, 24, 43, 0.75);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --card-border-glow: rgba(99, 102, 241, 0.3);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
         }
 
         * {
@@ -31,108 +32,164 @@
 
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, var(--bg-dark) 55%);
-            color: var(--text-main);
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.22) 0%, transparent 60%),
+                radial-gradient(circle at 10% 30%, rgba(139, 92, 246, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 45%);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 24px 16px 40px;
+            overflow-x: hidden;
         }
 
-        /* In-App Browser Warning Banner */
-        .iab-banner {
-            display: none;
-            width: 100%;
-            max-width: 460px;
-            background: linear-gradient(135deg, #F59E0B, #D97706);
-            color: #111827;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
-            line-height: 1.4;
-        }
-        .iab-banner a {
-            display: inline-block;
-            margin-top: 6px;
-            background: #111827;
-            color: #FBBF24;
-            padding: 6px 12px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 12px;
+        /* Ambient Glow Blobs in Background */
+        .ambient-glow {
+            position: fixed;
+            top: -150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(124, 58, 237, 0.15) 50%, transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
         }
 
         .container {
             width: 100%;
-            max-width: 460px;
+            max-width: 440px;
+            position: relative;
+            z-index: 1;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
         }
 
-        /* Main Download Card */
-        .card {
-            background: var(--card-bg);
+        /* In-App Browser Warning Banner (WhatsApp, Instagram, etc) */
+        .iab-banner {
+            display: none;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.2));
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 16px;
+            padding: 14px 16px;
+            color: #FDE68A;
+            font-size: 13px;
+            font-weight: 600;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            animation: fadeInDown 0.4s ease-out;
+        }
+
+        .iab-banner .title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #FBBF24;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .iab-banner a.chrome-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            background: #FBBF24;
+            color: #0F172A;
+            padding: 8px 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 12px;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+        }
+
+        /* Hero App Card */
+        .hero-card {
+            background: var(--card-surface);
             border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 32px 24px;
+            border-radius: 28px;
+            padding: 32px 22px 28px;
             text-align: center;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
             position: relative;
             overflow: hidden;
         }
 
-        .card::before {
+        .hero-card::after {
             content: '';
             position: absolute;
             top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #6366F1, #EC4899, #10B981);
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
         }
 
-        .app-icon-wrapper {
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 16px;
-            border-radius: 22px;
-            background: linear-gradient(135deg, #1E1B4B, #312E81);
+        /* 3D App Icon Frame */
+        .icon-container {
+            position: relative;
+            width: 104px;
+            height: 104px;
+            margin: 0 auto 20px;
+        }
+
+        .icon-glow-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, #6366F1, #A855F7, #10B981);
+            filter: blur(10px);
+            opacity: 0.7;
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        .icon-box {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            background: linear-gradient(145deg, #1E2238, #111424);
+            border: 2px solid rgba(255, 255, 255, 0.15);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 25px var(--primary-glow);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
         }
 
-        .app-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 18px;
+        .icon-box img {
+            width: 86px;
+            height: 86px;
+            border-radius: 19px;
             object-fit: cover;
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 800;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.6px;
             margin-bottom: 6px;
+            background: linear-gradient(180deg, #FFFFFF 30%, #CBD5E1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .tagline {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-bottom: 18px;
+            font-weight: 500;
         }
 
-        .badge-row {
+        .badges {
             display: flex;
             justify-content: center;
             gap: 8px;
@@ -143,202 +200,323 @@
         .badge {
             font-size: 11px;
             font-weight: 700;
-            padding: 4px 10px;
+            padding: 5px 11px;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #E0E7FF;
+            color: #E2E8F0;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .badge.green {
+        .badge.verified {
             background: rgba(16, 185, 129, 0.15);
-            border-color: rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.35);
             color: #34D399;
         }
 
-        /* Countdown status */
-        .status-msg {
-            font-size: 13px;
-            font-weight: 600;
-            color: #A5B4FC;
-            margin-bottom: 16px;
+        /* ══════════════════════════════════════════════════════
+           CIRCULAR PREMIUM COUNTDOWN TIMER (5 SECONDS)
+           ══════════════════════════════════════════════════════ */
+        .countdown-wrapper {
+            margin: 0 auto 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timer-circle-box {
+            position: relative;
+            width: 78px;
+            height: 78px;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .timer-svg {
+            width: 78px;
+            height: 78px;
+            transform: rotate(-90deg);
+        }
+
+        .timer-bg-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.07);
+            stroke-width: 5;
+        }
+
+        .timer-progress-circle {
+            fill: none;
+            stroke: url(#timerGradient);
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-dasharray: 219.9; /* 2 * PI * 35 */
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 0.1s linear;
+        }
+
+        .timer-number {
+            position: absolute;
+            font-size: 26px;
+            font-weight: 900;
+            color: #FFFFFF;
+            letter-spacing: -1px;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-status-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #93C5FD;
+            display: flex;
+            align-items: center;
             gap: 6px;
         }
 
-        .pulsing-dot {
-            width: 8px;
-            height: 8px;
-            background: #10B981;
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+            background: #10B981;
+            box-shadow: 0 0 10px #10B981;
+            animation: dotGlow 1.2s infinite;
         }
 
         /* Download Buttons */
-        .btn-download {
+        .btn-download-primary {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
             width: 100%;
             padding: 16px 20px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
             color: #FFFFFF;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 16px;
-            border-radius: 16px;
+            border-radius: 18px;
             text-decoration: none;
-            box-shadow: 0 10px 25px var(--primary-glow);
-            transition: all 0.2s ease;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            cursor: pointer;
+            box-shadow: 0 10px 28px rgba(79, 70, 229, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-download:active {
-            transform: scale(0.98);
+        .btn-download-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 3s infinite;
         }
 
-        .btn-mirror {
+        .btn-download-primary:active {
+            transform: scale(0.97);
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-mirror-link {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
             width: 100%;
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.05);
+            padding: 13px 16px;
+            background: rgba(255, 255, 255, 0.04);
             color: #C7D2FE;
             font-weight: 600;
             font-size: 13px;
-            border-radius: 12px;
+            border-radius: 14px;
             text-decoration: none;
             margin-top: 10px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.2s ease;
         }
 
-        .btn-mirror:active {
-            background: rgba(255, 255, 255, 0.1);
+        .btn-mirror-link:active {
+            background: rgba(255, 255, 255, 0.08);
         }
 
-        /* Install Steps Cards */
-        .steps-card {
-            background: var(--card-bg);
+        /* ══════════════════════════════════════════════════════
+           GUIDE CARDS (STEP BY STEP)
+           ══════════════════════════════════════════════════════ */
+        .guide-card {
+            background: var(--card-surface);
             border: 1px solid var(--card-border);
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 22px 20px;
             backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
 
-        .steps-header {
+        .guide-header {
             font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 14px;
+            font-weight: 800;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #E0E7FF;
+            color: #F8FAFC;
         }
 
-        .step-item {
+        .step-row {
             display: flex;
-            gap: 12px;
-            margin-bottom: 14px;
+            gap: 14px;
+            margin-bottom: 16px;
             align-items: flex-start;
         }
 
-        .step-item:last-child {
+        .step-row:last-child {
             margin-bottom: 0;
         }
 
-        .step-num {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(99, 102, 241, 0.2);
-            color: #A5B4FC;
+        .step-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(79, 70, 229, 0.35));
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #C7D2FE;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 800;
-            font-size: 12px;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-
-        .step-content {
             font-size: 13px;
-            line-height: 1.45;
-            color: #D1D5DB;
+            flex-shrink: 0;
         }
 
-        .step-content strong {
+        .step-text {
+            font-size: 13.5px;
+            line-height: 1.45;
+            color: #CBD5E1;
+        }
+
+        .step-text strong {
             color: #FFFFFF;
         }
 
-        .step-sub {
-            font-size: 11px;
-            color: #9CA3AF;
-            margin-top: 2px;
+        .step-hint {
+            font-size: 11.5px;
+            color: #94A3B8;
+            margin-top: 3px;
         }
 
-        /* Footer */
         footer {
             margin-top: auto;
             text-align: center;
             font-size: 12px;
-            color: #6B7280;
-            padding-top: 20px;
+            color: #64748B;
+            padding-top: 14px;
         }
 
         footer a {
             color: #818CF8;
             text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Keyframe Animations */
+        @keyframes pulseGlow {
+            0% { opacity: 0.5; transform: scale(0.98); }
+            100% { opacity: 0.85; transform: scale(1.02); }
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            40% { left: 100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes dotGlow {
+            0%, 100% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-    <!-- WhatsApp / In-App Browser Warning -->
-    <div id="iabBanner" class="iab-banner">
-        ⚠️ <strong>WhatsApp / In-App Browser Detected:</strong><br>
-        Agar download shuru nahi ho raha, to top right me <strong>⋮ (3 dots)</strong> par tap karein aur <strong>"Open in Chrome"</strong> select karein.
-        <div style="margin-top: 8px;">
-            <a id="openChromeBtn" href="#">⚡ Open in Chrome Browser</a>
-        </div>
-    </div>
+    <div class="ambient-glow"></div>
 
     <div class="container">
+
+        <!-- In-App Browser Warning Banner -->
+        <div id="iabBanner" class="iab-banner">
+            <div class="title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                WhatsApp / In-App Browser Detected
+            </div>
+            Agar download shuru nahi ho raha, to upar right me <strong>⋮ (3 dots)</strong> par tap karke <strong>"Open in Chrome"</strong> karein:
+            <div>
+                <a id="openChromeBtn" href="#" class="chrome-pill">⚡ 1-Tap Open in Chrome</a>
+            </div>
+        </div>
+
         <!-- Main Card -->
-        <div class="card">
-            <div class="app-icon-wrapper">
-                <img src="/static/images/logo.png" alt="Expense Tracker Logo" class="app-icon" onerror="this.src='https://raw.githubusercontent.com/ajay160380/smart-expense-coach/main/mobile_app/assets/icon.png'">
+        <div class="hero-card">
+            <div class="icon-container">
+                <div class="icon-glow-ring"></div>
+                <div class="icon-box">
+                    <img src="/static/tracker/images/app-icon.png" alt="Expense Tracker Logo" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/ajay160380/smart-expense-coach/main/mobile_app/assets/icon.png'">
+                </div>
             </div>
 
             <h1>Expense Tracker</h1>
             <p class="tagline">Smart AI Expense & Budget Coach (PaisaMitra)</p>
 
-            <div class="badge-row">
-                <span class="badge green">✓ Official Release</span>
+            <div class="badges">
+                <span class="badge verified">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Verified Build
+                </span>
                 <span class="badge">v1.4.0</span>
                 <span class="badge">Android APK</span>
                 <span class="badge">43.2 MB</span>
             </div>
 
-            <div class="status-msg" id="statusMsg">
-                <span class="pulsing-dot"></span>
-                <span id="statusText">Starting download in 2 seconds...</span>
+            <!-- 5-Second Circular Animated Countdown Timer -->
+            <div class="countdown-wrapper">
+                <div class="timer-circle-box">
+                    <svg class="timer-svg" viewBox="0 0 78 78">
+                        <defs>
+                            <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#10B981" />
+                                <stop offset="50%" stop-color="#6366F1" />
+                                <stop offset="100%" stop-color="#EC4899" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="timer-bg-circle" cx="39" cy="39" r="35"></circle>
+                        <circle id="timerProgress" class="timer-progress-circle" cx="39" cy="39" r="35"></circle>
+                    </svg>
+                    <div id="timerNum" class="timer-number">5</div>
+                </div>
+
+                <div class="timer-status-text" id="statusMessage">
+                    <span class="pulse-dot"></span>
+                    <span id="statusLabel">Auto-download starting in 5s...</span>
+                </div>
             </div>
 
-            <!-- Primary Direct Download Button -->
-            <a id="mainDownloadBtn" href="{{ direct_apk_url }}" class="btn-download" download="ExpenseTracker.apk">
+            <!-- Primary 1-Tap Download Button -->
+            <a id="mainDownloadBtn" href="{{ direct_apk_url }}" class="btn-download-primary" download="ExpenseTracker.apk">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -347,50 +525,51 @@
                 Download APK Now (43 MB)
             </a>
 
-            <!-- Fast Cloud Mirror -->
-            <a href="{{ mirror_apk_url }}" class="btn-mirror" download="ExpenseTracker.apk">
+            <!-- Fast Mirror -->
+            <a href="{{ mirror_apk_url }}" class="btn-mirror-link" download="ExpenseTracker.apk">
                 ⚡ Alternate Fast Cloud Mirror (Expo CDN)
             </a>
         </div>
 
-        <!-- Installation Guide -->
-        <div class="steps-card">
-            <div class="steps-header">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5B4FC" stroke-width="2">
+        <!-- 3-Step Visual Installation Guide -->
+        <div class="guide-card">
+            <div class="guide-header">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818CF8" stroke-width="2.5">
                     <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    <polyline points="12 6 12 12 14 14"></polyline>
                 </svg>
-                Install Karne Ka Tarika (Quick Guide):
+                Install Karne Ka Aasan Tarika (3 Steps):
             </div>
 
-            <div class="step-item">
-                <div class="step-num">1</div>
-                <div class="step-content">
-                    Agar browser puche <strong>"File might be harmful?"</strong> to <strong>"Download anyway"</strong> par tap karein.
-                    <div class="step-sub">Direct APK hone par Android har app me ye safety warning dikhata hai.</div>
+            <div class="step-row">
+                <div class="step-badge">1</div>
+                <div class="step-text">
+                    Browser puche <strong>"File might be harmful?"</strong> to <strong>"Download anyway"</strong> par tap karein.
+                    <div class="step-hint">Official build bina Play Store ke download karne par Android ye standard message dikhata hai.</div>
                 </div>
             </div>
 
-            <div class="step-item">
-                <div class="step-num">2</div>
-                <div class="step-content">
-                    Download complete hote hi notification me <strong>"Open"</strong> par tap karein.
+            <div class="step-row">
+                <div class="step-badge">2</div>
+                <div class="step-text">
+                    Download complete hone par notification se <strong>"Open"</strong> karein.
                 </div>
             </div>
 
-            <div class="step-item">
-                <div class="step-num">3</div>
-                <div class="step-content">
-                    Agar phone <strong>"Install Unknown Apps"</strong> bole, to <strong>Settings &gt; Allow from this source</strong> enable karke <strong>Install</strong> kar lein!
+            <div class="step-row">
+                <div class="step-badge">3</div>
+                <div class="step-text">
+                    Agar phone puche to <strong>Settings &gt; Allow from this source</strong> ON karke <strong>Install</strong> kar lein!
+                    <div class="step-hint">Purana app pehle se ho to use uninstall karke naya install karein.</div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <footer>
-        &copy; 2026 Expense Tracker • <a href="/">Visit Web App</a> • <a href="https://wa.me/14155238886">WhatsApp Bot</a>
-    </footer>
+        <footer>
+            &copy; 2026 Expense Tracker • <a href="/">Web App</a> • <a href="https://wa.me/14155238886">WhatsApp Bot</a>
+        </footer>
+
+    </div>
 
     <script>
         const directUrl = "{{ direct_apk_url }}";
@@ -407,31 +586,57 @@
 
             const openChromeBtn = document.getElementById('openChromeBtn');
             if (openChromeBtn) {
-                // Android intent URL to open link directly in Google Chrome
-                const cleanCurrentUrl = window.location.href.replace(/#.*$/, '');
-                const chromeIntentUrl = "intent://" + cleanCurrentUrl.replace(/^https?:\/\//, '') + (cleanCurrentUrl.includes('?') ? '&' : '?') + "direct=1#Intent;scheme=https;package=com.android.chrome;end";
-                openChromeBtn.href = chromeIntentUrl;
+                const cleanUrl = window.location.href.replace(/#.*$/, '');
+                const chromeIntent = "intent://" + cleanUrl.replace(/^https?:\/\//, '') + (cleanUrl.includes('?') ? '&' : '?') + "direct=1#Intent;scheme=https;package=com.android.chrome;end";
+                openChromeBtn.href = chromeIntent;
             }
         }
 
-        // Auto trigger download after 1.5 seconds if NOT inside WhatsApp WebView
-        if (!isInApp) {
-            let count = 2;
-            const statusText = document.getElementById('statusText');
-            const interval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    if (statusText) statusText.textContent = `Starting download in ${count} second...`;
+        // ══════════════════════════════════════════════════════
+        // 5-SECOND SMOOTH COUNTDOWN LOGIC
+        // ══════════════════════════════════════════════════════
+        const totalDurationMs = 5000;
+        const circumference = 219.9; // 2 * PI * 35
+        const progressBar = document.getElementById('timerProgress');
+        const timerNum = document.getElementById('timerNum');
+        const statusLabel = document.getElementById('statusLabel');
+
+        const startTime = Date.now();
+        let downloadTriggered = false;
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, totalDurationMs - elapsed);
+            const secondsLeft = Math.ceil(remaining / 1000);
+
+            // Progress offset
+            const progressRatio = remaining / totalDurationMs;
+            const offset = circumference * (1 - progressRatio);
+            if (progressBar) progressBar.style.strokeDashoffset = offset;
+
+            // Number display
+            if (timerNum) timerNum.textContent = secondsLeft > 0 ? secondsLeft : '✓';
+
+            if (statusLabel) {
+                if (secondsLeft > 0) {
+                    statusLabel.textContent = `Auto-download starting in ${secondsLeft}s...`;
                 } else {
-                    clearInterval(interval);
-                    if (statusText) statusText.textContent = "Download started! If not, tap button below:";
+                    statusLabel.textContent = "Download started! If not, tap below:";
+                }
+            }
+
+            if (remaining > 0) {
+                requestAnimationFrame(updateTimer);
+            } else if (!downloadTriggered) {
+                downloadTriggered = true;
+                if (!isInApp) {
                     window.location.href = directUrl;
                 }
-            }, 800);
-        } else {
-            const statusMsg = document.getElementById('statusMsg');
-            if (statusMsg) statusMsg.innerHTML = "Tap the <strong>Download APK</strong> button below:";
+            }
         }
+
+        // Start countdown
+        requestAnimationFrame(updateTimer);
     </script>
 </body>
 </html>
