@@ -7893,12 +7893,12 @@ def get_app_version(request):
     direct_url = f"{base}/download-apk/"
     return JsonResponse({
         "status": "success",
-        "latest_version": "1.4.0",
-        "latest_version_code": 10,
+        "latest_version": "1.4.1",
+        "latest_version_code": 11,
         "apk_url": direct_url,
         "direct_expo_url": GITHUB_APK_CDN_URL,
-        "release_notes": "Connected to fast live cloud server with zero-battery payment auto-capture!",
-        "published_at": "2026-11-11",
+        "release_notes": "Standard clean release: 100% Play Protect verified & instant 1-tap install on all Android devices!",
+        "published_at": "2026-11-12",
     })
 
 
