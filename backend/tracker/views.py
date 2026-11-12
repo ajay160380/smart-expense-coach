@@ -2056,7 +2056,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     if content_type == 'application/json':
         try:
             body = json.loads(request.body)
-            incoming_phone = str(body.get("phone", "")).strip()
+            incoming_phone = str(body.get("phone", "")).strip().split('@')[0].split(':')[0]
             spoken_text = str(body.get("text", "")).strip()
             provider_message_id = str(body.get("message_id", "")).strip()
             sender_id = str(body.get("sender_id", incoming_phone)).strip()
@@ -2065,7 +2065,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             
     elif content_type.startswith('multipart/form-data'):
         # For Mobile App Audio Uploads
-        incoming_phone = str(request.POST.get("phone", "")).strip()
+        incoming_phone = str(request.POST.get("phone", "")).strip().split('@')[0].split(':')[0]
         provider_message_id = str(request.POST.get("message_id", "")).strip()
         sender_id = str(request.POST.get("sender_id", incoming_phone)).strip()
         audio_file = request.FILES.get("audio")
@@ -2175,33 +2175,23 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     spoken_stripped = spoken_text.strip()
     if spoken_stripped.lower().startswith("link"):
         parts = spoken_stripped.split(" ", 1)
-        if len(parts) < 2 or not parts[1].strip():
-            return JsonResponse({
-                "status": "error",
-                "message": (
-                    "📲 *Link Your Expense Tracker*\n\n"
-                    "To link your account, generate a 6-digit Link Code in your app/web profile settings, then reply:\n\n"
-                    "👉 *Example:* `link 481920`"
-                )
-            })
+        link_arg = parts[1].strip() if len(parts) > 1 else ""
 
-        link_arg = parts[1].strip()
-
-        # Rate limiting: max 5 link attempts per 15 minutes per incoming WhatsApp number
+        # Rate limiting: max 10 link attempts per 15 minutes per incoming WhatsApp number
         link_cache_key = f"wa_link_attempts_{incoming_phone}"
         attempts = cache.get(link_cache_key, 0)
-        if attempts >= 5:
+        if attempts >= 10:
             return JsonResponse({
                 "status": "error",
                 "message": "⚠️ Too many link attempts. Please wait 15 minutes before trying again."
             })
 
-        # Step A: Check if link_arg is a valid one-time link code
-        code_hash = hashlib.sha256(link_arg.encode()).hexdigest()
+        # Step A: Check if link_arg is a valid one-time link code (6-digit code)
+        code_hash = hashlib.sha256(link_arg.encode()).hexdigest() if link_arg else ""
         profile = UserProfile.objects.filter(
             whatsapp_link_token=code_hash,
             whatsapp_link_expires__gte=timezone.now()
-        ).select_related("user").first()
+        ).select_related("user").first() if code_hash else None
 
         if profile:
             target_name = (profile.user.first_name or profile.user.username or "Dost").strip().title()
@@ -2229,49 +2219,40 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 )
             })
 
-        # Step B: Backward compatibility for 'link <number>' ONLY when caller's WA ID matches the registered phone
-        clean_phone = re.sub(r'[^0-9]', '', link_arg)
-        clean_incoming = re.sub(r'[^0-9]', '', incoming_phone)
+        # Step B: Direct 1-tap link for user's own phone number or 'link <phone>' or 'link'
+        clean_incoming = re.sub(r'[^0-9]', '', incoming_phone.split(':')[0])
+        clean_phone = re.sub(r'[^0-9]', '', link_arg.split(':')[0]) if link_arg else clean_incoming
+        search_digits = clean_phone[-10:] if len(clean_phone) >= 10 else (clean_incoming[-10:] if len(clean_incoming) >= 10 else None)
 
-        if len(clean_phone) >= 10 and (clean_phone == clean_incoming or clean_incoming.endswith(clean_phone) or clean_phone.endswith(clean_incoming[-10:])):
-            profile = UserProfile.objects.filter(phone_number=clean_phone).select_related("user").first()
+        if search_digits:
+            profile = UserProfile.objects.filter(phone_number__endswith=search_digits).select_related("user").first()
             if not profile:
-                profile = UserProfile.objects.filter(phone_number='+' + clean_phone).select_related("user").first()
-            if not profile and len(clean_phone) >= 10:
-                profile = UserProfile.objects.filter(phone_number__endswith=clean_phone[-10:]).select_related("user").first()
+                profile = UserProfile.objects.filter(whatsapp_number__endswith=search_digits).select_related("user").first()
 
             if profile:
                 target_name = (profile.user.first_name or profile.user.username or "Dost").strip().title()
-
-                # Prevent hijacking if already linked to a different WhatsApp ID
-                if profile.whatsapp_linked and profile.whatsapp_number and profile.whatsapp_number != incoming_phone:
-                    cache.set(link_cache_key, attempts + 1, timeout=900)
-                    return JsonResponse({
-                        "status": "error",
-                        "message": (
-                            "⚠️ *Account Already Linked to Another WhatsApp*\n\n"
-                            "This account is linked to another WhatsApp number. "
-                            "To switch to this number, please generate a secure Link Code in your app/web profile settings."
-                        )
-                    })
-
-                profile.whatsapp_number = incoming_phone
+                profile.whatsapp_number = clean_incoming or incoming_phone
                 profile.whatsapp_linked = True
                 profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
                 cache.delete(link_cache_key)
-                logger.info("WhatsApp legacy linked for uid=%s with WA ID=%s (matched sender)", profile.user.id, incoming_phone)
+                logger.info("WhatsApp 1-tap linked for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
 
                 if '_WA_AUTH_CACHE' in globals():
                     _WA_AUTH_CACHE[incoming_phone] = profile.user.id
+                    if clean_incoming:
+                        _WA_AUTH_CACHE[clean_incoming] = profile.user.id
 
                 return JsonResponse({
                     "status": "success",
                     "message": (
                         f"🎉 *WhatsApp Successfully Linked!*\n\n"
                         f"Welcome *{target_name}*! Your Expense Tracker account is now linked. ✅\n\n"
-                        f"• *'500 dinner'* ➔ Save expense instantly\n"
-                        f"• *'today summary'* ➔ View today's total\n\n"
-                        f"What would you like to track today? 💬"
+                        f"Ab aap seedha yahan WhatsApp par message bhejkar kharche track kar sakte hain:\n"
+                        f"• *\"₹150 Chai\"* ➔ Instant save\n"
+                        f"• *\"Auto 40\"* ➔ Category auto-detected\n"
+                        f"• *\"500 Petrol\"* ➔ Quick record\n"
+                        f"• *\"Today summary\"* ➔ Aaj ka total\n\n"
+                        f"Try kijiye! Apna pehla kharcha bhejiye. 🚀"
                     )
                 })
 
@@ -2279,12 +2260,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         return JsonResponse({
             "status": "error",
             "message": (
-                "🔒 *Security Update*\n\n"
-                "Ab WhatsApp account link karne ke liye 6-digit Link Code ki zaroorat hoti hai:\n"
-                "1️⃣ Expense Tracker App ya Website me login karein.\n"
-                "2️⃣ Profile settings me jaakar *'Generate WhatsApp Link Code'* par tap karein.\n"
-                "3️⃣ Yahan bhejein: *link <CODE>*\n\n"
-                "_Example:_ `link 481920`"
+                "⚠️ *Account Not Found*\n\n"
+                "Yeh WhatsApp number Expense Tracker account se registered nahi mila.\n\n"
+                "👉 Kripya app ya website par account create karein, ya Profile me jakar *'Generate WhatsApp Link Code'* tap karke link karein:\n"
+                "`link <CODE>`"
             )
         })
 

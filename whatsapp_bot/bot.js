@@ -310,7 +310,7 @@ async function startBot(sessionName = null) {
         if (!text || text.trim() === '') return;
 
         const remoteJid = msg.key.remoteJid;
-        const phone = remoteJid.split('@')[0];
+        const phone = remoteJid.split('@')[0].split(':')[0];
         const pushName = msg.pushName || "User";
         const maskedPhone = phone.length >= 7 ? `${phone.slice(0, 3)}***${phone.slice(-3)}` : '***';
         console.log(`📩 Received message from ${maskedPhone} (${pushName})`);
