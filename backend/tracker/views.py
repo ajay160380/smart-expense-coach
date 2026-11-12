@@ -556,7 +556,10 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     
     If asked about your creator or developer, your `chat_response` MUST be exactly this string (ensure you escape newlines as \\n\\n so the JSON remains valid):
     "👨‍💻 *My Creator: Ajay Vishwakarma*\\n\\nI was developed by Ajay, a passionate Full Stack & AI/ML Engineer! Here are his professional links:\\n\\n🌐 *Portfolio:* https://ajay-vishwakarmaa.netlify.app\\n🐙 *GitHub:* https://github.com/ajay160380\\n💼 *LinkedIn:* https://www.linkedin.com/in/ajay-vishwakarma-71649129a/"
-    
+
+    If the user asks about the Android App, APK, Mobile App, or Download Link, your `chat_response` MUST be:
+    "📱 *Expense Tracker (PaisaMitra) Android App* 🚀\\n\\nAap niche diye gaye links se official Android App download kar sakte hain:\\n\\n📥 *Universal Download Webpage (Auto 5s Timer):*\\nhttps://expense-coach-prxm.onrender.com/download/\\n\\n⚡ *Direct Fast CDN Download:*\\nhttps://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk\\n\\n✨ *Key Features:*\\n• Instant Voice & Text expense tracking\\n• AI Natural Language categorization\\n• Real-time budget alerts & Home screen widgets\\n\\n💡 *Install kaise karein:*\\n1️⃣ Link tap karke APK download karein.\\n2️⃣ File open karke *Install* dabayein.\\n3️⃣ App open karke WhatsApp number se login karein! 😊"
+
     FORMATTING RULES (CRITICAL):
     1. Do NOT make everything bold. Only bold *important keywords* (like amounts or names), NOT entire sentences!
     2. Write in short, clean sentences.
@@ -578,10 +581,17 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
 
     Rules for Routing (CRITICAL):
     1. EXPENSE RECORDING (HIGHEST PRIORITY):
-       Whenever the user mentions ANY expense, purchase, money spent, paid, bought, or incurred (e.g. "500 petrol", "200 chai", "swiggy se 450 ka khana", "maine 300 rupaye khana khaya", "doodh 60 ka", "bought medicine for 350", "uber cab 280 rupaye de diye", "pizza 450"):
+       Whenever the user mentions ANY expense, purchase, money spent, paid, bought, or incurred:
        - action = "log_expenses"
        - expenses = An array of expense objects: [{{"amount": 500, "category": "transport", "description": "Petrol"}}]. Extract EVERY SINGLE item mentioned.
        - NEVER classify a message mentioning an amount of money spent as "chat"! Always set action="log_expenses".
+       - Examples of natural inputs to parse accurately:
+         • "Maine aaj ₹150 ka pizza khaya" ➔ [{{"amount": 150, "category": "food", "description": "Pizza"}}]
+         • "Auto ₹40" ➔ [{{"amount": 40, "category": "transport", "description": "Auto"}}]
+         • "₹500 petrol bharwaya" ➔ [{{"amount": 500, "category": "transport", "description": "Petrol"}}]
+         • "D-Mart se ₹1200 ki grocery li" ➔ [{{"amount": 1200, "category": "groceries", "description": "D-Mart Grocery"}}]
+         • "Chai 20 aur samosa 30" ➔ [{{"amount": 20, "category": "food", "description": "Chai"}}, {{"amount": 30, "category": "food", "description": "Samosa"}}]
+         • "350 medicine doctor fee 500" ➔ [{{"amount": 350, "category": "health", "description": "Medicine"}}, {{"amount": 500, "category": "health", "description": "Doctor Fee"}}]
     2. If the user EXPLICITLY asks to save a note (e.g. "save to notepad", "notepad me daal do", "note: buy milk"):
        - action = "save_note"
        - note = The exact text they want to save.
