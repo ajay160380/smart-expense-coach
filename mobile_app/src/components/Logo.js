@@ -1,39 +1,39 @@
 
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, UIManager } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-
-
-
-
-
-
-
-
-
+import React from 'react';
+import { View, Image, StyleSheet } from 'react-native';
 
 export default function Logo({ size = 1, showText = true, circle = true }) {
   const s = size; 
-  const dark = '#2C353F';
-  const blue = '#1A73E8';
 
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      
-      {/* Wrapper for Icon */}
+    <View style={styles.center}>
+      {/* Wrapper for Icon with stable Android elevation */}
       <View style={[
-        { width: 220 * s, height: 220 * s, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
-        circle ? { backgroundColor: '#FFF', borderRadius: 110 * s, shadowColor: '#000', shadowOffset: { width: 0, height: 10 * s }, shadowOpacity: 0.1, shadowRadius: 20 * s, elevation: 10 } : {}
+        { width: 220 * s, height: 220 * s, justifyContent: 'center', alignItems: 'center' },
+        circle ? {
+          backgroundColor: '#FFFFFF',
+          borderRadius: 110 * s,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 6 * s },
+          shadowOpacity: 0.1,
+          shadowRadius: 16 * s,
+          elevation: 5,
+        } : {}
       ]}>
         <Image 
           source={require('../../assets/icon.png')} 
           resizeMode="contain"
-          style={{ width: 180 * s, height: 180 * s }} 
+          style={{ width: 180 * s, height: 180 * s, borderRadius: 90 * s }} 
         />
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

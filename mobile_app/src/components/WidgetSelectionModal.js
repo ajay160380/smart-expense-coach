@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { requestPinWidget, requestWidgetUpdate } from 'react-native-android-widget';
+import { requestPinWidget, requestWidgetUpdate } from '../utils/widgetCompat';
 
 const { width } = Dimensions.get('window');
 

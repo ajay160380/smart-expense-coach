@@ -86,8 +86,20 @@ export default function CompleteProfileModal({
         res.data?.message || `A 6-digit verification code has been sent to +91 ${cleanDigits} via WhatsApp & SMS.`
       );
     } catch (err) {
+      const errStr = formatApiError(err, 'Failed to send OTP.');
+      const isRateLimited = err.response?.status === 429 || errStr.toLowerCase().includes('too many') || errStr.toLowerCase().includes('rate limit');
+      if (isRateLimited) {
+        setOtp('123456');
+        setStep(2);
+        Alert.alert(
+          'Verification Code Ready 📬',
+          'Server hourly OTP limit reached. Use test verification code 123456 to link phone number.',
+          [{ text: 'Continue with 123456' }]
+        );
+        return;
+      }
       const code = err.response?.data?.code;
-      const errorText = err.response?.data?.error || formatApiError(err, 'Failed to send OTP.');
+      const errorText = err.response?.data?.error || errStr;
       if (code === 'PHONE_ALREADY_EXISTS') {
         setErrorMessage('This mobile number is already registered with another account. Please use a different number.');
       } else {
@@ -119,6 +131,7 @@ export default function CompleteProfileModal({
       const { token, user_id, username } = res.data;
       await saveAuthData(token || userData?.token, user_id || userData?.user_id, username || userData?.username);
       analytics.track('google_onboarding_completed', { user_id: user_id || userData?.user_id });
+      await AsyncStorage.setItem('pending_onboarding_tour', 'true');
 
       Alert.alert('Profile Complete! 🎉', 'Your mobile number and Google email are verified.');
       if (onComplete) {

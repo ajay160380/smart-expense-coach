@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlexWidget, TextWidget, SvgWidget } from 'react-native-android-widget';
+import { FlexWidget, TextWidget, SvgWidget } from '../utils/widgetCompat';
 
 export function WideExpenseWidget({ stats = null }) {
   const spentVal = stats?.total_spent ?? 1200;

@@ -33,7 +33,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { requestPinWidget } from 'react-native-android-widget';
+import { requestPinWidget } from '../utils/widgetCompat';
 
 import api from '../api/config';
 import messaging from '../utils/messaging';
@@ -811,6 +811,20 @@ export default function ProfileScreen({ navigation }) {
             />
           )}
           <MenuItem
+            ionIcon="sparkles"
+            iconColor="#8B5CF6"
+            label="App Feature Tour & Walkthrough"
+            sub="Explore WhatsApp bot, Center '+', Widgets & Tools"
+            badge="Guide"
+            badgeColor="#8B5CF6"
+            onPress={() => {
+              navigation.navigate('Home');
+              setTimeout(() => {
+                DeviceEventEmitter.emit('SHOW_APP_TOUR');
+              }, 250);
+            }}
+          />
+          <MenuItem
             ionIcon="cloud-download-outline"
             iconColor="#06B6D4"
             label="Check for Updates"
@@ -899,9 +913,15 @@ export default function ProfileScreen({ navigation }) {
           <MenuItem
             ionIcon="sparkles-outline"
             iconColor="#F59E0B"
-            label="App Tour & Onboarding"
-            sub="Explore features & interactive onboarding"
-            onPress={() => navigation.navigate('Welcome', { fromProfile: true })}
+            label="Interactive Feature Tour"
+            sub="Step-by-step walkthrough of all app features"
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch (e) {}
+              DeviceEventEmitter.emit('SHOW_APP_TOUR');
+              navigation.navigate('Home', { screen: 'DashboardMain', params: { showTour: true } });
+            }}
             showArrow
             isLast
           />

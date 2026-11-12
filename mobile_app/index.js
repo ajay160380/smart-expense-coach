@@ -3,20 +3,32 @@ import messaging from './src/utils/messaging';
 import { saveNotification } from './src/utils/notifications';
 
 import App from './App';
-import { registerWidgetTaskHandler } from 'react-native-android-widget';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { registerWidgetTaskHandler } from './src/utils/widgetCompat';
 import { widgetTaskHandler } from './src/widgets/WidgetTaskHandler';
 
-registerWidgetTaskHandler(widgetTaskHandler);
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
+  Constants.executionEnvironment === 'storeClient' ||
+  Boolean(Constants.expoVersion);
 
+if (!isExpoGo) {
+  try {
+    registerWidgetTaskHandler(widgetTaskHandler);
+  } catch (e) {
+    console.log('Error registering widget handler:', e);
+  }
 
-// Register background handler safely
-try {
-  messaging().setBackgroundMessageHandler(async remoteMessage => {
-    console.log('Message handled in the background!', remoteMessage);
-    await saveNotification(remoteMessage);
-  });
-} catch (error) {
-  console.log('Error registering background message handler:', error);
+  // Register background handler safely
+  try {
+    messaging().setBackgroundMessageHandler?.(async remoteMessage => {
+      console.log('Message handled in the background!', remoteMessage);
+      await saveNotification(remoteMessage);
+    });
+  } catch (error) {
+    console.log('Error registering background message handler:', error);
+  }
 }
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);

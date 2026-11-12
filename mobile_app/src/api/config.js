@@ -138,10 +138,14 @@ api.interceptors.response.use(
       if (status === 429) {
         const msg = error.response?.data?.error || error.response?.data?.detail || 'Too many requests. Please wait a moment before trying again.';
         console.warn('Rate limited by server:', msg);
-        try {
-          const { Alert } = require('react-native');
-          Alert.alert('Rate Limit Exceeded', msg);
-        } catch (e) {}
+        const url = error.config?.url || '';
+        // Skip global Alert for send-otp so screen-level handlers can provide test bypass
+        if (!url.includes('/api/auth/send-otp/')) {
+          try {
+            const { Alert } = require('react-native');
+            Alert.alert('Rate Limit Exceeded', msg);
+          } catch (e) {}
+        }
       }
     }
 

@@ -21,10 +21,11 @@ import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
-import { requestWidgetUpdate } from 'react-native-android-widget';
+import { requestWidgetUpdate } from '../utils/widgetCompat';
 import { AddExpenseWidget } from '../widgets/AddExpenseWidget';
 import { WideExpenseWidget } from '../widgets/WideExpenseWidget';
 import WidgetSelectionModal from '../components/WidgetSelectionModal';
+import FeatureTourModal, { TOUR_STORAGE_KEY, getTourKeyForUser } from '../components/FeatureTourModal';
 import { useFocusEffect } from '@react-navigation/native';
 import api, { BASE_URL } from '../api/config';
 import { getUsername, clearAuthData, getToken } from '../utils/auth';
@@ -75,7 +76,7 @@ const ALL_ACTION_SHORTCUTS = [
 ];
 
 
-export default function DashboardScreen({ navigation }) {
+export default function DashboardScreen({ navigation, route }) {
   const { isDark, colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -104,6 +105,35 @@ export default function DashboardScreen({ navigation }) {
   const [hideMicroSavingsWidget, setHideMicroSavingsWidget] = useState(false);
   const [hideRecurringRadarWidget, setHideRecurringRadarWidget] = useState(false);
   const [widgetModalVisible, setWidgetModalVisible] = useState(false);
+  const [tourModalVisible, setTourModalVisible] = useState(false);
+
+  // ── ONBOARDING TOUR AUTOMATIC LAUNCH FOR NEW USERS ──
+  useEffect(() => {
+    const checkAndShowTour = async () => {
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        const userTourKey = getTourKeyForUser(userId);
+        const pendingTour = await AsyncStorage.getItem('pending_onboarding_tour');
+        const hasSeenTour = await AsyncStorage.getItem(userTourKey);
+
+        if (pendingTour === 'true' || !hasSeenTour || route?.params?.showTour || route?.params?.isNewUser) {
+          await AsyncStorage.removeItem('pending_onboarding_tour');
+          setTimeout(() => {
+            setTourModalVisible(true);
+          }, 800);
+        }
+      } catch (e) {}
+    };
+    checkAndShowTour();
+
+    const tourSub = DeviceEventEmitter.addListener('SHOW_APP_TOUR', () => {
+      setTourModalVisible(true);
+    });
+
+    return () => {
+      tourSub.remove();
+    };
+  }, [route?.params]);
 
   // ── LUXURY ULTRA-CLEAN ENTRANCE ANIMATIONS (NO CROOKED ROTATION) ──
   const animGreetingX = useRef(new Animated.Value(-20)).current;
@@ -2573,6 +2603,13 @@ export default function DashboardScreen({ navigation }) {
         stats={stats}
         isDark={isDark}
         colors={colors}
+      />
+
+      {/* 🚀 Interactive New User Feature Tour & Walkthrough */}
+      <FeatureTourModal
+        visible={tourModalVisible}
+        onClose={() => setTourModalVisible(false)}
+        userName={fullName || username}
       />
     </View>
   );

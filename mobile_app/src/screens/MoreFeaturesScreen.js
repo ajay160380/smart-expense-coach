@@ -37,7 +37,7 @@ import api from '../api/config';
 import { clearAuthData } from '../utils/auth';
 import { formatApiError } from '../utils/errors';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
-import { requestPinWidget } from 'react-native-android-widget';
+import { requestPinWidget } from '../utils/widgetCompat';
 import { useTheme } from '../theme/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 import WidgetSelectionModal from '../components/WidgetSelectionModal';
@@ -553,6 +553,20 @@ export default function MoreFeaturesScreen({ navigation }) {
         </View>
 
         <View style={[styles.listCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <ListItem
+            icon="sparkles"
+            iconColor="#8B5CF6"
+            title="App Feature Tour & Walkthrough"
+            desc="Interactive guide: WhatsApp bot, Center '+', Widgets"
+            badge="Guide"
+            badgeColor="#8B5CF6"
+            onPress={() => {
+              navigation.navigate('Home');
+              setTimeout(() => {
+                DeviceEventEmitter.emit('SHOW_APP_TOUR');
+              }, 250);
+            }}
+          />
           <ListItem
             icon="chatbubble-ellipses-outline"
             iconColor="#EC4899"

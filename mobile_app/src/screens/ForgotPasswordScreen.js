@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, UIManager } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking, LayoutAnimation, UIManager, StatusBar as RNStatusBar } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -110,27 +110,40 @@ export default function ForgotPasswordScreen({ navigation }) {
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
         >
-          {/* Back Button */}
-          <TouchableOpacity style={styles.backBtn} onPress={() => {
-            if (step > 1) setStep(step - 1);
-            else navigation.goBack();
-          }}>
-            <Ionicons name="chevron-back" size={24} color="#111827" />
-          </TouchableOpacity>
-
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoSmall}>
-              <Logo size={0.7} circle={true} showText={false} />
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            {/* Top Navigation Row */}
+            <View style={styles.topNavRow}>
+              <TouchableOpacity
+                style={styles.backBtn}
+                onPress={() => {
+                  if (step > 1) setStep(step - 1);
+                  else navigation.goBack();
+                }}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                accessibilityLabel="Go back"
+              >
+                <Ionicons name="chevron-back" size={24} color="#111827" />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.title}>Reset Password</Text>
-            <Text style={styles.subtitle}>
-              {step === 1 ? 'Enter your details to receive an OTP' : step === 2 ? 'Enter the OTP sent to you' : 'Create a new secure password'}
-            </Text>
-          </View>
+
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.logoSmall}>
+                <Logo size={0.6} circle={true} showText={false} />
+              </View>
+              <Text style={styles.title}>Reset Password</Text>
+              <Text style={styles.subtitle}>
+                {step === 1 ? 'Enter your details to receive an OTP' : step === 2 ? 'Enter the OTP sent to you' : 'Create a new secure password'}
+              </Text>
+            </View>
 
           {/* Form */}
           <View style={styles.formSection}>
@@ -216,6 +229,7 @@ export default function ForgotPasswordScreen({ navigation }) {
               </>
             )}
           </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -224,20 +238,39 @@ export default function ForgotPasswordScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F7FB' },
-  safeArea: { flex: 1, paddingTop: Platform.OS === 'android' ? 30 : 0 },
-  keyboardView: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
-  backBtn: {
-    position: 'absolute', top: 10, left: 0, zIndex: 10,
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05, shadowRadius: 10, elevation: 3,
-    justifyContent: 'center', alignItems: 'center',
+  safeArea: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 36) : 0,
   },
-  header: { alignItems: 'center', marginBottom: 28 },
-  logoSmall: { marginBottom: 14 },
-  title: { fontSize: 26, fontWeight: '900', color: '#111827', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', paddingHorizontal: 20 },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'android' ? 16 : 8,
+    paddingBottom: Platform.OS === 'android' ? 36 : 24,
+  },
+  topNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    minHeight: 44,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: { alignItems: 'center', marginBottom: 20 },
+  logoSmall: { marginBottom: 10 },
+  title: { fontSize: 26, fontWeight: '900', color: '#111827', marginBottom: 4, textAlign: 'center' },
+  subtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', paddingHorizontal: 16 },
   formSection: { gap: 10 },
   label: { fontSize: 11, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -4 },
   input: {

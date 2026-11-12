@@ -14,19 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import Logo from '../components/Logo';
 import { getToken } from '../utils/auth';
-
-
-
-
-
-
-
-
-
-
-
-
-
+import * as Haptics from 'expo-haptics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -249,6 +237,26 @@ export default function WelcomeScreen({ navigation, route }) {
   const fromProfile = route?.params?.fromProfile;
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(fromProfile));
 
+  // Smooth screen entrance animation
+  const screenFade = useRef(new Animated.Value(0)).current;
+  const screenScale = useRef(new Animated.Value(0.96)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(screenFade, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.spring(screenScale, {
+        toValue: 1,
+        friction: 8,
+        tension: 60,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
     getToken().then(token => {
@@ -262,22 +270,31 @@ export default function WelcomeScreen({ navigation, route }) {
   const isTourMode = Boolean(fromProfile || isLoggedIn);
 
   const exitTour = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate('MainTabs');
+      navigation.replace('MainTabs', { screen: 'Home', params: { screen: 'DashboardMain' } });
     }
   };
   
   const viewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems[0]) {
       setCurrentIndex(viewableItems[0].index);
+      try {
+        Haptics.selectionAsync();
+      } catch (e) {}
     }
   }).current;
 
   const scrollToNext = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
     if (currentIndex < SLIDES.length - 1) {
-      slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
+      slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
     }
   };
 
@@ -326,7 +343,12 @@ export default function WelcomeScreen({ navigation, route }) {
                 <View style={{ alignItems: 'center', marginTop: 16 }}>
                   <TouchableOpacity
                     activeOpacity={0.6}
-                    onPress={() => navigation.navigate('MainTabs', { screen: 'Home', params: { screen: 'DashboardMain' } })}
+                    onPress={() => {
+                      try {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      } catch (e) {}
+                      navigation.replace('MainTabs', { screen: 'Home', params: { screen: 'DashboardMain' } });
+                    }}
                   >
                     <Text style={{ color: THEME.primary, fontSize: 16, fontWeight: '700' }}>Go to Dashboard</Text>
                   </TouchableOpacity>
@@ -399,7 +421,7 @@ export default function WelcomeScreen({ navigation, route }) {
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: screenFade, transform: [{ scale: screenScale }] }]}>
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safeArea}>
 
@@ -441,6 +463,9 @@ export default function WelcomeScreen({ navigation, route }) {
           <View style={styles.footerAbsolute}>
             <TouchableOpacity
               onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch (e) {}
                 if (isTourMode) {
                   exitTour();
                 } else {
@@ -451,6 +476,21 @@ export default function WelcomeScreen({ navigation, route }) {
             >
               <Text style={styles.skipText}>{isTourMode ? 'Skip Tour' : 'Skip'}</Text>
             </TouchableOpacity>
+
+            {/* Smooth Indicator Pills */}
+            <View style={styles.paginationRow}>
+              {SLIDES.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.paginationDot,
+                    i === currentIndex
+                      ? [styles.paginationDotActive, { backgroundColor: THEME.primary, width: 22 }]
+                      : { backgroundColor: '#CBD5E1', width: 7 },
+                  ]}
+                />
+              ))}
+            </View>
             
             <TouchableOpacity activeOpacity={0.8} onPress={scrollToNext} style={styles.nextBtnRing}>
               <View style={styles.nextBtnFill}>
@@ -461,7 +501,7 @@ export default function WelcomeScreen({ navigation, route }) {
         )}
 
       </SafeAreaView>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -563,6 +603,18 @@ const styles = StyleSheet.create({
   footerAbsolute: { position: 'absolute', bottom: Platform.OS === 'ios' ? 36 : 24, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 20 },
   skipWrapper: { padding: 10, paddingLeft: 0 },
   skipText: { fontSize: 16, fontWeight: '700', color: THEME.textMain },
+  paginationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  paginationDot: {
+    height: 7,
+    borderRadius: 3.5,
+  },
+  paginationDotActive: {
+    height: 7,
+  },
   nextBtnRing: { width: 70, height: 70, borderRadius: 35, borderWidth: 1.5, borderColor: 'rgba(139, 92, 246, 0.4)', justifyContent: 'center', alignItems: 'center' },
   nextBtnFill: { width: 54, height: 54, borderRadius: 27, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', shadowColor: THEME.primary, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.4, shadowRadius: 10 },
   
