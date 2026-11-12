@@ -19,8 +19,6 @@ class APKDownloadRedirectMiddleware:
             '/downloads/ExpenseTracker.apk',
             '/static/downloads/ExpenseTracker.apk/',
             '/downloads/ExpenseTracker.apk/',
-            '/download-apk/',
-            '/download-apk',
         ):
             from tracker.views import get_apk_response
             return get_apk_response()

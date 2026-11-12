@@ -7867,14 +7867,20 @@ def api_send_admin_push(request):
         return Response({"status": "error", "message": str(e)}, status=500)
 
 GITHUB_APK_CDN_URL = "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
-LATEST_EXPO_APK_URL = GITHUB_APK_CDN_URL
+LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/k7SqI-6nvwck26Cv82RJK38Da1E2nD_e0syCYfBiYn0.apk"
 
 def get_apk_response():
     from django.http import HttpResponseRedirect
     return HttpResponseRedirect(GITHUB_APK_CDN_URL)
 
 def download_apk(request):
-    return get_apk_response()
+    user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+    if request.GET.get('direct') == '1' or 'curl' in user_agent or 'wget' in user_agent or request.headers.get('Accept') == 'application/json':
+        return get_apk_response()
+    return render(request, 'tracker/download.html', {
+        'direct_apk_url': GITHUB_APK_CDN_URL,
+        'mirror_apk_url': LATEST_EXPO_APK_URL,
+    })
 
 @csrf_exempt
 def get_app_version(request):

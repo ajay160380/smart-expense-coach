@@ -167,6 +167,7 @@ urlpatterns = [
     path('api/latest-update-time/', views.get_latest_update_time, name='get_latest_update_time'),
     path('api/wa-link-status/', views.wa_link_status, name='wa_link_status'),
     path('api/generate-wa-link-code/', views.generate_wa_link_code, name='generate_wa_link_code'),
+    path('download/', views.download_apk, name='download'),
     path('download-apk/', views.download_apk, name='download_apk'),
     path('static/downloads/ExpenseTracker.apk', views.download_apk, name='static_download_apk'),
     path('downloads/ExpenseTracker.apk', views.download_apk, name='downloads_apk'),
