@@ -49,8 +49,8 @@ const GITHUB_APK_CDN_URL = 'https://github.com/ajay160380/smart-expense-coach/re
 
     const latestCode = Number(data.latest_version_code || 0);
     const latestVersion = data.latest_version || CURRENT_APP_VERSION;
-    const apkUrl = data.apk_url || GITHUB_APK_CDN_URL;
-    const directUrl = data.direct_expo_url || apkUrl;
+    const directUrl = data.direct_expo_url || GITHUB_APK_CDN_URL;
+    const apkUrl = directUrl || data.apk_url || GITHUB_APK_CDN_URL;
     const releaseNotes = data.release_notes || 'New features and performance improvements.';
 
     // Has update if server version code is greater than current device's version code

@@ -8208,19 +8208,19 @@ def api_send_admin_push(request):
         return Response({"status": "error", "message": str(e)}, status=500)
 
 GITHUB_APK_CDN_URL = "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
-LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/XmpFE8ks54B2zzMtDDIS7wO-2ikUOkqq9VhfTqVd5Wg.apk"
+LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/DkaXdqGuglhATyUMA2a-ZEVgyGKoncKtI2H90ld9PQY.apk"
 
 def get_apk_response():
     from django.http import HttpResponseRedirect
-    return HttpResponseRedirect(GITHUB_APK_CDN_URL)
+    return HttpResponseRedirect(LATEST_EXPO_APK_URL)
 
 def download_apk(request):
     user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
     if request.GET.get('direct') == '1' or 'curl' in user_agent or 'wget' in user_agent or request.headers.get('Accept') == 'application/json':
         return get_apk_response()
     return render(request, 'tracker/download.html', {
-        'direct_apk_url': GITHUB_APK_CDN_URL,
-        'mirror_apk_url': LATEST_EXPO_APK_URL,
+        'direct_apk_url': LATEST_EXPO_APK_URL,
+        'mirror_apk_url': GITHUB_APK_CDN_URL,
     })
 
 @csrf_exempt
@@ -8236,7 +8236,7 @@ def get_app_version(request):
         "latest_version": "1.4.2",
         "latest_version_code": 12,
         "apk_url": direct_url,
-        "direct_expo_url": GITHUB_APK_CDN_URL,
+        "direct_expo_url": LATEST_EXPO_APK_URL,
         "release_notes": "Interactive Feature Tour, Keyboard Safe Area fixes, and smoother animations!",
         "published_at": "2026-11-13",
     })
