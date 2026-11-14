@@ -575,7 +575,7 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
     "👨‍💻 *My Creator: Ajay Vishwakarma*\\n\\nI was developed by Ajay, a passionate Full Stack & AI/ML Engineer! Here are his professional links:\\n\\n🌐 *Portfolio:* https://ajay-vishwakarmaa.netlify.app\\n🐙 *GitHub:* https://github.com/ajay160380\\n💼 *LinkedIn:* https://www.linkedin.com/in/ajay-vishwakarma-71649129a/"
 
     If the user asks about the Android App, APK, Mobile App, or Download Link, your `chat_response` MUST be:
-    "📱 *Expense Tracker (PaisaMitra) Android App* 🚀\\n\\nYou can download the official latest Android App from the links below:\\n\\n📥 *Universal Download Webpage (Auto 5s Timer):*\\nhttps://expense-coach-prxm.onrender.com/download/\\n\\n⚡ *Direct Fast CDN Download (v1.4.2):*\\nhttps://expo.dev/artifacts/eas/DkaXdqGuglhATyUMA2a-ZEVgyGKoncKtI2H90ld9PQY.apk\\n\\n✨ *Key Features:*\\n• Instant Voice & Text expense tracking\\n• AI Natural Language categorization\\n• Real-time budget alerts & Home screen widgets\\n\\n💡 *How to Install:*\\n1️⃣ Tap the download link above to get the APK file.\\n2️⃣ Once downloaded, open the file and tap *Install*.\\n3️⃣ Open the app and log in with your WhatsApp number! 😊"
+    "📱 *Expense Tracker (PaisaMitra) Android App* 🚀\\n\\nYou can download the official latest Android App from the links below:\\n\\n📥 *Universal Download Webpage (Auto 5s Timer):*\\nhttps://expense-coach-prxm.onrender.com/download/\\n\\n⚡ *Direct Fast CDN Download (v1.4.2):*\\nhttps://github.com/ajay160380/smart-expense-coach/releases/download/v1.4.2/ExpenseTracker_v1.4.2.apk\\n\\n✨ *Key Features:*\\n• Instant Voice & Text expense tracking\\n• AI Natural Language categorization\\n• Real-time budget alerts & Home screen widgets\\n\\n💡 *How to Install:*\\n1️⃣ Tap the download link above to get the APK file.\\n2️⃣ Once downloaded, open the file and tap *Install*.\\n3️⃣ Open the app and log in with your WhatsApp number! 😊"
 
     FORMATTING RULES (CRITICAL):
     1. Do NOT make everything bold. Only bold *important keywords* (like amounts or names), NOT entire sentences!
@@ -2202,7 +2202,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             "📥 *Universal Download Webpage (Auto 5s Timer):*\n"
             "https://expense-coach-prxm.onrender.com/download/\n\n"
             "⚡ *Direct Fast CDN Download (v1.4.2):*\n"
-            "https://expo.dev/artifacts/eas/DkaXdqGuglhATyUMA2a-ZEVgyGKoncKtI2H90ld9PQY.apk\n\n"
+            "https://github.com/ajay160380/smart-expense-coach/releases/download/v1.4.2/ExpenseTracker_v1.4.2.apk\n\n"
             "✨ *Key Features:*\n"
             "• Instant Voice & Text expense tracking\n"
             "• AI Natural Language expense categorization\n"
@@ -2412,7 +2412,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                             "📱 Don't have an account yet? Register here:\n"
                             "https://expense-coach-prxm.onrender.com/register/\n\n"
                             "📥 Download Android App (v1.4.2):\n"
-                            "https://expo.dev/artifacts/eas/DkaXdqGuglhATyUMA2a-ZEVgyGKoncKtI2H90ld9PQY.apk"
+                            "https://github.com/ajay160380/smart-expense-coach/releases/download/v1.4.2/ExpenseTracker_v1.4.2.apk"
                         )
                     })
             target_user = profile.user
@@ -8207,20 +8207,23 @@ def api_send_admin_push(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=500)
 
-GITHUB_APK_CDN_URL = "https://expo.dev/artifacts/eas/DkaXdqGuglhATyUMA2a-ZEVgyGKoncKtI2H90ld9PQY.apk"
-LATEST_EXPO_APK_URL = "https://expo.dev/artifacts/eas/DkaXdqGuglhATyUMA2a-ZEVgyGKoncKtI2H90ld9PQY.apk"
+OFFICIAL_RELEASE_APK_URL = "https://github.com/ajay160380/smart-expense-coach/releases/download/v1.4.2/ExpenseTracker_v1.4.2.apk"
+GITHUB_APK_CDN_URL = OFFICIAL_RELEASE_APK_URL
+LATEST_EXPO_APK_URL = OFFICIAL_RELEASE_APK_URL
 
 def get_apk_response():
     from django.http import HttpResponseRedirect
-    return HttpResponseRedirect(LATEST_EXPO_APK_URL)
+    response = HttpResponseRedirect(OFFICIAL_RELEASE_APK_URL)
+    response['Content-Disposition'] = 'attachment; filename="ExpenseTracker_v1.4.2.apk"'
+    return response
 
 def download_apk(request):
     user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
     if request.GET.get('direct') == '1' or 'curl' in user_agent or 'wget' in user_agent or request.headers.get('Accept') == 'application/json':
         return get_apk_response()
     return render(request, 'tracker/download.html', {
-        'direct_apk_url': LATEST_EXPO_APK_URL,
-        'mirror_apk_url': GITHUB_APK_CDN_URL,
+        'direct_apk_url': OFFICIAL_RELEASE_APK_URL,
+        'mirror_apk_url': 'https://expo.dev/artifacts/eas/DkaXdqGuglhATyUMA2a-ZEVgyGKoncKtI2H90ld9PQY.apk',
     })
 
 @csrf_exempt
@@ -8236,7 +8239,7 @@ def get_app_version(request):
         "latest_version": "1.4.2",
         "latest_version_code": 12,
         "apk_url": direct_url,
-        "direct_expo_url": LATEST_EXPO_APK_URL,
+        "direct_expo_url": OFFICIAL_RELEASE_APK_URL,
         "release_notes": "Interactive Feature Tour, Keyboard Safe Area fixes, and smoother animations!",
         "published_at": "2026-11-13",
     })
