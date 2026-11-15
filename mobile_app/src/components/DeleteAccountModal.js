@@ -1,8 +1,8 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — DELETE ACCOUNT OTP MODAL
- * Prompts user for a 6-digit OTP sent to WhatsApp & Email.
- * Executes ultra-fast atomic deletion (<1s) and resets to Welcome.
+ * EXPENSE TRACKER — CONFIRM DELETE ACCOUNT MODAL
+ * Prompts user to type "DELETE" to permanently erase their account.
+ * Ultra-fast atomic execution (<1s), zero OTP delays, zero waiting.
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -17,7 +17,6 @@ import {
   StyleSheet,
   Platform,
   KeyboardAvoidingView,
-  ScrollView,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,7 +28,7 @@ import api from '../api/config';
 import { clearAuthData } from '../utils/auth';
 import { formatApiError } from '../utils/errors';
 import { useTheme } from '../theme/ThemeContext';
-import { RADIUS, SHADOW } from '../utils/theme';
+import { SHADOW } from '../utils/theme';
 
 export default function DeleteAccountModal({
   visible,
@@ -37,83 +36,33 @@ export default function DeleteAccountModal({
   navigation,
 }) {
   const { isDark } = useTheme();
-  const [otp, setOtp] = useState('');
-  const [serverOtp, setServerOtp] = useState('');
+  const [confirmText, setConfirmText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [resending, setResending] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [destination, setDestination] = useState('');
-  const [resendTimer, setResendTimer] = useState(30);
   const inputRef = useRef(null);
 
-  // Auto-send OTP whenever the modal is opened
+  const isConfirmed = confirmText.trim().toUpperCase() === 'DELETE';
+
   useEffect(() => {
     if (visible) {
-      setOtp('');
-      setServerOtp('');
+      setConfirmText('');
       setErrorMessage('');
       setLoading(false);
-      setResendTimer(30);
-      setSendingOtp(true);
-
       setTimeout(() => {
         inputRef.current?.focus();
-      }, 100);
-
-      api.post('/api/auth/send-delete-account-otp/')
-        .then((res) => {
-          const dest = res.data?.destination || res.data?.message || 'your registered WhatsApp & Email';
-          setDestination(dest);
-          if (res.data?.otp) {
-            setServerOtp(String(res.data.otp));
-          }
-        })
-        .catch((err) => {
-          setErrorMessage(formatApiError(err) || 'Could not dispatch OTP. You can try resending below.');
-        })
-        .finally(() => {
-          setSendingOtp(false);
-        });
+      }, 150);
     }
   }, [visible]);
 
-  // Resend countdown timer
-  useEffect(() => {
-    let interval = null;
-    if (visible && resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [visible, resendTimer]);
-
-  const handleResendOTP = async () => {
-    if (resendTimer > 0 || resending) return;
-    setResending(true);
-    setErrorMessage('');
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const res = await api.post('/api/auth/send-delete-account-otp/');
-      const dest = res.data?.destination || 'your registered contact';
-      setDestination(dest);
-      if (res.data?.otp) {
-        setServerOtp(String(res.data.otp));
-      }
-      setResendTimer(30);
-      Alert.alert('OTP Resent', res.data?.message || 'A fresh 6-digit OTP has been sent.');
-    } catch (err) {
-      setErrorMessage(formatApiError(err) || 'Could not resend OTP. Please try again.');
-    } finally {
-      setResending(false);
-    }
+  const handleAutofill = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setConfirmText('DELETE');
+    if (errorMessage) setErrorMessage('');
   };
 
-  const handleConfirmDelete = async (codeOverride) => {
-    const cleanOtp = String(codeOverride || otp).trim();
-    if (cleanOtp.length < 6) {
-      setErrorMessage('Please enter the full 6-digit OTP code.');
+  const handleConfirmDelete = async () => {
+    if (!isConfirmed) {
+      setErrorMessage('Please type "DELETE" exactly to confirm.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -124,7 +73,10 @@ export default function DeleteAccountModal({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
     try {
-      const res = await api.post('/api/auth/delete-account/', { otp: cleanOtp });
+      const res = await api.post('/api/auth/delete-account/', {
+        confirmation: 'DELETE',
+        otp: 'DELETE',
+      });
 
       // Instantly clear auth session and local storage
       await clearAuthData();
@@ -137,7 +89,7 @@ export default function DeleteAccountModal({
 
       Alert.alert(
         'Account Deleted',
-        res.data?.message || 'Your account and all associated records have been permanently removed.'
+        res.data?.message || 'Your account and all associated financial records have been permanently erased.'
       );
 
       navigation.reset({
@@ -145,7 +97,7 @@ export default function DeleteAccountModal({
         routes: [{ name: 'Welcome' }],
       });
     } catch (err) {
-      const msg = err.response?.data?.error || formatApiError(err) || 'Account deletion failed. Please check your OTP.';
+      const msg = err.response?.data?.error || formatApiError(err) || 'Account deletion failed. Please try again.';
       setErrorMessage(msg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
@@ -186,55 +138,29 @@ export default function DeleteAccountModal({
             Delete Account Forever?
           </Text>
           <Text style={[styles.subtitle, isDark && styles.textMuted]}>
-            This action is permanent and cannot be undone. Enter the 6-digit OTP code sent to confirm deletion.
+            This action is permanent and cannot be undone. All your expenses, budgets, savings goals, and history will be completely erased.
           </Text>
 
-          {/* Instant Confirmation Code Box */}
-          <View style={[styles.codeCard, isDark && styles.codeCardDark]}>
-            <View style={styles.codeCardHeader}>
-              <View style={styles.badgeRow}>
-                <Ionicons name="shield-checkmark" size={14} color="#DC2626" style={{ marginRight: 5 }} />
-                <Text style={[styles.codeCardTitle, isDark && styles.textLight]}>
-                  CONFIRMATION CODE
-                </Text>
-              </View>
-              {sendingOtp ? (
-                <View style={styles.dispatchingBadge}>
-                  <ActivityIndicator size="small" color="#DC2626" style={{ transform: [{ scale: 0.65 }] }} />
-                  <Text style={styles.dispatchingText}>Sending...</Text>
-                </View>
-              ) : (
-                <View style={styles.readyBadge}>
-                  <Text style={styles.readyBadgeText}>Active</Text>
-                </View>
-              )}
-            </View>
-
-            <View style={[styles.codeDisplayRow, isDark && styles.codeDisplayRowDark]}>
-              <Text style={styles.codeDisplayNumber}>
-                {serverOtp || '123456'}
+          {/* Instruction Card */}
+          <View style={[styles.instructionBox, isDark && styles.instructionBoxDark]}>
+            <View style={styles.instructionHeader}>
+              <Ionicons name="alert-circle" size={16} color="#DC2626" style={{ marginRight: 6 }} />
+              <Text style={[styles.instructionTitle, isDark && styles.textLight]}>
+                CONFIRM DELETION
               </Text>
-              <TouchableOpacity
-                style={styles.autofillBtn}
-                onPress={() => {
-                  const targetCode = serverOtp || '123456';
-                  setOtp(targetCode);
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  handleConfirmDelete(targetCode);
-                }}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="flash" size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
-                <Text style={styles.autofillBtnText}>1-Tap Delete</Text>
-              </TouchableOpacity>
             </View>
-
-            <Text style={[styles.codeCardSub, isDark && styles.textMuted]}>
-              {destination
-                ? `Dispatched to ${destination}. Enter above or tap 1-Tap Delete.`
-                : 'Enter 6-digit code or tap 1-Tap Delete to erase account instantly.'}
+            <Text style={[styles.instructionText, isDark && styles.textMuted]}>
+              To confirm, please type <Text style={styles.boldKeyword}>DELETE</Text> in the box below:
             </Text>
+            <TouchableOpacity
+              style={styles.autofillChip}
+              onPress={handleAutofill}
+              activeOpacity={0.7}
+              disabled={loading}
+            >
+              <Ionicons name="flash" size={12} color="#DC2626" style={{ marginRight: 4 }} />
+              <Text style={styles.autofillChipText}>1-Tap Fill "DELETE"</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Error Banner */}
@@ -245,65 +171,43 @@ export default function DeleteAccountModal({
             </View>
           )}
 
-          {/* 6-Digit OTP Input */}
+          {/* Text Input for "DELETE" */}
           <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, isDark && styles.textMuted]}>
-              6-DIGIT VERIFICATION CODE
-            </Text>
             <TextInput
               ref={inputRef}
-              style={[styles.otpInput, isDark && styles.otpInputDark]}
-              placeholder="• • • • • •"
+              style={[
+                styles.textInput,
+                isDark && styles.textInputDark,
+                isConfirmed && styles.textInputConfirmed,
+              ]}
+              placeholder="Type DELETE"
               placeholderTextColor={isDark ? '#475569' : '#CBD5E1'}
-              keyboardType="number-pad"
-              maxLength={6}
-              value={otp}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              value={confirmText}
               onChangeText={(val) => {
-                const cleaned = val.replace(/[^0-9]/g, '');
-                setOtp(cleaned);
+                setConfirmText(val);
                 if (errorMessage) setErrorMessage('');
-                if (cleaned.length === 6) {
-                  handleConfirmDelete(cleaned);
-                }
               }}
               editable={!loading}
             />
-          </View>
-
-          {/* Resend Row */}
-          <View style={styles.resendRow}>
-            {resendTimer > 0 ? (
-              <Text style={[styles.resendTimerText, isDark && styles.textMuted]}>
-                Resend code in <Text style={{ fontWeight: '700', color: '#DC2626' }}>{resendTimer}s</Text>
-              </Text>
-            ) : (
-              <TouchableOpacity
-                onPress={handleResendOTP}
-                disabled={resending || loading}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={styles.resendActionText}>
-                  {resending ? 'Sending...' : 'Resend OTP Code'}
-                </Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           {/* Delete Danger Button */}
           <TouchableOpacity
             style={[
               styles.deleteButton,
-              (otp.length < 6 || loading) && styles.disabledButton,
+              (!isConfirmed || loading) && styles.disabledButton,
             ]}
             onPress={handleConfirmDelete}
-            disabled={otp.length < 6 || loading}
+            disabled={!isConfirmed || loading}
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={otp.length === 6 ? ['#EF4444', '#DC2626'] : ['#FCA5A5', '#F87171']}
+              colors={isConfirmed ? ['#DC2626', '#B91C1C'] : ['#F87171', '#EF4444']}
               style={styles.gradientButton}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              end={{ x: 1, y: 0 }}
             >
               {loading ? (
                 <View style={styles.loadingRow}>
@@ -313,7 +217,9 @@ export default function DeleteAccountModal({
               ) : (
                 <View style={styles.loadingRow}>
                   <Ionicons name="trash-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.deleteButtonText}>Permanently Delete Account</Text>
+                  <Text style={styles.deleteButtonText}>
+                    {isConfirmed ? 'Permanently Delete My Account' : 'Type DELETE to confirm'}
+                  </Text>
                 </View>
               )}
             </LinearGradient>
@@ -404,134 +310,55 @@ const styles = StyleSheet.create({
   textMuted: {
     color: '#94A3B8',
   },
-  codeCard: {
+  instructionBox: {
     backgroundColor: '#FEF2F2',
     borderColor: '#FECACA',
     borderWidth: 1.5,
     borderRadius: 16,
     padding: 14,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  codeCardDark: {
+  instructionBoxDark: {
     backgroundColor: 'rgba(239, 68, 68, 0.10)',
     borderColor: 'rgba(239, 68, 68, 0.28)',
   },
-  codeCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  badgeRow: {
+  instructionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 6,
   },
-  codeCardTitle: {
+  instructionTitle: {
     fontSize: 11,
     fontWeight: '800',
     color: '#DC2626',
     letterSpacing: 0.8,
   },
-  dispatchingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  dispatchingText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#DC2626',
-    marginLeft: 4,
-  },
-  readyBadge: {
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  readyBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#16A34A',
-  },
-  codeDisplayRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+  instructionText: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 18,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
   },
-  codeDisplayRowDark: {
-    backgroundColor: '#0F172A',
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  codeDisplayNumber: {
-    fontSize: 22,
+  boldKeyword: {
     fontWeight: '900',
-    letterSpacing: 4,
     color: '#DC2626',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    letterSpacing: 1,
   },
-  autofillBtn: {
-    backgroundColor: '#DC2626',
+  autofillChip: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
-  autofillBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  codeCardSub: {
+  autofillChipText: {
     fontSize: 11,
-    color: '#7F1D1D',
-    lineHeight: 15,
-  },
-  statusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginBottom: 14,
-  },
-  statusBannerDark: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-  },
-  statusBannerText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#DC2626',
-  },
-  destinationPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginBottom: 14,
-  },
-  destinationPillDark: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-  },
-  destinationText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#991B1B',
-    flex: 1,
   },
   errorBox: {
     flexDirection: 'row',
@@ -549,43 +376,28 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   inputContainer: {
-    marginBottom: 14,
+    marginBottom: 16,
   },
-  inputLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748B',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  otpInput: {
+  textInput: {
     backgroundColor: '#F8FAFC',
     borderColor: '#E2E8F0',
     borderWidth: 1.5,
     borderRadius: 14,
-    height: 56,
+    height: 54,
     textAlign: 'center',
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0F172A',
-    letterSpacing: 8,
+    letterSpacing: 2,
   },
-  otpInputDark: {
+  textInputDark: {
     backgroundColor: '#0F172A',
     borderColor: 'rgba(239, 68, 68, 0.4)',
     color: '#F8FAFC',
   },
-  resendRow: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  resendTimerText: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  resendActionText: {
-    fontSize: 13,
-    fontWeight: '700',
+  textInputConfirmed: {
+    borderColor: '#DC2626',
+    backgroundColor: '#FEF2F2',
     color: '#DC2626',
   },
   deleteButton: {
@@ -595,7 +407,7 @@ const styles = StyleSheet.create({
     ...SHADOW.medium,
   },
   disabledButton: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   gradientButton: {
     paddingVertical: 14,
@@ -615,6 +427,7 @@ const styles = StyleSheet.create({
   cancelBtn: {
     paddingVertical: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelBtnText: {
     fontSize: 13,
