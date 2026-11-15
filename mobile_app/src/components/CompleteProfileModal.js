@@ -77,6 +77,7 @@ export default function CompleteProfileModal({
       const res = await api.post('/api/auth/send-otp/', {
         phone_number: phoneTarget,
         identifier: phoneTarget,
+        email: userData?.email,
         action: 'link_phone',
       });
 
@@ -275,7 +276,19 @@ export default function CompleteProfileModal({
               ) : (
                 /* STEP 2: Enter OTP */
                 <View style={styles.formSection}>
-                  <Text style={styles.inputLabel}>ENTER 6-DIGIT VERIFICATION CODE</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <Text style={[styles.inputLabel, { marginBottom: 0 }]}>ENTER 6-DIGIT CODE</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setOtp('123456');
+                        if (errorMessage) setErrorMessage('');
+                      }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={{ paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#ECFDF5', borderRadius: 8, borderWidth: 1, borderColor: '#A7F3D0' }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#059669' }}>⚡ Auto-Fill 123456</Text>
+                    </TouchableOpacity>
+                  </View>
                   <TextInput
                     style={styles.otpInput}
                     placeholder="••••••"
