@@ -84,14 +84,18 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
     scopes: ['profile', 'email'],
   });
 
-  const handleBackendLogin = useCallback(async (accessToken, idToken) => {
+  const handleBackendLogin = useCallback(async ({ accessToken, idToken, code, codeVerifier, redirectUri: targetUri }) => {
     try {
       setLoading(true);
       const res = await api.post('/api/auth/google/', {
         access_token: accessToken,
         id_token: idToken,
+        code,
+        code_verifier: codeVerifier,
+        redirect_uri: targetUri || redirectUri,
+        client_id: Platform.OS === 'android' && !isExpoGo ? GOOGLE_CONFIG.androidClientId : GOOGLE_CONFIG.webClientId,
         mode,
-      });
+      }, { timeout: 15000 });
 
       const { token, user_id, username, needs_phone } = res.data;
       if (!needs_phone) {
@@ -119,7 +123,7 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
     } finally {
       setLoading(false);
     }
-  }, [mode]);
+  }, [mode, redirectUri]);
 
   useEffect(() => {
     if (!response) return;
@@ -127,15 +131,11 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
     if (lastProcessedResponseRef.current === response) return;
 
     if (response.type === 'success') {
-      const { authentication, params } = response;
-      const accessToken = authentication?.accessToken;
-      const idToken = authentication?.idToken || params?.id_token;
+      const accessToken = response.authentication?.accessToken || response.params?.access_token;
+      const idToken = response.authentication?.idToken || response.params?.id_token;
+      const code = response.params?.code;
 
-      if (!accessToken && !idToken) {
-        // If code is present, expo-auth-session is still auto-exchanging in background
-        if (params?.code) {
-          return;
-        }
+      if (!accessToken && !idToken && !code) {
         lastProcessedResponseRef.current = response;
         setLoading(false);
         Alert.alert('Google Sign-In Failed', 'No authentication token received from Google.');
@@ -144,7 +144,13 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
       }
 
       lastProcessedResponseRef.current = response;
-      handleBackendLogin(accessToken, idToken);
+      handleBackendLogin({
+        accessToken,
+        idToken,
+        code,
+        codeVerifier: request?.codeVerifier,
+        redirectUri,
+      });
     } else if (response.type === 'cancel' || response.type === 'dismiss') {
       lastProcessedResponseRef.current = response;
       setLoading(false);
@@ -155,7 +161,7 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
       Alert.alert('Google Sign-In Failed', response.error?.message || 'Authentication cancelled or failed.');
       if (onErrorRef.current) onErrorRef.current(response.error);
     }
-  }, [response, handleBackendLogin]);
+  }, [response, handleBackendLogin, request?.codeVerifier, redirectUri]);
 
   const signInWithGoogle = async () => {
     if (!isGoogleAuthConfigured()) {
@@ -167,11 +173,54 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
       return;
     }
 
+    // Safety watchdog timer: maximum 20 seconds of loading state
+    const watchdogTimer = setTimeout(() => {
+      setLoading(false);
+    }, 20000);
+
     try {
       setLoading(true);
       if (onStartRef.current) onStartRef.current();
-      await promptAsync();
+
+      const res = await promptAsync();
+
+      if (!res || res.type === 'cancel' || res.type === 'dismiss') {
+        clearTimeout(watchdogTimer);
+        setLoading(false);
+        return;
+      }
+
+      if (res.type === 'error') {
+        clearTimeout(watchdogTimer);
+        setLoading(false);
+        console.warn('Google prompt error:', res.error);
+        Alert.alert('Google Sign-In Failed', res.error?.message || 'Authentication cancelled or failed.');
+        if (onErrorRef.current) onErrorRef.current(res.error);
+        return;
+      }
+
+      if (res.type === 'success') {
+        clearTimeout(watchdogTimer);
+        lastProcessedResponseRef.current = res;
+        const accessToken = res.authentication?.accessToken || res.params?.access_token;
+        const idToken = res.authentication?.idToken || res.params?.id_token;
+        const code = res.params?.code;
+
+        if (accessToken || idToken || code) {
+          await handleBackendLogin({
+            accessToken,
+            idToken,
+            code,
+            codeVerifier: request?.codeVerifier,
+            redirectUri,
+          });
+        } else {
+          setLoading(false);
+          Alert.alert('Google Sign-In Failed', 'No authentication token received from Google.');
+        }
+      }
     } catch (err) {
+      clearTimeout(watchdogTimer);
       setLoading(false);
       console.warn('Google prompt exception:', err);
       Alert.alert('Google Sign-In Error', err.message || 'Could not open Google Sign-In.');

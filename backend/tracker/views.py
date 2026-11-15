@@ -6752,11 +6752,45 @@ def api_google_login(request):
     
     access_token = request.data.get('access_token')
     id_token = request.data.get('id_token')
+    code = request.data.get('code')
+    code_verifier = request.data.get('code_verifier')
+    redirect_uri = request.data.get('redirect_uri')
+    client_id = request.data.get('client_id')
     
-    if not access_token and not id_token:
-        return Response({'error': 'Google token (access_token or id_token) is required.'}, status=400)
+    if not access_token and not id_token and not code:
+        return Response({'error': 'Google token (access_token, id_token, or code) is required.'}, status=400)
         
     google_data = None
+    
+    # 0. If code provided and tokens not directly provided, exchange code with Google
+    if code and not id_token and not access_token:
+        client_candidates = [
+            client_id,
+            '600331588079-97q2pl2l6impkean30df3qig5t6rl7et.apps.googleusercontent.com',
+            '600331588079-n2cpn41g5gev34u59v1v76pflsovhm93.apps.googleusercontent.com',
+        ]
+        for c_id in client_candidates:
+            if not c_id:
+                continue
+            try:
+                post_data = {
+                    'code': code,
+                    'client_id': c_id,
+                    'grant_type': 'authorization_code',
+                    'redirect_uri': redirect_uri or 'com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et:/oauthredirect',
+                }
+                if code_verifier:
+                    post_data['code_verifier'] = code_verifier
+                tok_resp = req_lib.post('https://oauth2.googleapis.com/token', data=post_data, timeout=10)
+                if tok_resp.status_code == 200:
+                    tok_json = tok_resp.json()
+                    id_token = tok_json.get('id_token') or id_token
+                    access_token = tok_json.get('access_token') or access_token
+                    break
+                else:
+                    logger.warning(f"Google code exchange attempt with {c_id[:20]} returned {tok_resp.status_code}")
+            except Exception as e:
+                logger.warning(f"Google code exchange attempt error: {e}")
     
     # 1. Try id_token first if provided
     if id_token:
