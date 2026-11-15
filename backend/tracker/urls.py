@@ -146,6 +146,7 @@ urlpatterns = [
     path('api/auth/google/', views.api_google_login, name='api_google_login'),
     path('api/logout/', views.api_logout, name='api_logout'),
     path('api/auth/delete-account/', views.api_delete_account, name='api_delete_account'),
+    path('api/auth/send-delete-account-otp/', views.api_send_delete_account_otp, name='api_send_delete_account_otp'),
     
     # ─── OTP, Password Recovery & Email Verification ───
     path('api/auth/send-otp/', views.api_send_otp, name='api_send_otp'),

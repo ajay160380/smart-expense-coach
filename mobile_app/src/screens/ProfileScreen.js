@@ -44,6 +44,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import { formatApiError } from '../utils/errors';
 import { validateEmail } from '../utils/validation';
 import WidgetSelectionModal from '../components/WidgetSelectionModal';
+import DeleteAccountModal from '../components/DeleteAccountModal';
 
 export default function ProfileScreen({ navigation }) {
   const { isDark, colors, toggleTheme } = useTheme();
@@ -63,7 +64,9 @@ export default function ProfileScreen({ navigation }) {
   const [widgetModalVisible, setWidgetModalVisible] = useState(false);
   const [cachedStats, setCachedStats] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteDestinationInfo, setDeleteDestinationInfo] = useState('');
+  const [sendingDeleteOtp, setSendingDeleteOtp] = useState(false);
 
   const userPhone = profile?.phone_number || profile?.whatsapp_number || '';
   const cleanPhone = String(userPhone).replace(/\D/g, '');
@@ -139,29 +142,26 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleDeleteAccount = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
       '⚠️ Delete Account Forever?',
-      'This will permanently delete your account, expenses, budgets, savings goals, subscriptions, and all personal records. This action is irreversible.',
+      'This will permanently delete your account, expenses, budgets, savings goals, subscriptions, and all personal records.\n\nA 6-digit verification code will be sent to your registered WhatsApp / Email.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete Permanently',
+          text: 'Send OTP & Proceed',
           style: 'destructive',
           onPress: async () => {
-            setDeletingAccount(true);
+            setSendingDeleteOtp(true);
             try {
-              const res = await api.post('/api/auth/delete-account/');
-              await clearAuthData();
-              Alert.alert('Account Deleted', res.data?.message || 'Your account has been deleted.');
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Welcome' }],
-              });
+              const res = await api.post('/api/auth/send-delete-account-otp/');
+              const dest = res.data?.destination || 'your registered contact';
+              setDeleteDestinationInfo(dest);
+              setDeleteModalVisible(true);
             } catch (error) {
-              Alert.alert('Deletion Failed', formatApiError(error));
+              Alert.alert('Could Not Send OTP', formatApiError(error));
             } finally {
-              setDeletingAccount(false);
+              setSendingDeleteOtp(false);
             }
           },
         },
@@ -936,7 +936,7 @@ export default function ProfileScreen({ navigation }) {
           <MenuItem
             ionIcon="trash-outline"
             iconColor="#EF4444"
-            label={deletingAccount ? "Deleting Account..." : "Delete Account"}
+            label={sendingDeleteOtp ? "Sending OTP..." : "Delete Account"}
             sub="Permanently delete all expenses, goals & personal data"
             onPress={handleDeleteAccount}
             showArrow
@@ -1137,6 +1137,13 @@ export default function ProfileScreen({ navigation }) {
         stats={cachedStats}
         isDark={isDark}
         colors={colors}
+      />
+
+      <DeleteAccountModal
+        visible={deleteModalVisible}
+        destinationInfo={deleteDestinationInfo}
+        onClose={() => setDeleteModalVisible(false)}
+        navigation={navigation}
       />
     </SafeAreaView>
   );

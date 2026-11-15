@@ -1,5 +1,5 @@
 require('dotenv').config({ path: '../.env' });
-const { default: makeWASocket, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, DisconnectReason, downloadMediaMessage } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const { Pool } = require('pg');
 const fs = require('fs');
@@ -320,21 +320,42 @@ async function startBot(sessionName = null) {
         const msg = m.messages[0];
         if (!msg.message || msg.key.fromMe || msg.key.remoteJid.includes('@g.us') || msg.key.remoteJid === 'status@broadcast') return;
 
-        const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
-        if (!text || text.trim() === '') return;
+        const innerMsg = msg.message?.ephemeralMessage?.message || msg.message?.viewOnceMessage?.message || msg.message?.viewOnceMessageV2?.message || msg.message;
+        const text = (innerMsg?.conversation || innerMsg?.extendedTextMessage?.text || '').trim();
+        const audioMsg = innerMsg?.audioMessage;
+
+        if (!text && !audioMsg) return;
 
         const remoteJid = msg.key.remoteJid;
         const phone = remoteJid.split('@')[0].split(':')[0];
         const pushName = msg.pushName || "User";
         const maskedPhone = phone.length >= 7 ? `${phone.slice(0, 3)}***${phone.slice(-3)}` : '***';
-        console.log(`📩 Received message from ${maskedPhone} (${pushName})`);
+        console.log(`📩 Received ${audioMsg ? 'voice note' : 'message'} from ${maskedPhone} (${pushName})`);
 
-        // ── Send Blue Tick (Read Receipt) & Instant Typing Indicator ──
+        // ── Send Blue Tick (Read Receipt) & Presence (recording for voice, composing for text) ──
         try {
             await sock.readMessages([msg.key]);
-            await sock.sendPresenceUpdate('composing', remoteJid);
+            await sock.sendPresenceUpdate(audioMsg ? 'recording' : 'composing', remoteJid);
         } catch (e) {
             console.warn('⚠️ Could not send read receipt or typing presence:', e.message);
+        }
+
+        // ── Download Audio Buffer if Voice Note ──
+        let audioBase64 = null;
+        if (audioMsg) {
+            try {
+                const buffer = await downloadMediaMessage(
+                    msg,
+                    'buffer',
+                    {},
+                    { logger: pino({ level: 'silent' }) }
+                );
+                audioBase64 = buffer.toString('base64');
+            } catch (err) {
+                console.error('❌ Failed to download audio media:', err);
+                await safeReply(remoteJid, '⚠️ Voice note download nahi ho paya. Kripya dobara boliye ya type karke bhejiye! 😊', msg);
+                return;
+            }
         }
 
         const lowerBody = text.toLowerCase();
@@ -520,7 +541,9 @@ async function startBot(sessionName = null) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     phone,
-                    text,
+                    text: text || '',
+                    audio_base64: audioBase64,
+                    audio_format: '.ogg',
                     name: pushName,
                     message_id: msg.key?.id || '',
                     sender_id: remoteJid || phone
