@@ -62,6 +62,18 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
     onAccountNotFoundRef.current = onAccountNotFound;
   });
 
+  // Pre-warm the Android Chrome Custom Tabs daemon so Google Sign-In pops up instantly (sub-100ms)
+  useEffect(() => {
+    try {
+      WebBrowser.warmUpAsync();
+    } catch (_) {}
+    return () => {
+      try {
+        WebBrowser.coolDownAsync();
+      } catch (_) {}
+    };
+  }, []);
+
   // In standalone APK on Android, Google requires reverse client ID scheme
   const androidRedirectUri = 'com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et:/oauthredirect';
   const defaultRedirectUri = makeRedirectUri({
@@ -173,10 +185,15 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
       return;
     }
 
-    // Safety watchdog timer: maximum 20 seconds of loading state
+    // Dismiss any old lingering auth session lock
+    try {
+      WebBrowser.dismissAuthSession();
+    } catch (_) {}
+
+    // Safety watchdog timer: maximum 15 seconds of loading state
     const watchdogTimer = setTimeout(() => {
       setLoading(false);
-    }, 20000);
+    }, 15000);
 
     try {
       setLoading(true);
@@ -184,9 +201,14 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
 
       const res = await promptAsync();
 
-      if (!res || res.type === 'cancel' || res.type === 'dismiss') {
+      if (!res || res.type === 'cancel' || res.type === 'dismiss' || res.type === 'locked') {
         clearTimeout(watchdogTimer);
         setLoading(false);
+        if (res?.type === 'locked') {
+          try {
+            WebBrowser.dismissAuthSession();
+          } catch (_) {}
+        }
         return;
       }
 

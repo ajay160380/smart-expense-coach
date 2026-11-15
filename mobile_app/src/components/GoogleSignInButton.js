@@ -30,7 +30,10 @@ export default function GoogleSignInButton({
       style={[styles.button, (loading || disabled) && styles.disabled, style]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color="#EA4335" />
+        <View style={styles.content}>
+          <ActivityIndicator size="small" color="#EA4335" style={{ marginRight: 8 }} />
+          <Text style={[styles.text, { color: '#6B7280' }]}>Connecting to Google...</Text>
+        </View>
       ) : (
         <View style={styles.content}>
           <View style={styles.iconContainer}>
