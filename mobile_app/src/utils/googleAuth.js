@@ -95,24 +95,71 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
     androidClientId: isExpoGo ? undefined : GOOGLE_CONFIG.androidClientId,
     iosClientId: GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.webClientId,
     redirectUri,
-    responseType: 'id_token token',
     scopes: ['profile', 'email'],
   });
 
-  const handleBackendLogin = useCallback(async ({ accessToken, idToken, code, codeVerifier, redirectUri: targetUri }) => {
+  const handleBackendLogin = useCallback(async ({ accessToken, idToken, code, codeVerifier, redirectUri: targetUri, profile }) => {
     // Prevent duplicate concurrent requests or processing after success
     if (loginInProgressRef.current || loginCompletedRef.current) return;
     loginInProgressRef.current = true;
 
     try {
       setLoading(true);
+
+      let activeAccessToken = accessToken;
+      let activeIdToken = idToken;
+      let activeProfile = profile;
+
+      // 1. If tokens not present but code is returned, perform PKCE token exchange directly on device
+      if (!activeAccessToken && !activeIdToken && code) {
+        try {
+          const clientId = Platform.OS === 'android' && !isExpoGo ? GOOGLE_CONFIG.androidClientId : GOOGLE_CONFIG.webClientId;
+          const bodyParams = new URLSearchParams({
+            client_id: clientId,
+            code,
+            grant_type: 'authorization_code',
+            redirect_uri: targetUri || redirectUri,
+          });
+          if (codeVerifier) {
+            bodyParams.append('code_verifier', codeVerifier);
+          }
+          const tokRes = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: bodyParams.toString(),
+          });
+          if (tokRes.ok) {
+            const tokJson = await tokRes.json();
+            activeAccessToken = tokJson.access_token || activeAccessToken;
+            activeIdToken = tokJson.id_token || activeIdToken;
+          }
+        } catch (exErr) {
+          console.warn('Client token exchange error:', exErr);
+        }
+      }
+
+      // 2. If access token exists, directly retrieve Google profile for instant verification
+      if (activeAccessToken && !activeProfile) {
+        try {
+          const uInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${activeAccessToken}` },
+          });
+          if (uInfoRes.ok) {
+            activeProfile = await uInfoRes.json();
+          }
+        } catch (profErr) {
+          console.warn('Direct userinfo fetch error:', profErr);
+        }
+      }
+
       const res = await api.post('/api/auth/google/', {
-        access_token: accessToken,
-        id_token: idToken,
+        access_token: activeAccessToken,
+        id_token: activeIdToken,
         code,
         code_verifier: codeVerifier,
         redirect_uri: targetUri || redirectUri,
         client_id: Platform.OS === 'android' && !isExpoGo ? GOOGLE_CONFIG.androidClientId : GOOGLE_CONFIG.webClientId,
+        profile: activeProfile,
         mode,
       }, { timeout: 15000 });
 
@@ -148,6 +195,7 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
 
   useEffect(() => {
     if (!response) return;
+    if (loginCompletedRef.current || loginInProgressRef.current) return;
     // Prevent processing the same response object multiple times (breaks infinite alert loops)
     if (lastProcessedResponseRef.current === response) return;
 
@@ -157,10 +205,6 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
       const code = response.params?.code;
 
       if (!accessToken && !idToken && !code) {
-        lastProcessedResponseRef.current = response;
-        setLoading(false);
-        Alert.alert('Google Sign-In Failed', 'No authentication token received from Google.');
-        if (onErrorRef.current) onErrorRef.current(new Error('No token received'));
         return;
       }
 

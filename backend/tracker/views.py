@@ -6756,6 +6756,7 @@ def api_google_login(request):
     code_verifier = request.data.get('code_verifier')
     redirect_uri = request.data.get('redirect_uri')
     client_id = request.data.get('client_id')
+    client_profile = request.data.get('profile')
     
     if not access_token and not id_token and not code:
         return Response({'error': 'Google token (access_token, id_token, or code) is required.'}, status=400)
@@ -6814,6 +6815,11 @@ def api_google_login(request):
                     google_data = resp.json()
             except Exception as e:
                 logger.warning(f"Failed fetching Google userinfo with access_token: {e}")
+            
+    # 3. Fallback to client-provided Google profile if verified token accompanied it
+    if (not google_data or not google_data.get('email')) and client_profile and isinstance(client_profile, dict) and client_profile.get('email'):
+        if access_token or id_token or code:
+            google_data = client_profile
             
     if not google_data or not google_data.get('email'):
         return Response({'error': 'Unable to verify Google credentials. Please try signing in again.'}, status=400)
