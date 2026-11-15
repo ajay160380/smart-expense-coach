@@ -48,6 +48,8 @@ export const isGoogleAuthConfigured = () => {
 export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onAccountNotFound } = {}) {
   const [loading, setLoading] = useState(false);
   const lastProcessedResponseRef = useRef(null);
+  const loginInProgressRef = useRef(false);
+  const loginCompletedRef = useRef(false);
 
   // Keep callback refs stable to prevent infinite re-render / effect loops
   const onSuccessRef = useRef(onSuccess);
@@ -97,6 +99,10 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
   });
 
   const handleBackendLogin = useCallback(async ({ accessToken, idToken, code, codeVerifier, redirectUri: targetUri }) => {
+    // Prevent duplicate concurrent requests or processing after success
+    if (loginInProgressRef.current || loginCompletedRef.current) return;
+    loginInProgressRef.current = true;
+
     try {
       setLoading(true);
       const res = await api.post('/api/auth/google/', {
@@ -109,6 +115,7 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
         mode,
       }, { timeout: 15000 });
 
+      loginCompletedRef.current = true;
       const { token, user_id, username, needs_phone } = res.data;
       if (!needs_phone) {
         await saveAuthData(token, user_id, username);
@@ -133,6 +140,7 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
         onErrorRef.current(err);
       }
     } finally {
+      loginInProgressRef.current = false;
       setLoading(false);
     }
   }, [mode, redirectUri]);

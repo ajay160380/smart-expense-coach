@@ -39,9 +39,9 @@ const TOUR_STEPS = [
   {
     id: 'add_expense',
     stepNumber: 1,
-    tag: 'QUICK 3-SEC ENTRY',
+    tag: 'FAST 3-SEC ENTRY',
     title: 'Center "+" Add Expense',
-    subtitle: 'Screen ke bilkul beech me ye bada "+" button hai. Kahin se bhi 1 tap me 3 second ke andar apna kharcha record karo!',
+    subtitle: 'Tap the large center "+" button anytime to record expenses in seconds with intelligent auto-categorization and instant split tracking.',
     icon: 'add-circle',
     colors: ['#7C3AED', '#6D28D9'],
     pills: [
@@ -49,15 +49,15 @@ const TOUR_STEPS = [
       { icon: 'pricetag-outline', text: 'Smart Auto-Categories' },
       { icon: 'people-outline', text: 'Split with Friends' },
     ],
-    highlightNote: 'Tip: Ye button har screen par hamesha available rehta hai!',
+    highlightNote: 'Pro Tip: Always accessible from the bottom navigation bar on every screen.',
     type: 'fab',
   },
   {
     id: 'whatsapp_bot',
     stepNumber: 2,
     tag: 'WHATSAPP SYNC',
-    title: '1-Tap WhatsApp Bot 🤖',
-    subtitle: 'App khole bina kharcha add karo! WhatsApp par message ya voice note bhejo ("150 chai", "500 petrol") aur instant sync pao.',
+    title: '1-Tap WhatsApp Assistant 🤖',
+    subtitle: 'Track expenses on the go without opening the app! Send a WhatsApp text or voice note ("₹150 coffee", "₹500 fuel") for instant sync.',
     icon: 'logo-whatsapp',
     colors: ['#16A34A', '#15803D'],
     pills: [
@@ -65,72 +65,72 @@ const TOUR_STEPS = [
       { icon: 'paper-plane-outline', text: 'Text "500 petrol"' },
       { icon: 'mic-outline', text: 'Voice Notes Supported' },
     ],
-    highlightNote: 'Tip: Dashboard ya Menu me "1-Tap Link WhatsApp" tap karke link karein!',
+    highlightNote: 'Pro Tip: Tap "Link WhatsApp" from your Dashboard or Menu to activate in 5 seconds!',
     type: 'whatsapp',
   },
   {
-    id: 'menu_utilities',
+    id: 'daily_allowance',
     stepNumber: 3,
-    tag: 'MENU & UTILITIES',
-    title: 'Menu Tab — Powerful Tools 📱',
-    subtitle: 'Neeche right side "Menu" tab me aapko milte hain Notepad, Android Home Widgets, aur PC/Laptop Web Cloud Portal.',
+    tag: 'SAFE-TO-SPEND',
+    title: 'Live Safe Daily Allowance ⚡',
+    subtitle: 'Your dashboard real-time spending dial calculates exactly how much you can safely spend today so you never run short before month-end.',
+    icon: 'speedometer',
+    colors: ['#8B5CF6', '#7C3AED'],
+    pills: [
+      { icon: 'shield-checkmark-outline', text: 'Dynamic Daily Target' },
+      { icon: 'trending-up-outline', text: 'Pacing Indicator' },
+      { icon: 'pie-chart-outline', text: 'Category Insights' },
+    ],
+    highlightNote: 'Pro Tip: Stay within your daily green zone to automatically hit your savings goals!',
+    type: 'budget',
+  },
+  {
+    id: 'voice_ai',
+    stepNumber: 4,
+    tag: 'AI VOICE MAGIC',
+    title: 'Hands-Free Voice Logging 🎙️',
+    subtitle: 'Prefer speaking over typing? Simply tap the microphone and say "Paid 50 for auto" or "150 for lunch" — AI automatically logs and tags it!',
+    icon: 'mic',
+    colors: ['#EC4899', '#BE185D'],
+    pills: [
+      { icon: 'chatbubbles-outline', text: 'Multi-Language AI' },
+      { icon: 'sparkles-outline', text: 'Zero Form Filling' },
+      { icon: 'bulb-outline', text: 'Instant Categorization' },
+    ],
+    highlightNote: 'Pro Tip: Try saying "Paid 300 for groceries at Supermart" for instant logging.',
+    type: 'voice',
+  },
+  {
+    id: 'menu_utilities',
+    stepNumber: 5,
+    tag: 'POWER TOOLS',
+    title: 'Menu Tab — Essential Utilities 📱',
+    subtitle: 'Explore the "Menu" hub for top productivity: Financial Notepad, Home Screen Widgets, and Web Cloud Portal for PC/laptop access.',
     icon: 'grid',
     colors: ['#2563EB', '#1D4ED8'],
     pills: [
       { icon: 'document-text-outline', text: 'Financial Notepad' },
       { icon: 'apps-outline', text: 'Home Screen Widgets' },
-      { icon: 'globe-outline', text: 'Web Cloud Portal' },
+      { icon: 'globe-outline', text: 'PC Web Cloud Portal' },
     ],
-    highlightNote: 'Tip: Menu tab se aap kisi bhi utility ko 1-tap me open kar sakte hain!',
+    highlightNote: 'Pro Tip: Add home screen widgets to log expenses right from your phone home screen!',
     type: 'menu',
   },
   {
     id: 'profile_settings',
-    stepNumber: 4,
-    tag: 'PROFILE & LIMITS',
+    stepNumber: 6,
+    tag: 'BUDGET & SECURITY',
     title: 'Profile & Budget Setup 👤',
-    subtitle: 'Top-left profile avatar tap karo: monthly budget limit set karo, salary cycle start date chuno, aur Biometric lock lagao.',
+    subtitle: 'Tap your profile avatar on the top-left to configure your monthly budget, set your salary cycle date, and enable Biometric app lock.',
     icon: 'person-circle',
     colors: ['#F59E0B', '#D97706'],
     pills: [
       { icon: 'wallet-outline', text: 'Monthly Budget Limit' },
-      { icon: 'calendar-outline', text: 'Salary Cycle Start' },
+      { icon: 'calendar-outline', text: 'Custom Salary Cycle' },
       { icon: 'finger-print-outline', text: 'Face / Fingerprint Lock' },
     ],
-    highlightNote: 'Tip: Apni financial safety ke liye monthly limit zaroor set karein!',
+    highlightNote: "You're all set! Experience effortless, smart money management with PaisaMitra! 🚀",
     type: 'profile',
-  },
-  {
-    id: 'daily_allowance',
-    stepNumber: 5,
-    tag: 'SAFE-TO-SPEND',
-    title: 'Live Daily Allowance ⚡',
-    subtitle: 'Dashboard par purple card aapko live batata hai ki aaj kitna kharch karna safe hai taaki mahine ke aakhri dino me paise kam na padein.',
-    icon: 'speedometer',
-    colors: ['#8B5CF6', '#7C3AED'],
-    pills: [
-      { icon: 'shield-checkmark-outline', text: 'Safe Daily Target' },
-      { icon: 'trending-up-outline', text: 'Budget Meter' },
-      { icon: 'pie-chart-outline', text: 'Category Insights' },
-    ],
-    highlightNote: 'Tip: Daily safe allowance ke andar rahenge to budget kabhi fail nahi hoga!',
-    type: 'budget',
-  },
-  {
-    id: 'voice_ai',
-    stepNumber: 6,
-    tag: 'AI VOICE MAGIC',
-    title: 'AI Voice & Chit-Chat 🎙️',
-    subtitle: 'Type karne ka man nahi? Mic dabao aur bolo — "Auto 50 diya" ya "150 ka pizza khaya" — AI samajh kar add kar dega!',
-    icon: 'mic',
-    colors: ['#EC4899', '#BE185D'],
-    pills: [
-      { icon: 'chatbubbles-outline', text: 'Natural Hinglish' },
-      { icon: 'sparkles-outline', text: 'Zero Form Filling' },
-      { icon: 'bulb-outline', text: 'AI Budget Coach' },
-    ],
-    highlightNote: 'Aap bilkul ready hain! Ab smart tareeke se paise manage karein! 🚀',
-    type: 'voice',
   },
 ];
 
@@ -276,17 +276,17 @@ export default function FeatureTourModal({ visible, onClose, userName = 'Dost' }
           <View style={styles.mockupContainer}>
             <View style={styles.chatBoxMock}>
               <View style={styles.chatBubbleUser}>
-                <Text style={styles.chatUserText}>150 Chai & Samosa</Text>
+                <Text style={styles.chatUserText}>₹150 Chai & Snacks</Text>
                 <Ionicons name="checkmark-done" size={13} color="#60A5FA" style={{ marginLeft: 6 }} />
               </View>
               <View style={styles.chatBubbleBot}>
                 <Ionicons name="logo-whatsapp" size={14} color="#16A34A" style={{ marginRight: 6 }} />
-                <Text style={styles.chatBotText}>✅ Logged ₹150 in Food! Safe left: ₹850</Text>
+                <Text style={styles.chatBotText}>✅ Logged ₹150 in Food! Daily safe: ₹850</Text>
               </View>
             </View>
             <View style={styles.whatsappActionPill}>
               <Ionicons name="flash" size={12} color="#16A34A" style={{ marginRight: 4 }} />
-              <Text style={styles.whatsappActionText}>1-Tap Link WhatsApp Available</Text>
+              <Text style={styles.whatsappActionText}>1-Tap WhatsApp Link Available</Text>
             </View>
           </View>
         );
@@ -300,7 +300,7 @@ export default function FeatureTourModal({ visible, onClose, userName = 'Dost' }
                   <Ionicons name="document-text" size={18} color="#F472B6" />
                 </View>
                 <Text style={styles.menuMiniTitle}>Notepad</Text>
-                <Text style={styles.menuMiniSub}>Wishlist & Lists</Text>
+                <Text style={styles.menuMiniSub}>Wishlist & Notes</Text>
               </View>
               <View style={[styles.menuMiniCard, { borderColor: '#A855F7' + '40' }]}>
                 <View style={[styles.menuMiniIcon, { backgroundColor: '#A855F7' + '18' }]}>
@@ -329,7 +329,7 @@ export default function FeatureTourModal({ visible, onClose, userName = 'Dost' }
               </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={styles.profileMockTitle}>Monthly Budget Limit</Text>
-                <Text style={styles.profileMockValue}>₹20,000 <Text style={styles.profileMockCycle}>• Salary: 1st</Text></Text>
+                <Text style={styles.profileMockValue}>₹20,000 <Text style={styles.profileMockCycle}>• Cycle: 1st of month</Text></Text>
               </View>
               <View style={styles.profileGearIcon}>
                 <Ionicons name="settings" size={18} color="#F59E0B" />
@@ -356,7 +356,7 @@ export default function FeatureTourModal({ visible, onClose, userName = 'Dost' }
               </View>
               <View style={styles.dailyAllowanceBadge}>
                 <Ionicons name="flash" size={12} color="#FBBF24" style={{ marginRight: 4 }} />
-                <Text style={styles.dailyAllowanceText}>+₹1,111 safe per day • 18d left</Text>
+                <Text style={styles.dailyAllowanceText}>+₹1,111 safe per day • 18 days left</Text>
               </View>
             </LinearGradient>
           </View>
@@ -378,7 +378,7 @@ export default function FeatureTourModal({ visible, onClose, userName = 'Dost' }
                 <View style={[styles.waveLine, { height: 16 }]} />
               </View>
             </View>
-            <Text style={styles.voicePromptExample}>"Bolo: 'Auto wale ko ₹40 diya' — AI add kar dega!"</Text>
+            <Text style={styles.voicePromptExample}>"Say: 'Paid ₹40 for cab to station' — AI logs it!"</Text>
           </View>
         );
 
@@ -475,6 +475,9 @@ export default function FeatureTourModal({ visible, onClose, userName = 'Dost' }
 
             {/* Highlight Note */}
             <View style={[styles.noteBox, { borderColor: step.colors[0] + '35', backgroundColor: step.colors[0] + '0C' }]}>
+              <View style={[styles.noteIconCircle, { backgroundColor: step.colors[0] + '20' }]}>
+                <Ionicons name="bulb-outline" size={14} color={step.colors[0]} />
+              </View>
               <Text style={[styles.noteText, { color: step.colors[0] }]}>{step.highlightNote}</Text>
             </View>
           </View>
@@ -932,16 +935,28 @@ const styles = StyleSheet.create({
   },
   noteBox: {
     width: '100%',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1,
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  noteIconCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
   },
   noteText: {
-    fontSize: 11,
+    flex: 1,
+    fontSize: 11.5,
     fontWeight: '600',
-    textAlign: 'center',
+    lineHeight: 16,
+    textAlign: 'left',
   },
 
   // Actions
