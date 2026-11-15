@@ -2468,40 +2468,22 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     res_digits = re.sub(r'\D', '', resolved_phone)
                     if len(res_digits) >= 10:
                         last10_res = res_digits[-10:]
-                        profile = UserProfile.objects.filter(phone_number__endswith=last10_res).select_related("user").first()
-                        if not profile:
-                            profile = UserProfile.objects.filter(whatsapp_number__endswith=last10_res).select_related("user").first()
-                        if profile:
-                            profile.whatsapp_number = incoming_phone
-                            profile.whatsapp_linked = True
-                            profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
-                            logger.info("Auto-linked WhatsApp LID %s to user %s (%s)", incoming_phone, profile.user.id, profile.phone_number)
+                        profile = UserProfile.objects.filter(whatsapp_number__endswith=last10_res, whatsapp_linked=True).select_related("user").first()
 
-            # 3. Match by phone_number (registration number)
-            if not profile or not profile.user:
-                clean_phone = re.sub(r'\D', '', incoming_phone)
-                if len(clean_phone) >= 10:
-                    last10 = clean_phone[-10:]
-                    profile = UserProfile.objects.filter(phone_number__endswith=last10).select_related("user").first()
-                    if profile:
-                        profile.whatsapp_number = incoming_phone
-                        profile.whatsapp_linked = True
-                        profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
-                
-                if not profile or not profile.user:
-                    return JsonResponse({
-                        "status":  "error",
-                        "message": (
-                            "❌ *Account Not Linked*\n\n"
-                            "To link your WhatsApp with your Expense Tracker account:\n"
-                            "1️⃣ Reply with: *link <your registered mobile number>*\n"
-                            "   _Example:_ *link 919876543210*\n\n"
-                            "📱 Don't have an account yet? Register here:\n"
-                            "https://expense-coach-prxm.onrender.com/register/\n\n"
-                            "📥 Download Android App:\n"
-                            "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
-                        )
-                    })
+            if not profile or not profile.user or not getattr(profile, 'whatsapp_linked', False):
+                return JsonResponse({
+                    "status":  "error",
+                    "message": (
+                        "❌ *Account Not Linked*\n\n"
+                        "To link your WhatsApp with your Expense Tracker account:\n"
+                        "1️⃣ Reply with: *link <your registered mobile number>*\n"
+                        "   _Example:_ *link 919876543210*\n\n"
+                        "📱 Don't have an account yet? Register here:\n"
+                        "https://expense-coach-prxm.onrender.com/register/\n\n"
+                        "📥 Download Android App:\n"
+                        "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
+                    )
+                })
             target_user = profile.user
             _WA_AUTH_CACHE[incoming_phone] = target_user.id
             
@@ -7589,21 +7571,11 @@ def api_complete_google_profile(request):
     with transaction.atomic():
         profile, _ = UserProfile.objects.get_or_create(
             user=user,
-            defaults={'phone_number': phone_target, 'email_verified': True}
+            defaults={'phone_number': phone_target, 'email_verified': True, 'whatsapp_linked': False}
         )
         profile.phone_number = phone_target
-        # Check if an existing profile had a linked WhatsApp LID or number for this phone
-        existing_wa = UserProfile.objects.filter(
-            phone_number__endswith=phone_target[-10:],
-            whatsapp_linked=True
-        ).exclude(whatsapp_number__isnull=True).exclude(whatsapp_number='').values_list('whatsapp_number', flat=True).first()
-
-        if existing_wa:
-            profile.whatsapp_number = existing_wa
-            profile.whatsapp_linked = True
-        elif not profile.whatsapp_number:
-            profile.whatsapp_number = phone_target
-            profile.whatsapp_linked = True
+        profile.whatsapp_linked = False
+        profile.whatsapp_number = None
         profile.email_verified = True
         if monthly_budget:
             try:
