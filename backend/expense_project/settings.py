@@ -301,6 +301,7 @@ if raw_cors:
     CORS_ALLOWED_ORIGINS = [c.strip() for c in raw_cors.split(',') if c.strip()]
 else:
     CORS_ALLOWED_ORIGINS = [
+        'https://expense-coach-prxm.onrender.com',
         'https://smart-expense-coach.onrender.com',
         'http://localhost:8081',
         'http://localhost:19006',
