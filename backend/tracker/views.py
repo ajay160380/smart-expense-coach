@@ -2495,7 +2495,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                             "❌ *Account Not Linked*\n\n"
                             "To link your WhatsApp with your Expense Tracker account:\n"
                             "1️⃣ Reply with: *link <your registered mobile number>*\n"
-                            "   _Example:_ *link 917905398965*\n\n"
+                            "   _Example:_ *link 919876543210*\n\n"
                             "📱 Don't have an account yet? Register here:\n"
                             "https://expense-coach-prxm.onrender.com/register/\n\n"
                             "📥 Download Android App:\n"
