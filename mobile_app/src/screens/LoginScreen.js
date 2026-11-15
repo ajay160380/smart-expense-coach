@@ -15,6 +15,7 @@ import Logo from '../components/Logo';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import CompleteProfileModal from '../components/CompleteProfileModal';
 import { useGoogleAuth } from '../utils/googleAuth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import api from '../api/config';
 import {

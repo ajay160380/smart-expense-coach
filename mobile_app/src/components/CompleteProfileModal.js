@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/config';
 import { saveAuthData } from '../utils/auth';
 import analytics from '../utils/analytics';
