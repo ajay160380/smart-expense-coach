@@ -7869,17 +7869,20 @@ def api_delete_account(request):
     username = user.username
     uid = user.id
 
-    from django.db import connection, transaction
+    from django.db import connection
     queries = [
-        'DELETE FROM authtoken_token WHERE user_id = %s',
-        'DELETE FROM tracker_expense WHERE user_id = %s',
-        'DELETE FROM tracker_savingsgoal WHERE user_id = %s',
-        'DELETE FROM tracker_subscription WHERE user_id = %s',
-        'DELETE FROM tracker_note WHERE user_id = %s',
+        # 1. Child tables of tracker_expense & tracker_subscription
+        'DELETE FROM tracker_subscriptioncharge WHERE expense_id IN (SELECT id FROM tracker_expense WHERE user_id = %s) OR subscription_id IN (SELECT id FROM tracker_subscription WHERE user_id = %s)',
+        # 2. Child tables of tracker_splitgroup
         'DELETE FROM tracker_splitsettlement WHERE group_id IN (SELECT id FROM tracker_splitgroup WHERE creator_id = %s)',
         'DELETE FROM tracker_splitexpense WHERE group_id IN (SELECT id FROM tracker_splitgroup WHERE creator_id = %s)',
         'DELETE FROM tracker_splitmember WHERE group_id IN (SELECT id FROM tracker_splitgroup WHERE creator_id = %s)',
         'DELETE FROM tracker_splitgroup WHERE creator_id = %s',
+        # 3. Direct children of auth_user
+        'DELETE FROM tracker_expense WHERE user_id = %s',
+        'DELETE FROM tracker_subscription WHERE user_id = %s',
+        'DELETE FROM tracker_savingsgoal WHERE user_id = %s',
+        'DELETE FROM tracker_note WHERE user_id = %s',
         'DELETE FROM tracker_feedback WHERE user_id = %s',
         'DELETE FROM tracker_userloginactivity WHERE user_id = %s',
         'DELETE FROM tracker_dailynotificationlog WHERE user_id = %s',
@@ -7888,23 +7891,20 @@ def api_delete_account(request):
         'DELETE FROM tracker_usermerchantcategory WHERE user_id = %s',
         'DELETE FROM tracker_whatsappsession WHERE user_id = %s',
         'DELETE FROM tracker_userprofile WHERE user_id = %s',
+        'DELETE FROM authtoken_token WHERE user_id = %s',
         'DELETE FROM django_admin_log WHERE user_id = %s',
         'DELETE FROM auth_user_groups WHERE user_id = %s',
         'DELETE FROM auth_user_user_permissions WHERE user_id = %s',
+        # 4. Finally auth_user itself
         'DELETE FROM auth_user WHERE id = %s',
     ]
-    try:
-        with transaction.atomic():
-            with connection.cursor() as cursor:
-                for q in queries:
-                    try:
-                        cursor.execute(q, [uid])
-                    except Exception as e_q:
-                        logger.warning("Query '%s' warning during delete: %s", q, e_q)
-            OTPVerification.objects.filter(identifier=username).delete()
-    except Exception as e:
-        logger.warning("Fast atomic delete fallback to ORM: %s", e)
-        user.delete()
+    with connection.cursor() as cursor:
+        for q in queries:
+            try:
+                cursor.execute(q, [uid])
+            except Exception as e_q:
+                logger.warning("Query '%s' warning during delete: %s", q, e_q)
+    OTPVerification.objects.filter(identifier=username).delete()
 
     return Response({
         'status': 'success',
