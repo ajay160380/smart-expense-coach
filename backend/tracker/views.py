@@ -2489,30 +2489,19 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                         profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
                 
                 if not profile or not profile.user:
-                    # If account is deleted or not linked, only respond if user explicitly sent a "link" command.
-                    # Otherwise remain completely silent so deleted accounts never get bot responses.
-                    is_link_cmd = spoken_text.strip().lower().startswith("link")
-                    if is_link_cmd:
-                        return JsonResponse({
-                            "status":  "error",
-                            "message": (
-                                "❌ *Account Not Linked*\n\n"
-                                "To link your WhatsApp with your Expense Tracker account:\n"
-                                "1️⃣ Reply with: *link <your registered mobile number>*\n"
-                                "   _Example:_ *link 917905398965*\n\n"
-                                "📱 Don't have an account yet? Register here:\n"
-                                "https://expense-coach-prxm.onrender.com/register/\n\n"
-                                "📥 Download Android App:\n"
-                                "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
-                            )
-                        })
-                    else:
-                        logger.info("Muted response for unlinked/deleted phone=%s (spoken: %s)", masked_phone, spoken_text[:30])
-                        return JsonResponse({
-                            "status": "unlinked",
-                            "silent": True,
-                            "message": None
-                        })
+                    return JsonResponse({
+                        "status":  "error",
+                        "message": (
+                            "❌ *Account Not Linked*\n\n"
+                            "To link your WhatsApp with your Expense Tracker account:\n"
+                            "1️⃣ Reply with: *link <your registered mobile number>*\n"
+                            "   _Example:_ *link 917905398965*\n\n"
+                            "📱 Don't have an account yet? Register here:\n"
+                            "https://expense-coach-prxm.onrender.com/register/\n\n"
+                            "📥 Download Android App:\n"
+                            "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
+                        )
+                    })
             target_user = profile.user
             _WA_AUTH_CACHE[incoming_phone] = target_user.id
             

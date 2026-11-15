@@ -560,7 +560,7 @@ async function startBot(sessionName = null) {
                     fileName: data.media.filename,
                     caption: data.message
                 });
-            } else if (data.message && !data.silent && data.status !== 'unlinked') {
+            } else if (data.message && !data.silent) {
                 await safeReply(remoteJid, data.message, msg);
             }
 
