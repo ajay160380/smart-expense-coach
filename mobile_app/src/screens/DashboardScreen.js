@@ -26,6 +26,7 @@ import { AddExpenseWidget } from '../widgets/AddExpenseWidget';
 import { WideExpenseWidget } from '../widgets/WideExpenseWidget';
 import WidgetSelectionModal from '../components/WidgetSelectionModal';
 import FeatureTourModal, { TOUR_STORAGE_KEY, getTourKeyForUser } from '../components/FeatureTourModal';
+import WhatsAppLinkModal from '../components/WhatsAppLinkModal';
 import { useFocusEffect } from '@react-navigation/native';
 import api, { BASE_URL } from '../api/config';
 import { getUsername, clearAuthData, getToken } from '../utils/auth';
@@ -106,6 +107,20 @@ export default function DashboardScreen({ navigation, route }) {
   const [hideRecurringRadarWidget, setHideRecurringRadarWidget] = useState(false);
   const [widgetModalVisible, setWidgetModalVisible] = useState(false);
   const [tourModalVisible, setTourModalVisible] = useState(false);
+  const [waLinkModalVisible, setWaLinkModalVisible] = useState(false);
+
+  // ── AUTO-POPUP FOR UNLINKED WHATSAPP BOT USERS ──
+  useEffect(() => {
+    if (!tourModalVisible && stats) {
+      const isLinked = Boolean(stats?.whatsapp_linked || userProfile?.whatsapp_linked);
+      if (!isLinked) {
+        const timer = setTimeout(() => {
+          setWaLinkModalVisible(true);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [tourModalVisible, stats?.whatsapp_linked, userProfile?.whatsapp_linked]);
 
   // ── ONBOARDING TOUR AUTOMATIC LAUNCH FOR NEW USERS ──
   useEffect(() => {
@@ -2608,8 +2623,25 @@ export default function DashboardScreen({ navigation, route }) {
       {/* 🚀 Interactive New User Feature Tour & Walkthrough */}
       <FeatureTourModal
         visible={tourModalVisible}
-        onClose={() => setTourModalVisible(false)}
+        onClose={() => {
+          setTourModalVisible(false);
+          const isLinked = Boolean(stats?.whatsapp_linked || userProfile?.whatsapp_linked);
+          if (!isLinked) {
+            setTimeout(() => setWaLinkModalVisible(true), 600);
+          }
+        }}
         userName={fullName || username}
+      />
+
+      {/* 🤖 WhatsApp Bot Linking Modal (Auto pops up until linked) */}
+      <WhatsAppLinkModal
+        visible={waLinkModalVisible}
+        onClose={() => setWaLinkModalVisible(false)}
+        userPhone={userProfile?.phone_number || stats?.user_phone}
+        onLinkedSuccess={() => {
+          if (stats) setStats({ ...stats, whatsapp_linked: true });
+          if (userProfile) setUserProfile({ ...userProfile, whatsapp_linked: true });
+        }}
       />
     </View>
   );

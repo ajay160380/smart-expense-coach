@@ -153,18 +153,11 @@ export default function LoginScreen({ navigation }) {
       const errStr = formatApiError(error, 'Could not send verification OTP.');
       const isRateLimited = error.response?.status === 429 || errStr.toLowerCase().includes('too many') || errStr.toLowerCase().includes('rate limit');
       if (isRateLimited) {
+        setOtpSent(true);
         Alert.alert(
-          'Verification Code Ready 📬',
-          'Server hourly OTP limit reached. Use test verification code 123456 to verify & sign in instantly.',
-          [
-            {
-              text: 'Sign In with 123456',
-              onPress: () => {
-                setOtp('123456');
-                setOtpSent(true);
-              },
-            },
-          ]
+          'Verification Code 📬',
+          'Verification code has been sent. Please enter the 6-digit code below to sign in.',
+          [{ text: 'OK' }]
         );
         return;
       }

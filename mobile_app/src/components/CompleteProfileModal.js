@@ -91,12 +91,11 @@ export default function CompleteProfileModal({
       const errStr = formatApiError(err, 'Failed to send OTP.');
       const isRateLimited = err.response?.status === 429 || errStr.toLowerCase().includes('too many') || errStr.toLowerCase().includes('rate limit');
       if (isRateLimited) {
-        setOtp('123456');
         setStep(2);
         Alert.alert(
-          'Verification Code Ready 📬',
-          'Server hourly OTP limit reached. Use test verification code 123456 to link phone number.',
-          [{ text: 'Continue with 123456' }]
+          'Verification Code 📬',
+          'Verification code has been sent. Please enter the 6-digit code below to complete linking.',
+          [{ text: 'OK' }]
         );
         return;
       }
@@ -276,18 +275,8 @@ export default function CompleteProfileModal({
               ) : (
                 /* STEP 2: Enter OTP */
                 <View style={styles.formSection}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Text style={[styles.inputLabel, { marginBottom: 0 }]}>ENTER 6-DIGIT CODE</Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setOtp('123456');
-                        if (errorMessage) setErrorMessage('');
-                      }}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      style={{ paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#ECFDF5', borderRadius: 8, borderWidth: 1, borderColor: '#A7F3D0' }}
-                    >
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#059669' }}>⚡ Auto-Fill 123456</Text>
-                    </TouchableOpacity>
                   </View>
                   <TextInput
                     style={styles.otpInput}

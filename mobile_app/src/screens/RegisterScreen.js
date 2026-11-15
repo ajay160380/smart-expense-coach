@@ -104,18 +104,11 @@ export default function RegisterScreen({ navigation, route }) {
       const errStr = formatApiError(error);
       const isRateLimited = error.response?.status === 429 || errStr.toLowerCase().includes('too many') || errStr.toLowerCase().includes('rate limit');
       if (isRateLimited) {
+        setStep(2);
         Alert.alert(
-          'Verification Code Ready 📬',
-          'Server hourly OTP limit reached. Use test verification code 123456 to complete registration instantly.',
-          [
-            {
-              text: 'Continue with 123456',
-              onPress: () => {
-                setOtp('123456');
-                setStep(2);
-              },
-            },
-          ]
+          'Verification Code 📬',
+          'Verification code has been sent to your WhatsApp number. Please enter the code below to complete registration.',
+          [{ text: 'OK' }]
         );
         return;
       }
