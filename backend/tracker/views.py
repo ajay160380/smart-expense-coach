@@ -7739,6 +7739,7 @@ def api_send_delete_account_otp(request):
 
     return Response({
         'status': 'success',
+        'destination': destination_desc,
         'message': f'Verification OTP sent to {destination_desc}. Please enter the 6-digit code to confirm.',
         'phone_masked': f"+{phone_target[:4]}***{phone_target[-2:]}" if phone_target else None,
         'email_masked': f"{email_target[:3]}***@{email_target.split('@')[-1]}" if email_target else None,

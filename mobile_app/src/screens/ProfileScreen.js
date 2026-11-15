@@ -65,8 +65,6 @@ export default function ProfileScreen({ navigation }) {
   const [cachedStats, setCachedStats] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deleteDestinationInfo, setDeleteDestinationInfo] = useState('');
-  const [sendingDeleteOtp, setSendingDeleteOtp] = useState(false);
 
   const userPhone = profile?.phone_number || profile?.whatsapp_number || '';
   const cleanPhone = String(userPhone).replace(/\D/g, '');
@@ -142,31 +140,8 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleDeleteAccount = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Alert.alert(
-      '⚠️ Delete Account Forever?',
-      'This will permanently delete your account, expenses, budgets, savings goals, subscriptions, and all personal records.\n\nA 6-digit verification code will be sent to your registered WhatsApp / Email.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send OTP & Proceed',
-          style: 'destructive',
-          onPress: async () => {
-            setSendingDeleteOtp(true);
-            try {
-              const res = await api.post('/api/auth/send-delete-account-otp/');
-              const dest = res.data?.destination || 'your registered contact';
-              setDeleteDestinationInfo(dest);
-              setDeleteModalVisible(true);
-            } catch (error) {
-              Alert.alert('Could Not Send OTP', formatApiError(error));
-            } finally {
-              setSendingDeleteOtp(false);
-            }
-          },
-        },
-      ]
-    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setDeleteModalVisible(true);
   };
 
   const handleSendEmailVerification = async () => {
@@ -936,7 +911,7 @@ export default function ProfileScreen({ navigation }) {
           <MenuItem
             ionIcon="trash-outline"
             iconColor="#EF4444"
-            label={sendingDeleteOtp ? "Sending OTP..." : "Delete Account"}
+            label="Delete Account"
             sub="Permanently delete all expenses, goals & personal data"
             onPress={handleDeleteAccount}
             showArrow
@@ -1141,7 +1116,6 @@ export default function ProfileScreen({ navigation }) {
 
       <DeleteAccountModal
         visible={deleteModalVisible}
-        destinationInfo={deleteDestinationInfo}
         onClose={() => setDeleteModalVisible(false)}
         navigation={navigation}
       />
