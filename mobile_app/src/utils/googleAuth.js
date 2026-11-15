@@ -95,6 +95,7 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
     androidClientId: isExpoGo ? undefined : GOOGLE_CONFIG.androidClientId,
     iosClientId: GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.webClientId,
     redirectUri,
+    responseType: 'id_token token',
     scopes: ['profile', 'email'],
   });
 
