@@ -514,47 +514,71 @@
         /* --- MOBILE RESPONSIVENESS FIXES --- */
         @media (max-width: 768px) {
             .navbar-wrapper {
-                padding: 10px 10px 0;
+                padding: 8px 12px 0;
             }
             .navbar {
-                padding: 10px;
+                padding: 8px 12px;
+                min-height: 52px;
             }
-            .nav-links {
+            .navbar-brand {
                 gap: 8px;
             }
             .navbar-brand img {
-                height: 36px !important;
-                width: 36px !important;
+                height: 32px !important;
+                width: 32px !important;
                 border-radius: 8px !important;
             }
             .navbar-brand span {
-                font-size: 16px !important;
+                font-size: 15px !important;
             }
-            .btn-primary {
-                padding: 8px 12px;
-                font-size: 13px;
-                white-space: nowrap;
+            .nav-links {
+                gap: 6px;
+                flex-wrap: nowrap;
+                align-items: center;
             }
             .nav-item {
                 font-size: 13px;
-                padding: 4px;
+                font-weight: 600;
+                padding: 6px 10px;
+                white-space: nowrap !important;
+                display: inline-block;
+            }
+            .btn-primary {
+                padding: 6px 14px;
+                font-size: 12.5px;
+                white-space: nowrap !important;
+                border-radius: 9999px;
             }
             .btn-glass {
-                padding: 8px 12px;
-                font-size: 13px;
+                padding: 6px 12px;
+                font-size: 12.5px;
+                white-space: nowrap !important;
             }
             .profile-avatar {
-                width: 36px;
-                height: 36px;
+                width: 32px;
+                height: 32px;
+            }
+            .real-footer {
+                flex-direction: column !important;
+                text-align: center !important;
+                gap: 12px !important;
+                padding-bottom: 95px !important;
+                padding-left: 16px !important;
+                padding-right: 16px !important;
+            }
+            .footer-links {
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+                gap: 14px !important;
             }
             .wa-floating-widget {
-                bottom: 20px;
-                right: 20px;
+                bottom: 16px;
+                right: 16px;
             }
             .wa-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 26px;
+                width: 48px;
+                height: 48px;
+                font-size: 24px;
             }
         }
         {% block base_extra_css %}{% endblock %}

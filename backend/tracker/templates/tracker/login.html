@@ -252,16 +252,30 @@
     background: var(--bg-card) !important;
 }
 
+.pwd-input-wrap {
+    position: relative;
+    width: 100%;
+}
+.pwd-input-wrap .form-input {
+    padding-right: 42px !important;
+}
+
 .pwd-toggle {
     position: absolute;
-    right: 16px;
-    top: 38px;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
     background: none;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
     font-size: 1.1rem;
     padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
 }
 .pwd-toggle:hover { color: var(--primary-light); }
 
@@ -352,18 +366,71 @@
 
 /* Responsive */
 @media (max-width: 900px) {
+    .auth-page {
+        padding: 12px 12px 24px;
+        min-height: auto;
+        align-items: flex-start;
+    }
+
     .auth-split-card {
         flex-direction: column;
-        border-radius: 16px;
+        border-radius: 20px;
+        max-width: 440px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
+
     .auth-left {
-        padding: 40px 30px;
+        display: none !important;
     }
-    .wa-mockup {
-        display: none;
+
+    .desktop-only-header {
+        display: none !important;
     }
+
+    .mobile-brand-header {
+        display: flex !important;
+    }
+
     .auth-right {
-        padding: 40px 30px;
+        padding: 24px 20px;
+        width: 100%;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    .form-input {
+        height: 44px;
+        font-size: 0.92rem;
+    }
+
+    .btn-submit {
+        height: 46px;
+        padding: 10px;
+        font-size: 0.95rem;
+    }
+
+    .auth-actions {
+        margin: 14px 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .real-footer {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 12px !important;
+        padding-bottom: 95px !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    .footer-links {
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 14px !important;
     }
 }
 
@@ -517,7 +584,13 @@
 
         <!-- RIGHT PANEL: Form -->
         <div class="auth-right">
-            <div class="auth-header">
+            <div class="mobile-brand-header" style="display: none; flex-direction: column; align-items: center; text-align: center; margin-bottom: 16px;">
+                <img src="{% static 'tracker/images/icon.png' %}?v=1784926718" alt="Logo" style="height: 48px; width: 48px; border-radius: 12px; box-shadow: 0 6px 18px rgba(99, 102, 241, 0.25); margin-bottom: 8px;">
+                <h1 style="font-size: 1.5rem; font-weight: 800; margin: 0 0 4px; color: var(--text-main);">Welcome Back</h1>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Sign in to your account</p>
+            </div>
+
+            <div class="auth-header desktop-only-header">
                 <h1 class="auth-title">Welcome Back</h1>
                 <p class="auth-subtitle">Sign in to continue your journey to financial freedom.</p>
             </div>
@@ -539,7 +612,7 @@
                      data-text="continue_with"
                      data-size="large"
                      data-logo_alignment="left"
-                     data-width="360">
+                     data-width="320">
                 </div>
             </div>
 
@@ -572,8 +645,10 @@
 
                     <div class="form-group">
                         <label class="form-label">Password</label>
-                        <input type="password" id="id_password" name="password" class="form-input" placeholder="••••••••" required>
-                        <button type="button" class="pwd-toggle" onclick="togglePwd('id_password', this)">👁️</button>
+                        <div class="pwd-input-wrap">
+                            <input type="password" id="id_password" name="password" class="form-input" placeholder="••••••••" required>
+                            <button type="button" class="pwd-toggle" onclick="togglePwd('id_password', this)">👁️</button>
+                        </div>
                     </div>
 
                     <div class="auth-actions">
