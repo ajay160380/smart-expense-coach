@@ -55,6 +55,10 @@ export default function DeleteAccountModal({
       setResendTimer(30);
       setSendingOtp(true);
 
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+
       api.post('/api/auth/send-delete-account-otp/')
         .then((res) => {
           const dest = res.data?.destination || res.data?.message || 'your registered WhatsApp & Email';
@@ -65,9 +69,6 @@ export default function DeleteAccountModal({
         })
         .finally(() => {
           setSendingOtp(false);
-          setTimeout(() => {
-            inputRef.current?.focus();
-          }, 300);
         });
     }
   }, [visible]);
@@ -101,13 +102,14 @@ export default function DeleteAccountModal({
     }
   };
 
-  const handleConfirmDelete = async () => {
-    const cleanOtp = otp.trim();
+  const handleConfirmDelete = async (codeOverride) => {
+    const cleanOtp = String(codeOverride || otp).trim();
     if (cleanOtp.length < 6) {
       setErrorMessage('Please enter the full 6-digit OTP code.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
+    if (loading) return;
 
     setLoading(true);
     setErrorMessage('');
@@ -216,8 +218,12 @@ export default function DeleteAccountModal({
               maxLength={6}
               value={otp}
               onChangeText={(val) => {
-                setOtp(val.replace(/[^0-9]/g, ''));
+                const cleaned = val.replace(/[^0-9]/g, '');
+                setOtp(cleaned);
                 if (errorMessage) setErrorMessage('');
+                if (cleaned.length === 6) {
+                  handleConfirmDelete(cleaned);
+                }
               }}
               editable={!loading}
             />

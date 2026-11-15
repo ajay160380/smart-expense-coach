@@ -7723,10 +7723,12 @@ def api_send_delete_account_otp(request):
 
     # 4. Dispatch WhatsApp OTP in background thread
     wa_dispatched = False
-    if phone_target:
+    wa_target_phone = phone_target
+    wa_target_lid = getattr(profile, 'whatsapp_number', None) if profile else None
+    if wa_target_phone or wa_target_lid:
         import threading
         import requests
-        def send_delete_wa(target_phone, code):
+        def send_delete_wa(target_phone, target_lid, code):
             try:
                 wa_msg = (
                     f"⚠️ *Expense Tracker Account Deletion*\n\n"
@@ -7735,25 +7737,28 @@ def api_send_delete_account_otp(request):
                     f"and all personal data. If you did not request this, please ignore this message.\n\n"
                     f"Valid for 10 minutes. Do not share this code."
                 )
+                payload = {'phone_number': target_phone, 'message': wa_msg}
+                if target_lid:
+                    payload['whatsapp_number'] = target_lid
                 requests.post(
                     'http://127.0.0.1:3001/api/send-message',
-                    json={'phone_number': target_phone, 'message': wa_msg},
+                    json=payload,
                     timeout=10
                 )
             except Exception as e:
                 logger.warning("Could not dispatch WhatsApp delete OTP: %s", e)
-        t = threading.Thread(target=send_delete_wa, args=(phone_target, otp_code))
+        t = threading.Thread(target=send_delete_wa, args=(wa_target_phone, wa_target_lid, otp_code))
         t.daemon = True
         t.start()
         wa_dispatched = True
 
-    # 5. Dispatch Email OTP in background thread
+    # 5. Dispatch Email OTP in background thread (using HTTPS Resend API for Render compatibility)
     email_dispatched = False
     if email_target:
         import threading
         def send_delete_email(target_email, code, uname):
             try:
-                from django.core.mail import send_mail
+                from .email_service import send_transactional_email
                 subject = "⚠️ Confirm Account Deletion - Expense Tracker"
                 plain_msg = (
                     f"Hello {uname},\n\n"
@@ -7762,13 +7767,23 @@ def api_send_delete_account_otp(request):
                     f"account, personal expenses, and budgets.\n\n"
                     f"Valid for 10 minutes. Do not share this code."
                 )
-                send_mail(
-                    subject,
-                    plain_msg,
-                    getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@expensecoach.com'),
-                    [target_email],
-                    fail_silently=True
-                )
+                html_msg = f"""
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #fee2e2;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span style="font-size: 40px;">⚠️</span>
+                        <h2 style="color: #dc2626; margin: 8px 0 4px;">Delete Account Confirmation</h2>
+                        <p style="color: #64748b; font-size: 14px; margin: 0;">Expense Tracker Security Verification</p>
+                    </div>
+                    <p style="color: #334155; font-size: 15px; line-height: 1.5;">Hello <b>{uname}</b>,</p>
+                    <p style="color: #334155; font-size: 14px; line-height: 1.5;">You requested to permanently delete your account. To proceed, please use this 6-digit verification code:</p>
+                    <div style="background: #fef2f2; border: 2px dashed #ef4444; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
+                        <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #dc2626;">{code}</span>
+                    </div>
+                    <p style="color: #991b1b; font-size: 12px; margin: 0 0 16px;">⚠️ This will immediately and permanently erase all your expense history, budgets, and accounts. This action cannot be undone.</p>
+                    <p style="color: #94a3b8; font-size: 12px; margin: 0;">Code is valid for 10 minutes. If you did not request this, please change your password immediately.</p>
+                </div>
+                """
+                send_transactional_email(target_email, subject, plain_msg, html_body=html_msg)
             except Exception as e:
                 logger.warning("Could not dispatch Email delete OTP: %s", e)
         t_em = threading.Thread(target=send_delete_email, args=(email_target, otp_code, user.username))

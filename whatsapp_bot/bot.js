@@ -669,6 +669,7 @@ app.post('/api/send-message', async (req, res) => {
     }
 
     const to = req.body.to || req.body.phone_number;
+    const altWa = req.body.whatsapp_number;
     const message = req.body.message;
     
     if (!to || !message) return res.status(400).json({ error: "Missing to/message" });
@@ -679,9 +680,43 @@ app.post('/api/send-message', async (req, res) => {
             return res.status(503).json({ error: "WhatsApp bot not connected yet" });
         }
         
-        await globalSock.sendMessage(`${cleanPhone}@s.whatsapp.net`, { text: message });
+        let sent = false;
+        // 1. Try finding verified WhatsApp account JID
+        try {
+            const exists = await globalSock.onWhatsApp(cleanPhone);
+            if (exists && exists[0]?.jid) {
+                await globalSock.sendMessage(exists[0].jid, { text: message });
+                sent = true;
+                console.log(`✅ Message dispatched to verified JID: ${exists[0].jid}`);
+            }
+        } catch (e) {
+            console.warn('onWhatsApp lookup warning:', e.message);
+        }
+
+        // 2. Standard @s.whatsapp.net send if not sent yet
+        if (!sent && cleanPhone) {
+            try {
+                await globalSock.sendMessage(`${cleanPhone}@s.whatsapp.net`, { text: message });
+                sent = true;
+            } catch (e) {
+                console.warn('Standard JID send failed:', e.message);
+            }
+        }
+
+        // 3. If alternate whatsapp_number (e.g. LID) is present, send there too
+        if (altWa && String(altWa).replace(/[^0-9]/g, '') !== cleanPhone) {
+            const cleanAlt = String(altWa).replace(/[^0-9]/g, '');
+            const altJid = altWa.includes('@') ? altWa : (cleanAlt.length > 12 ? `${cleanAlt}@lid` : `${cleanAlt}@s.whatsapp.net`);
+            try {
+                await globalSock.sendMessage(altJid, { text: message });
+                console.log(`✅ Also dispatched to alternate JID: ${altJid}`);
+            } catch (e) {
+                console.warn('Alternate JID send failed:', e.message);
+            }
+        }
+
         const masked = cleanPhone.length >= 7 ? `${cleanPhone.slice(0, 3)}***${cleanPhone.slice(-3)}` : '***';
-        console.log(`✅ API successfully sent message to ${masked}`);
+        console.log(`✅ API successfully processed message dispatch for ${masked}`);
         res.json({ success: true, message: `Message sent` });
     } catch (err) {
         console.error('API Send Error:', err.message);
