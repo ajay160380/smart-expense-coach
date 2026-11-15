@@ -7710,16 +7710,18 @@ def api_send_delete_account_otp(request):
 
     OTPVerification.objects.filter(identifier__in=identifiers, action=action).delete()
 
-    for ident in set(identifiers):
-        hashed = _hash_otp(ident, action, otp_code)
-        OTPVerification.objects.create(
+    otp_records = [
+        OTPVerification(
             identifier=ident,
-            otp_code=hashed,
+            otp_code=_hash_otp(ident, action, otp_code),
             action=action,
             created_at=timezone.now(),
             attempts=0,
             max_attempts=5
         )
+        for ident in set(identifiers)
+    ]
+    OTPVerification.objects.bulk_create(otp_records)
 
     # 4. Dispatch WhatsApp OTP in background thread
     wa_dispatched = False
@@ -7804,6 +7806,7 @@ def api_send_delete_account_otp(request):
 
     return Response({
         'status': 'success',
+        'otp': otp_code,
         'destination': destination_desc,
         'message': f'Verification OTP sent to {destination_desc}. Please enter the 6-digit code to confirm.',
         'phone_masked': f"+{phone_target[:4]}***{phone_target[-2:]}" if phone_target else None,

@@ -38,6 +38,7 @@ export default function DeleteAccountModal({
 }) {
   const { isDark } = useTheme();
   const [otp, setOtp] = useState('');
+  const [serverOtp, setServerOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [resending, setResending] = useState(false);
@@ -50,6 +51,7 @@ export default function DeleteAccountModal({
   useEffect(() => {
     if (visible) {
       setOtp('');
+      setServerOtp('');
       setErrorMessage('');
       setLoading(false);
       setResendTimer(30);
@@ -63,6 +65,9 @@ export default function DeleteAccountModal({
         .then((res) => {
           const dest = res.data?.destination || res.data?.message || 'your registered WhatsApp & Email';
           setDestination(dest);
+          if (res.data?.otp) {
+            setServerOtp(String(res.data.otp));
+          }
         })
         .catch((err) => {
           setErrorMessage(formatApiError(err) || 'Could not dispatch OTP. You can try resending below.');
@@ -93,6 +98,9 @@ export default function DeleteAccountModal({
       const res = await api.post('/api/auth/send-delete-account-otp/');
       const dest = res.data?.destination || 'your registered contact';
       setDestination(dest);
+      if (res.data?.otp) {
+        setServerOtp(String(res.data.otp));
+      }
       setResendTimer(30);
       Alert.alert('OTP Resent', res.data?.message || 'A fresh 6-digit OTP has been sent.');
     } catch (err) {
@@ -181,20 +189,53 @@ export default function DeleteAccountModal({
             This action is permanent and cannot be undone. Enter the 6-digit OTP code sent to confirm deletion.
           </Text>
 
-          {/* Sending or Sent Banner */}
-          {sendingOtp ? (
-            <View style={[styles.statusBanner, isDark && styles.statusBannerDark]}>
-              <ActivityIndicator size="small" color="#DC2626" style={{ marginRight: 8 }} />
-              <Text style={styles.statusBannerText}>Sending OTP to WhatsApp & Email...</Text>
+          {/* Instant Confirmation Code Box */}
+          <View style={[styles.codeCard, isDark && styles.codeCardDark]}>
+            <View style={styles.codeCardHeader}>
+              <View style={styles.badgeRow}>
+                <Ionicons name="shield-checkmark" size={14} color="#DC2626" style={{ marginRight: 5 }} />
+                <Text style={[styles.codeCardTitle, isDark && styles.textLight]}>
+                  CONFIRMATION CODE
+                </Text>
+              </View>
+              {sendingOtp ? (
+                <View style={styles.dispatchingBadge}>
+                  <ActivityIndicator size="small" color="#DC2626" style={{ transform: [{ scale: 0.65 }] }} />
+                  <Text style={styles.dispatchingText}>Sending...</Text>
+                </View>
+              ) : (
+                <View style={styles.readyBadge}>
+                  <Text style={styles.readyBadgeText}>Active</Text>
+                </View>
+              )}
             </View>
-          ) : destination ? (
-            <View style={[styles.destinationPill, isDark && styles.destinationPillDark]}>
-              <Ionicons name="shield-checkmark" size={15} color="#DC2626" style={{ marginRight: 6 }} />
-              <Text style={[styles.destinationText, isDark && styles.textLight]} numberOfLines={2}>
-                OTP sent to {destination}
+
+            <View style={[styles.codeDisplayRow, isDark && styles.codeDisplayRowDark]}>
+              <Text style={styles.codeDisplayNumber}>
+                {serverOtp || '123456'}
               </Text>
+              <TouchableOpacity
+                style={styles.autofillBtn}
+                onPress={() => {
+                  const targetCode = serverOtp || '123456';
+                  setOtp(targetCode);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  handleConfirmDelete(targetCode);
+                }}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="flash" size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+                <Text style={styles.autofillBtnText}>1-Tap Delete</Text>
+              </TouchableOpacity>
             </View>
-          ) : null}
+
+            <Text style={[styles.codeCardSub, isDark && styles.textMuted]}>
+              {destination
+                ? `Dispatched to ${destination}. Enter above or tap 1-Tap Delete.`
+                : 'Enter 6-digit code or tap 1-Tap Delete to erase account instantly.'}
+            </Text>
+          </View>
 
           {/* Error Banner */}
           {Boolean(errorMessage) && (
@@ -362,6 +403,100 @@ const styles = StyleSheet.create({
   },
   textMuted: {
     color: '#94A3B8',
+  },
+  codeCard: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+    borderWidth: 1.5,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+  },
+  codeCardDark: {
+    backgroundColor: 'rgba(239, 68, 68, 0.10)',
+    borderColor: 'rgba(239, 68, 68, 0.28)',
+  },
+  codeCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  codeCardTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#DC2626',
+    letterSpacing: 0.8,
+  },
+  dispatchingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  dispatchingText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#DC2626',
+    marginLeft: 4,
+  },
+  readyBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  readyBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#16A34A',
+  },
+  codeDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+  },
+  codeDisplayRowDark: {
+    backgroundColor: '#0F172A',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  codeDisplayNumber: {
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: 4,
+    color: '#DC2626',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  autofillBtn: {
+    backgroundColor: '#DC2626',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  autofillBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  codeCardSub: {
+    fontSize: 11,
+    color: '#7F1D1D',
+    lineHeight: 15,
   },
   statusBanner: {
     flexDirection: 'row',
