@@ -2489,19 +2489,30 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                         profile.save(update_fields=['whatsapp_number', 'whatsapp_linked'])
                 
                 if not profile or not profile.user:
-                    return JsonResponse({
-                        "status":  "error",
-                        "message": (
-                            "❌ *Account Not Linked*\n\n"
-                            "To link your WhatsApp with your Expense Tracker account:\n"
-                            "1️⃣ Reply with: *link <your registered mobile number>*\n"
-                            "   _Example:_ *link 917905398965*\n\n"
-                            "📱 Don't have an account yet? Register here:\n"
-                            "https://expense-coach-prxm.onrender.com/register/\n\n"
-                            "📥 Download Android App:\n"
-                            "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
-                        )
-                    })
+                    # If account is deleted or not linked, only respond if user explicitly sent a "link" command.
+                    # Otherwise remain completely silent so deleted accounts never get bot responses.
+                    is_link_cmd = spoken_text.strip().lower().startswith("link")
+                    if is_link_cmd:
+                        return JsonResponse({
+                            "status":  "error",
+                            "message": (
+                                "❌ *Account Not Linked*\n\n"
+                                "To link your WhatsApp with your Expense Tracker account:\n"
+                                "1️⃣ Reply with: *link <your registered mobile number>*\n"
+                                "   _Example:_ *link 917905398965*\n\n"
+                                "📱 Don't have an account yet? Register here:\n"
+                                "https://expense-coach-prxm.onrender.com/register/\n\n"
+                                "📥 Download Android App:\n"
+                                "https://github.com/ajay160380/smart-expense-coach/releases/latest/download/ExpenseTracker.apk"
+                            )
+                        })
+                    else:
+                        logger.info("Muted response for unlinked/deleted phone=%s (spoken: %s)", masked_phone, spoken_text[:30])
+                        return JsonResponse({
+                            "status": "unlinked",
+                            "silent": True,
+                            "message": None
+                        })
             target_user = profile.user
             _WA_AUTH_CACHE[incoming_phone] = target_user.id
             
@@ -7916,6 +7927,15 @@ def api_delete_account(request):
     username = user.username
     uid = user.id
 
+    # Track phones to purge WhatsApp bot and Baileys session bindings
+    raw_phones = []
+    profile = getattr(user, 'profile', None) or UserProfile.objects.filter(user=user).first()
+    if profile:
+        if profile.phone_number:
+            raw_phones.append(str(profile.phone_number))
+        if profile.whatsapp_number:
+            raw_phones.append(str(profile.whatsapp_number))
+
     from django.db import connection
     queries = [
         # 1. Child tables of tracker_expense & tracker_subscription
@@ -7953,6 +7973,24 @@ def api_delete_account(request):
             except Exception as e_q:
                 logger.warning("Query '%s' warning during delete: %s", q, e_q)
     OTPVerification.objects.filter(identifier=username).delete()
+
+    # 5. Purge WhatsApp in-memory auth cache so bot immediately stops recognizing user
+    global _WA_AUTH_CACHE
+    if '_WA_AUTH_CACHE' in globals():
+        for k in list(_WA_AUTH_CACHE.keys()):
+            if _WA_AUTH_CACHE[k] == uid:
+                del _WA_AUTH_CACHE[k]
+
+    # 6. Purge Baileys multi-device LID mapping and device session records for deleted phones
+    with connection.cursor() as cursor:
+        for p in raw_phones:
+            digits = re.sub(r'\D', '', p)
+            if len(digits) >= 10:
+                last10 = digits[-10:]
+                try:
+                    cursor.execute("DELETE FROM baileys_auth WHERE key_id LIKE %s OR data::text LIKE %s", [f'%{last10}%', f'%{last10}%'])
+                except Exception as e_b:
+                    logger.debug("baileys_auth cleanup notice: %s", e_b)
 
     return Response({
         'status': 'success',

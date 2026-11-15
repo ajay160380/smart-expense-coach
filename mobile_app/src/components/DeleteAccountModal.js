@@ -73,25 +73,15 @@ export default function DeleteAccountModal({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
     try {
-      // Race API request with a 7s safety timeout so it NEVER hangs
-      const apiCall = api.post(
+      // Execute server-side permanent account deletion
+      await api.post(
         '/api/auth/delete-account/',
         {
           confirmation: 'DELETE',
           otp: 'DELETE',
         },
-        { timeout: 7000 }
+        { timeout: 15000 }
       );
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 7000)
-      );
-
-      try {
-        await Promise.race([apiCall, timeoutPromise]);
-      } catch (reqErr) {
-        console.warn('Delete request completed with notice:', reqErr.message);
-      }
 
       // 1. Instantly clear auth session and local storage
       await clearAuthData();
