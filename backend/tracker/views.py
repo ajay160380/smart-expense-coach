@@ -127,7 +127,7 @@ CAT_KEYWORDS = {
     "health":        ["dawai", "medicine", "doctor", "hospital", "chemist", "pharmacy",
                       "gym", "clinic", "test", "pathlab", "dawa", "injection", "checkup",
                       "tablet", "syrup"],
-    "entertainment": ["movie", "netflix", "ott", "game", "concert", "sports", "match",
+    "entertainment": ["party", "movie", "netflix", "ott", "game", "concert", "sports", "match",
                       "hotstar", "prime", "spotify", "youtube", "ticket", "fun", "outing",
                       "cinema", "reels"],
     "education":     ["book", "course", "fees", "tuition", "stationery", "school",
@@ -470,7 +470,7 @@ def _safe_float(value, default: float = 0.0) -> float:
 
 def _parse_hindi_num_tokens(tokens: list) -> int:
     """Convert a list of Hindi number-word tokens into a single integer.
-    Handles compounds like ['do', 'sau', 'pachaas'] → 250
+    Handles compounds like ['do', 'sau', 'pachaas'] → 250, ['15', '100'] → 1500
     """
     result = 0
     current = 0
@@ -488,24 +488,62 @@ def _parse_hindi_num_tokens(tokens: list) -> int:
         elif t in _HINDI_UNITS:
             current += _HINDI_UNITS[t]
         elif re.match(r'^\d+$', t):
-            current += int(t)
+            val = int(t)
+            # Critical speech idiom: If 1..99 is followed by 100 (e.g. 15 100 = 15 hundred = 1500)
+            if 0 < current < 100 and val == 100:
+                current *= 100
+            elif 0 < current < 100 and val == 1000:
+                current *= 1000
+            else:
+                current += val
     result += current
     return result
 
 
 def normalize_hinglish_numbers(text: str) -> str:
-    """Convert Hindi/Hinglish number words to digits, handling compounds correctly.
-    e.g. 'do sau pachaas petrol' → '250 petrol'
+    """Convert Hindi/Hinglish number words to digits, handling speech idioms & compounds correctly.
+    e.g. '15-100 kaa party kia' → '1500 party'
+         '15 100 kaa party kia' → '1500 party'
+         'pandrah sau ka party kiya' → '1500 party'
+         'do sau pachaas petrol' → '250 petrol'
          'teen hazar ka khaana' → '3000 ka khaana'
+         'dedh hazaar' → '1500'
     """
+    if not text:
+        return ""
     original = text
+
     # 1. Devanagari digit characters → ASCII
     deva_map = {'०':'0','१':'1','२':'2','३':'3','४':'4',
                 '५':'5','६':'6','७':'7','८':'8','९':'9'}
     for d, a in deva_map.items():
         text = text.replace(d, a)
 
-    # 2. Tokenise on whitespace, keeping whitespace tokens to preserve spacing
+    # 2. Colloquial Indian special numbers (dedh, dhai)
+    specials = {
+        r'\bdedh\s*(?:hazar|hazaar|hajar|hajaar)\b': '1500',
+        r'\bdhai\s*(?:hazar|hazaar|hajar|hajaar)\b': '2500',
+        r'\bdedh\s*(?:sau|so|sou|saw)\b': '150',
+        r'\bdhai\s*(?:sau|so|sou|saw)\b': '250',
+    }
+    for pat, rep in specials.items():
+        text = re.sub(pat, rep, text, flags=re.IGNORECASE)
+
+    # 3. Speech idiom: Whisper writes "pandrah sau" as "15-100", "15 - 100", or "15 100"
+    def _replace_hundred_num(m):
+        return str(int(m.group(1)) * 100)
+
+    text = re.sub(r'\b([1-9][0-9]?)\s*[-]\s*100\b', _replace_hundred_num, text)
+    text = re.sub(r'\b([1-9][0-9]?)\s+100\b', _replace_hundred_num, text)
+
+    # 4. Number + sau / so / hundred (e.g. '15 sau', '15 so', '15 hundred' → '1500')
+    text = re.sub(r'\b([1-9][0-9]?)\s*[-]?\s*(?:sau|so|sou|saw|saww|sow|hundred)\b', _replace_hundred_num, text, flags=re.IGNORECASE)
+
+    # 5. Number + hazar / k (e.g. '2 hazar' → '2000', '1.5k' → '1500')
+    text = re.sub(r'\b(\d+(?:\.\d+)?)\s*k\b', lambda m: str(int(float(m.group(1)) * 1000)), text, flags=re.IGNORECASE)
+    text = re.sub(r'\b([1-9][0-9]?)\s*(?:hazar|hazaar|hajar|hajaar|thousand)\b', lambda m: str(int(m.group(1)) * 1000), text, flags=re.IGNORECASE)
+
+    # 6. Tokenise on whitespace, keeping whitespace tokens to preserve spacing
     all_num_words = set(_HINDI_UNITS.keys()) | set(_HINDI_MULTIPLIERS.keys())
     raw_tokens = re.split(r'(\s+)', text)   # alternating [word, ws, word, ws, …]
 
@@ -609,6 +647,11 @@ def build_conversational_ai_prompt(today, user_context: dict) -> str:
          • "D-Mart se ₹1200 ki grocery li" ➔ [{{"amount": 1200, "category": "groceries", "description": "D-Mart Grocery"}}]
          • "Chai 20 aur samosa 30" ➔ [{{"amount": 20, "category": "food", "description": "Chai"}}, {{"amount": 30, "category": "food", "description": "Samosa"}}]
          • "350 medicine doctor fee 500" ➔ [{{"amount": 350, "category": "health", "description": "Medicine"}}, {{"amount": 500, "category": "health", "description": "Doctor Fee"}}]
+         • "1500 party kiya" / "15-100 party" ➔ [{{"amount": 1500, "category": "entertainment", "description": "Party"}}]
+         • CRITICAL AMOUNT ACCURACY (INDIAN SPEECH):
+           In Indian speech and transcriptions, terms like "15-100", "15 100", "pandrah sau", "fifteen hundred" ALWAYS mean ₹1500 (1500).
+           "12-100", "barah sau" = 1200. "25-100", "pacchis sau" = 2500. "dedh hazaar", "1.5k" = 1500.
+           NEVER split a single expense statement into 15 and 100 or ₹115. Only split when multiple distinct items are explicitly stated!
     2. If the user EXPLICITLY asks to save a note (e.g. "save to notepad", "notepad me daal do", "note: buy milk"):
        - action = "save_note"
        - note = The exact text they want to save.
@@ -1978,13 +2021,14 @@ def _check_greeting(text: str) -> bool:
     return _get_smart_greeting_response(text, "User") is not None
 
 def _clean_expense_desc(desc: str) -> str:
+    desc = desc.strip(" .,!?:;")
     desc = re.sub(r'^(?:aaj|kal|maine|mene|meine|humne|hamne|i\s+paid|i\s+spent|spent|paid|bought|got)\s+', '', desc, flags=re.IGNORECASE)
-    desc = re.sub(r'^(?:for|ka|ki|ke|on|ke\s*liye|mein|me|pe|se|par)\s+', '', desc, flags=re.IGNORECASE)
-    for _ in range(2):
-        desc = re.sub(r'(?:^\s*|\s+)(?:de\s*diye|de\s*diya|de\s*di|diya|diye|pay\s*kiya|paid|spent|kharcha|kharche|kharch\s*kiye?|kharch\s*huye|liye|liya|mangwaya|lag\s*gaye|laga)$', '', desc, flags=re.IGNORECASE)
-        desc = re.sub(r'(?:^\s*|\s+)(?:for|ka|ki|ke|on|ke\s*liye|mein|me|pe|se|par)$', '', desc, flags=re.IGNORECASE)
+    desc = re.sub(r'^(?:for|ka|kaa|ki|ke|ko|on|ke\s*liye|mein|me|pe|se|par)\s+', '', desc, flags=re.IGNORECASE)
+    for _ in range(3):
+        desc = re.sub(r'(?:^\s*|\s+)(?:de\s*diye|de\s*diya|de\s*di|diya|diye|kia|kiya|kare|kara|karo|hai|tha|the|thi|huye|hua|pay\s*kiya|paid|spent|kharcha|kharche|kharch\s*kiye?|kharch\s*huye|liye|liya|mangwaya|lag\s*gaye|laga)$', '', desc, flags=re.IGNORECASE)
+        desc = re.sub(r'(?:^\s*|\s+)(?:for|ka|kaa|ki|ke|ko|on|ke\s*liye|mein|me|pe|se|par)$', '', desc, flags=re.IGNORECASE)
     desc = re.sub(r'^(?:rs\.?|inr|rupees?|rupaye?)\s*', '', desc, flags=re.IGNORECASE)
-    return desc.strip()
+    return desc.strip(" .,!?:;")
 
 def _extract_single_expense(text: str):
     clean = text.strip()
@@ -2115,9 +2159,12 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 try:
                     audio_bytes = base64.b64decode(audio_base64)
                     whisper_prompt = (
-                        "PaisaMitra expense tracker. Output numbers as digits: "
-                        "500 petrol, 200 chai, 150 auto, 1200 grocery, 450 pizza, "
-                        "300 khana, 2500 rent, 80 snacks, 2000 shopping, 350 medicine."
+                        "PaisaMitra expense tracker. Indian Hindi and Hinglish speech. "
+                        "Transcribe spoken numbers and amounts to exact clean digits: "
+                        "1500 party, 1500 ka party kiya, pandrah sau 1500, barah sau 1200, "
+                        "gyarah sau 1100, do hazaar 2000, paanch sau 500, 2500 rent, 200 chai, "
+                        "150 auto, 1200 grocery, 450 pizza, 300 khana, 80 snacks, 2000 shopping, "
+                        "350 medicine, 500 petrol, 100 recharge."
                     )
                     logger.info("Transcribing WhatsApp voice note via Groq Whisper (%s, %d bytes)...", ext, len(audio_bytes))
                     try:
@@ -2169,9 +2216,12 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     audio_bytes = file.read()
 
                 whisper_prompt = (
-                    "PaisaMitra expense tracker. Output numbers as digits: "
-                    "500 petrol, 200 chai, 150 auto, 1200 grocery, 450 pizza, "
-                    "300 khana, 2500 rent, 80 snacks, 2000 shopping, 350 medicine."
+                    "PaisaMitra expense tracker. Indian Hindi and Hinglish speech. "
+                    "Transcribe spoken numbers and amounts to exact clean digits: "
+                    "1500 party, 1500 ka party kiya, pandrah sau 1500, barah sau 1200, "
+                    "gyarah sau 1100, do hazaar 2000, paanch sau 500, 2500 rent, 200 chai, "
+                    "150 auto, 1200 grocery, 450 pizza, 300 khana, 80 snacks, 2000 shopping, "
+                    "350 medicine, 500 petrol, 100 recharge."
                 )
 
                 try:
