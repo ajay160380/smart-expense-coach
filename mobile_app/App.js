@@ -162,7 +162,7 @@ function AddButton({ onPress }) {
     <View style={styles.addBtnContainer}>
       <View style={styles.addBtnWhiteRing}>
         <LinearGradient
-          colors={['#A78BFA', '#7C3AED']}
+          colors={['#3B82F6', '#1D4ED8']}
           style={styles.addBtnGradient}
         >
           <Ionicons name="add" size={30} color="#FFFFFF" />
@@ -637,7 +637,12 @@ export default function App() {
       setIsAuthenticated(false);
     });
 
+    const authListener = DeviceEventEmitter.addListener('AUTH_STATE_CHANGED', (isAuth) => {
+      setIsAuthenticated(!!isAuth);
+    });
+
     return () => {
+      if (authListener && authListener.remove) authListener.remove();
       if (typeof unsubscribe === 'function') unsubscribe();
       if (notifResponseSub && notifResponseSub.remove) notifResponseSub.remove();
     };
@@ -670,13 +675,13 @@ export default function App() {
           <TouchableOpacity 
             style={{
               marginTop: 32,
-              backgroundColor: '#8B5CF6',
+              backgroundColor: '#2563EB',
               paddingHorizontal: 28,
               paddingVertical: 14,
               borderRadius: 24,
               flexDirection: 'row',
               alignItems: 'center',
-              shadowColor: '#8B5CF6',
+              shadowColor: '#2563EB',
               shadowOpacity: 0.4,
               shadowRadius: 10,
               elevation: 6
@@ -870,7 +875,7 @@ const styles = StyleSheet.create({
     padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#7C3AED',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,

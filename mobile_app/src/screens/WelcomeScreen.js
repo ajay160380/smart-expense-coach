@@ -23,7 +23,7 @@ const THEME = {
   bg: '#F7F7FB', 
   textMain: '#1F2937', 
   textSub: '#6B7280', 
-  primary: '#7C3AED', 
+  primary: '#2563EB', 
   primaryLight: '#EDE9FE',
   accent: '#FF6B35',
   success: '#22C55E',
@@ -329,7 +329,7 @@ export default function WelcomeScreen({ navigation, route }) {
                   style={styles.tourBackBtnShadow}
                 >
                   <LinearGradient
-                    colors={['#8B5CF6', '#6D28D9']}
+                    colors={['#2563EB', '#1D4ED8']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.primaryBtnGradient}
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     color: THEME.primary,
   },
   tourBackBtnShadow: {
-    shadowColor: '#8B5CF6',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
     shadowRadius: 20,

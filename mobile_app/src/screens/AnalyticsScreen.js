@@ -152,9 +152,9 @@ export default function AnalyticsScreen({ navigation }) {
 
           {/* ── 2 Side-by-Side Summary Cards (Purple & Orange from Image 2 Screen 3) ── */}
           <View style={styles.sideBySideRow}>
-            {/* Card 1: Purple (Total Spent / Limit) */}
+            {/* Card 1: Logo Blue (Total Spent / Limit) */}
             <LinearGradient
-              colors={['#7C3AED', '#6D28D9']}
+              colors={['#2563EB', '#1D4ED8']}
               style={styles.statCardHalf}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -208,7 +208,7 @@ export default function AnalyticsScreen({ navigation }) {
                 <View style={styles.catGrid}>
                   {categories.map((cat, idx) => (
                     <View key={idx} style={[styles.catGridItem, isDark && { borderBottomColor: colors.border }]}>
-                      <View style={[styles.catGridDot, { backgroundColor: cat.color || '#7C3AED' }]} />
+                      <View style={[styles.catGridDot, { backgroundColor: cat.color || '#2563EB' }]} />
                       <Text style={[styles.catGridName, isDark && { color: colors.textPrimary }]} numberOfLines={1}>{cat.title || cat.name}</Text>
                       <Text style={[styles.catGridPercent, isDark && { color: colors.textSecondary }]}>{Math.round(cat.percent || 0)}%</Text>
                       <Text style={[styles.catGridAmount, isDark && { color: colors.textPrimary }]}>₹{Math.round(cat.total).toLocaleString('en-IN')}</Text>
@@ -241,7 +241,7 @@ export default function AnalyticsScreen({ navigation }) {
                           styles.bar,
                           {
                             height: Math.max((month.total / maxTrend) * 100, 6),
-                            backgroundColor: idx === trend.length - 1 ? (isDark ? colors.primary : '#7C3AED') : (isDark ? '#334155' : '#93C5FD'),
+                            backgroundColor: idx === trend.length - 1 ? (isDark ? colors.primary : '#2563EB') : (isDark ? '#334155' : '#93C5FD'),
                           },
                         ]}
                       />
@@ -258,8 +258,8 @@ export default function AnalyticsScreen({ navigation }) {
             <View style={{ marginTop: 12 }}>
               <SectionHeader title="Peak Spending Day" />
               <View style={[styles.whiteCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { flexDirection: 'row', alignItems: 'center' }]}>
-                <View style={[styles.topDayIcon, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}>
-                  <Ionicons name="calendar" size={22} color={isDark ? colors.primary : "#7C3AED"} />
+                <View style={[styles.topDayIcon, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+                  <Ionicons name="calendar" size={22} color={isDark ? colors.primary : "#2563EB"} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.topDayDate, isDark && { color: colors.textSecondary }]}>
@@ -279,12 +279,12 @@ export default function AnalyticsScreen({ navigation }) {
           {aiReport ? (
             <View style={{ marginTop: 14 }}>
               <SectionHeader title="AI Coach Financial Report" />
-              <View style={[styles.aiReportCard, isDark && { backgroundColor: colors.surface, borderColor: 'rgba(124, 58, 237, 0.25)' }]}>
+              <View style={[styles.aiReportCard, isDark && { backgroundColor: colors.surface, borderColor: 'rgba(37, 99, 235, 0.25)' }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                  <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: 'rgba(124, 58, 237, 0.12)', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
-                    <Ionicons name="sparkles" size={14} color="#7C3AED" />
+                  <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: 'rgba(37, 99, 235, 0.12)', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+                    <Ionicons name="sparkles" size={14} color="#2563EB" />
                   </View>
-                  <Text style={{ color: isDark ? '#A78BFA' : '#7C3AED', fontWeight: '800', fontSize: 13.5 }}>Smart AI Summary</Text>
+                  <Text style={{ color: isDark ? '#60A5FA' : '#2563EB', fontWeight: '800', fontSize: 13.5 }}>Smart AI Summary</Text>
                 </View>
                 {aiReport.split('\n').filter(l => l.trim().length > 0).map((line, idx) => {
                   const cleaned = line.replace(/^[\*\-\•]\s*/, '').replace(/\*\*([^*]+)\*\*/g, '$1').trim();
@@ -362,8 +362,8 @@ const styles = StyleSheet.create({
     ...SHADOW.sm,
   },
   tabActive: {
-    backgroundColor: '#7C3AED',
-    borderColor: '#7C3AED',
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
   tabText: {
     color: '#6B7280',

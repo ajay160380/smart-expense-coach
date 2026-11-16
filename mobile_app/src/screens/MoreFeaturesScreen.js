@@ -80,13 +80,23 @@ export default function MoreFeaturesScreen({ navigation }) {
         style: 'destructive',
         onPress: async () => {
           try {
-            await api.post('/api/logout/').catch(() => {});
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch (e) {}
+          // 1. Instant local auth wipe
           await clearAuthData();
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
+          // 2. Notify root app auth state immediately
+          DeviceEventEmitter.emit('AUTH_STATE_CHANGED', false);
+          // 3. Reset navigation
+          try {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          } catch (e) {
+            navigation.navigate('Login');
+          }
+          // 4. Background server logout without blocking
+          api.post('/api/logout/').catch(() => {});
         },
       },
     ]);
@@ -212,7 +222,7 @@ export default function MoreFeaturesScreen({ navigation }) {
           accessibilityLabel="Open User Profile"
         >
           <LinearGradient
-            colors={['#7C3AED', '#6D28D9']}
+            colors={['#2563EB', '#1D4ED8']}
             style={styles.topProfileGrad}
           >
             <Text style={styles.topProfileInitial}>{initialLetter}</Text>
@@ -531,11 +541,11 @@ export default function MoreFeaturesScreen({ navigation }) {
         <View style={[styles.listCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ListItem
             icon="sparkles"
-            iconColor="#8B5CF6"
+            iconColor="#2563EB"
             title="App Feature Tour & Walkthrough"
             desc="Interactive guide: WhatsApp bot, Center '+', Widgets"
             badge="Guide"
-            badgeColor="#8B5CF6"
+            badgeColor="#2563EB"
             onPress={() => {
               navigation.navigate('Home');
               setTimeout(() => {
@@ -932,7 +942,7 @@ const styles = StyleSheet.create({
   },
   topProfileBtn: {
     borderRadius: 22,
-    shadowColor: '#7C3AED',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -1312,7 +1322,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   submitFeedbackBtn: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#2563EB',
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: 'center',
@@ -1335,7 +1345,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   devFooterLink: {
-    color: '#7C3AED',
+    color: '#2563EB',
     fontWeight: '700',
   },
   logoutBtn: {

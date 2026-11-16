@@ -26,16 +26,16 @@ export const COLORS = {
   textInverse:   '#FFFFFF', // White text on dark/colored cards
 
   // ── Brand Colors ──
-  primary:       '#7C3AED', // Vivid purple (active action, center FAB)
-  primaryLight:  '#EDE9FE',
-  primaryDark:   '#6D28D9',
+  primary:       '#2563EB', // Logo Royal Blue (was purple)
+  primaryLight:  '#EFF6FF', // Soft Sky Blue tint
+  primaryDark:   '#1D4ED8', // Deep Royal Blue
   accent:        '#FF6B35', // Warm orange (active tab, "View All" links)
   orange:        '#FF6B35',
   orangeLight:   '#FFF2EB',
 
   // ── System Accents ──
-  cyan:          '#3B82F6', // Vibrant blue
-  blue:          '#4F7CFF',
+  cyan:          '#38BDF8', // Sky blue
+  blue:          '#2563EB', // Logo Royal Blue
   green:         '#22C55E', // Success green
   greenBright:   '#22C55E',
   greenLight:    '#DCFCE7',
@@ -52,15 +52,15 @@ export const COLORS = {
   navFabRing:    '#FFFFFF', // White ring around center purple FAB
 
   // ── Gradients (for LinearGradient) ──
-  gradHero:      ['#4F7CFF', '#3B5BDB'], // Blue hero balance card
-  gradPurple:    ['#7C3AED', '#6D28D9'], // Primary purple
+  gradHero:      ['#2563EB', '#1D4ED8'], // Blue hero balance card
+  gradPurple:    ['#3B82F6', '#2563EB'], // Primary Brand Blue
   gradOrange:    ['#FF6B35', '#F97316'], // Orange accent
   gradGreen:     ['#22C55E', '#16A34A'],
   gradRed:       ['#EF4444', '#DC2626'],
   gradPink:      ['#EC4899', '#DB2777'],
   gradCyan:      ['#38BDF8', '#0284C7'],
-  gradDeepPurp:  ['#7C3AED', '#4C1D95'],
-  gradCardLight: ['#FFFFFF', '#FAF5FF'],
+  gradDeepPurp:  ['#2563EB', '#1E40AF'],
+  gradCardLight: ['#FFFFFF', '#F0F9FF'],
   gradPastelMint:['#E6FFFA', '#F0FDF4'],
   gradPastelPeach:['#FFF7ED', '#FEF2F2'],
 
@@ -98,10 +98,10 @@ export const DARK_COLORS = {
   textInverse:   '#0F172A', // Inverted text on bright elements
 
   // ── Brand Colors ──
-  primary:       '#818CF8', // Vibrant Indigo accent curve
-  primaryLight:  'rgba(99, 102, 241, 0.15)', // Subtle dark-mode glow
-  primaryDark:   '#6366F1',
-  accent:        '#A855F7',
+  primary:       '#3B82F6', // Vibrant Blue accent
+  primaryLight:  'rgba(59, 130, 246, 0.15)', // Subtle dark-mode glow
+  primaryDark:   '#2563EB',
+  accent:        '#60A5FA',
   orange:        '#FB923C',
   orangeLight:   'rgba(251, 146, 60, 0.15)',
 
@@ -119,19 +119,19 @@ export const DARK_COLORS = {
   // ── Bottom Navigation Bar ──
   navBg:         '#090D16', // Ultra-dark crisp navigation bar
   navBorder:     '#334155',
-  navActive:     '#818CF8',
+  navActive:     '#3B82F6',
   navInactive:   '#64748B',
   navFabRing:    '#0F172A',
 
   // ── Gradients (for LinearGradient) ──
   gradHero:      ['#1E293B', '#0F172A'],
-  gradPurple:    ['#818CF8', '#6366F1'],
+  gradPurple:    ['#3B82F6', '#2563EB'],
   gradOrange:    ['#F97316', '#EA580C'],
   gradGreen:     ['#10B981', '#059669'],
   gradRed:       ['#EF4444', '#DC2626'],
   gradPink:      ['#EC4899', '#DB2777'],
   gradCyan:      ['#06B6D4', '#0891B2'],
-  gradDeepPurp:  ['#6366F1', '#4338CA'],
+  gradDeepPurp:  ['#2563EB', '#1D4ED8'],
   gradCardLight: ['#1E293B', '#243047'],
   gradPastelMint:['rgba(16, 185, 129, 0.12)', 'rgba(5, 150, 105, 0.08)'],
   gradPastelPeach:['rgba(249, 115, 22, 0.12)', 'rgba(234, 88, 12, 0.08)'],

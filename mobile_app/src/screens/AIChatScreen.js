@@ -222,7 +222,7 @@ export default function AIChatScreen({ navigation }) {
             disabled={!inputText.trim() || loading}
           >
             <LinearGradient
-              colors={inputText.trim() ? (isDark ? ['#818CF8', '#6366F1'] : ['#7C3AED', '#6D28D9']) : (isDark ? ['#334155', '#334155'] : ['#E5E7EB', '#E5E7EB'])}
+              colors={inputText.trim() ? (isDark ? ['#3B82F6', '#2563EB'] : ['#2563EB', '#1D4ED8']) : (isDark ? ['#334155', '#334155'] : ['#E5E7EB', '#E5E7EB'])}
               style={styles.sendGrad}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -286,8 +286,8 @@ const styles = StyleSheet.create({
   },
   msgBubble: { maxWidth: '78%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
   userBubble: {
-    backgroundColor: '#7C3AED', borderBottomRightRadius: 4,
-    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 3 },
+    backgroundColor: '#2563EB', borderBottomRightRadius: 4,
+    shadowColor: '#2563EB', shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2, shadowRadius: 6, elevation: 2,
   },
   botBubble: {
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   sendGrad: {
     width: 42, height: 42, borderRadius: 21,
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#2563EB', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25, shadowRadius: 4, elevation: 2,
   },
 });

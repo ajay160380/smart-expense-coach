@@ -120,7 +120,7 @@ export default function AddExpenseScreen({ route, navigation }) {
     }
   };
 
-  const handleAddExpense = async () => {
+  const handleAddExpense = () => {
     const cleanAmount = sanitizeAmount(amount);
     const amountVal = validateAmount(cleanAmount);
     if (!amountVal.isValid) {
@@ -128,58 +128,50 @@ export default function AddExpenseScreen({ route, navigation }) {
       return;
     }
 
-    setLoading(true);
-    let saveSuccess = false;
     try {
-      if (isEdit) {
-        await api.post(`/api/edit-expense/${expense.id}/`, {
-          amount: parseFloat(cleanAmount),
-          category: category,
-          description: sanitizeInput(description),
-          date: expDate || TODAY,
-        });
-      } else {
-        await api.post('/api/quick-add/', {
-          amount: parseFloat(cleanAmount),
-          category: category,
-          description: sanitizeInput(description),
-          date: expDate || TODAY,
-        });
-      }
-      saveSuccess = true;
-    } catch (error) {
-      console.error('AddExpense Save Error:', error);
-      Alert.alert('Save Failed', formatApiError(error));
-      setLoading(false);
-      return;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {}
+
+    // 1-Tap Instant Dismiss: Close screen immediately with 0ms waiting
+    setTimeout(() => {
+      try {
+        DeviceEventEmitter.emit('EXPENSE_UPDATED');
+      } catch (e) {}
+    }, 50);
+
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Home', { screen: 'DashboardMain' });
     }
 
-    if (saveSuccess) {
-      try {
-        analytics.track(isEdit ? 'expense_updated' : 'expense_created', {
-          amount: parseFloat(cleanAmount),
-          category,
-          has_description: !!description,
-        });
-      } catch (e) {}
+    // Background sync without blocking the UI
+    const payload = {
+      amount: parseFloat(cleanAmount),
+      category: category,
+      description: sanitizeInput(description),
+      date: expDate || TODAY,
+    };
 
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch (e) {}
+    const syncPromise = isEdit
+      ? api.post(`/api/edit-expense/${expense.id}/`, payload)
+      : api.post('/api/quick-add/', payload);
 
-      setTimeout(() => {
+    syncPromise
+      .then(() => {
         try {
-          DeviceEventEmitter.emit('EXPENSE_UPDATED');
+          analytics.track(isEdit ? 'expense_updated' : 'expense_created', {
+            amount: parseFloat(cleanAmount),
+            category,
+            has_description: !!description,
+          });
         } catch (e) {}
-      }, 50);
-
-      setLoading(false);
-      if (navigation.canGoBack()) {
-        navigation.goBack();
-      } else {
-        navigation.navigate('Home', { screen: 'DashboardMain' });
-      }
-    }
+        DeviceEventEmitter.emit('EXPENSE_UPDATED');
+      })
+      .catch((error) => {
+        console.error('Background AddExpense Sync Error:', error);
+        Alert.alert('Sync Notice', 'Could not sync expense to server. Please check your internet connection.');
+      });
   };
 
   const handleDeleteExpense = () => {
@@ -470,7 +462,7 @@ const styles = StyleSheet.create({
   rupee: {
     fontSize: 44,
     fontWeight: '800',
-    color: '#7C3AED',
+    color: '#2563EB',
     marginRight: 6,
     marginTop: 8,
   },

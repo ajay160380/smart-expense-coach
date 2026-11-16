@@ -128,13 +128,23 @@ export default function ProfileScreen({ navigation }) {
         style: 'destructive',
         onPress: async () => {
           try {
-            await api.post('/api/logout/').catch(() => {});
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch (e) {}
+          // 1. Instant local auth wipe
           await clearAuthData();
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
+          // 2. Notify root app auth state immediately
+          DeviceEventEmitter.emit('AUTH_STATE_CHANGED', false);
+          // 3. Reset navigation
+          try {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          } catch (e) {
+            navigation.navigate('Login');
+          }
+          // 4. Background server logout without blocking
+          api.post('/api/logout/').catch(() => {});
         },
       },
     ]);
@@ -367,7 +377,7 @@ export default function ProfileScreen({ navigation }) {
       >
         {/* ── Profile Header Hero ── */}
         <LinearGradient
-          colors={isDark ? ['#1E1B4B', '#0F172A', '#0F172A'] : ['#F5F3FF', '#EDE9FE', '#F7F7FB']}
+          colors={isDark ? ['#172554', '#0F172A', '#0F172A'] : ['#EFF6FF', '#DBEAFE', '#F8FAFC']}
           style={styles.profileHeader}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -377,13 +387,13 @@ export default function ProfileScreen({ navigation }) {
           {/* ── Avatar Initial DP with Verified Shield ── */}
           <View style={styles.avatarGlowWrapper}>
             <LinearGradient
-              colors={['#7C3AED', '#FF6B35']}
+              colors={['#2563EB', '#38BDF8']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.avatarOuterRing}
             >
               <View style={[styles.avatarInner, { backgroundColor: isDark ? colors.surface : '#FFFFFF' }]}>
-                <Text style={[styles.avatarLetterText, { color: isDark ? '#A78BFA' : '#7C3AED' }]}>{initialLetter}</Text>
+                <Text style={[styles.avatarLetterText, { color: isDark ? '#60A5FA' : '#2563EB' }]}>{initialLetter}</Text>
               </View>
             </LinearGradient>
             <View style={[styles.avatarBadge, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -1613,7 +1623,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   submitFeedbackBtn: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#2563EB',
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: 'center',
@@ -1643,7 +1653,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   devFooterLink: {
-    color: '#7C3AED',
+    color: '#2563EB',
     fontWeight: '700',
   },
   devMiniLinks: {

@@ -296,7 +296,7 @@ export default function RegisterScreen({ navigation, route }) {
 
                   <TouchableOpacity activeOpacity={0.85} onPress={handleSendOTP} disabled={loading || googleLoading}>
                     <LinearGradient
-                      colors={['#7C3AED', '#6D28D9']}
+                      colors={['#2563EB', '#1D4ED8']}
                       style={[styles.button, loading && { opacity: 0.8 }]}
                     >
                       {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.buttonText}>Send OTP</Text>}
@@ -336,7 +336,7 @@ export default function RegisterScreen({ navigation, route }) {
                   
                   <TouchableOpacity activeOpacity={0.85} onPress={handleRegister} disabled={loading} style={{marginTop: 10}}>
                     <LinearGradient
-                      colors={['#7C3AED', '#6D28D9']}
+                      colors={['#2563EB', '#1D4ED8']}
                       style={[styles.button, loading && { opacity: 0.8 }]}
                     >
                       {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.buttonText}>Verify & Sign Up</Text>}
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   button: {
     height: 54, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
     marginTop: 4,
-    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 },
+    shadowColor: '#2563EB', shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
   },
   buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },

@@ -950,9 +950,9 @@ export default function DashboardScreen({ navigation, route }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── LILAC PURPLE RADIANT HEADER (Direct Match to User Screenshot) ── */}
+        {/* ── SLEEK OCEAN BLUE LOGO HEADER ── */}
         <LinearGradient
-          colors={['#8B5CF6', '#9333EA', '#A855F7']}
+          colors={['#2563EB', '#1D4ED8', '#1E40AF']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
@@ -1281,11 +1281,11 @@ export default function DashboardScreen({ navigation, route }) {
               activeOpacity={0.75}
             >
               <View style={styles.bentoCardTopRow}>
-                <View style={[styles.bentoIconCircle, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.2)' : '#EDE9FE' }]}>
-                  <Ionicons name="pie-chart-outline" size={19} color={isDark ? '#818CF8' : '#7C3AED'} />
+                <View style={[styles.bentoIconCircle, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF' }]}>
+                  <Ionicons name="pie-chart-outline" size={19} color={isDark ? '#3B82F6' : '#2563EB'} />
                 </View>
-                <View style={[styles.bentoBadge, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.2)' : '#EDE9FE' }]}>
-                  <Text style={[styles.bentoBadgeText, { color: isDark ? '#818CF8' : '#7C3AED' }]}>Edit Plan</Text>
+                <View style={[styles.bentoBadge, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF' }]}>
+                  <Text style={[styles.bentoBadgeText, { color: isDark ? '#3B82F6' : '#2563EB' }]}>Edit Plan</Text>
                 </View>
               </View>
               <Text style={[styles.bentoCardLabel, isDark && { color: colors.textSecondary }]}>Budget Limit</Text>
@@ -1313,7 +1313,7 @@ export default function DashboardScreen({ navigation, route }) {
                   styles.budgetHealthFill, 
                   { 
                     width: `${Math.min(100, Math.max(4, usedPercent))}%`,
-                    backgroundColor: overspent ? '#EF4444' : usedPercent > 80 ? '#F59E0B' : '#7C3AED'
+                    backgroundColor: overspent ? '#EF4444' : usedPercent > 80 ? '#F59E0B' : '#2563EB'
                   }
                 ]} 
               />
@@ -1412,11 +1412,11 @@ export default function DashboardScreen({ navigation, route }) {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShortcutsModalVisible(true);
                 }}
-                style={[styles.quickCustomizeBtn, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}
+                style={[styles.quickCustomizeBtn, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}
                 activeOpacity={0.7}
               >
-                <Ionicons name="create-outline" size={12} color={isDark ? '#818CF8' : '#7C3AED'} style={{ marginRight: 4 }} />
-                <Text style={[styles.quickCustomizeText, isDark && { color: '#818CF8' }]}>Edit & Add</Text>
+                <Ionicons name="create-outline" size={12} color={isDark ? '#3B82F6' : '#2563EB'} style={{ marginRight: 4 }} />
+                <Text style={[styles.quickCustomizeText, isDark && { color: '#3B82F6' }]}>Edit & Add</Text>
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickLogScroll}>
@@ -1434,7 +1434,7 @@ export default function DashboardScreen({ navigation, route }) {
                   }}
                   activeOpacity={0.75}
                 >
-                  <View style={[styles.quickEmojiBubble, { backgroundColor: (item.color || '#7C3AED') + '15' }]}>
+                  <View style={[styles.quickEmojiBubble, { backgroundColor: (item.color || '#2563EB') + '15' }]}>
                     <Text style={{ fontSize: 16 }}>{item.icon}</Text>
                   </View>
                   <View style={{ marginLeft: 8 }}>
@@ -1446,12 +1446,12 @@ export default function DashboardScreen({ navigation, route }) {
 
               {/* Quick Add Card */}
               <TouchableOpacity
-                style={[styles.quickAddCard, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.1)', borderColor: 'rgba(129, 140, 248, 0.3)' }]}
+                style={[styles.quickAddCard, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }]}
                 onPress={handleOpenAddShortcut}
                 activeOpacity={0.75}
               >
-                <Ionicons name="add" size={18} color={isDark ? '#818CF8' : '#7C3AED'} />
-                <Text style={[styles.quickAddCardText, isDark && { color: '#818CF8' }]}>Add New</Text>
+                <Ionicons name="add" size={18} color={isDark ? '#3B82F6' : '#2563EB'} />
+                <Text style={[styles.quickAddCardText, isDark && { color: '#3B82F6' }]}>Add New</Text>
               </TouchableOpacity>
             </ScrollView>
           </Animated.View>
@@ -1476,7 +1476,7 @@ export default function DashboardScreen({ navigation, route }) {
                     </View>
                     {getCategoryBreakdown(recentExpenses).slice(0, 5).map((cat, idx) => (
                       <View key={idx} style={styles.legendItem}>
-                        <View style={[styles.legendDot, { backgroundColor: cat.color || '#7C3AED' }]} />
+                        <View style={[styles.legendDot, { backgroundColor: cat.color || '#2563EB' }]} />
                         <Text style={[styles.legendName, isDark && { color: colors.textPrimary }]} numberOfLines={1}>{cat.name}</Text>
                         <Text style={[styles.legendAmount, isDark && { color: colors.textPrimary }]}>₹{cat.total.toLocaleString('en-IN')}</Text>
                       </View>
@@ -1496,8 +1496,8 @@ export default function DashboardScreen({ navigation, route }) {
           <Animated.View style={{ opacity: animListsOpacity, transform: [{ translateY: animListsY }], marginTop: 18 }}>
             <View style={styles.sectionHeaderRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1, marginRight: 8 }}>
-                <View style={[styles.widgetBadgeIconBox, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}>
-                  <Ionicons name="sparkles" size={13} color={isDark ? '#818CF8' : '#7C3AED'} />
+                <View style={[styles.widgetBadgeIconBox, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+                  <Ionicons name="sparkles" size={13} color={isDark ? '#3B82F6' : '#2563EB'} />
                 </View>
                 <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]} numberOfLines={1}>Financial Widgets</Text>
               </View>
@@ -1652,7 +1652,7 @@ export default function DashboardScreen({ navigation, route }) {
                 <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }, { textAlign: 'center', marginTop: 3, marginBottom: 10 }]}>
                   Set your monthly budget or income to unlock daily spending limits.
                 </Text>
-                <View style={{ backgroundColor: '#7C6FF7', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
+                <View style={{ backgroundColor: '#2563EB', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
                   <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Set Budget Now ⚡</Text>
                 </View>
               </TouchableOpacity>
@@ -1701,7 +1701,7 @@ export default function DashboardScreen({ navigation, route }) {
                 <View style={[styles.velocityMetricDivider, isDark && { backgroundColor: colors.border }]} />
                 <View style={styles.velocityMetricCol}>
                   <Text style={[styles.velocityMetricCaption, isDark && { color: colors.textSecondary }]}>LEFT TODAY</Text>
-                  <Text style={[styles.velocityMetricValue, { color: remainingTodayVal > 0 ? (isDark ? '#818CF8' : '#7C3AED') : '#EF4444' }]}>
+                  <Text style={[styles.velocityMetricValue, { color: remainingTodayVal > 0 ? (isDark ? '#3B82F6' : '#2563EB') : '#EF4444' }]}>
                     ₹{Math.max(0, remainingTodayVal).toLocaleString('en-IN')}
                   </Text>
                 </View>
@@ -1873,8 +1873,8 @@ export default function DashboardScreen({ navigation, route }) {
                 {/* Header */}
                 <View style={styles.widgetHeaderRow}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 32 }}>
-                    <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.18)' : '#EEF2FF' }]}>
-                      <Ionicons name="repeat-outline" size={18} color={isDark ? '#818CF8' : '#7C3AED'} />
+                    <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.18)' : '#EFF6FF' }]}>
+                      <Ionicons name="repeat-outline" size={18} color={isDark ? '#3B82F6' : '#2563EB'} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]} numberOfLines={1}>Recurring Radar</Text>
@@ -1957,7 +1957,7 @@ export default function DashboardScreen({ navigation, route }) {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       navigation.navigate('Subscriptions');
                     }}
-                    style={[styles.widgetEmptyActionBtn, { backgroundColor: isDark ? colors.primary : '#7C3AED' }]}
+                    style={[styles.widgetEmptyActionBtn, { backgroundColor: isDark ? colors.primary : '#2563EB' }]}
                     activeOpacity={0.8}
                   >
                     <Ionicons name="add" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
@@ -1997,8 +1997,8 @@ export default function DashboardScreen({ navigation, route }) {
               style={styles.toolBentoCard}
             >
               <View style={[styles.toolBentoInner, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={[styles.toolBentoIconBox, { backgroundColor: isDark ? 'rgba(129, 140, 248, 0.2)' : '#F3E8FF' }]}>
-                  <Ionicons name="pie-chart-outline" size={18} color={isDark ? '#818CF8' : '#7C3AED'} />
+                <View style={[styles.toolBentoIconBox, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF' }]}>
+                  <Ionicons name="pie-chart-outline" size={18} color={isDark ? '#3B82F6' : '#2563EB'} />
                 </View>
                 <Text style={[styles.toolBentoTitle, isDark && { color: colors.textPrimary }]}>Analytics</Text>
                 <Text style={[styles.toolBentoSub, isDark && { color: colors.textSecondary }]}>Trends & charts</Text>
@@ -2017,7 +2017,7 @@ export default function DashboardScreen({ navigation, route }) {
                   style={[styles.txExportBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="document-text-outline" size={12} color={isDark ? colors.primary : '#7C3AED'} style={{ marginRight: 3 }} />
+                  <Ionicons name="document-text-outline" size={12} color={isDark ? colors.primary : '#2563EB'} style={{ marginRight: 3 }} />
                   <Text style={[styles.txExportBtnText, isDark && { color: colors.primary }]}>PDF</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -2025,12 +2025,12 @@ export default function DashboardScreen({ navigation, route }) {
                   style={[styles.txExportBtn, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="download-outline" size={12} color={isDark ? colors.primary : '#7C3AED'} style={{ marginRight: 3 }} />
+                  <Ionicons name="download-outline" size={12} color={isDark ? colors.primary : '#2563EB'} style={{ marginRight: 3 }} />
                   <Text style={[styles.txExportBtnText, isDark && { color: colors.primary }]}>CSV</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => navigation.navigate('History')}
-                  style={[styles.forThePeriodPill, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.15)' }]}
+                  style={[styles.forThePeriodPill, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}
                   activeOpacity={0.75}
                 >
                   <Text style={[styles.forThePeriodText, isDark && { color: colors.primary }]}>All &gt;</Text>
@@ -2053,7 +2053,7 @@ export default function DashboardScreen({ navigation, route }) {
               <View style={{ marginTop: 8 }}>
                 {recentExpenses.slice(0, 6).map((exp, idx) => {
                   const catKey = (exp.category || 'other').toLowerCase();
-                  const catColor = CAT_COLORS[catKey] || '#7C3AED';
+                  const catColor = CAT_COLORS[catKey] || '#2563EB';
                   const catIcon = CAT_ICONS[catKey] || 'pricetag';
 
                   return (
@@ -2163,8 +2163,8 @@ export default function DashboardScreen({ navigation, route }) {
         >
           <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { maxWidth: 360, padding: 22, borderRadius: 28 }]}>
             {/* Elegant Header Icon */}
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(124, 111, 247, 0.2)' : 'rgba(124, 111, 247, 0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <Ionicons name="wallet-outline" size={26} color="#7C6FF7" />
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(37, 99, 235, 0.2)' : 'rgba(37, 99, 235, 0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <Ionicons name="wallet-outline" size={26} color="#2563EB" />
             </View>
 
             <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }, { fontSize: 20, fontWeight: '800', marginBottom: 4 }]}>Set Monthly Budget</Text>
@@ -2177,14 +2177,14 @@ export default function DashboardScreen({ navigation, route }) {
               borderRadius: 18,
               padding: 16,
               borderWidth: 1.5,
-              borderColor: isDark ? 'rgba(124, 111, 247, 0.4)' : 'rgba(124, 111, 247, 0.25)',
+              borderColor: isDark ? 'rgba(37, 99, 235, 0.4)' : 'rgba(37, 99, 235, 0.25)',
               marginBottom: 12,
             }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#7C6FF7', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
                 Monthly Spending Limit
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 26, fontWeight: '800', color: '#7C6FF7', marginRight: 8 }}>₹</Text>
+                <Text style={{ fontSize: 26, fontWeight: '800', color: '#2563EB', marginRight: 8 }}>₹</Text>
                 <TextInput
                   style={{ flex: 1, fontSize: 26, fontWeight: '800', color: isDark ? colors.textPrimary : '#0F172A', padding: 0 }}
                   keyboardType="numeric"
@@ -2256,7 +2256,7 @@ export default function DashboardScreen({ navigation, route }) {
                 <Text style={[styles.modalBtnCancelText, isDark && { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnSave, { backgroundColor: '#7C6FF7' }]}
+                style={[styles.modalBtn, styles.modalBtnSave, { backgroundColor: '#2563EB' }]}
                 onPress={handleSaveBudget}
                 activeOpacity={0.85}
               >
@@ -2733,7 +2733,7 @@ function getCategoryBreakdown(expenses) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#2563EB',
   },
   scrollContent: {
     paddingBottom: 24,
@@ -2785,7 +2785,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   heroAvatarText: {
-    color: '#7C3AED',
+    color: '#2563EB',
     fontSize: 18,
     fontWeight: '800',
   },
@@ -2837,7 +2837,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#EF4444',
     borderWidth: 1.5,
-    borderColor: '#8B5CF6',
+    borderColor: '#2563EB',
   },
 
   // ── Hero Centered Balance Block ──
@@ -3147,13 +3147,13 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   forThePeriodPill: {
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 14,
   },
   forThePeriodText: {
-    color: '#7C3AED',
+    color: '#2563EB',
     fontSize: 11.5,
     fontWeight: '700',
   },
@@ -3173,7 +3173,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   txExportBtnText: {
-    color: '#7C3AED',
+    color: '#2563EB',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -3396,13 +3396,13 @@ const styles = StyleSheet.create({
   aiUnifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   aiUnifiedBadgeText: {
-    color: '#7C3AED',
+    color: '#2563EB',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -3557,7 +3557,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputPrefix: {
-    color: '#7C3AED',
+    color: '#2563EB',
     fontSize: 18,
     fontWeight: 'bold',
     marginRight: 8,
@@ -3591,7 +3591,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   modalBtnSave: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#2563EB',
   },
   modalBtnSaveText: {
     color: '#FFFFFF',
@@ -3866,8 +3866,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.35)',
-    shadowColor: '#8B5CF6',
+    borderColor: 'rgba(37, 99, 235, 0.35)',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
@@ -3877,7 +3877,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(139, 92, 246, 0.25)',
+    backgroundColor: 'rgba(37, 99, 235, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -4623,7 +4623,7 @@ const styles = StyleSheet.create({
   widgetHeaderLink: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#7C3AED',
+    color: '#2563EB',
   },
   subRadarRow: {
     flexDirection: 'row',

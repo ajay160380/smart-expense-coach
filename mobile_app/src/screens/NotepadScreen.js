@@ -183,7 +183,7 @@ export default function NotepadScreen({ navigation }) {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={isDark ? ['#818CF8', '#6366F1'] : ['#7C3AED', '#6D28D9']}
+                colors={isDark ? ['#3B82F6', '#2563EB'] : ['#2563EB', '#1D4ED8']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.saveBtnGrad}
@@ -204,13 +204,13 @@ export default function NotepadScreen({ navigation }) {
         {/* ── Notes List ── */}
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color={isDark ? colors.primary : "#7C3AED"} />
+            <ActivityIndicator size="large" color={isDark ? colors.primary : "#2563EB"} />
             <Text style={[styles.loadingText, isDark && { color: colors.textSecondary }]}>Loading notes...</Text>
           </View>
         ) : notes.length === 0 ? (
           <View style={styles.center}>
-            <View style={[styles.emptyIconBox, isDark && { backgroundColor: 'rgba(129, 140, 248, 0.18)', borderColor: 'rgba(129, 140, 248, 0.3)' }]}>
-              <Ionicons name="document-text-outline" size={40} color={isDark ? colors.primary : "#7C3AED"} />
+            <View style={[styles.emptyIconBox, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.18)', borderColor: 'rgba(59, 130, 246, 0.3)' }]}>
+              <Ionicons name="document-text-outline" size={40} color={isDark ? colors.primary : "#2563EB"} />
             </View>
             <Text style={[styles.emptyText, isDark && { color: colors.textPrimary }]}>No Notes Yet</Text>
             <Text style={[styles.emptySubtext, isDark && { color: colors.textSecondary }]}>
@@ -277,12 +277,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: '#BFDBFE',
   },
   countBadgeText: {
-    color: '#7C3AED',
+    color: '#2563EB',
     fontSize: 11,
     fontWeight: '700',
   },
