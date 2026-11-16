@@ -55,13 +55,13 @@ api.interceptors.request.use(
     }, 3500);
     config.__warmTimer = warmTimer;
 
-    // ── Auto-prefix /api/ and BASE_URL to relative endpoints ──
+    // ── Auto-prefix /api/ to relative endpoints ──
     if (config.url && !config.url.startsWith('http://') && !config.url.startsWith('https://')) {
       let cleanUrl = config.url.startsWith('/') ? config.url : `/${config.url}`;
       if (!cleanUrl.startsWith('/api') && !cleanUrl.startsWith('/ai_chat')) {
         cleanUrl = `/api${cleanUrl}`;
       }
-      config.url = `${BASE_URL}${cleanUrl}`;
+      config.url = cleanUrl;
     }
 
     // ── Cache-busting: add _t timestamp to every GET request ──

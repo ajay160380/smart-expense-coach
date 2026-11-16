@@ -46,7 +46,7 @@ export default function ExpenseSplitScreen({ navigation }) {
 
   const fetchGroups = async () => {
     try {
-      const res = await api.get('/splits/');
+      const res = await api.get('/api/splits/');
       setGroups(res.data?.groups || []);
     } catch (error) {
       console.error('Splits fetch error:', error);
@@ -68,7 +68,7 @@ export default function ExpenseSplitScreen({ navigation }) {
 
     setSubmitting(true);
     try {
-      await api.post('/splits/create/', { name, members: memberList });
+      await api.post('/api/splits/create/', { name, members: memberList });
       setShowCreateModal(false);
       setGroupName('');
       setMembers(['', '']);
@@ -90,7 +90,7 @@ export default function ExpenseSplitScreen({ navigation }) {
     setLoadingEstimate(true);
     setAiEstimate(null);
     try {
-      const res = await api.post('/splits/estimate/', { name });
+      const res = await api.post('/api/splits/estimate/', { name });
       setAiEstimate(res.data.estimate);
     } catch (error) {
       Alert.alert('Error', 'Failed to get AI estimate');
@@ -113,7 +113,7 @@ export default function ExpenseSplitScreen({ navigation }) {
 
     setSubmittingExpense(true);
     try {
-      await api.post(`/splits/${groupId}/add-expense/`, {
+      await api.post(`/api/splits/${groupId}/add-expense/`, {
         paid_by: paidBy,
         description: desc,
         amount,
@@ -138,7 +138,7 @@ export default function ExpenseSplitScreen({ navigation }) {
         text: 'Delete', style: 'destructive',
         onPress: async () => {
           try {
-            await api.post(`/splits/${groupId}/delete-expense/${expenseId}/`);
+            await api.post(`/api/splits/${groupId}/delete-expense/${expenseId}/`);
             fetchGroups();
           } catch (error) {
             Alert.alert('Error', 'Failed to delete expense');
@@ -150,7 +150,7 @@ export default function ExpenseSplitScreen({ navigation }) {
 
   const viewSummary = async (groupId) => {
     try {
-      const res = await api.get(`/splits/${groupId}/summary/`);
+      const res = await api.get(`/api/splits/${groupId}/summary/`);
       setSummaryData(res.data);
       setShowSummary(groupId);
     } catch (error) {
@@ -165,7 +165,7 @@ export default function ExpenseSplitScreen({ navigation }) {
         text: 'Settle',
         onPress: async () => {
           try {
-            await api.post(`/splits/${groupId}/settle/`);
+            await api.post(`/api/splits/${groupId}/settle/`);
             fetchGroups();
             setShowSummary(null);
             Alert.alert('✅ Settled!', 'Group has been settled');
@@ -184,7 +184,7 @@ export default function ExpenseSplitScreen({ navigation }) {
         text: 'Delete', style: 'destructive',
         onPress: async () => {
           try {
-            await api.post(`/splits/${groupId}/delete/`);
+            await api.post(`/api/splits/${groupId}/delete/`);
             fetchGroups();
           } catch (error) { Alert.alert('Error', 'Failed to delete'); }
         },

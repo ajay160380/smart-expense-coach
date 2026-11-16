@@ -40,7 +40,7 @@ export default function SubscriptionsScreen({ navigation }) {
 
   const fetchSubs = async () => {
     try {
-      const res = await api.get('/subscriptions/');
+      const res = await api.get('/api/subscriptions/');
       setData(res.data);
     } catch (error) {
       console.error('Subscriptions fetch error:', error);
@@ -70,7 +70,7 @@ export default function SubscriptionsScreen({ navigation }) {
       formData.append('category', subCategory);
       formData.append('next_billing_date', subDate);
 
-      await api.post('/subscriptions/', {
+      await api.post('/api/subscriptions/', {
         name,
         amount,
         category: subCategory,

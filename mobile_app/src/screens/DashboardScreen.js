@@ -365,7 +365,7 @@ export default function DashboardScreen({ navigation, route }) {
     } catch (err) {
       console.error('Quick deposit error:', err);
       Alert.alert('Deposit Failed', 'Could not record quick savings. Please try again.');
-      api.get('/savings-goals/').then(r => {
+      api.get('/api/savings-goals/').then(r => {
         if (r.data?.goals) setGoals(r.data.goals);
       }).catch(() => {});
     } finally {
@@ -477,43 +477,43 @@ export default function DashboardScreen({ navigation, route }) {
   const handleSaveBudget = async () => {
     const parsedBudget = parseFloat(newBudget);
     if (isNaN(parsedBudget) || parsedBudget <= 0) {
-      Alert.alert('Error', 'Please enter a valid positive number for the budget.');
+      Alert.alert('Invalid Budget', 'Please enter a valid positive number for the budget.');
       return;
     }
 
-    setBudgetSubmitting(true);
     try {
-      const parsedCycleDay = parseInt(newBudgetCycleDay, 10);
-      const payload = { 
-        budget: parsedBudget,
-        daily_budget_basis: dailyBudgetBasis,
-        daily_budget_rollover: dailyBudgetRollover,
-      };
-      if (newMonthlyIncome && newMonthlyIncome.trim()) {
-        const parsedIncome = parseFloat(newMonthlyIncome);
-        if (!isNaN(parsedIncome) && parsedIncome >= 0) {
-          payload.monthly_income = parsedIncome;
-        }
-      } else {
-        payload.monthly_income = null;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {}
+
+    // 1-Tap Instant UI Close & Optimistic Update
+    setBudgetModalVisible(false);
+    setStats(prev => prev ? ({ ...prev, monthly_budget: parsedBudget }) : prev);
+
+    const parsedCycleDay = parseInt(newBudgetCycleDay, 10);
+    const payload = { 
+      budget: parsedBudget,
+      daily_budget_basis: dailyBudgetBasis,
+      daily_budget_rollover: dailyBudgetRollover,
+    };
+    if (newMonthlyIncome && newMonthlyIncome.trim()) {
+      const parsedIncome = parseFloat(newMonthlyIncome);
+      if (!isNaN(parsedIncome) && parsedIncome >= 0) {
+        payload.monthly_income = parsedIncome;
       }
-      if (!isNaN(parsedCycleDay) && parsedCycleDay >= 1 && parsedCycleDay <= 28) {
-          payload.budget_cycle_start_day = parsedCycleDay;
-      }
-      
-      const response = await api.post('/api/profile/', payload);
-      if (response.data.status === 'success') {
-        setBudgetModalVisible(false);
-        fetchDashboardData();
-        Alert.alert('Success', 'Monthly budget & income updated successfully! 🎉');
-      } else {
-        Alert.alert('Error', response.data.error || 'Failed to update budget');
-      }
+    } else {
+      payload.monthly_income = null;
+    }
+    if (!isNaN(parsedCycleDay) && parsedCycleDay >= 1 && parsedCycleDay <= 28) {
+        payload.budget_cycle_start_day = parsedCycleDay;
+    }
+    
+    // Sync with backend asynchronously
+    try {
+      await api.post('/api/profile/', payload);
+      fetchDashboardData(false);
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to save new budget.');
-    } finally {
-      setBudgetSubmitting(false);
+      console.error('Budget save error:', error);
+      fetchDashboardData(false);
     }
   };
 
@@ -528,15 +528,15 @@ export default function DashboardScreen({ navigation, route }) {
           style: "destructive",
           onPress: async () => {
             try {
-              const res = await api.post(`/delete-expense/${expenseId}/`);
-              DeviceEventEmitter.emit('EXPENSE_UPDATED');
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch (e) {}
+            DeviceEventEmitter.emit('EXPENSE_UPDATED');
+            try {
+              await api.post(`/api/delete-expense/${expenseId}/`);
               fetchDashboardData(false);
-              try {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              } catch (e) {}
             } catch (err) {
               console.error(err);
-              Alert.alert("Error", formatApiError(err, "Could not delete expense."));
+              fetchDashboardData(false);
             }
           }
         }
@@ -608,7 +608,7 @@ export default function DashboardScreen({ navigation, route }) {
       const localType = (localHour >= 18 || localHour < 5) ? 'night' : 'morning';
 
       // ── 3. ASYNC BACKGROUND AI TIP (Non-blocking, never stalls dashboard!) ──
-      api.get(`/daily-tip/?type=${localType}&hour=${localHour}`).then(tipRes => {
+      api.get(`/api/daily-tip/?type=${localType}&hour=${localHour}`).then(tipRes => {
         if (tipRes.data?.tip) {
           setDailyTip(tipRes.data.tip);
         }
@@ -620,7 +620,7 @@ export default function DashboardScreen({ navigation, route }) {
       let newSubs = null;
 
       try {
-        const allRes = await api.get('/dashboard-all/');
+        const allRes = await api.get('/api/dashboard-all/');
         const data = allRes.data;
         if (data.status === 'success') {
           if (data.stats) {
@@ -648,11 +648,11 @@ export default function DashboardScreen({ navigation, route }) {
       } catch (err) {
         // Fallback to concurrent individual requests if needed
         const [statsRes, compRes, anomRes, goalsRes, subsRes] = await Promise.allSettled([
-          api.get('/summary-stats/'),
-          api.get('/monthly-comparison/'),
-          api.get('/anomalies/'),
-          api.get('/savings-goals/'),
-          api.get('/subscriptions/'),
+          api.get('/api/summary-stats/'),
+          api.get('/api/monthly-comparison/'),
+          api.get('/api/anomalies/'),
+          api.get('/api/savings-goals/'),
+          api.get('/api/subscriptions/'),
         ]);
 
         if (statsRes.status === 'fulfilled') {
@@ -2082,15 +2082,15 @@ export default function DashboardScreen({ navigation, route }) {
                                       style: 'destructive',
                                       onPress: async () => {
                                         try {
-                                          await api.post(`/delete-expense/${exp.id}/`);
-                                          DeviceEventEmitter.emit('EXPENSE_UPDATED');
+                                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                        } catch (e) {}
+                                        DeviceEventEmitter.emit('EXPENSE_UPDATED');
+                                        try {
+                                          await api.post(`/api/delete-expense/${exp.id}/`);
                                           fetchDashboardData(false);
-                                          try {
-                                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                          } catch (e) {}
                                         } catch (e) {
                                           console.error(e);
-                                          Alert.alert('Error', formatApiError(e, 'Could not delete expense'));
+                                          fetchDashboardData(false);
                                         }
                                       }
                                     }
@@ -2154,88 +2154,113 @@ export default function DashboardScreen({ navigation, route }) {
       <Modal
         visible={budgetModalVisible}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setBudgetModalVisible(false)}
       >
         <KeyboardAvoidingView 
           style={styles.modalOverlay} 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }]}>Set Monthly Budget</Text>
-            <Text style={[styles.modalSubtitle, isDark && { color: colors.textSecondary }]}>Define your monthly spending limit to stay on track.</Text>
-
-            <View style={[styles.inputContainer, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
-              <Text style={styles.inputPrefix}>₹</Text>
-              <TextInput
-                style={[styles.budgetInput, isDark && { color: colors.textPrimary }]}
-                keyboardType="numeric"
-                value={newBudget}
-                onChangeText={setNewBudget}
-                placeholder="Enter budget amount"
-                placeholderTextColor={isDark ? colors.textSecondary : '#64748b'}
-                autoFocus={true}
-                maxLength={10}
-              />
-            </View>
-            
-            <View style={[styles.inputContainer, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }, { marginTop: 15 }]}>
-              <Text style={styles.inputPrefix}>💼</Text>
-              <TextInput
-                style={[styles.budgetInput, isDark && { color: colors.textPrimary }]}
-                keyboardType="numeric"
-                value={newMonthlyIncome}
-                onChangeText={setNewMonthlyIncome}
-                placeholder="Monthly income (optional)"
-                placeholderTextColor={isDark ? colors.textSecondary : '#64748b'}
-                maxLength={10}
-              />
-            </View>
-            
-            <View style={[styles.inputContainer, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }, { marginTop: 15 }]}>
-              <Text style={styles.inputPrefix}>📅</Text>
-              <TextInput
-                style={[styles.budgetInput, isDark && { color: colors.textPrimary }]}
-                keyboardType="numeric"
-                value={newBudgetCycleDay}
-                onChangeText={setNewBudgetCycleDay}
-                placeholder="Cycle start day (1-28)"
-                placeholderTextColor={isDark ? colors.textSecondary : '#64748b'}
-                maxLength={2}
-              />
+          <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { maxWidth: 360, padding: 22, borderRadius: 28 }]}>
+            {/* Elegant Header Icon */}
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? 'rgba(124, 111, 247, 0.2)' : 'rgba(124, 111, 247, 0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <Ionicons name="wallet-outline" size={26} color="#7C6FF7" />
             </View>
 
-            {/* Live Daily Preview */}
-            <View style={{ marginTop: 14, padding: 12, borderRadius: 12, backgroundColor: isDark ? 'rgba(124, 111, 247, 0.15)' : 'rgba(124, 111, 247, 0.08)', borderWidth: 1, borderColor: isDark ? 'rgba(124, 111, 247, 0.3)' : 'rgba(124, 111, 247, 0.2)' }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#7C6FF7', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Rozana Ka Budget Preview
+            <Text style={[styles.modalTitle, isDark && { color: colors.textPrimary }, { fontSize: 20, fontWeight: '800', marginBottom: 4 }]}>Set Monthly Budget</Text>
+            <Text style={[styles.modalSubtitle, isDark && { color: colors.textSecondary }, { fontSize: 13, marginBottom: 18, paddingHorizontal: 8 }]}>Define your monthly spending limit to stay on track</Text>
+
+            {/* Primary Budget Card */}
+            <View style={{
+              width: '100%',
+              backgroundColor: isDark ? colors.bgElevated : '#F8FAFC',
+              borderRadius: 18,
+              padding: 16,
+              borderWidth: 1.5,
+              borderColor: isDark ? 'rgba(124, 111, 247, 0.4)' : 'rgba(124, 111, 247, 0.25)',
+              marginBottom: 12,
+            }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#7C6FF7', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
+                Monthly Spending Limit
               </Text>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? colors.textPrimary : '#0F172A', marginTop: 2 }}>
-                ≈ ₹{Math.round(((dailyBudgetBasis === 'income' && parseFloat(newMonthlyIncome) > 0 ? parseFloat(newMonthlyIncome) : (parseFloat(newBudget) || 20000)) / 30)).toLocaleString('en-IN')} / din
-              </Text>
-              <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 2 }}>
-                (Base: {dailyBudgetBasis === 'income' && parseFloat(newMonthlyIncome) > 0 ? 'Monthly Income' : 'Monthly Budget'} ÷ cycle days)
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 26, fontWeight: '800', color: '#7C6FF7', marginRight: 8 }}>₹</Text>
+                <TextInput
+                  style={{ flex: 1, fontSize: 26, fontWeight: '800', color: isDark ? colors.textPrimary : '#0F172A', padding: 0 }}
+                  keyboardType="numeric"
+                  value={newBudget}
+                  onChangeText={setNewBudget}
+                  placeholder="20,000"
+                  placeholderTextColor={isDark ? colors.textSecondary : '#94A3B8'}
+                  autoFocus={true}
+                  maxLength={10}
+                />
+              </View>
             </View>
 
-            <View style={styles.modalButtons}>
+            {/* Optional Income & Reset Day Row */}
+            <View style={{ width: '100%', flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+              <View style={{
+                flex: 1,
+                backgroundColor: isDark ? colors.bgElevated : '#F8FAFC',
+                borderRadius: 14,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                borderWidth: 1,
+                borderColor: isDark ? colors.border : '#E2E8F0',
+              }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: isDark ? colors.textSecondary : '#64748B', marginBottom: 4 }} numberOfLines={1}>
+                  💼 Monthly Income
+                </Text>
+                <TextInput
+                  style={{ fontSize: 14, fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A', padding: 0 }}
+                  keyboardType="numeric"
+                  value={newMonthlyIncome}
+                  onChangeText={setNewMonthlyIncome}
+                  placeholder="Optional"
+                  placeholderTextColor={isDark ? colors.textSecondary : '#94A3B8'}
+                  maxLength={10}
+                />
+              </View>
+              <View style={{
+                flex: 1,
+                backgroundColor: isDark ? colors.bgElevated : '#F8FAFC',
+                borderRadius: 14,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                borderWidth: 1,
+                borderColor: isDark ? colors.border : '#E2E8F0',
+              }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: isDark ? colors.textSecondary : '#64748B', marginBottom: 4 }} numberOfLines={1}>
+                  📅 Reset Day
+                </Text>
+                <TextInput
+                  style={{ fontSize: 14, fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A', padding: 0 }}
+                  keyboardType="numeric"
+                  value={newBudgetCycleDay}
+                  onChangeText={setNewBudgetCycleDay}
+                  placeholder="Day 1"
+                  placeholderTextColor={isDark ? colors.textSecondary : '#94A3B8'}
+                  maxLength={2}
+                />
+              </View>
+            </View>
+
+            {/* 1-Tap Action Buttons */}
+            <View style={[styles.modalButtons, { marginTop: 0 }]}>
               <TouchableOpacity
                 style={[styles.modalBtn, styles.modalBtnCancel, isDark && { backgroundColor: colors.bgElevated }]}
                 onPress={() => setBudgetModalVisible(false)}
-                disabled={budgetSubmitting}
+                activeOpacity={0.8}
               >
                 <Text style={[styles.modalBtnCancelText, isDark && { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnSave]}
+                style={[styles.modalBtn, styles.modalBtnSave, { backgroundColor: '#7C6FF7' }]}
                 onPress={handleSaveBudget}
-                disabled={budgetSubmitting}
+                activeOpacity={0.85}
               >
-                {budgetSubmitting ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.modalBtnSaveText}>Save Budget</Text>
-                )}
+                <Text style={styles.modalBtnSaveText}>Save Budget</Text>
               </TouchableOpacity>
             </View>
           </View>

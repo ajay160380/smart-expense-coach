@@ -132,14 +132,14 @@ export default function AddExpenseScreen({ route, navigation }) {
     let saveSuccess = false;
     try {
       if (isEdit) {
-        await api.post(`/edit-expense/${expense.id}/`, {
+        await api.post(`/api/edit-expense/${expense.id}/`, {
           amount: parseFloat(cleanAmount),
           category: category,
           description: sanitizeInput(description),
           date: expDate || TODAY,
         });
       } else {
-        await api.post('/quick-add/', {
+        await api.post('/api/quick-add/', {
           amount: parseFloat(cleanAmount),
           category: category,
           description: sanitizeInput(description),
@@ -193,20 +193,19 @@ export default function AddExpenseScreen({ route, navigation }) {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            setLoading(true);
             try {
-              await api.post(`/delete-expense/${expense.id}/`);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              DeviceEventEmitter.emit('EXPENSE_UPDATED');
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.navigate('Home', { screen: 'DashboardMain' });
-              }
+            } catch (e) {}
+            DeviceEventEmitter.emit('EXPENSE_UPDATED');
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('Home', { screen: 'DashboardMain' });
+            }
+            try {
+              await api.post(`/api/delete-expense/${expense.id}/`);
             } catch (err) {
-              Alert.alert('Delete Failed', formatApiError(err));
-            } finally {
-              setLoading(false);
+              console.error('Delete expense error:', err);
             }
           }
         }

@@ -37,7 +37,7 @@ export default function NotepadScreen({ navigation }) {
 
   const fetchNotes = async () => {
     try {
-      const response = await api.get('/notes/');
+      const response = await api.get('/api/notes/');
       setNotes(response.data.notes || []);
     } catch (error) {
       console.error('Error fetching notes:', error);
@@ -61,7 +61,7 @@ export default function NotepadScreen({ navigation }) {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setSaving(true);
-      const response = await api.post('/notes/', {
+      const response = await api.post('/api/notes/', {
         text: newNote.trim(),
       });
 
@@ -90,17 +90,16 @@ export default function NotepadScreen({ navigation }) {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            // Optimistic instant delete
             try {
-              const response = await api.delete(`/notes/${id}/delete/`);
-              if (response.data.status === 'success') {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setNotes((prev) => prev.filter((n) => n.id !== id));
-              } else {
-                Alert.alert('Error', response.data.error || 'Failed to delete note');
-              }
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch (e) {}
+            setNotes((prev) => prev.filter((n) => n.id !== id));
+            try {
+              await api.delete(`/api/notes/${id}/delete/`);
             } catch (error) {
               console.error('Error deleting note:', error);
-              Alert.alert('Error', 'Failed to delete note');
+              fetchNotes();
             }
           },
         },

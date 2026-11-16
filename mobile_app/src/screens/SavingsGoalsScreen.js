@@ -56,7 +56,7 @@ export default function SavingsGoalsScreen({ navigation }) {
 
   const fetchGoals = async () => {
     try {
-      const res = await api.get('/savings-goals/');
+      const res = await api.get('/api/savings-goals/');
       setGoals(res.data?.goals || []);
     } catch (error) {
       console.error('Goals fetch error:', error);
@@ -92,7 +92,7 @@ export default function SavingsGoalsScreen({ navigation }) {
 
     setSubmitting(true);
     try {
-      await api.post('/savings-goals/add/', {
+      await api.post('/api/savings-goals/add/', {
         name,
         target_amount: target,
         icon: goalIcon,
@@ -114,7 +114,7 @@ export default function SavingsGoalsScreen({ navigation }) {
     if (!amount || amount <= 0) { Alert.alert('Error', 'Enter a valid amount'); return; }
 
     try {
-      const res = await api.post(`/savings-goals/${goalId}/update/`, { add_amount: amount });
+      const res = await api.post(`/api/savings-goals/${goalId}/update/`, { add_amount: amount });
       setShowAddMoney(null);
       setAddMoneyAmount('');
       fetchGoals();
@@ -140,7 +140,7 @@ export default function SavingsGoalsScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.post(`/savings-goals/${goalId}/delete/`);
+              await api.post(`/api/savings-goals/${goalId}/delete/`);
               fetchGoals();
             } catch (error) {
               Alert.alert('Error', 'Failed to delete goal');
