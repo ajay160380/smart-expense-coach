@@ -501,7 +501,7 @@ export default function DashboardScreen({ navigation, route }) {
           payload.budget_cycle_start_day = parsedCycleDay;
       }
       
-      const response = await api.post('/profile/', payload);
+      const response = await api.post('/api/profile/', payload);
       if (response.data.status === 'success') {
         setBudgetModalVisible(false);
         fetchDashboardData();
@@ -577,7 +577,7 @@ export default function DashboardScreen({ navigation, route }) {
         }
       }).catch(() => {});
 
-      api.get('/profile/').then(res => {
+      api.get('/api/profile/').then(res => {
         if (res.data) {
           if (res.data.full_name) setFullName(res.data.full_name);
           setUserProfile(res.data);

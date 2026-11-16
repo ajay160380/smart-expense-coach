@@ -84,7 +84,7 @@ export default function ProfileScreen({ navigation }) {
         setProfile(JSON.parse(cached));
         setLoading(false);
       }
-      const res = await api.get('/profile/');
+      const res = await api.get('/api/profile/');
       if (res.data) {
         setProfile(res.data);
         AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
@@ -192,7 +192,7 @@ export default function ProfileScreen({ navigation }) {
     }
     setSubmittingFeedback(true);
     try {
-      await api.post('/feedback/', { text: feedbackText.trim(), feedback: feedbackText.trim(), source: 'app' });
+      await api.post('/api/feedback/', { text: feedbackText.trim(), feedback: feedbackText.trim(), source: 'app' });
       Alert.alert('Thank You! 🎉', 'Your feedback has been received. We appreciate your support!');
       setFeedbackText('');
       setFeedbackVisible(false);
@@ -228,13 +228,18 @@ export default function ProfileScreen({ navigation }) {
     }
     setSubmittingProfile(true);
     try {
-      const res = await api.post('/profile/', {
+      const res = await api.post('/api/profile/', {
         username: editUsername.trim(),
         first_name: editFirstName.trim(),
         last_name: editLastName.trim(),
         email: editEmail.trim(),
       });
       if (res.data.status === 'success') {
+        await AsyncStorage.setItem('username', editUsername.trim());
+        const fullName = `${editFirstName.trim()} ${editLastName.trim()}`.trim();
+        if (fullName) {
+          await AsyncStorage.setItem('full_name', fullName);
+        }
         Alert.alert('Success', 'Profile updated successfully! 🎉');
         setEditProfileVisible(false);
         fetchProfile();

@@ -55,16 +55,13 @@ api.interceptors.request.use(
     }, 3500);
     config.__warmTimer = warmTimer;
 
-    // ── Auto-prefix /api/ to endpoints if missing ──
-    if (config.url && !config.url.startsWith('/api') && !config.url.startsWith('/ai_chat')) {
-      const formattedPath = config.url.startsWith('/') ? config.url : `/${config.url}`;
-      config.url = `/api${formattedPath}`;
-    }
-
-    // ── Force absolute URL prefixing to avoid browser origin resolution issues ──
-    if (config.url && !config.url.startsWith('http')) {
-      const path = config.url.startsWith('/') ? config.url : `/${config.url}`;
-      config.url = `${BASE_URL}${path}`;
+    // ── Auto-prefix /api/ and BASE_URL to relative endpoints ──
+    if (config.url && !config.url.startsWith('http://') && !config.url.startsWith('https://')) {
+      let cleanUrl = config.url.startsWith('/') ? config.url : `/${config.url}`;
+      if (!cleanUrl.startsWith('/api') && !cleanUrl.startsWith('/ai_chat')) {
+        cleanUrl = `/api${cleanUrl}`;
+      }
+      config.url = `${BASE_URL}${cleanUrl}`;
     }
 
     // ── Cache-busting: add _t timestamp to every GET request ──

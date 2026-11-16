@@ -103,7 +103,7 @@ export default function MoreFeaturesScreen({ navigation }) {
       if (cached) {
         setProfile(JSON.parse(cached));
       }
-      const res = await api.get('/profile/');
+      const res = await api.get('/api/profile/');
       if (res.data) {
         setProfile(res.data);
         AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
