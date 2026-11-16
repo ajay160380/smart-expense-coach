@@ -34,6 +34,7 @@ import * as Haptics from 'expo-haptics';
 import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requestPinWidget } from '../utils/widgetCompat';
+import { CURRENT_APP_VERSION } from '../utils/versionCheck';
 
 import api from '../api/config';
 import messaging from '../utils/messaging';
@@ -809,7 +810,7 @@ export default function ProfileScreen({ navigation }) {
             iconColor="#06B6D4"
             label="Check for Updates"
             sub="Check for latest EAS OTA update"
-            badge="v1.3.2"
+            badge={`v${CURRENT_APP_VERSION}`}
             badgeColor="#06B6D4"
             onPress={async () => {
               try {
