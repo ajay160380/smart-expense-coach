@@ -228,6 +228,7 @@ export default function DashboardScreen({ navigation, route }) {
 
   useFocusEffect(
     useCallback(() => {
+      fetchDashboardData(false);
       if (hasRevealedRef.current) {
         runEntranceAnimation();
       } else {
@@ -237,7 +238,7 @@ export default function DashboardScreen({ navigation, route }) {
         animDockOpacity.setValue(0);
         animListsOpacity.setValue(0);
       }
-    }, [runEntranceAnimation])
+    }, [runEntranceAnimation, fetchDashboardData])
   );
 
   // ── Quick Action Dock Customizable State (1-8 items) ──

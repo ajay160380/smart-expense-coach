@@ -33,6 +33,7 @@ import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW } from '../utils/theme';
 import { EmptyState } from '../components/SharedComponents';
 import { formatApiError } from '../utils/errors';
 import { useTheme } from '../theme/ThemeContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function HistoryScreen({ navigation }) {
   const { isDark, colors } = useTheme();
@@ -79,6 +80,12 @@ export default function HistoryScreen({ navigation }) {
       setLoading(false);
     }
   }, [currentDate]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchHistory();
+    }, [fetchHistory])
+  );
 
   useEffect(() => {
     fetchHistory();

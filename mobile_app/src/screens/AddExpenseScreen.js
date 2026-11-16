@@ -36,14 +36,14 @@ import { COLORS, RADIUS, SHADOW } from '../utils/theme';
 import { useTheme } from '../theme/ThemeContext';
 
 const CATEGORIES = [
-  { key: 'food', label: 'Food', icon: '🍜', color: '#6c5ce7' },
-  { key: 'transport', label: 'Transport', icon: '🚗', color: '#00cec9' },
-  { key: 'shopping', label: 'Shopping', icon: '🛍️', color: '#fd79a8' },
-  { key: 'health', label: 'Health', icon: '💊', color: '#00b894' },
-  { key: 'entertainment', label: 'Fun', icon: '🎬', color: '#fdcb6e' },
-  { key: 'education', label: 'Education', icon: '📚', color: '#74b9ff' },
-  { key: 'utilities', label: 'Utilities', icon: '⚡', color: '#a29bfe' },
-  { key: 'other', label: 'Other', icon: '📦', color: '#dfe6e9' },
+  { key: 'food', label: 'Food', icon: '🍜', color: '#F97316' },
+  { key: 'transport', label: 'Transport', icon: '🚗', color: '#06B6D4' },
+  { key: 'shopping', label: 'Shopping', icon: '🛍️', color: '#EC4899' },
+  { key: 'health', label: 'Health', icon: '💊', color: '#10B981' },
+  { key: 'entertainment', label: 'Fun', icon: '🎬', color: '#8B5CF6' },
+  { key: 'education', label: 'Education', icon: '📚', color: '#3B82F6' },
+  { key: 'utilities', label: 'Utilities', icon: '⚡', color: '#EAB308' },
+  { key: 'other', label: 'Other', icon: '📦', color: '#64748B' },
 ];
 
 const getLocalDate = (daysOffset = 0) => {
@@ -120,7 +120,7 @@ export default function AddExpenseScreen({ route, navigation }) {
     }
   };
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     const cleanAmount = sanitizeAmount(amount);
     const amountVal = validateAmount(cleanAmount);
     if (!amountVal.isValid) {
@@ -128,50 +128,46 @@ export default function AddExpenseScreen({ route, navigation }) {
       return;
     }
 
+    setLoading(true);
     try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e) {}
+      const payload = {
+        amount: parseFloat(cleanAmount),
+        category: category,
+        description: sanitizeInput(description),
+        date: expDate || TODAY,
+      };
 
-    // 1-Tap Instant Dismiss: Close screen immediately with 0ms waiting
-    setTimeout(() => {
+      if (isEdit) {
+        await api.post(`/api/edit-expense/${expense.id}/`, payload);
+      } else {
+        await api.post('/api/quick-add/', payload);
+      }
+
       try {
-        DeviceEventEmitter.emit('EXPENSE_UPDATED');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (e) {}
-    }, 50);
 
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('Home', { screen: 'DashboardMain' });
+      try {
+        analytics.track(isEdit ? 'expense_updated' : 'expense_created', {
+          amount: parseFloat(cleanAmount),
+          category,
+          has_description: !!description,
+        });
+      } catch (e) {}
+
+      DeviceEventEmitter.emit('EXPENSE_UPDATED');
+
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate('Home', { screen: 'DashboardMain' });
+      }
+    } catch (error) {
+      console.error('AddExpense Save Error:', error);
+      Alert.alert('Save Failed', formatApiError(error, 'Could not save expense. Please check your connection.'));
+    } finally {
+      setLoading(false);
     }
-
-    // Background sync without blocking the UI
-    const payload = {
-      amount: parseFloat(cleanAmount),
-      category: category,
-      description: sanitizeInput(description),
-      date: expDate || TODAY,
-    };
-
-    const syncPromise = isEdit
-      ? api.post(`/api/edit-expense/${expense.id}/`, payload)
-      : api.post('/api/quick-add/', payload);
-
-    syncPromise
-      .then(() => {
-        try {
-          analytics.track(isEdit ? 'expense_updated' : 'expense_created', {
-            amount: parseFloat(cleanAmount),
-            category,
-            has_description: !!description,
-          });
-        } catch (e) {}
-        DeviceEventEmitter.emit('EXPENSE_UPDATED');
-      })
-      .catch((error) => {
-        console.error('Background AddExpense Sync Error:', error);
-        Alert.alert('Sync Notice', 'Could not sync expense to server. Please check your internet connection.');
-      });
   };
 
   const handleDeleteExpense = () => {
@@ -410,7 +406,7 @@ export default function AddExpenseScreen({ route, navigation }) {
                 title="Save Expense"
                 onPress={handleAddExpense}
                 loading={loading}
-                colors={[selectedCat.color, selectedCat.color + 'CC']}
+                colors={['#2563EB', '#1D4ED8']}
                 icon={selectedCat.icon}
               />
             )}
