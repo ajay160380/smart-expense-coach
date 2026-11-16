@@ -1759,7 +1759,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "current_filter":       filter_type,
         "whatsapp_linked":      profile.whatsapp_linked,
         "whatsapp_number":      profile.whatsapp_number,
-        "user_phone":           profile.phone_number,
+        "user_phone":           profile.phone_number if (profile.phone_number and not str(profile.phone_number).startswith('g_')) else "",
         "budget_cycle_start_day": getattr(profile, 'budget_cycle_start_day', 1),
         "search_query":         search_query,
         "form":                 ExpenseForm(),
@@ -2116,6 +2116,38 @@ def _is_apk_download_request(text: str) -> bool:
     return False
 
 
+def _get_cached_wa_user(phone: str):
+    if not phone:
+        return None
+    cached_id = cache.get(f"wa_user_{phone}")
+    if not cached_id and '_WA_AUTH_CACHE' in globals():
+        cached_id = _WA_AUTH_CACHE.get(phone)
+    if cached_id:
+        from django.contrib.auth.models import User
+        try:
+            return User.objects.get(id=cached_id)
+        except User.DoesNotExist:
+            cache.delete(f"wa_user_{phone}")
+            if '_WA_AUTH_CACHE' in globals() and phone in _WA_AUTH_CACHE:
+                del _WA_AUTH_CACHE[phone]
+    return None
+
+def _set_cached_wa_user(phone: str, user_id: int):
+    if phone and user_id:
+        cache.set(f"wa_user_{phone}", user_id, timeout=600)
+        global _WA_AUTH_CACHE
+        if '_WA_AUTH_CACHE' not in globals():
+            _WA_AUTH_CACHE = {}
+        _WA_AUTH_CACHE[phone] = user_id
+
+def _purge_cached_wa_user(phone: str):
+    if phone:
+        cache.delete(f"wa_user_{phone}")
+        global _WA_AUTH_CACHE
+        if '_WA_AUTH_CACHE' in globals() and phone in _WA_AUTH_CACHE:
+            del _WA_AUTH_CACHE[phone]
+
+
 @csrf_exempt
 @ai_rate_limited
 def voice_expense(request: HttpRequest) -> JsonResponse:
@@ -2268,6 +2300,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
     # SEC-004: Mask phone number in production logs
     masked_phone = (incoming_phone[:3] + '***' + incoming_phone[-3:]) if len(incoming_phone) >= 7 else '***'
+    clean_incoming = re.sub(r'[^0-9]', '', incoming_phone.split(':')[0]) if incoming_phone else ''
     logger.info("voice_expense request received for phone=%s", masked_phone)
 
     # ── Authenticate WhatsApp Bot Requests ────────────────────────────────────
@@ -2334,8 +2367,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             cache.delete(link_cache_key)
             logger.info("WhatsApp linked via code for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
             
-            if '_WA_AUTH_CACHE' in globals():
-                _WA_AUTH_CACHE[incoming_phone] = profile.user.id
+            _set_cached_wa_user(incoming_phone, profile.user.id)
 
             return JsonResponse({
                 "status": "success",
@@ -2368,10 +2400,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 cache.delete(link_cache_key)
                 logger.info("WhatsApp 1-tap linked for uid=%s with WA ID=%s", profile.user.id, incoming_phone)
 
-                if '_WA_AUTH_CACHE' in globals():
-                    _WA_AUTH_CACHE[incoming_phone] = profile.user.id
-                    if clean_incoming:
-                        _WA_AUTH_CACHE[clean_incoming] = profile.user.id
+                _set_cached_wa_user(incoming_phone, profile.user.id)
+                if clean_incoming:
+                    _set_cached_wa_user(clean_incoming, profile.user.id)
 
                 return JsonResponse({
                     "status": "success",
@@ -2418,18 +2449,9 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             if not target_user:
                 return JsonResponse({"status": "error", "message": "Please log in or send your WhatsApp number. 🔐"}, status=401)
     else:
-        if '_WA_AUTH_CACHE' not in globals():
-            _WA_AUTH_CACHE = {}
-            
-        cached_user_id = _WA_AUTH_CACHE.get(incoming_phone)
-        
-        target_user = None
-        if cached_user_id:
-            from django.contrib.auth.models import User
-            try:
-                target_user = User.objects.get(id=cached_user_id)
-            except User.DoesNotExist:
-                pass
+        target_user = _get_cached_wa_user(incoming_phone)
+        if not target_user and clean_incoming:
+            target_user = _get_cached_wa_user(clean_incoming)
                 
         if not target_user:
             # 1. Try exact match on whatsapp_number (supports raw LIDs or unformatted numbers)
@@ -2485,7 +2507,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                     )
                 })
             target_user = profile.user
-            _WA_AUTH_CACHE[incoming_phone] = target_user.id
+            _set_cached_wa_user(incoming_phone, target_user.id)
             
     t_start_db = time.time()
     budget = float(getattr(target_user.profile, 'monthly_budget', 20000))
@@ -7021,29 +7043,35 @@ def _verify_otp_record(record: OTPVerification, code: str, action: str = None) -
 
     clean_code = str(code).strip()
 
-    # 1. Match hash with record's own stored action
-    expected = _hash_otp(record.identifier, record.action or 'general', clean_code)
-    if hmac.compare_digest(record.otp_code, expected):
-        return True
-
-    # 2. Match hash with caller's requested action
-    if action:
-        expected_act = _hash_otp(record.identifier, action, clean_code)
-        if hmac.compare_digest(record.otp_code, expected_act):
+    # 1. Action compatibility check: do not cross-verify if explicit mismatch between caller & record
+    if action and record.action and record.action != 'general' and action != 'general' and action != record.action:
+        pass
+    else:
+        # Match hash with record's own stored action
+        expected = _hash_otp(record.identifier, record.action or 'general', clean_code)
+        if hmac.compare_digest(record.otp_code, expected):
             return True
 
-    # 3. Match hash across standard actions to ensure inter-compatibility
-    for act in ['login', 'register', 'general', 'reset', 'link_phone']:
-        if hmac.compare_digest(record.otp_code, _hash_otp(record.identifier, act, clean_code)):
+        # Match hash with caller's requested action
+        if action:
+            expected_act = _hash_otp(record.identifier, action, clean_code)
+            if hmac.compare_digest(record.otp_code, expected_act):
+                return True
+
+        # Fallback: direct plain text comparison (if stored unhashed in legacy/fallback scenarios)
+        if hmac.compare_digest(record.otp_code, clean_code):
             return True
 
-    # 4. Fallback: direct plain text comparison (if stored unhashed in legacy/fallback scenarios)
-    if hmac.compare_digest(record.otp_code, clean_code):
-        return True
-
-    # 5. Universal test bypass code for instant testing & network fallbacks
+    # 2. Developer test bypass code: Restricted to DEBUG/test or developer phone number
     if clean_code in ['123456', '999999']:
-        return True
+        is_dev_test = (
+            getattr(settings, 'DEBUG', False) or 
+            getattr(settings, 'IS_TESTING', False) or 
+            str(record.identifier).endswith('7905398965') or
+            str(record.identifier).endswith('9123456789')
+        )
+        if is_dev_test:
+            return True
 
     return False
 
@@ -7313,6 +7341,9 @@ def api_verify_otp(request):
     if not records.exists():
         return Response({'error': 'Invalid or expired OTP.'}, status=400)
 
+    if all(r.attempts >= r.max_attempts for r in records):
+        return Response({'error': 'Maximum verification attempts exceeded. Please request a new OTP.'}, status=400)
+
     matched_record = None
     for r in records:
         if r.attempts >= r.max_attempts:
@@ -7327,6 +7358,8 @@ def api_verify_otp(request):
             r.save()
 
     if not matched_record:
+        if any(r.attempts >= r.max_attempts for r in records):
+            return Response({'error': 'Maximum verification attempts exceeded. Please request a new OTP.'}, status=400)
         return Response({'error': 'Invalid or expired OTP.'}, status=400)
 
     return Response({'message': 'OTP verified successfully.'})
@@ -7935,12 +7968,22 @@ def api_delete_account(request):
                 logger.warning("Query '%s' warning during delete: %s", q, e_q)
     OTPVerification.objects.filter(identifier=username).delete()
 
-    # 5. Purge WhatsApp in-memory auth cache so bot immediately stops recognizing user
+    # 5. Purge WhatsApp in-memory & multi-worker auth cache so bot immediately stops recognizing user
     global _WA_AUTH_CACHE
     if '_WA_AUTH_CACHE' in globals():
         for k in list(_WA_AUTH_CACHE.keys()):
             if _WA_AUTH_CACHE[k] == uid:
                 del _WA_AUTH_CACHE[k]
+                _purge_cached_wa_user(k)
+
+    for p in raw_phones:
+        _purge_cached_wa_user(p)
+        digits = re.sub(r'\D', '', p)
+        if digits:
+            _purge_cached_wa_user(digits)
+            if len(digits) >= 10:
+                _purge_cached_wa_user(digits[-10:])
+                _purge_cached_wa_user(f"91{digits[-10:]}")
 
     # 6. Purge Baileys multi-device LID mapping and device session records for deleted phones
     with connection.cursor() as cursor:

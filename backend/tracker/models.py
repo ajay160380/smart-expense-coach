@@ -148,6 +148,10 @@ class Expense(models.Model):
 
     class Meta:
         ordering = ['-date', '-id']
+        indexes = [
+            models.Index(fields=['user', 'date']),
+            models.Index(fields=['user', '-date', '-id']),
+        ]
 
 class Subscription(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

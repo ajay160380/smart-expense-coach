@@ -7,7 +7,7 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -38,6 +38,14 @@ export default function WhatsAppLinkModal({
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const pollRef = useRef(null);
+
+  const clearPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
 
   useEffect(() => {
     if (visible) {
@@ -47,8 +55,16 @@ export default function WhatsAppLinkModal({
       const tenDigits = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
       setPhone(tenDigits);
       setIsEditingPhone(!tenDigits);
+    } else {
+      clearPolling();
     }
+    return () => clearPolling();
   }, [visible, userPhone]);
+
+  const handleClose = () => {
+    clearPolling();
+    onClose();
+  };
 
   const handleOpenWhatsApp = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -60,14 +76,15 @@ export default function WhatsAppLinkModal({
     Linking.openURL(waUrl).catch(() => {});
 
     // Start background poll to see if user linked
+    clearPolling();
     setCheckingStatus(true);
     let attempts = 0;
-    const pollInterval = setInterval(async () => {
+    pollRef.current = setInterval(async () => {
       attempts += 1;
       try {
         const res = await api.get('/api/wa-link-status/');
         if (res.data?.linked) {
-          clearInterval(pollInterval);
+          clearPolling();
           setIsSuccess(true);
           setCheckingStatus(false);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -75,13 +92,13 @@ export default function WhatsAppLinkModal({
             onLinkedSuccess();
           }
           setTimeout(() => {
-            onClose();
+            handleClose();
           }, 1800);
         }
       } catch (e) {}
 
       if (attempts >= 15) {
-        clearInterval(pollInterval);
+        clearPolling();
         setCheckingStatus(false);
       }
     }, 2000);
@@ -94,14 +111,14 @@ export default function WhatsAppLinkModal({
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
         <View style={[styles.card, isDark && styles.cardDark]}>
           {/* Close button */}
           <TouchableOpacity
             style={styles.closeBtn}
-            onPress={onClose}
+            onPress={handleClose}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
@@ -249,7 +266,7 @@ export default function WhatsAppLinkModal({
 
               {/* Remind later link */}
               <TouchableOpacity
-                onPress={onClose}
+                onPress={handleClose}
                 style={styles.remindBtn}
                 hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
               >
@@ -493,3 +510,4 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
 });
+

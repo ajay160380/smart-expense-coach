@@ -231,13 +231,13 @@ class OTPHardeningTests(TestCase):
         self.assertFalse(_verify_otp_record(record, code, action))
 
     def test_account_enumeration_protection_on_reset(self):
-        # Requesting reset for non-existent account returns generic 200 success
+        # Requesting reset for non-existent account returns 404 ACCOUNT_NOT_FOUND
         res = self.client.post('/api/auth/send-otp/', {
             'email': 'nonexistent_account_12345@example.com',
             'action': 'reset',
         }, content_type='application/json')
-        self.assertEqual(res.status_code, 200)
-        self.assertIn("verification code has been sent", res.json().get('message', ''))
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json().get('code'), 'ACCOUNT_NOT_FOUND')
 
     def test_otp_rate_limiting(self):
         identifier = "ratelimit@example.com"

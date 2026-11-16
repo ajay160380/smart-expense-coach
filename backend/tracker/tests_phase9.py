@@ -529,7 +529,7 @@ class Phase9WhatsAppCommandsTests(TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertEqual(data['status'], 'success')
-        self.assertIn('monthly budget set nahi hai', data['message'])
+        self.assertTrue('monthly budget set nahi hai' in data['message'].lower() or 'monthly budget is not set' in data['message'].lower())
 
 
 

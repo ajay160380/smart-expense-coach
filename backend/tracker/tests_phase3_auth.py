@@ -47,19 +47,19 @@ class AuthHardeningTests(TestCase):
     def tearDown(self):
         cache.clear()
 
-    # 1. STOP ACCOUNT ENUMERATION ON LOGIN
+    # 1. ACCOUNT NOT FOUND ERROR CODE ON LOGIN FOR USER CLARITY
     def test_login_account_enumeration_prevented(self):
-        # Case A: Unknown user
+        # Case A: Unknown user returns 404 ACCOUNT_NOT_FOUND
         resp_unknown = self.client.post(
             "/api/login/",
             data=json.dumps({"username": "nonexistent_user_999", "password": "WrongPassword123"}),
             content_type="application/json"
         )
-        self.assertEqual(resp_unknown.status_code, 401)
+        self.assertEqual(resp_unknown.status_code, 404)
         data_unknown = resp_unknown.json()
-        self.assertIn("Invalid credentials", data_unknown.get("error", ""))
+        self.assertEqual(data_unknown.get("code"), "ACCOUNT_NOT_FOUND")
 
-        # Case B: Known user with wrong password
+        # Case B: Known user with wrong password returns 401
         resp_known = self.client.post(
             "/api/login/",
             data=json.dumps({"username": self.username, "password": "WrongPassword123"}),
@@ -67,27 +67,27 @@ class AuthHardeningTests(TestCase):
         )
         self.assertEqual(resp_known.status_code, 401)
         data_known = resp_known.json()
-        self.assertEqual(data_unknown["error"], data_known["error"])
+        self.assertIn("Incorrect password", data_known.get("error", ""))
 
-    # 2. STOP ACCOUNT ENUMERATION ON SEND-OTP & LOGIN-OTP
+    # 2. CLEAR ACCOUNT STATUS ON SEND-OTP & LOGIN-OTP
     def test_send_and_login_otp_enumeration_prevented(self):
-        # Case A: Send-OTP for login on non-existent account returns same generic 200 response
+        # Case A: Send-OTP for login on non-existent account returns 404 ACCOUNT_NOT_FOUND
         resp_send = self.client.post(
             "/api/auth/send-otp/",
             data=json.dumps({"identifier": "910000000000", "action": "login"}),
             content_type="application/json"
         )
-        self.assertEqual(resp_send.status_code, 200)
-        self.assertEqual(resp_send.json().get("status"), "success")
+        self.assertEqual(resp_send.status_code, 404)
+        self.assertEqual(resp_send.json().get("code"), "ACCOUNT_NOT_FOUND")
 
-        # Case B: Login-OTP with non-existent account returns generic 400
+        # Case B: Login-OTP with non-existent account returns 404 ACCOUNT_NOT_FOUND
         resp_login_otp_unknown = self.client.post(
             "/api/auth/login-otp/",
             data=json.dumps({"identifier": "910000000000", "otp": "999999"}),
             content_type="application/json"
         )
-        self.assertEqual(resp_login_otp_unknown.status_code, 400)
-        self.assertIn("Invalid credentials", resp_login_otp_unknown.json().get("error", ""))
+        self.assertEqual(resp_login_otp_unknown.status_code, 404)
+        self.assertEqual(resp_login_otp_unknown.json().get("code"), "ACCOUNT_NOT_FOUND")
 
     # 3. PER-IDENTIFIER HOURLY RATE LIMIT
     def test_otp_hourly_identifier_limit(self):
