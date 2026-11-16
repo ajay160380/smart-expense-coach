@@ -7992,7 +7992,7 @@ def api_delete_account(request):
             if len(digits) >= 10:
                 last10 = digits[-10:]
                 try:
-                    cursor.execute("DELETE FROM baileys_auth WHERE key_id LIKE %s OR data::text LIKE %s", [f'%{last10}%', f'%{last10}%'])
+                    cursor.execute("DELETE FROM baileys_auth WHERE key_id LIKE %s", [f'%{last10}%'])
                 except Exception as e_b:
                     logger.debug("baileys_auth cleanup notice: %s", e_b)
 

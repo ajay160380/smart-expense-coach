@@ -30,11 +30,11 @@ import { COLORS } from '../utils/theme';
 import { useTheme } from '../theme/ThemeContext';
 
 const QUICK_CHIPS = [
-  { label: '💰 Budget Check', text: 'Budget kitna bacha hai?' },
-  { label: '📊 Summary', text: 'Mera spending summary batao' },
-  { label: '🍜 Top Category', text: 'Sabse jyada kaha kharcha kiya?' },
-  { label: '💡 Save Tips', text: 'Paise bachane ke tips do' },
-  { label: '📈 This Month', text: 'Is mahine ka total kharcha?' },
+  { label: '💰 Budget Check', text: 'How much budget do I have left?' },
+  { label: '📊 Summary', text: 'Show me my spending summary' },
+  { label: '🍜 Top Category', text: 'Where did I spend the most money?' },
+  { label: '💡 Save Tips', text: 'Give me tips to save money' },
+  { label: '📈 This Month', text: 'What is my total spending this month?' },
 ];
 
 export default function AIChatScreen({ navigation }) {
@@ -53,7 +53,7 @@ export default function AIChatScreen({ navigation }) {
     setMessages([{
       id: 'welcome',
       role: 'bot',
-      text: `Hey ${username}! 🤖 Main hoon ExpenseTracker, tumhara personal AI financial coach.\n\nMujhse kuch bhi pucho — budget, savings tips, kaha kharcha kiya, ya koi bhi finance ka sawaal! 💰`,
+      text: `Hey ${username}! 🤖 I am ExpenseTracker, your personal AI financial assistant.\n\nAsk me anything — your remaining budget, savings advice, top expense categories, or any personal finance question! 💰`,
       time: new Date(),
     }]);
   }, []);
@@ -91,7 +91,7 @@ export default function AIChatScreen({ navigation }) {
       const botMsg = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
-        text: response.data?.reply || 'Oops! Kuch gadbad hui. Phir try karo! 😅',
+        text: response.data?.reply || 'Oops! Something went wrong. Please try again! 😅',
         time: new Date(),
       };
 
@@ -102,7 +102,7 @@ export default function AIChatScreen({ navigation }) {
         id: (Date.now() + 1).toString(),
         role: 'bot',
         text: error.response?.status === 429
-          ? '⏰ Rate limit reached! Thoda wait karo, phir try karo.'
+          ? '⏰ Rate limit reached! Please wait a moment and try again.'
           : (error.response?.data?.reply || error.response?.data?.error || '😅 Network issue. Please check your connection and try again.'),
         time: new Date(),
       };
@@ -207,7 +207,7 @@ export default function AIChatScreen({ navigation }) {
         <View style={[styles.inputBar, isDark && { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
           <TextInput
             style={[styles.input, isDark && { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="Ask anything... (Hinglish bhi chalega!)"
+            placeholder="Ask anything about your expenses..."
             placeholderTextColor={isDark ? colors.textMuted : COLORS.textMuted}
             value={inputText}
             onChangeText={setInputText}

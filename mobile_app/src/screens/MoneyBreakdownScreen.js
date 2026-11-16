@@ -249,7 +249,7 @@ export default function MoneyBreakdownScreen({ navigation }) {
                 </>
               ) : (
                 <Text style={{ textAlign: 'center', marginVertical: 20, color: colors.textSecondary }}>
-                  Is period me koi kharcha nahi mila.
+                  No expenses recorded for this period.
                 </Text>
               )}
             </View>
@@ -310,7 +310,7 @@ export default function MoneyBreakdownScreen({ navigation }) {
               >
                 <Text style={[styles.cardTitle, { color: '#7C6FF7' }]}>Detected Recurring Payments 💡</Text>
                 <Text style={[styles.cardSub, isDark && { color: colors.textSecondary }]}>
-                  Ye har mahine regular detect hue hain. 1-tap me Subscription list me jodhein:
+                  Detected as recurring monthly charges. Add to your subscriptions in 1-tap:
                 </Text>
                 <View style={{ marginTop: 12, gap: 10 }}>
                   {data.suggested_subscriptions.map((sub, idx) => (

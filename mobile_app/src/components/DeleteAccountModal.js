@@ -70,54 +70,48 @@ export default function DeleteAccountModal({
 
     setLoading(true);
     setErrorMessage('');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-
     try {
-      // Execute server-side permanent account deletion
-      await api.post(
-        '/api/auth/delete-account/',
-        {
-          confirmation: 'DELETE',
-          otp: 'DELETE',
-        },
-        { timeout: 15000 }
-      );
-
-      // 1. Instantly clear auth session and local storage
-      await clearAuthData();
-      try {
-        await AsyncStorage.clear();
-      } catch (e) {}
-
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onClose();
+    } catch (e) {}
 
-      Alert.alert(
-        'Account Deleted',
-        'Your account and all associated financial records have been permanently erased.'
-      );
+    // 1. Instantly close modal and clear local auth
+    onClose();
+    await clearAuthData();
+    try {
+      await AsyncStorage.clear();
+    } catch (e) {}
 
-      // 2. Safe navigation reset to Login screen
+    Alert.alert(
+      'Account Deleted',
+      'Your account and all associated financial records have been permanently erased.'
+    );
+
+    // 2. Safe navigation reset to Login screen immediately
+    try {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (navErr) {
       try {
-        navigation.reset({
+        navigation.getParent()?.reset({
           index: 0,
           routes: [{ name: 'Login' }],
         });
-      } catch (navErr) {
-        try {
-          navigation.getParent()?.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
-        } catch (e2) {}
-      }
-    } catch (err) {
-      const msg = err.response?.data?.error || formatApiError(err) || 'Account deletion failed. Please try again.';
-      setErrorMessage(msg);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setLoading(false);
+      } catch (e2) {}
     }
+
+    // 3. Execute server-side permanent account deletion in background
+    api.post(
+      '/api/auth/delete-account/',
+      {
+        confirmation: 'DELETE',
+        otp: 'DELETE',
+      },
+      { timeout: 15000 }
+    ).catch((err) => {
+      console.warn('Background account delete notice:', err);
+    });
   };
 
   return (

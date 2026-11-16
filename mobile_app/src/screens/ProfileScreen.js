@@ -227,30 +227,45 @@ export default function ProfileScreen({ navigation }) {
         return;
       }
     }
-    setSubmittingProfile(true);
+
     try {
-      const res = await api.post('/api/profile/', {
-        username: editUsername.trim(),
-        first_name: editFirstName.trim(),
-        last_name: editLastName.trim(),
-        email: editEmail.trim(),
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {}
+
+    const newUName = editUsername.trim();
+    const newFName = editFirstName.trim();
+    const newLName = editLastName.trim();
+    const newEMail = editEmail.trim();
+
+    // 1-Tap Instant UI Close & State Update
+    setProfile((prev) => prev ? ({
+      ...prev,
+      username: newUName,
+      first_name: newFName,
+      last_name: newLName,
+      email: newEMail,
+    }) : prev);
+
+    setEditProfileVisible(false);
+
+    AsyncStorage.setItem('username', newUName).catch(() => {});
+    const fullName = `${newFName} ${newLName}`.trim();
+    if (fullName) {
+      AsyncStorage.setItem('full_name', fullName).catch(() => {});
+    }
+
+    // Background server sync
+    try {
+      await api.post('/api/profile/', {
+        username: newUName,
+        first_name: newFName,
+        last_name: newLName,
+        email: newEMail,
       });
-      if (res.data.status === 'success') {
-        await AsyncStorage.setItem('username', editUsername.trim());
-        const fullName = `${editFirstName.trim()} ${editLastName.trim()}`.trim();
-        if (fullName) {
-          await AsyncStorage.setItem('full_name', fullName);
-        }
-        Alert.alert('Success', 'Profile updated successfully! 🎉');
-        setEditProfileVisible(false);
-        fetchProfile();
-      } else {
-        Alert.alert('Error', res.data.error || 'Failed to update profile');
-      }
+      fetchProfile();
     } catch (e) {
-      Alert.alert('Error', formatApiError(e, 'An error occurred while updating profile'));
-    } finally {
-      setSubmittingProfile(false);
+      console.warn('Profile background sync notice:', e);
+      fetchProfile();
     }
   };
 

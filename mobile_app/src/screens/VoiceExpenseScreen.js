@@ -28,10 +28,10 @@ const { width } = Dimensions.get('window');
 
 const SAMPLE_PROMPTS = [
   { icon: 'gas-station', text: '500 petrol' },
-  { icon: 'coffee', text: '200 chai snacks' },
-  { icon: 'cart-outline', text: '1200 grocery' },
-  { icon: 'silverware-fork-knife', text: '450 swiggy' },
-  { icon: 'chart-pie', text: 'aaj ka summary' },
+  { icon: 'coffee', text: '200 coffee snacks' },
+  { icon: 'cart-outline', text: '1200 groceries' },
+  { icon: 'silverware-fork-knife', text: '450 food order' },
+  { icon: 'chart-pie', text: 'daily summary' },
 ];
 
 export function parseExpenseFromSpeech(text) {
@@ -468,29 +468,28 @@ export default function VoiceExpenseScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Status Header ── */}
-        <View style={styles.statusSection}>
-          <Text style={[styles.instructionText, isDark && { color: colors.textPrimary }]}>
-            {isRecording 
-              ? 'Listening to you...' 
-              : loading 
-              ? 'AI is parsing expense...' 
-              : loggedExpense 
-              ? 'Expense Logged! 🎉' 
-              : 'Speak Your Expense'}
-          </Text>
+        {!loggedExpense && (
+          <View style={styles.statusSection}>
+            <Text style={[styles.instructionText, isDark && { color: colors.textPrimary }]}>
+              {isRecording 
+                ? 'Listening to you...' 
+                : loading 
+                ? 'AI is parsing expense...' 
+                : 'Speak Your Expense'}
+            </Text>
 
-          <Text style={[styles.subInstructionText, isDark && { color: colors.textSecondary }]}>
-            {isRecording 
-              ? 'Speak naturally: amount + what you bought' 
-              : loading 
-              ? 'Extracting category & updating budget...' 
-              : loggedExpense 
-              ? 'Added to your daily expenses successfully' 
-              : 'Tap mic to start/stop, or press and hold'}
-          </Text>
-        </View>
+            <Text style={[styles.subInstructionText, isDark && { color: colors.textSecondary }]}>
+              {isRecording 
+                ? 'Speak naturally: amount + what you bought' 
+                : loading 
+                ? 'Extracting category & updating budget...' 
+                : 'Tap mic to start/stop, or press and hold'}
+            </Text>
+          </View>
+        )}
 
         {/* ── Mic Recording Stage ── */}
+        {!loggedExpense && (
         <View style={styles.stageContainer}>
           {/* Animated concentric pulse waves */}
           {isRecording && (
@@ -568,13 +567,14 @@ export default function VoiceExpenseScreen({ navigation }) {
             )}
           </View>
         </View>
+        )}
 
         {/* ── Recognized Transcript Display (Immediate Real-time verification) ── */}
         {transcription ? (
-          <View style={[styles.transcriptCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.transcriptCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, loggedExpense && { marginTop: 8 }]}>
             <View style={styles.transcriptHeader}>
               <Ionicons name="mic" size={16} color={isDark ? colors.primary : '#2563EB'} />
-              <Text style={[styles.transcriptTitle, isDark && { color: colors.primary }]}>Recognized Speech (Aapne Bola):</Text>
+              <Text style={[styles.transcriptTitle, isDark && { color: colors.primary }]}>Recognized Speech:</Text>
             </View>
             <Text style={[styles.transcriptText, isDark && { color: colors.textPrimary }]}>"{transcription}"</Text>
           </View>
@@ -679,22 +679,24 @@ export default function VoiceExpenseScreen({ navigation }) {
         )}
 
         {/* ── Sample Prompt Chips ── */}
-        <View style={styles.suggestionsContainer}>
-          <Text style={[styles.suggestionsTitle, isDark && { color: colors.textSecondary }]}>💡 Quick Examples to Try:</Text>
-          <View style={styles.chipsRow}>
-            {SAMPLE_PROMPTS.map((item, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.sampleChip, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
-                onPress={() => submitTextExpense(item.text)}
-                activeOpacity={0.7}
-              >
-                <MaterialCommunityIcons name={item.icon} size={15} color={isDark ? colors.primary : '#2563EB'} />
-                <Text style={[styles.sampleChipText, isDark && { color: colors.textPrimary }]}>"{item.text}"</Text>
-              </TouchableOpacity>
-            ))}
+        {!loggedExpense && (
+          <View style={styles.suggestionsContainer}>
+            <Text style={[styles.suggestionsTitle, isDark && { color: colors.textSecondary }]}>💡 Quick Examples to Try:</Text>
+            <View style={styles.chipsRow}>
+              {SAMPLE_PROMPTS.map((item, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.sampleChip, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  onPress={() => submitTextExpense(item.text)}
+                  activeOpacity={0.7}
+                >
+                  <MaterialCommunityIcons name={item.icon} size={15} color={isDark ? colors.primary : '#2563EB'} />
+                  <Text style={[styles.sampleChipText, isDark && { color: colors.textPrimary }]}>"{item.text}"</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

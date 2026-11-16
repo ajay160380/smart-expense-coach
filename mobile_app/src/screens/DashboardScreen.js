@@ -1648,9 +1648,9 @@ export default function DashboardScreen({ navigation, route }) {
                 style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginBottom: 14, alignItems: 'center', paddingVertical: 16 }]}
               >
                 <Text style={{ fontSize: 22, marginBottom: 4 }}>📅</Text>
-                <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Set Aapka Daily Budget</Text>
+                <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Set Your Daily Budget</Text>
                 <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }, { textAlign: 'center', marginTop: 3, marginBottom: 10 }]}>
-                  Rozana kitna kharch karna hai jaan ne ke liye monthly budget ya income set karein.
+                  Set your monthly budget or income to unlock daily spending limits.
                 </Text>
                 <View style={{ backgroundColor: '#7C6FF7', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
                   <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Set Budget Now ⚡</Text>
