@@ -25,7 +25,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import api from '../api/config';
-import { clearAuthData } from '../utils/auth';
+import { clearAuthData, getToken } from '../utils/auth';
 import { formatApiError } from '../utils/errors';
 import { useTheme } from '../theme/ThemeContext';
 import { SHADOW } from '../utils/theme';
@@ -70,48 +70,63 @@ export default function DeleteAccountModal({
 
     setLoading(true);
     setErrorMessage('');
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e) {}
 
-    // 1. Instantly close modal and clear local auth
-    onClose();
-    await clearAuthData();
     try {
-      await AsyncStorage.clear();
-    } catch (e) {}
+      // 1. Get active token BEFORE clearing local auth
+      const token = await getToken();
 
-    Alert.alert(
-      'Account Deleted',
-      'Your account and all associated financial records have been permanently erased.'
-    );
+      // 2. Call backend deletion API with explicit token
+      await api.post(
+        '/api/auth/delete-account/',
+        {
+          confirmation: 'DELETE',
+          otp: 'DELETE',
+        },
+        {
+          headers: token ? { Authorization: `Token ${token}` } : {},
+          timeout: 15000,
+        }
+      );
 
-    // 2. Safe navigation reset to Login screen immediately
-    try {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-    } catch (navErr) {
       try {
-        navigation.getParent()?.reset({
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (e) {}
+
+      // 3. Clear local auth and all storage
+      await clearAuthData();
+      try {
+        await AsyncStorage.clear();
+      } catch (e) {}
+
+      onClose();
+
+      Alert.alert(
+        'Account Deleted',
+        'Your account and all associated data have been permanently erased from the server.'
+      );
+
+      // 4. Safe navigation reset to Login screen
+      try {
+        navigation.reset({
           index: 0,
           routes: [{ name: 'Login' }],
         });
-      } catch (e2) {}
+      } catch (navErr) {
+        try {
+          navigation.getParent()?.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        } catch (e2) {}
+      }
+    } catch (err) {
+      console.error('Delete account error:', err);
+      const errMsg = formatApiError(err, 'Failed to delete account from server. Please try again.');
+      setErrorMessage(errMsg);
+      Alert.alert('Deletion Error', errMsg);
+    } finally {
+      setLoading(false);
     }
-
-    // 3. Execute server-side permanent account deletion in background
-    api.post(
-      '/api/auth/delete-account/',
-      {
-        confirmation: 'DELETE',
-        otp: 'DELETE',
-      },
-      { timeout: 15000 }
-    ).catch((err) => {
-      console.warn('Background account delete notice:', err);
-    });
   };
 
   return (

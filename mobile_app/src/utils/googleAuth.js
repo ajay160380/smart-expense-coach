@@ -100,7 +100,10 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
 
   const handleBackendLogin = useCallback(async ({ accessToken, idToken, code, codeVerifier, redirectUri: targetUri, profile }) => {
     // Prevent duplicate concurrent requests or processing after success
-    if (loginInProgressRef.current || loginCompletedRef.current) return;
+    if (loginInProgressRef.current || loginCompletedRef.current) {
+      setLoading(false);
+      return;
+    }
     loginInProgressRef.current = true;
 
     try {
@@ -238,25 +241,31 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
       return;
     }
 
+    // Reset flags for fresh attempt
+    loginCompletedRef.current = false;
+    loginInProgressRef.current = false;
+
     // Dismiss any old lingering auth session lock
     try {
       WebBrowser.dismissAuthSession();
     } catch (_) {}
 
-    // Safety watchdog timer: maximum 15 seconds of loading state
+    // Safety watchdog timer: maximum 6 seconds of loading state
     const watchdogTimer = setTimeout(() => {
       setLoading(false);
-    }, 15000);
+      loginInProgressRef.current = false;
+    }, 6000);
 
     try {
       setLoading(true);
       if (onStartRef.current) onStartRef.current();
 
       const res = await promptAsync();
+      clearTimeout(watchdogTimer);
 
       if (!res || res.type === 'cancel' || res.type === 'dismiss' || res.type === 'locked') {
-        clearTimeout(watchdogTimer);
         setLoading(false);
+        loginInProgressRef.current = false;
         if (res?.type === 'locked') {
           try {
             WebBrowser.dismissAuthSession();
@@ -266,8 +275,8 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
       }
 
       if (res.type === 'error') {
-        clearTimeout(watchdogTimer);
         setLoading(false);
+        loginInProgressRef.current = false;
         console.warn('Google prompt error:', res.error);
         Alert.alert('Google Sign-In Failed', res.error?.message || 'Authentication cancelled or failed.');
         if (onErrorRef.current) onErrorRef.current(res.error);
@@ -275,7 +284,6 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
       }
 
       if (res.type === 'success') {
-        clearTimeout(watchdogTimer);
         lastProcessedResponseRef.current = res;
         const accessToken = res.authentication?.accessToken || res.params?.access_token;
         const idToken = res.authentication?.idToken || res.params?.id_token;
@@ -291,12 +299,17 @@ export function useGoogleAuth({ mode = 'login', onSuccess, onError, onStart, onA
           });
         } else {
           setLoading(false);
+          loginInProgressRef.current = false;
           Alert.alert('Google Sign-In Failed', 'No authentication token received from Google.');
         }
+      } else {
+        setLoading(false);
+        loginInProgressRef.current = false;
       }
     } catch (err) {
       clearTimeout(watchdogTimer);
       setLoading(false);
+      loginInProgressRef.current = false;
       console.warn('Google prompt exception:', err);
       Alert.alert('Google Sign-In Error', err.message || 'Could not open Google Sign-In.');
       if (onErrorRef.current) onErrorRef.current(err);
