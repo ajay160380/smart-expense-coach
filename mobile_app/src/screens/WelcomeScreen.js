@@ -1,10 +1,10 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — REFINED PREMIUM ONBOARDING
- * Clean, modern fintech design with seamless navigation:
- * - Full Navigation on ALL slides: Previous (← Back), Skip, Next (→)
+ * EXPENSE TRACKER — REFINED WORLD-CLASS ONBOARDING
+ * Clean, modern fintech aesthetic with seamless navigation:
+ * - Clean Top Header on all slides (Back on slides 2 & 3, Skip, X / 3)
  * - Slide 1: AI Voice Logging with 3D Mic, Receipt, Glowing Pulsing Mic, Next
- * - Slide 2: Chat on Smarter Way with High-End Feature Boxes (Live Sync, Voice & Chat, Smart Budget), Back/Next
+ * - Slide 2: Chat on Smarter Way with Interactive WhatsApp AI Coach & 3 Centered Feature Cards
  * - Slide 3: Welcome to Expense Tracker (Compact layout, Register & Login moved UP, Zero dead gap)
  * ═══════════════════════════════════════════════════════════════
  */
@@ -68,11 +68,9 @@ const UnderlineCurve = ({ color = '#2563EB', width = 110 }) => (
 const NativeMicReceiptArt = () => {
   return (
     <View style={artStyles.slide1HeroBox}>
-      {/* Background Radiating Wave Arcs */}
       <View style={artStyles.soundArcOuter} />
       <View style={artStyles.soundArcInner} />
 
-      {/* Floating 3D Receipt Paper */}
       <View style={artStyles.receiptCard}>
         <View style={artStyles.receiptRupeeCircle}>
           <Text style={artStyles.receiptRupeeText}>₹</Text>
@@ -87,7 +85,6 @@ const NativeMicReceiptArt = () => {
         </View>
       </View>
 
-      {/* 3D Capsule Royal Blue Microphone */}
       <View style={artStyles.micCapsuleWrapper}>
         <LinearGradient
           colors={['#60A5FA', '#2563EB', '#1D4ED8']}
@@ -100,7 +97,6 @@ const NativeMicReceiptArt = () => {
         <View style={artStyles.micStandBase} />
       </View>
 
-      {/* Radiating sound dashes */}
       <View style={[artStyles.soundDash, { top: 12, right: 10, transform: [{ rotate: '45deg' }] }]} />
       <View style={[artStyles.soundDash, { top: 32, right: 2, transform: [{ rotate: '15deg' }] }]} />
       <View style={[artStyles.soundDash, { bottom: 28, left: 2, transform: [{ rotate: '-35deg' }] }]} />
@@ -109,44 +105,52 @@ const NativeMicReceiptArt = () => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 2. NATIVE VECTOR ROBOT WITH HEADPHONES (Slide 2 Hero Graphic)
+// 2. NATIVE WHATSAPP AI CHAT & COACH HERO (Slide 2 Hero Graphic)
 // ═══════════════════════════════════════════════════════════════
-const NativeRobotDJArt = () => {
+const NativeWhatsAppChatHero = () => {
   return (
-    <View style={artStyles.slide2HeroBox}>
-      <View style={artStyles.robotAmbientGlow} />
-      <View style={artStyles.robotAntennaPole} />
-      <View style={artStyles.robotAntennaBall} />
-      <View style={artStyles.headphoneArc} />
+    <View style={artStyles.chatHeroContainer}>
+      {/* Background Soft Glow */}
+      <View style={artStyles.chatAmbientCircle} />
 
-      <View style={artStyles.robotHeadOuter}>
-        <View style={[artStyles.headphoneEarcup, { left: -12 }]} />
-        <View style={[artStyles.headphoneEarcup, { right: -12 }]} />
+      {/* User Outgoing Speech Bubble */}
+      <Float delay={0} duration={3200} range={-5}>
+        <View style={artStyles.waUserBubble}>
+          <Text style={artStyles.waUserBubbleText}>Spent ₹250 on coffee ☕</Text>
+          <View style={artStyles.waUserBubbleTail} />
+        </View>
+      </Float>
 
-        <View style={artStyles.robotVisor}>
-          <View style={artStyles.happyEyesRow}>
-            <View style={artStyles.happyEyeArc} />
-            <View style={artStyles.happyEyeArc} />
+      {/* AI Assistant Incoming Card */}
+      <Float delay={500} duration={3600} range={-6}>
+        <View style={artStyles.waBotCard}>
+          <View style={artStyles.waBotHeader}>
+            <View style={artStyles.waBotAvatar}>
+              <Ionicons name="sparkles" size={13} color="#10B981" />
+            </View>
+            <Text style={artStyles.waBotName}>AI Expense Coach</Text>
+            <View style={artStyles.waLiveDot} />
           </View>
-          <View style={artStyles.happySmileArc} />
+
+          <Text style={artStyles.waBotText}>Added ₹250 to Food & Dining!</Text>
+
+          {/* Mini Budget Bar */}
+          <View style={artStyles.waBudgetBox}>
+            <View style={artStyles.waBudgetLabels}>
+              <Text style={artStyles.waBudgetTitle}>Food Budget:</Text>
+              <Text style={artStyles.waBudgetAmt}>₹1,250 left</Text>
+            </View>
+            <View style={artStyles.waProgressBarBg}>
+              <View style={artStyles.waProgressBarFill} />
+            </View>
+          </View>
         </View>
-      </View>
+      </Float>
 
-      <View style={artStyles.robotTorso}>
-        <View style={artStyles.torsoBarRow}>
-          <View style={[artStyles.torsoBar, { height: 7, backgroundColor: '#10B981' }]} />
-          <View style={[artStyles.torsoBar, { height: 12, backgroundColor: '#10B981' }]} />
-          <View style={[artStyles.torsoBar, { height: 9, backgroundColor: '#34D399' }]} />
-        </View>
+      {/* Floating 3D WhatsApp Badge */}
+      <View style={artStyles.waFloatingBadge}>
+        <Ionicons name="logo-whatsapp" size={26} color="#FFFFFF" />
       </View>
-
-      <View style={artStyles.thumbsUpBadge}>
-        <Ionicons name="thumbs-up" size={17} color="#10B981" />
-      </View>
-
-      <View style={[artStyles.greenDash, { top: 6, left: 16, transform: [{ rotate: '-30deg' }] }]} />
-      <View style={[artStyles.greenDash, { top: 0, left: 34 }]} />
-      <View style={[artStyles.greenDash, { top: 6, left: 52, transform: [{ rotate: '30deg' }] }]} />
     </View>
   );
 };
@@ -371,7 +375,7 @@ export default function WelcomeScreen({ navigation, route }) {
   );
 
   // ═══════════════════════════════════════════════════════════════
-  // SLIDE 2: CHAT ON SMARTER WAY (Full Navigation + Enhanced Cards)
+  // SLIDE 2: CHAT ON SMARTER WAY (Clean Top, AI WhatsApp Hero, 3 Balanced Cards)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide2 = () => (
     <LinearGradient colors={['#F0FDF4', '#F8FAFC', '#FFFFFF']} style={styles.slide}>
@@ -379,7 +383,7 @@ export default function WelcomeScreen({ navigation, route }) {
       <View style={[styles.bgBlob, { bottom: 100, left: -60, width: 250, height: 250, backgroundColor: '#E8FBF0', opacity: 0.8 }]} />
 
       <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
-        {/* Top Header Row with Previous (← Back), Logo, Rupee, Skip, 2/3 */}
+        {/* Top Header Row with Previous (← Back), Skip, 2/3 */}
         <View style={styles.topHeaderRow}>
           <TouchableOpacity
             activeOpacity={0.75}
@@ -389,15 +393,6 @@ export default function WelcomeScreen({ navigation, route }) {
           >
             <Ionicons name="chevron-back" size={20} color="#0F172A" />
           </TouchableOpacity>
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={styles.slide2LogoBox}>
-              <Ionicons name="trending-up" size={20} color="#10B981" />
-            </View>
-            <View style={styles.slide2RupeeBubble}>
-              <Text style={styles.slide2RupeeText}>₹</Text>
-            </View>
-          </View>
 
           <View style={styles.topRightControls}>
             <TouchableOpacity onPress={skipToEnd} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -409,7 +404,7 @@ export default function WelcomeScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Hero Row: Left Title & Right Mascot */}
+        {/* Hero Row: Left Title & Right WhatsApp AI Coach Showcase */}
         <View style={styles.heroRow}>
           <View style={styles.titleColumn}>
             <Text style={styles.heroTitleSmall}>Welcome to</Text>
@@ -419,9 +414,7 @@ export default function WelcomeScreen({ navigation, route }) {
             <Text style={styles.heroTitleMain}>Way</Text>
           </View>
 
-          <Float delay={150} duration={3200} range={-6}>
-            <NativeRobotDJArt />
-          </Float>
+          <NativeWhatsAppChatHero />
         </View>
 
         {/* Subtitle */}
@@ -429,62 +422,56 @@ export default function WelcomeScreen({ navigation, route }) {
           Send a quick text or voice note and keep your budgets updated.
         </Text>
 
-        {/* 3 Enhanced Fintech Feature Cards with Micro-Badges & Crisp Copy */}
+        {/* 3 Perfectly Balanced Feature Cards */}
         <View style={styles.featureCardsRow}>
           {/* Card 1: Real-time Sync */}
           <LinearGradient
             colors={['#FFFFFF', '#F0FDF4']}
             style={styles.featureCardEnhanced}
           >
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.featureIconWrap}>
-                <Ionicons name="stats-chart" size={20} color="#059669" />
-              </View>
-              <View style={styles.microBadgePill}>
-                <Text style={styles.microBadgeText}>● LIVE</Text>
-              </View>
+            <View style={styles.featureIconWrap}>
+              <Ionicons name="stats-chart" size={22} color="#059669" />
             </View>
-            <Text style={styles.featureCardTitle}>Real-time Sync</Text>
-            <Text style={styles.featureCardSub}>Auto-tracks spends instantly</Text>
+            <Text style={styles.featureCardTitle}>Track Expenses</Text>
+            <Text style={styles.featureCardSub}>in Real-time</Text>
+            <View style={styles.cardBottomPill}>
+              <Text style={styles.cardBottomPillText}>Live Sync</Text>
+            </View>
           </LinearGradient>
 
-          {/* Card 2: Voice & Chat */}
+          {/* Card 2: Voice & Text */}
           <LinearGradient
             colors={['#FFFFFF', '#F0FDF4']}
             style={styles.featureCardEnhanced}
           >
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.featureIconWrap}>
-                <Ionicons name="chatbubbles" size={20} color="#059669" />
-              </View>
-              <View style={[styles.microBadgePill, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
-                <Text style={[styles.microBadgeText, { color: '#0284C7' }]}>● 24/7 AI</Text>
-              </View>
+            <View style={styles.featureIconWrap}>
+              <Ionicons name="mic" size={22} color="#059669" />
             </View>
-            <Text style={styles.featureCardTitle}>Voice & Chat</Text>
-            <Text style={styles.featureCardSub}>Hindi, English & Hinglish</Text>
+            <Text style={styles.featureCardTitle}>Voice & Text</Text>
+            <Text style={styles.featureCardSub}>Both Work</Text>
+            <View style={[styles.cardBottomPill, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
+              <Text style={[styles.cardBottomPillText, { color: '#0284C7' }]}>AI Powered</Text>
+            </View>
           </LinearGradient>
 
-          {/* Card 3: Smart Budget */}
+          {/* Card 3: Smart Insights */}
           <LinearGradient
             colors={['#FFFFFF', '#F0FDF4']}
             style={styles.featureCardEnhanced}
           >
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.featureIconWrap}>
-                <Ionicons name="shield-checkmark" size={20} color="#059669" />
-              </View>
-              <View style={[styles.microBadgePill, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
-                <Text style={[styles.microBadgeText, { color: '#D97706' }]}>● SAFE</Text>
-              </View>
+            <View style={styles.featureIconWrap}>
+              <Ionicons name="shield-checkmark" size={22} color="#059669" />
             </View>
-            <Text style={styles.featureCardTitle}>Smart Budget</Text>
-            <Text style={styles.featureCardSub}>Daily pace & alerts</Text>
+            <Text style={styles.featureCardTitle}>Smart Insights</Text>
+            <Text style={styles.featureCardSub}>Better Planning</Text>
+            <View style={[styles.cardBottomPill, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+              <Text style={[styles.cardBottomPillText, { color: '#D97706' }]}>100% Private</Text>
+            </View>
           </LinearGradient>
         </View>
 
-        {/* Primary Action: Get Started Button */}
-        <View style={styles.slide2ActionSection}>
+        {/* Primary Action Section: Sleek Get Started Pill + Dots */}
+        <View style={styles.slide2BottomActionBox}>
           <TouchableOpacity
             activeOpacity={0.88}
             onPress={scrollToNext}
@@ -500,47 +487,20 @@ export default function WelcomeScreen({ navigation, route }) {
               <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
             </LinearGradient>
           </TouchableOpacity>
-        </View>
 
-        {/* Bottom Footer Row with Previous, Dots, Next */}
-        <View style={styles.bottomFooterRow}>
-          <TouchableOpacity
-            onPress={scrollToPrevious}
-            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-            style={styles.skipBtnWrap}
-          >
-            <Text style={[styles.footerSkipText, { color: '#059669' }]}>← Previous</Text>
-          </TouchableOpacity>
-
-          <View style={styles.dotsRow}>
+          {/* Centered Pagination Dots */}
+          <View style={styles.dotsRowCenter}>
             <View style={styles.dotCircleInactive} />
             <View style={[styles.dotPillActive, { backgroundColor: '#10B981' }]} />
             <View style={styles.dotCircleInactive} />
           </View>
-
-          <TouchableOpacity
-            activeOpacity={0.88}
-            onPress={scrollToNext}
-            style={[styles.nextBtnShadow, { shadowColor: '#10B981' }]}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <LinearGradient
-              colors={['#10B981', '#059669']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.nextPillBtnGradient}
-            >
-              <Text style={styles.nextPillBtnText}>Next</Text>
-              <Ionicons name="arrow-forward" size={17} color="#FFFFFF" style={{ marginLeft: 6 }} />
-            </LinearGradient>
-          </TouchableOpacity>
         </View>
       </View>
     </LinearGradient>
   );
 
   // ═══════════════════════════════════════════════════════════════
-  // SLIDE 3: WELCOME TO EXPENSE TRACKER (Compact Layout, Register/Login Moved UP)
+  // SLIDE 3: WELCOME TO EXPENSE TRACKER (Compact, Register/Login UP)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide3 = () => (
     <LinearGradient colors={['#F3F7FF', '#FFFFFF']} style={styles.slide}>
@@ -608,7 +568,7 @@ export default function WelcomeScreen({ navigation, route }) {
               : "Start tracking effortlessly, stay on pace with your daily budget, and boost your savings today!"}
           </Text>
 
-          {/* Action Buttons (Moved UP immediately below subtitle with clean margin) */}
+          {/* Action Buttons (Shifted UP, 16px from subtitle) */}
           <View style={styles.slide3CompactActionSection}>
             {isTourMode ? (
               <TouchableOpacity
@@ -833,161 +793,148 @@ const artStyles = StyleSheet.create({
     borderRadius: 1,
   },
 
-  // ── Slide 2: Native Robot DJ Mascot ──
-  slide2HeroBox: {
-    width: 140,
-    height: 145,
+  // ── Slide 2: Interactive WhatsApp AI Chat Hero ──
+  chatHeroContainer: {
+    width: 160,
+    height: 155,
+    position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
-  robotAmbientGlow: {
+  chatAmbientCircle: {
     position: 'absolute',
-    width: 105,
-    height: 105,
-    borderRadius: 52,
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
   },
-  robotAntennaPole: {
+  waUserBubble: {
     position: 'absolute',
     top: 6,
-    width: 3,
-    height: 12,
-    backgroundColor: '#10B981',
-    borderRadius: 1.5,
-  },
-  robotAntennaBall: {
-    position: 'absolute',
-    top: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#34D399',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headphoneArc: {
-    position: 'absolute',
-    top: 14,
-    width: 80,
-    height: 38,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    borderWidth: 4,
-    borderColor: '#10B981',
-    borderBottomWidth: 0,
-  },
-  robotHeadOuter: {
-    width: 76,
-    height: 60,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    right: 4,
+    backgroundColor: '#2563EB',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderBottomRightRadius: 2,
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
-    position: 'relative',
-    marginTop: 10,
+    transform: [{ rotate: '2deg' }],
   },
-  headphoneEarcup: {
+  waUserBubbleText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  waUserBubbleTail: {
     position: 'absolute',
-    top: 12,
-    width: 14,
-    height: 28,
-    borderRadius: 7,
-    backgroundColor: '#10B981',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    bottom: 0,
+    right: -4,
+    width: 8,
+    height: 8,
+    backgroundColor: '#2563EB',
+    borderBottomLeftRadius: 6,
   },
-  robotVisor: {
-    width: 52,
-    height: 36,
-    borderRadius: 13,
-    backgroundColor: '#0F172A',
+  waBotCard: {
+    position: 'absolute',
+    bottom: 12,
+    left: 4,
+    width: 148,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderBottomLeftRadius: 2,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    transform: [{ rotate: '-1.5deg' }],
+  },
+  waBotHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  waBotAvatar: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#ECFDF5',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 4,
   },
-  happyEyesRow: {
+  waBotName: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  waLiveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#10B981',
+    marginLeft: 'auto',
+  },
+  waBotText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 5,
+  },
+  waBudgetBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    padding: 5,
+  },
+  waBudgetLabels: {
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-between',
     marginBottom: 3,
   },
-  happyEyeArc: {
-    width: 10,
-    height: 5,
-    borderTopLeftRadius: 5,
-    borderTopRightRadius: 5,
-    borderWidth: 2,
-    borderColor: '#34D399',
-    borderBottomWidth: 0,
+  waBudgetTitle: {
+    fontSize: 8.5,
+    color: '#64748B',
   },
-  happySmileArc: {
-    width: 12,
-    height: 5,
-    borderBottomLeftRadius: 6,
-    borderBottomRightRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#34D399',
-    borderTopWidth: 0,
+  waBudgetAmt: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#10B981',
   },
-  robotTorso: {
-    width: 56,
-    height: 22,
-    backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderTopWidth: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -2,
+  waProgressBarBg: {
+    width: '100%',
+    height: 3.5,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+    overflow: 'hidden',
   },
-  torsoBarRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 3,
-  },
-  torsoBar: {
-    width: 4,
+  waProgressBarFill: {
+    width: '75%',
+    height: '100%',
+    backgroundColor: '#10B981',
     borderRadius: 2,
   },
-  thumbsUpBadge: {
+  waFloatingBadge: {
     position: 'absolute',
-    right: 8,
-    bottom: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#ECFDF5',
-    borderWidth: 1.5,
-    borderColor: '#A7F3D0',
+    top: 48,
+    right: 2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#25D366',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  greenDash: {
-    position: 'absolute',
-    width: 8,
-    height: 2.5,
-    backgroundColor: '#10B981',
-    borderRadius: 1,
+    shadowColor: '#25D366',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });
 
@@ -1025,9 +972,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backCircleBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1265,46 +1212,16 @@ const styles = StyleSheet.create({
     color: '#1E40AF',
   },
 
-  // ── Slide 2 Artwork & Elements ──
-  slide2LogoBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  slide2RupeeBubble: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#DCFCE7',
-    borderWidth: 1,
-    borderColor: '#86EFAC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  slide2RupeeText: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#059669',
-  },
+  // ── Slide 2 Styling ──
   slideSubtitleGreen: {
     fontSize: 13,
     color: '#334155',
     lineHeight: 18.5,
-    marginTop: 2,
-    marginBottom: 6,
+    marginTop: 4,
+    marginBottom: 8,
   },
 
-  // ── Slide 2 Enhanced Feature Cards ──
+  // ── Slide 2 Enhanced 3 Feature Cards ──
   featureCardsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1314,7 +1231,7 @@ const styles = StyleSheet.create({
   featureCardEnhanced: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: '#A7F3D0',
@@ -1323,51 +1240,49 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
   featureIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: '#DCFCE7',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#ECFDF5',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  microBadgePill: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-  },
-  microBadgeText: {
-    fontSize: 8.5,
-    fontWeight: '800',
-    color: '#059669',
-    letterSpacing: 0.3,
+    marginBottom: 8,
   },
   featureCardTitle: {
     fontSize: 12,
     fontWeight: '800',
     color: '#064E3B',
     lineHeight: 15,
+    textAlign: 'center',
     marginBottom: 2,
   },
   featureCardSub: {
-    fontSize: 9.5,
+    fontSize: 10,
     color: '#059669',
     lineHeight: 13,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  cardBottomPill: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 6,
+    paddingVertical: 2.5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  cardBottomPillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#059669',
   },
 
-  slide2ActionSection: {
+  slide2BottomActionBox: {
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 6,
   },
   getStartedBtnShadow: {
     width: '100%',
@@ -1376,17 +1291,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.32,
     shadowRadius: 14,
     elevation: 7,
+    marginBottom: 10,
   },
   getStartedBtnGradient: {
-    height: 48,
-    borderRadius: 24,
+    height: 52,
+    borderRadius: 26,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
   },
   getStartedBtnText: {
-    fontSize: 16,
+    fontSize: 16.5,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -1399,9 +1315,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   slide3ShieldFrameOuter: {
-    width: 156,
-    height: 156,
-    borderRadius: 78,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1411,12 +1327,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 18,
     elevation: 6,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   slide3ShieldFrameInner: {
-    width: 124,
-    height: 124,
-    borderRadius: 62,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1427,8 +1343,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   slide3OfficialLogoImg: {
-    width: 96,
-    height: 96,
+    width: 92,
+    height: 92,
     borderRadius: 20,
   },
   shieldBadgeCompanion: {
