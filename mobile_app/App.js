@@ -635,10 +635,24 @@ export default function App() {
 
     setUnauthorizedHandler(() => {
       setIsAuthenticated(false);
+      try {
+        navigationRef.current?.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      } catch (e) {}
     });
 
     const authListener = DeviceEventEmitter.addListener('AUTH_STATE_CHANGED', (isAuth) => {
       setIsAuthenticated(!!isAuth);
+      if (!isAuth) {
+        try {
+          navigationRef.current?.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        } catch (e) {}
+      }
     });
 
     return () => {

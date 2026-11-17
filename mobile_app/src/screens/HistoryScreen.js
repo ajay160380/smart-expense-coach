@@ -56,7 +56,11 @@ export default function HistoryScreen({ navigation }) {
     { key: 'other', label: 'Other' },
   ];
 
+  const isFetchingHistoryRef = useRef(false);
+
   const fetchHistory = useCallback(async () => {
+    if (isFetchingHistoryRef.current) return;
+    isFetchingHistoryRef.current = true;
     const month = currentDate.getMonth() + 1;
     const year = currentDate.getFullYear();
     const cacheKey = `history_cache_${year}_${month}`;
@@ -77,6 +81,7 @@ export default function HistoryScreen({ navigation }) {
       console.error(error);
       Alert.alert('Error', 'Failed to fetch transaction history');
     } finally {
+      isFetchingHistoryRef.current = false;
       setLoading(false);
     }
   }, [currentDate]);

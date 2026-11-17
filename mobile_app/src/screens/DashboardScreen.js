@@ -228,7 +228,6 @@ export default function DashboardScreen({ navigation, route }) {
 
   useFocusEffect(
     useCallback(() => {
-      fetchDashboardData(false);
       if (hasRevealedRef.current) {
         runEntranceAnimation();
       } else {
@@ -238,7 +237,7 @@ export default function DashboardScreen({ navigation, route }) {
         animDockOpacity.setValue(0);
         animListsOpacity.setValue(0);
       }
-    }, [runEntranceAnimation, fetchDashboardData])
+    }, [runEntranceAnimation])
   );
 
   // ── Quick Action Dock Customizable State (1-8 items) ──
@@ -545,7 +544,15 @@ export default function DashboardScreen({ navigation, route }) {
     );
   };
 
+  const isFetchingDashboardRef = useRef(false);
+  const lastFetchDashboardTimeRef = useRef(0);
+
   const fetchDashboardData = async (isInitial = false) => {
+    const now = Date.now();
+    if (isFetchingDashboardRef.current) return;
+    if (!isInitial && now - lastFetchDashboardTimeRef.current < 2500) return;
+    isFetchingDashboardRef.current = true;
+    lastFetchDashboardTimeRef.current = now;
     try {
       // ── 1. LOAD CACHED DATA IMMEDIATELY (Only on cold start initial render) ──
       if (isInitial) {
@@ -712,6 +719,7 @@ export default function DashboardScreen({ navigation, route }) {
         navigation.replace('Login');
       }
     } finally {
+      isFetchingDashboardRef.current = false;
       setLoading(false);
       setRefreshing(false);
     }

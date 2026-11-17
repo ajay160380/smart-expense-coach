@@ -105,13 +105,14 @@ api.interceptors.response.use(
     }
     notifyServerWarming(false);
 
-    // ── Auto-retry on transient network / timeout failure (up to 2 retries) ──
-    if (config && (!error.response || error.code === 'ECONNABORTED')) {
+    // ── Safe single retry on transient GET request timeout only ──
+    const isGet = (config?.method || 'get').toLowerCase() === 'get';
+    if (config && isGet && (!error.response || error.code === 'ECONNABORTED')) {
       config.__retryCount = config.__retryCount || 0;
-      if (config.__retryCount < 2) {
+      if (config.__retryCount < 1) {
         config.__retryCount += 1;
-        console.warn(`[Network Retry ${config.__retryCount}/2] Retrying ${config.url}...`);
-        await new Promise((resolve) => setTimeout(resolve, 1200 * config.__retryCount));
+        console.warn(`[Network Retry ${config.__retryCount}/1] Retrying ${config.url}...`);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         return api(config);
       }
     }
