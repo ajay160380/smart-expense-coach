@@ -1153,8 +1153,8 @@ export default function DashboardScreen({ navigation, route }) {
                   style={styles.waModernActionGradient}
                 >
                   <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                  <Text style={styles.waModernActionText} numberOfLines={1}>
-                    {waFormattedPhone ? `1-Tap Link WhatsApp (${waFormattedPhone})` : 'Connect WhatsApp Bot'}
+                  <Text style={styles.waModernActionText} numberOfLines={1} ellipsizeMode="tail">
+                    {waFormattedPhone ? `Link WhatsApp (${waFormattedPhone})` : 'Connect WhatsApp Bot'}
                   </Text>
                   <Ionicons name="arrow-forward" size={15} color="#FFFFFF" style={{ marginLeft: 6 }} />
                 </LinearGradient>
@@ -4827,6 +4827,9 @@ const styles = StyleSheet.create({
   },
   // ── Modern WhatsApp Card ──
   waModernCard: {
+    width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'stretch',
     borderRadius: 22,
     padding: 16,
     marginBottom: 16,
@@ -4835,6 +4838,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 3,
+    overflow: 'hidden',
   },
   waModernCardLight: {
     backgroundColor: '#FFFFFF',
@@ -4899,21 +4903,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   waModernActionTouch: {
+    width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'stretch',
     borderRadius: 14,
     overflow: 'hidden',
   },
   waModernActionGradient: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   waModernActionText: {
     color: '#FFFFFF',
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
+    flexShrink: 1,
+    textAlign: 'center',
   },
 
   // ── Modern Widget Cards ──
