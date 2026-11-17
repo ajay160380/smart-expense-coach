@@ -1086,67 +1086,63 @@ export default function DashboardScreen({ navigation, route }) {
 
           {/* ── WHATSAPP BOT PROMO / LINK BANNER (FOR NEW / UNLINKED USERS) ── */}
           {(!stats?.whatsapp_linked && !userProfile?.whatsapp_linked && !dismissWhatsAppBanner) && (
-            <Animated.View style={[styles.waPromoCard, { opacity: animGreetingOpacity }]}>
-              <LinearGradient
-                colors={isDark ? ['#064E3B', '#022C22'] : ['#065F46', '#047857']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.waPromoGradient}
-              >
-                {/* Top Row: Icon, Title & Close Button */}
-                <View style={styles.waPromoHeaderRow}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-                    <View style={styles.waPromoIconBox}>
-                      <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
-                    </View>
-                    <View style={{ marginLeft: 10, flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <Text style={styles.waPromoTitle}>Link WhatsApp Bot</Text>
-                        <View style={styles.waPromoBadge}>
-                          <Text style={styles.waPromoBadgeText}>⚡ 10X FASTER</Text>
-                        </View>
-                      </View>
+            <Animated.View style={[
+              styles.waModernCard, 
+              isDark ? styles.waModernCardDark : styles.waModernCardLight,
+              { opacity: animGreetingOpacity }
+            ]}>
+              {/* Header row: Icon, Title, Badge & Dismiss Button */}
+              <View style={styles.waModernHeader}>
+                <View style={[styles.waModernIconCircle, isDark && { backgroundColor: 'rgba(37, 211, 102, 0.12)', borderColor: 'rgba(37, 211, 102, 0.3)' }]}>
+                  <Ionicons name="logo-whatsapp" size={24} color="#10B981" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12, marginRight: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <Text style={[styles.waModernTitle, isDark && { color: '#F8FAFC' }]}>
+                      WhatsApp Smart Logger
+                    </Text>
+                    <View style={[styles.waModernSpeedBadge, isDark && { backgroundColor: 'rgba(37, 211, 102, 0.15)', borderColor: 'rgba(37, 211, 102, 0.3)' }]}>
+                      <Ionicons name="flash" size={10} color="#059669" />
+                      <Text style={[styles.waModernSpeedText, isDark && { color: '#34D399' }]}>10X FASTER</Text>
                     </View>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setDismissWhatsAppBanner(true);
-                      AsyncStorage.setItem('dismiss_wa_banner', 'true');
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    style={styles.waPromoCloseBtn}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="close" size={16} color="rgba(255,255,255,0.75)" />
-                  </TouchableOpacity>
+                  <Text style={[styles.waModernSubtitle, isDark && { color: '#94A3B8' }]}>
+                    Send &quot;₹150 Chai&quot; or voice notes on WhatsApp to log expenses automatically!
+                  </Text>
                 </View>
-
-                {/* Subtitle */}
-                <Text style={styles.waPromoSubtitle}>
-                  Send &quot;₹150 Chai&quot; or voice notes on WhatsApp to log expenses automatically!
-                </Text>
-
-                {/* Modern CTA Button */}
                 <TouchableOpacity
-                  onPress={openWhatsApp}
-                  style={styles.waPromoActionBtn}
-                  activeOpacity={0.85}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setDismissWhatsAppBanner(true);
+                    AsyncStorage.setItem('dismiss_wa_banner', 'true');
+                  }}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  style={[styles.waModernCloseBtn, isDark && { backgroundColor: 'rgba(255,255,255,0.08)' }]}
+                  activeOpacity={0.7}
                 >
-                  <LinearGradient
-                    colors={['#10B981', '#059669']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.waPromoBtnGradient}
-                  >
-                    <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                    <Text style={styles.waPromoActionBtnText} numberOfLines={1}>
-                      {waFormattedPhone ? `1-Tap Link WhatsApp (${waFormattedPhone})` : 'Connect WhatsApp Bot'}
-                    </Text>
-                    <Ionicons name="arrow-forward" size={15} color="#FFFFFF" style={{ marginLeft: 6 }} />
-                  </LinearGradient>
+                  <Ionicons name="close" size={16} color={isDark ? '#94A3B8' : '#64748B'} />
                 </TouchableOpacity>
-              </LinearGradient>
+              </View>
+
+              {/* Action Button */}
+              <TouchableOpacity
+                onPress={openWhatsApp}
+                activeOpacity={0.88}
+                style={styles.waModernActionTouch}
+              >
+                <LinearGradient
+                  colors={['#10B981', '#059669']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.waModernActionGradient}
+                >
+                  <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                  <Text style={styles.waModernActionText} numberOfLines={1}>
+                    {waFormattedPhone ? `1-Tap Link WhatsApp (${waFormattedPhone})` : 'Connect WhatsApp Bot'}
+                  </Text>
+                  <Ionicons name="arrow-forward" size={15} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                </LinearGradient>
+              </TouchableOpacity>
             </Animated.View>
           )}
 
@@ -1593,13 +1589,13 @@ export default function DashboardScreen({ navigation, route }) {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   navigation.navigate('MoneyBreakdown');
                 }}
-                style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginBottom: 14 }]}
+                style={[styles.widgetCardModern, isDark && styles.widgetCardModernDark, { marginBottom: 12 }]}
               >
                 {/* Header */}
                 <View style={styles.widgetHeaderRow}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(124, 111, 247, 0.2)' : 'rgba(124, 111, 247, 0.12)' }]}>
-                      <Text style={{ fontSize: 18 }}>📅</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <View style={[styles.modernWidgetIcon, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF' }]}>
+                      <Ionicons name="calendar-outline" size={18} color="#2563EB" />
                     </View>
                     <View>
                       <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Daily Budget</Text>
@@ -1609,7 +1605,7 @@ export default function DashboardScreen({ navigation, route }) {
                     </View>
                   </View>
                   <View style={[styles.widgetStatusBadge, { 
-                    backgroundColor: stats.daily_budget.status === 'ok' ? 'rgba(16, 185, 129, 0.15)' : (stats.daily_budget.status === 'warning' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)')
+                    backgroundColor: stats.daily_budget.status === 'ok' ? 'rgba(16, 185, 129, 0.12)' : (stats.daily_budget.status === 'warning' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)')
                   }]}>
                     <Text style={[styles.widgetStatusText, { 
                       color: stats.daily_budget.status === 'ok' ? '#10B981' : (stats.daily_budget.status === 'warning' ? '#F59E0B' : '#EF4444')
@@ -1620,13 +1616,13 @@ export default function DashboardScreen({ navigation, route }) {
                 </View>
 
                 {/* Big Remaining Amount */}
-                <View style={{ marginTop: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <View>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    <Text style={{ fontSize: 10.5, fontWeight: '700', color: isDark ? colors.textSecondary : '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                       Remaining Today
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 2 }}>
-                      <Text style={{ fontSize: 28, fontWeight: '900', color: stats.daily_budget.today_remaining >= 0 ? '#10B981' : '#EF4444' }}>
+                      <Text style={{ fontSize: 30, fontWeight: '900', color: stats.daily_budget.today_remaining >= 0 ? '#10B981' : '#EF4444', letterSpacing: -0.5 }}>
                         ₹{Math.abs(Math.round(stats.daily_budget.today_remaining)).toLocaleString('en-IN')}
                       </Text>
                       {stats.daily_budget.today_remaining < 0 && (
@@ -1636,43 +1632,52 @@ export default function DashboardScreen({ navigation, route }) {
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={{ fontSize: 12, color: isDark ? colors.textSecondary : '#64748B' }}>
-                      Daily Budget: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>₹{Math.round(stats.daily_budget.daily_budget).toLocaleString('en-IN')}</Text>
+                      Target: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>₹{Math.round(stats.daily_budget.daily_budget).toLocaleString('en-IN')}</Text>
                     </Text>
                     <Text style={{ fontSize: 12, color: isDark ? colors.textSecondary : '#64748B', marginTop: 2 }}>
-                      Spent Today: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>₹{Math.round(stats.daily_budget.spent_today).toLocaleString('en-IN')}</Text> ({stats.daily_budget.percent_used}%)
+                      Spent: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>₹{Math.round(stats.daily_budget.spent_today).toLocaleString('en-IN')}</Text> ({Math.round(stats.daily_budget.percent_used)}%)
                     </Text>
                   </View>
                 </View>
 
-                {/* Progress Bar */}
-                <View style={{ height: 8, backgroundColor: isDark ? colors.bgElevated : '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginTop: 10 }}>
+                {/* Sleek Progress Bar */}
+                <View style={{ height: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', borderRadius: 3, overflow: 'hidden', marginTop: 10 }}>
                   <View style={{ 
                     height: '100%', 
-                    width: `${Math.min(100, Math.max(3, stats.daily_budget.percent_used))}%`, 
+                    width: `${Math.min(100, Math.max(3, Math.round(stats.daily_budget.percent_used)))}%`, 
                     backgroundColor: stats.daily_budget.status === 'ok' ? '#10B981' : (stats.daily_budget.status === 'warning' ? '#F59E0B' : '#EF4444'),
-                    borderRadius: 4
+                    borderRadius: 3
                   }} />
                 </View>
 
                 {/* Today's Transactions Mini List */}
                 {stats.daily_budget.today_transactions && stats.daily_budget.today_transactions.length > 0 && (
-                  <View style={{ marginTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? colors.border : '#E2E8F0', paddingTop: 8 }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, marginBottom: 6, textTransform: 'uppercase' }}>
-                      Today's Spends ({stats.daily_budget.today_transactions.length})
-                    </Text>
-                    {stats.daily_budget.today_transactions.slice(0, 3).map((tx, idx) => (
-                      <View key={tx.id || idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 3 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, marginRight: 8 }}>
-                          <Text style={{ fontSize: 13 }}>{tx.icon || '💸'}</Text>
-                          <Text style={{ fontSize: 13, color: isDark ? colors.textPrimary : '#0F172A', fontWeight: '500' }} numberOfLines={1}>
+                  <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : '#F8FAFC' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ fontSize: 10.5, fontWeight: '700', color: isDark ? colors.textSecondary : '#94A3B8', textTransform: 'uppercase' }}>
+                        Today's Spends ({stats.daily_budget.today_transactions.length})
+                      </Text>
+                      <Ionicons name="chevron-forward" size={13} color={isDark ? colors.textSecondary : '#94A3B8'} />
+                    </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                      {stats.daily_budget.today_transactions.slice(0, 3).map((tx, idx) => (
+                        <View 
+                          key={tx.id || idx} 
+                          style={[
+                            styles.todaySpendPill, 
+                            isDark && { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
+                          ]}
+                        >
+                          <Text style={{ fontSize: 12 }}>{tx.icon || '💸'}</Text>
+                          <Text style={[styles.todaySpendPillText, isDark && { color: colors.textPrimary }]} numberOfLines={1}>
                             {tx.description || tx.category}
                           </Text>
+                          <Text style={styles.todaySpendPillAmount}>
+                            -₹{Math.round(tx.amount).toLocaleString('en-IN')}
+                          </Text>
                         </View>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>
-                          -₹{Math.round(tx.amount).toLocaleString('en-IN')}
-                        </Text>
-                      </View>
-                    ))}
+                      ))}
+                    </View>
                   </View>
                 )}
               </TouchableOpacity>
@@ -1683,7 +1688,7 @@ export default function DashboardScreen({ navigation, route }) {
                   setNewBudget(budget.toString());
                   setBudgetModalVisible(true);
                 }}
-                style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }, { marginBottom: 14, alignItems: 'center', paddingVertical: 16 }]}
+                style={[styles.widgetCardModern, isDark && styles.widgetCardModernDark, { marginBottom: 12, alignItems: 'center', paddingVertical: 16 }]}
               >
                 <Text style={{ fontSize: 22, marginBottom: 4 }}>📅</Text>
                 <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Set Your Daily Budget</Text>
@@ -1703,12 +1708,12 @@ export default function DashboardScreen({ navigation, route }) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 navigation.navigate('Analytics');
               }}
-              style={[styles.widgetCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}
+              style={[styles.widgetCardModern, isDark && styles.widgetCardModernDark]}
             >
               {/* Header */}
               <View style={styles.widgetHeaderRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <View style={[styles.widgetIconSquare, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.18)' : '#FEF3C7' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={[styles.modernWidgetIcon, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7' }]}>
                     <Ionicons name="speedometer-outline" size={18} color="#F59E0B" />
                   </View>
                   <View>
@@ -1722,53 +1727,52 @@ export default function DashboardScreen({ navigation, route }) {
               </View>
 
               {/* Metric Comparison Numbers */}
-              <View style={[styles.velocityMetricsRow, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
-                <View style={styles.velocityMetricCol}>
-                  <Text style={[styles.velocityMetricCaption, isDark && { color: colors.textSecondary }]}>ACTUAL BURN</Text>
-                  <Text style={[styles.velocityMetricValue, isDark && { color: colors.textPrimary }]}>
-                    ₹{avgPerDayVal.toLocaleString('en-IN')}<Text style={styles.velocityMetricUnit}>/d</Text>
+              <View style={[styles.modernMetricsRow, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+                <View style={styles.modernMetricCol}>
+                  <Text style={[styles.modernMetricCaption, isDark && { color: colors.textSecondary }]}>ACTUAL BURN</Text>
+                  <Text style={[styles.modernMetricValue, isDark && { color: colors.textPrimary }]}>
+                    ₹{avgPerDayVal.toLocaleString('en-IN')}<Text style={styles.modernMetricUnit}>/d</Text>
                   </Text>
                 </View>
-                <View style={[styles.velocityMetricDivider, isDark && { backgroundColor: colors.border }]} />
-                <View style={styles.velocityMetricCol}>
-                  <Text style={[styles.velocityMetricCaption, isDark && { color: colors.textSecondary }]}>SAFE CEILING</Text>
-                  <Text style={[styles.velocityMetricValue, { color: '#10B981' }]}>
-                    ₹{Math.max(0, safeDailyVal).toLocaleString('en-IN')}<Text style={styles.velocityMetricUnit}>/d</Text>
+                <View style={[styles.modernMetricDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+                <View style={styles.modernMetricCol}>
+                  <Text style={[styles.modernMetricCaption, isDark && { color: colors.textSecondary }]}>SAFE CEILING</Text>
+                  <Text style={[styles.modernMetricValue, { color: '#10B981' }]}>
+                    ₹{Math.max(0, safeDailyVal).toLocaleString('en-IN')}<Text style={styles.modernMetricUnit}>/d</Text>
                   </Text>
                 </View>
-                <View style={[styles.velocityMetricDivider, isDark && { backgroundColor: colors.border }]} />
-                <View style={styles.velocityMetricCol}>
-                  <Text style={[styles.velocityMetricCaption, isDark && { color: colors.textSecondary }]}>LEFT TODAY</Text>
-                  <Text style={[styles.velocityMetricValue, { color: remainingTodayVal > 0 ? (isDark ? '#3B82F6' : '#2563EB') : '#EF4444' }]}>
+                <View style={[styles.modernMetricDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+                <View style={styles.modernMetricCol}>
+                  <Text style={[styles.modernMetricCaption, isDark && { color: colors.textSecondary }]}>LEFT TODAY</Text>
+                  <Text style={[styles.modernMetricValue, { color: remainingTodayVal > 0 ? (isDark ? '#60A5FA' : '#2563EB') : '#EF4444' }]}>
                     ₹{Math.max(0, remainingTodayVal).toLocaleString('en-IN')}
                   </Text>
                 </View>
               </View>
 
-              {/* Dual Progress Runway Gauge */}
-              <View style={styles.cleanRunwayWrapper}>
-                <View style={styles.cleanRunwayHeader}>
-                  <Text style={[styles.cleanRunwaySubtitle, isDark && { color: colors.textSecondary }]}>
+              {/* Clean Single Runway Gauge */}
+              <View style={{ marginTop: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <Text style={{ fontSize: 11.5, color: isDark ? colors.textSecondary : '#64748B' }}>
                     Month: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>{currentDay}/{daysInMonth}d ({monthElapsedPct}%)</Text>
                   </Text>
-                  <Text style={[styles.cleanRunwaySubtitle, isDark && { color: colors.textSecondary }]}>
+                  <Text style={{ fontSize: 11.5, color: isDark ? colors.textSecondary : '#64748B' }}>
                     Budget Used: <Text style={{ fontWeight: '700', color: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }}>{budgetUsedPct}%</Text>
                   </Text>
                 </View>
                 {/* Single Sleek Progress Track */}
-                <View style={[styles.cleanRunwayTrack, isDark && { backgroundColor: colors.border }]}>
+                <View style={{ height: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
                   <View 
-                    style={[
-                      styles.cleanRunwayFill, 
-                      { 
-                        width: `${Math.min(100, Math.max(3, budgetUsedPct))}%`,
-                        backgroundColor: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' 
-                      }
-                    ]} 
+                    style={{ 
+                      height: '100%',
+                      width: `${Math.min(100, Math.max(3, budgetUsedPct))}%`,
+                      backgroundColor: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981',
+                      borderRadius: 3
+                    }} 
                   />
                 </View>
-                <View style={styles.cleanRunwayFooter}>
-                  <Text style={[styles.cleanRunwayPaceText, { color: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                  <Text style={{ fontSize: 11.5, fontWeight: '600', color: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }}>
                     {budgetUsedPct > monthElapsedPct ? '⚠️ Pacing higher than monthly timeline' : '✅ Pacing safely within budget'}
                   </Text>
                   <Ionicons name="chevron-forward" size={14} color={isDark ? colors.textSecondary : '#94A3B8'} />
@@ -4816,93 +4820,179 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 2,
   },
-  // ── WhatsApp Top Banner Styles ──
-  waPromoCard: {
+  // ── Modern WhatsApp Card ──
+  waModernCard: {
     borderRadius: 22,
-    overflow: 'hidden',
+    padding: 16,
     marginBottom: 16,
     shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
-  },
-  waPromoGradient: {
-    padding: 16,
-    borderRadius: 22,
-  },
-  waPromoHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  waPromoIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(37, 211, 102, 0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(37, 211, 102, 0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  waPromoTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  waPromoBadge: {
-    backgroundColor: 'rgba(37, 211, 102, 0.25)',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 0.5,
-    borderColor: 'rgba(37, 211, 102, 0.5)',
-  },
-  waPromoBadgeText: {
-    color: '#6EE7B7',
-    fontSize: 9.5,
-    fontWeight: '800',
-  },
-  waPromoSubtitle: {
-    color: '#D1FAE5',
-    fontSize: 12.5,
-    lineHeight: 17,
-    marginBottom: 12,
-    fontWeight: '500',
-  },
-  waPromoCloseBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  waPromoActionBtn: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
     elevation: 3,
   },
-  waPromoBtnGradient: {
+  waModernCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#D1FAE5',
+  },
+  waModernCardDark: {
+    backgroundColor: '#1E293B',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  waModernHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  waModernIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  waModernTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  waModernSpeedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    gap: 3,
+    borderWidth: 0.5,
+    borderColor: '#A7F3D0',
+  },
+  waModernSpeedText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  waModernSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 16,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  waModernCloseBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waModernActionTouch: {
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  waModernActionGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
-  waPromoActionBtnText: {
+  waModernActionText: {
     color: '#FFFFFF',
     fontSize: 13.5,
     fontWeight: '800',
     letterSpacing: 0.2,
+  },
+
+  // ── Modern Widget Cards ──
+  widgetCardModern: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  widgetCardModernDark: {
+    backgroundColor: '#1E293B',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  modernWidgetIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modernMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  modernMetricCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  modernMetricCaption: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  modernMetricValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modernMetricUnit: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#94A3B8',
+  },
+  modernMetricDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E2E8F0',
+  },
+  todaySpendPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    gap: 4,
+  },
+  todaySpendPillText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#334155',
+    maxWidth: 90,
+  },
+  todaySpendPillAmount: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#EF4444',
   },
 });
