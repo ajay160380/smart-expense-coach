@@ -86,7 +86,7 @@ export default function DashboardScreen({ navigation, route }) {
   const [comparison, setComparison] = useState(null);
   const [anomalies, setAnomalies] = useState([]);
   const [dismissedAnomalies, setDismissedAnomalies] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [username, setUsername] = useState('User');
   const [fullName, setFullName] = useState('');
@@ -150,53 +150,50 @@ export default function DashboardScreen({ navigation, route }) {
     };
   }, [route?.params]);
 
-  // ── LUXURY ULTRA-CLEAN ENTRANCE ANIMATIONS (NO CROOKED ROTATION) ──
-  const animGreetingX = useRef(new Animated.Value(-20)).current;
-  const animGreetingOpacity = useRef(new Animated.Value(0)).current;
+  // ── LUXURY ULTRA-CLEAN ENTRANCE ANIMATIONS (ALWAYS FULL OPACITY, ZERO BLANK SCREEN) ──
+  const animGreetingX = useRef(new Animated.Value(0)).current;
+  const animGreetingOpacity = useRef(new Animated.Value(1)).current;
 
-  const animCardScale = useRef(new Animated.Value(0.93)).current;
-  const animCardY = useRef(new Animated.Value(20)).current;
-  const animCardOpacity = useRef(new Animated.Value(0)).current;
+  const animCardScale = useRef(new Animated.Value(1)).current;
+  const animCardY = useRef(new Animated.Value(0)).current;
+  const animCardOpacity = useRef(new Animated.Value(1)).current;
 
-  const animDockX = useRef(new Animated.Value(20)).current;
-  const animDockOpacity = useRef(new Animated.Value(0)).current;
+  const animDockX = useRef(new Animated.Value(0)).current;
+  const animDockOpacity = useRef(new Animated.Value(1)).current;
 
-  const animListsY = useRef(new Animated.Value(25)).current;
-  const animListsOpacity = useRef(new Animated.Value(0)).current;
+  const animListsY = useRef(new Animated.Value(0)).current;
+  const animListsOpacity = useRef(new Animated.Value(1)).current;
 
-  const hasRevealedRef = useRef(false);
+  const hasRevealedRef = useRef(true);
 
   const runEntranceAnimation = useCallback(() => {
-    // Reset values first
-    animGreetingX.setValue(-20);
-    animGreetingOpacity.setValue(0);
-    animCardScale.setValue(0.93);
-    animCardY.setValue(20);
-    animCardOpacity.setValue(0);
-    animDockX.setValue(20);
-    animDockOpacity.setValue(0);
-    animListsY.setValue(25);
-    animListsOpacity.setValue(0);
+    // Keep opacities at 100% so nothing ever flashes blank or stays hidden!
+    animGreetingOpacity.setValue(1);
+    animCardOpacity.setValue(1);
+    animDockOpacity.setValue(1);
+    animListsOpacity.setValue(1);
+    animCardScale.setValue(1);
+    animCardY.setValue(0);
+    animGreetingX.setValue(0);
+    animDockX.setValue(0);
+    animListsY.setValue(0);
+  }, []);
 
-    Animated.stagger(100, [
-      Animated.parallel([
-        Animated.timing(animGreetingOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.spring(animGreetingX, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(animCardOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
-        Animated.spring(animCardY, { toValue: 0, friction: 6, tension: 60, useNativeDriver: true }),
-        Animated.spring(animCardScale, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(animDockOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.spring(animDockX, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(animListsOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
-        Animated.spring(animListsY, { toValue: 0, friction: 7, tension: 45, useNativeDriver: true }),
-      ]),
-    ]).start();
+  // Immediate synchronous-like cache load on cold start mount
+  useEffect(() => {
+    AsyncStorage.getItem('dashboard_cache').then(cachedDashboard => {
+      if (cachedDashboard) {
+        try {
+          const parsed = JSON.parse(cachedDashboard);
+          if (parsed.stats) setStats(parsed.stats);
+          if (parsed.tip) setDailyTip(parsed.tip);
+          if (parsed.comp) setComparison(parsed.comp);
+          if (parsed.anom) setAnomalies(parsed.anom);
+          if (parsed.goals) setGoals(parsed.goals);
+          if (parsed.subs) setSubsData(parsed.subs);
+        } catch (e) {}
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -211,32 +208,15 @@ export default function DashboardScreen({ navigation, route }) {
       fetchDashboardData(false);
     });
 
-    // Fallback: if splash didn't run or finished earlier
-    const fallbackTimer = setTimeout(() => {
-      if (!hasRevealedRef.current) {
-        hasRevealedRef.current = true;
-        runEntranceAnimation();
-      }
-    }, 1800);
-
     return () => {
       sub.remove();
       expSub.remove();
-      clearTimeout(fallbackTimer);
     };
   }, [runEntranceAnimation]);
 
   useFocusEffect(
     useCallback(() => {
-      if (hasRevealedRef.current) {
-        runEntranceAnimation();
-      } else {
-        // Keep hidden while splash is running
-        animGreetingOpacity.setValue(0);
-        animCardOpacity.setValue(0);
-        animDockOpacity.setValue(0);
-        animListsOpacity.setValue(0);
-      }
+      runEntranceAnimation();
     }, [runEntranceAnimation])
   );
 
@@ -805,16 +785,6 @@ export default function DashboardScreen({ navigation, route }) {
       Alert.alert('Export Error', 'An error occurred during export.');
     }
   };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={{ fontSize: 40, marginBottom: 12 }}>✨</Text>
-        <Text style={{ color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold' }}>ExpenseTracker</Text>
-        <ActivityIndicator color={COLORS.cyan} size="small" style={{ marginTop: 16 }} />
-      </View>
-    );
-  }
 
   const spent = stats?.total_spent || 0;
   const budget = stats?.budget || 20000;

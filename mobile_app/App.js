@@ -662,19 +662,7 @@ export default function App() {
     };
   }, []);
 
-  if (isLoading) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: '#F8F9FA' }]}>
-        <StatusBar style="dark" />
-        <View style={styles.loadingContent}>
-          <Logo size={0.7} circle={true} showText={false} />
-          <ActivityIndicator size="small" color="#1A73E8" style={{ marginTop: 24 }} />
-        </View>
-      </View>
-    );
-  }
-
-  if (appLocked && !isBiometricUnlocked) {
+  if (!isLoading && appLocked && !isBiometricUnlocked) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: '#0B0E14' }]}>
         <StatusBar style="light" />
@@ -734,7 +722,7 @@ export default function App() {
     },
   };
 
-function AppNavigatorContent({ isAuthenticated, linking, showSplash, setShowSplash }) {
+function AppNavigatorContent({ isAuthenticated, linking }) {
   const { isDark, colors } = useTheme();
 
   const baseTheme = isDark ? DarkTheme : DefaultTheme;
@@ -792,15 +780,6 @@ function AppNavigatorContent({ isAuthenticated, linking, showSplash, setShowSpla
         </Stack.Navigator>
       </NavigationContainer>
       <CustomAlertModal />
-
-      {/* 💸 Luxury Smooth Splash Overlay (Absolute Fill — No Native Dialog Flickering) */}
-      {isAuthenticated && showSplash && (
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
-          <MoneySplashScreen
-            onFinish={() => setShowSplash(false)}
-          />
-        </View>
-      )}
     </View>
   );
 }
@@ -809,12 +788,22 @@ function AppNavigatorContent({ isAuthenticated, linking, showSplash, setShowSpla
     <ErrorBoundary>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AppNavigatorContent
-            isAuthenticated={isAuthenticated}
-            linking={linking}
-            showSplash={showSplash}
-            setShowSplash={setShowSplash}
-          />
+          <View style={{ flex: 1, backgroundColor: '#070D1E' }}>
+            {!isLoading && (
+              <AppNavigatorContent
+                isAuthenticated={isAuthenticated}
+                linking={linking}
+              />
+            )}
+            {/* 💸 Luxury Smooth Splash Overlay (Always smooth on cold start, 1s display + blur-zoom dissolve) */}
+            {showSplash && (
+              <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+                <MoneySplashScreen
+                  onFinish={() => setShowSplash(false)}
+                />
+              </View>
+            )}
+          </View>
         </ThemeProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

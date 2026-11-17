@@ -142,23 +142,31 @@ export function CategoryBadge({ category, icon, color, selected, onPress, size =
 // ANIMATED NUMBER — Smooth counter
 // ═══════════════════════════════════════════════
 export function AnimatedNumber({ value, prefix = '', suffix = '', style }) {
-  const animVal = useRef(new Animated.Value(0)).current;
-  const [displayVal, setDisplayVal] = React.useState(0);
+  const numValue = typeof value === 'number' ? value : (parseFloat(value) || 0);
+  const animVal = useRef(new Animated.Value(numValue)).current;
+  const [displayVal, setDisplayVal] = React.useState(numValue);
+  const prevValRef = useRef(numValue);
 
   useEffect(() => {
-    animVal.setValue(0);
-    Animated.timing(animVal, {
-      toValue: value,
-      duration: 800,
-      useNativeDriver: false,
-    }).start();
+    if (prevValRef.current !== numValue) {
+      animVal.setValue(prevValRef.current);
+      Animated.timing(animVal, {
+        toValue: numValue,
+        duration: 500,
+        useNativeDriver: false,
+      }).start(() => {
+        prevValRef.current = numValue;
+      });
+    } else {
+      setDisplayVal(Math.round(numValue));
+    }
 
     const listener = animVal.addListener(({ value: v }) => {
       setDisplayVal(Math.round(v));
     });
 
     return () => animVal.removeListener(listener);
-  }, [value]);
+  }, [numValue]);
 
   return (
     <Text style={style}>

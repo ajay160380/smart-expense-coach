@@ -22,6 +22,7 @@ const { width: SW, height: SH } = Dimensions.get('window');
 
 const MoneySplashScreen = memo(({ onFinish }) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const exitScale = useRef(new Animated.Value(1)).current;
   const logoScale = useRef(new Animated.Value(0.82)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const glowScale = useRef(new Animated.Value(0.6)).current;
@@ -73,28 +74,36 @@ const MoneySplashScreen = memo(({ onFinish }) => {
       ]),
     ]).start();
 
-    // 2. Notify dashboard to prepare/reveal right before dissolve
+    // 2. Notify dashboard to be ready
     const revealTimer = setTimeout(() => {
       DeviceEventEmitter.emit('splash_reveal');
-    }, 700);
+    }, 900);
 
-    // 3. Smooth cross-dissolve to reveal dashboard seamlessly
+    // 3. Luxurious 1-second display followed by cinematic blur-zoom cross-dissolve
     const dissolveTimer = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 380,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 450,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(exitScale, {
+          toValue: 1.08,
+          duration: 450,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
         DeviceEventEmitter.emit('splash_reveal');
         if (onFinish) onFinish();
       });
-    }, 900);
+    }, 1050);
 
     const fallback = setTimeout(() => {
       DeviceEventEmitter.emit('splash_reveal');
       if (onFinish) onFinish();
-    }, 1500);
+    }, 1800);
 
     return () => {
       clearTimeout(revealTimer);
@@ -108,7 +117,10 @@ const MoneySplashScreen = memo(({ onFinish }) => {
       style={[
         StyleSheet.absoluteFillObject,
         styles.container,
-        { opacity: fadeAnim },
+        {
+          opacity: fadeAnim,
+          transform: [{ scale: exitScale }],
+        },
       ]}
       pointerEvents="none"
     >
