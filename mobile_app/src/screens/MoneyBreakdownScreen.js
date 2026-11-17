@@ -133,7 +133,7 @@ export default function MoneyBreakdownScreen({ navigation }) {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ fontSize: 20 }}>📅</Text>
                     <View>
-                      <Text style={[styles.cardTitle, isDark && { color: colors.textPrimary }]}>Aaj Ka Budget</Text>
+                      <Text style={[styles.cardTitle, isDark && { color: colors.textPrimary }]}>Daily Budget</Text>
                       <Text style={[styles.cardSub, isDark && { color: colors.textSecondary }]}>
                         Day {dailyBudget.day_of_cycle} of {dailyBudget.total_days_in_cycle}
                       </Text>
@@ -173,7 +173,7 @@ export default function MoneyBreakdownScreen({ navigation }) {
                 <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <View>
                     <Text style={{ fontSize: 11, color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700' }}>
-                      Aaj Ka Bacha
+                      Remaining Today
                     </Text>
                     <Text
                       style={{

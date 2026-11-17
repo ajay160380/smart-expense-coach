@@ -43,7 +43,7 @@ const TOUR_STEPS = [
     title: 'Center "+" Add Expense',
     subtitle: 'Tap the large center "+" button anytime to record expenses in seconds with intelligent auto-categorization and instant split tracking.',
     icon: 'add-circle',
-    colors: ['#7C3AED', '#6D28D9'],
+    colors: ['#2563EB', '#1D4ED8'],
     pills: [
       { icon: 'flash-outline', text: '3-Sec Quick Add' },
       { icon: 'pricetag-outline', text: 'Smart Auto-Categories' },
@@ -75,7 +75,7 @@ const TOUR_STEPS = [
     title: 'Live Safe Daily Allowance ⚡',
     subtitle: 'Your dashboard real-time spending dial calculates exactly how much you can safely spend today so you never run short before month-end.',
     icon: 'speedometer',
-    colors: ['#8B5CF6', '#7C3AED'],
+    colors: ['#0284C7', '#0369A1'],
     pills: [
       { icon: 'shield-checkmark-outline', text: 'Dynamic Daily Target' },
       { icon: 'trending-up-outline', text: 'Pacing Indicator' },
@@ -245,7 +245,7 @@ export default function FeatureTourModal({ visible, onClose, userName = 'Dost' }
           <View style={styles.mockupContainer}>
             <Animated.View style={[styles.fabHaloOuter, { transform: [{ scale: pulseAnim }] }]}>
               <View style={styles.fabHaloInner}>
-                <LinearGradient colors={['#8B5CF6', '#6D28D9']} style={styles.fabButtonMock}>
+                <LinearGradient colors={['#2563EB', '#1D4ED8']} style={styles.fabButtonMock}>
                   <Ionicons name="add" size={32} color="#FFFFFF" />
                 </LinearGradient>
               </View>
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    backgroundColor: 'rgba(37, 99, 235, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(139, 92, 246, 0.35)',
+    backgroundColor: 'rgba(37, 99, 235, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#7C3AED',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 6,

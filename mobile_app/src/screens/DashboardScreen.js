@@ -62,18 +62,18 @@ const AVAILABLE_SHORTCUT_CATEGORIES = [
 const DEFAULT_ACTION_DOCK_KEYS = ['add', 'voice', 'split', 'history'];
 
 const ALL_ACTION_SHORTCUTS = [
-  { id: 'add', label: 'Add', icon: 'add', colors: ['#0F172A', '#1E293B'], screen: 'AddExpense', iconSize: 24, desc: 'Quickly log new expense' },
-  { id: 'voice', label: 'Voice', icon: 'mic', colors: ['#0F172A', '#1E293B'], screen: 'VoiceExpense', iconSize: 20, desc: 'Speak to record spend' },
-  { id: 'split', label: 'Split', icon: 'people', colors: ['#0F172A', '#1E293B'], screen: 'ExpenseSplit', iconSize: 20, desc: 'Split bills with friends' },
-  { id: 'history', label: 'History', icon: 'receipt', colors: ['#0F172A', '#1E293B'], screen: 'History', iconSize: 19, desc: 'All transactions log' },
-  { id: 'ai', label: 'AI Coach', icon: 'sparkles', colors: ['#0F172A', '#1E293B'], screen: 'AIChat', iconSize: 20, desc: 'Financial intelligence AI' },
-  { id: 'goals', label: 'Goals', icon: 'flag', colors: ['#0F172A', '#1E293B'], screen: 'SavingsGoals', iconSize: 20, desc: 'Savings & milestone targets' },
-  { id: 'subs', label: 'Subs', icon: 'repeat', colors: ['#0F172A', '#1E293B'], screen: 'Subscriptions', iconSize: 20, desc: 'Monthly subscriptions' },
-  { id: 'notes', label: 'Notepad', icon: 'document-text', colors: ['#0F172A', '#1E293B'], screen: 'Notepad', iconSize: 20, desc: 'Personal finance notes' },
-  { id: 'analytics', label: 'Analytics', icon: 'bar-chart', colors: ['#0F172A', '#1E293B'], screen: 'Analytics', iconSize: 20, desc: 'Spending trend charts' },
-  { id: 'scan', label: 'Scan QR', icon: 'qr-code', colors: ['#0F172A', '#1E293B'], screen: 'UPIPayment', iconSize: 20, desc: 'UPI pay & scan QR' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', colors: ['#0F172A', '#1E293B'], isWhatsApp: true, iconSize: 20, desc: 'Track via WhatsApp bot' },
-  { id: 'budget', label: 'Budget', icon: 'wallet', colors: ['#0F172A', '#1E293B'], isBudget: true, iconSize: 20, desc: 'Update monthly limit' },
+  { id: 'add', label: 'Add', icon: 'add', colors: ['#2563EB', '#1D4ED8'], screen: 'AddExpense', iconSize: 24, desc: 'Quickly log new expense' },
+  { id: 'voice', label: 'Voice', icon: 'mic', colors: ['#4F46E5', '#3730A3'], screen: 'VoiceExpense', iconSize: 20, desc: 'Speak to record spend' },
+  { id: 'split', label: 'Split', icon: 'people', colors: ['#059669', '#047857'], screen: 'ExpenseSplit', iconSize: 20, desc: 'Split bills with friends' },
+  { id: 'history', label: 'History', icon: 'receipt', colors: ['#0284C7', '#0369A1'], screen: 'History', iconSize: 19, desc: 'All transactions log' },
+  { id: 'ai', label: 'AI Coach', icon: 'sparkles', colors: ['#2563EB', '#0284C7'], screen: 'AIChat', iconSize: 20, desc: 'Financial intelligence AI' },
+  { id: 'goals', label: 'Goals', icon: 'flag', colors: ['#D97706', '#B45309'], screen: 'SavingsGoals', iconSize: 20, desc: 'Savings & milestone targets' },
+  { id: 'subs', label: 'Subs', icon: 'repeat', colors: ['#7C3AED', '#6D28D9'], screen: 'Subscriptions', iconSize: 20, desc: 'Monthly subscriptions' },
+  { id: 'notes', label: 'Notepad', icon: 'document-text', colors: ['#6366F1', '#4F46E5'], screen: 'Notepad', iconSize: 20, desc: 'Personal finance notes' },
+  { id: 'analytics', label: 'Analytics', icon: 'bar-chart', colors: ['#0EA5E9', '#0284C7'], screen: 'Analytics', iconSize: 20, desc: 'Spending trend charts' },
+  { id: 'scan', label: 'Scan QR', icon: 'qr-code', colors: ['#10B981', '#059669'], screen: 'UPIPayment', iconSize: 20, desc: 'UPI pay & scan QR' },
+  { id: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', colors: ['#25D366', '#128C7E'], isWhatsApp: true, iconSize: 20, desc: 'Track via WhatsApp bot' },
+  { id: 'budget', label: 'Budget', icon: 'wallet', colors: ['#2563EB', '#1E40AF'], isBudget: true, iconSize: 20, desc: 'Update monthly limit' },
 ];
 
 
@@ -1030,9 +1030,18 @@ export default function DashboardScreen({ navigation, route }) {
               <Text style={styles.heroBalanceCents}>.00</Text>
             </View>
 
-            {/* Remaining Balance & Budget Overview Badge */}
+            {/* Remaining Balance & Budget Overview Badge (1-Tap Tap to Set Limit) */}
             <View style={styles.heroSpentBadgeRow}>
-              <View style={styles.heroSpentBadge}>
+              <TouchableOpacity
+                style={styles.heroSpentBadge}
+                activeOpacity={0.78}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setNewBudget(budget.toString());
+                  setNewBudgetCycleDay(budgetCycleDay.toString());
+                  setBudgetModalVisible(true);
+                }}
+              >
                 <Ionicons name="wallet-outline" size={13} color="#86EFAC" style={{ marginRight: 5 }} />
                 <Text style={styles.heroSpentBadgeText}>
                   Remaining: <Text style={{ fontWeight: '800', color: '#FFFFFF' }}>₹{remaining.toLocaleString('en-IN')}</Text>
@@ -1041,7 +1050,10 @@ export default function DashboardScreen({ navigation, route }) {
                 <Text style={styles.heroSpentBudgetText}>
                   Limit: ₹{budget.toLocaleString('en-IN')}
                 </Text>
-              </View>
+                <View style={{ marginLeft: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingHorizontal: 5, paddingVertical: 1 }}>
+                  <Text style={{ fontSize: 9.5, color: '#FFFFFF', fontWeight: '800' }}>EDIT</Text>
+                </View>
+              </TouchableOpacity>
             </View>
 
             {/* Sub-Pill below balance (Translucent Frosted Pill) */}
@@ -1080,8 +1092,8 @@ export default function DashboardScreen({ navigation, route }) {
                   <View style={styles.waPromoIconBox}>
                     <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
                   </View>
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ flex: 1, marginLeft: 12, paddingRight: 24 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                       <Text style={styles.waPromoTitle}>Link through WhatsApp</Text>
                       <View style={styles.waPromoBadge}>
                         <Text style={styles.waPromoBadgeText}>⚡ 10X FASTER</Text>
@@ -1573,7 +1585,7 @@ export default function DashboardScreen({ navigation, route }) {
                       <Text style={{ fontSize: 18 }}>📅</Text>
                     </View>
                     <View>
-                      <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Aaj Ka Budget</Text>
+                      <Text style={[styles.widgetCardTitle, isDark && { color: colors.textPrimary }]}>Daily Budget</Text>
                       <Text style={[styles.widgetCardSubtitle, isDark && { color: colors.textSecondary }]}>
                         Day {stats.daily_budget.day_of_cycle} of {stats.daily_budget.total_days_in_cycle} • {stats.daily_budget.days_left}d left
                       </Text>
@@ -1594,7 +1606,7 @@ export default function DashboardScreen({ navigation, route }) {
                 <View style={{ marginTop: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <View>
                     <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                      Aaj Ka Bacha
+                      Remaining Today
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 2 }}>
                       <Text style={{ fontSize: 28, fontWeight: '900', color: stats.daily_budget.today_remaining >= 0 ? '#10B981' : '#EF4444' }}>
@@ -3270,28 +3282,28 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.22,
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   actionDockLabel: {
     marginTop: 7,
     fontSize: 12,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#1E293B',
     textAlign: 'center',
   },
   actionDockCustomizeBox: {
     width: 54,
     height: 54,
     borderRadius: 20,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
@@ -4863,14 +4875,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   waPromoCloseBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 6,
-    alignSelf: 'flex-start',
   },
   waPromoActionBtn: {
     flexDirection: 'row',
