@@ -188,7 +188,7 @@ export default function RegisterScreen({ navigation, route }) {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoSmall}>
-                <Logo size={0.42} circle={true} showText={false} />
+                <Logo size={0.34} circle={true} showText={false} />
               </View>
               <Text style={styles.title}>Create Account</Text>
               <Text style={styles.subtitle}>Join Expense Tracker — it&apos;s free!</Text>
@@ -386,21 +386,21 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 22,
-    paddingTop: Platform.OS === 'android' ? 6 : 4,
-    paddingBottom: Platform.OS === 'android' ? 20 : 16,
+    paddingTop: 0,
+    paddingBottom: Platform.OS === 'android' ? 12 : 8,
   },
 
   topNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
-    minHeight: 38,
+    marginBottom: 0,
+    minHeight: 34,
   },
 
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -411,16 +411,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  header: { alignItems: 'center', marginBottom: 10, marginTop: 0 },
-  logoSmall: { marginBottom: 4 },
-  title: { fontSize: 22, fontWeight: '900', color: '#111827', marginBottom: 2, textAlign: 'center' },
-  subtitle: { fontSize: 13, color: '#6B7280', textAlign: 'center' },
+  header: { alignItems: 'center', marginBottom: 6, marginTop: -2 },
+  logoSmall: { marginBottom: 2 },
+  title: { fontSize: 21, fontWeight: '900', color: '#111827', marginBottom: 1, textAlign: 'center' },
+  subtitle: { fontSize: 12.5, color: '#6B7280', textAlign: 'center' },
 
-  formSection: { gap: 9 },
-  label: { fontSize: 10.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -4 },
+  formSection: { gap: 8 },
+  label: { fontSize: 10, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -4 },
   input: {
-    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 11, paddingHorizontal: 14,
-    color: '#111827', fontSize: 15, borderWidth: 1, borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14,
+    color: '#111827', fontSize: 14.5, borderWidth: 1, borderColor: '#E5E7EB',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
   passwordRow: {
@@ -429,16 +429,16 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#E5E7EB',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
-  passwordInput: { flex: 1, paddingVertical: 11, paddingHorizontal: 14, color: '#111827', fontSize: 15 },
-  eyeBtn: { padding: 12 },
-  matchIcon: { padding: 12 },
+  passwordInput: { flex: 1, paddingVertical: 10, paddingHorizontal: 14, color: '#111827', fontSize: 14.5 },
+  eyeBtn: { padding: 10 },
+  matchIcon: { padding: 10 },
   strengthRow: { flexDirection: 'row', alignItems: 'center', marginTop: -4 },
   strengthBg: { flex: 1, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, overflow: 'hidden', marginRight: 10 },
   strengthFill: { height: '100%', borderRadius: 2 },
   strengthLabel: { fontSize: 11, fontWeight: 'bold' },
   mismatchText: { color: COLORS.red, fontSize: 12, marginTop: -4 },
   button: {
-    height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
     marginTop: 2,
     shadowColor: '#2563EB', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,

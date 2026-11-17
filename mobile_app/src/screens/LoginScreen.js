@@ -249,7 +249,7 @@ export default function LoginScreen({ navigation }) {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoSmall}>
-                <Logo size={0.42} circle={true} showText={false} />
+                <Logo size={0.34} circle={true} showText={false} />
               </View>
               <Text style={styles.title}>Welcome Back</Text>
               <Text style={styles.subtitle}>Sign in to your account</Text>
@@ -500,21 +500,21 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 22,
-    paddingTop: Platform.OS === 'android' ? 6 : 4,
-    paddingBottom: Platform.OS === 'android' ? 18 : 14,
+    paddingTop: 0,
+    paddingBottom: Platform.OS === 'android' ? 12 : 8,
   },
 
   topNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
-    minHeight: 38,
+    marginBottom: 0,
+    minHeight: 34,
   },
 
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -527,35 +527,35 @@ const styles = StyleSheet.create({
 
   header: {
     alignItems: 'center',
-    marginBottom: 10,
-    marginTop: 0,
+    marginBottom: 6,
+    marginTop: -2,
   },
   logoSmall: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   title: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '900',
     color: '#111827',
-    marginBottom: 2,
+    marginBottom: 1,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: '#6B7280',
     textAlign: 'center',
   },
 
-  formSection: { gap: 10 },
+  formSection: { gap: 8 },
   throttleBox: {
-    backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, padding: 10,
+    backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, padding: 8,
     borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
   },
-  throttleText: { color: COLORS.red, fontSize: 13, textAlign: 'center' },
-  label: { fontSize: 10.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -6 },
+  throttleText: { color: COLORS.red, fontSize: 12.5, textAlign: 'center' },
+  label: { fontSize: 10, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -6 },
   input: {
-    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14,
-    color: '#111827', fontSize: 15, borderWidth: 1, borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14,
+    color: '#111827', fontSize: 14.5, borderWidth: 1, borderColor: '#E5E7EB',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
   passwordRow: {
@@ -564,19 +564,19 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#E5E7EB',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
-  passwordInput: { flex: 1, paddingVertical: 12, paddingHorizontal: 14, color: '#111827', fontSize: 15 },
-  eyeBtn: { padding: 12 },
+  passwordInput: { flex: 1, paddingVertical: 10, paddingHorizontal: 14, color: '#111827', fontSize: 14.5 },
+  eyeBtn: { padding: 10 },
   button: {
-    height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
     marginTop: 2,
     shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  buttonText: { color: '#fff', fontSize: 15.5, fontWeight: 'bold' },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 2,
+    marginVertical: 1,
   },
   dividerLine: {
     flex: 1,
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 12, paddingBottom: 4 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 8, paddingBottom: 2 },
   footerText: { color: '#6B7280', fontSize: 13.5 },
   linkText: { color: '#FF6B35', fontSize: 13.5, fontWeight: 'bold' },
 
