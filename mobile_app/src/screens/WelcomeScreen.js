@@ -140,27 +140,27 @@ const ElegantArt = ({ type }) => {
         
         {/* WhatsApp Chat Mockup */}
         <Float delay={0} duration={4000}>
-          <View style={[styles.chatBubbleRight, { top: -30, right: 30, transform: [{ rotate: '5deg' }] }]}>
-            <Text style={styles.chatTextRight}>Spent 250 on coffee ☕️</Text>
+          <View style={[styles.chatBubbleRight, { top: 15, right: 28, transform: [{ rotate: '4deg' }] }]}>
+            <Text style={styles.chatTextRight}>Spent ₹250 on coffee ☕️</Text>
           </View>
         </Float>
         
-        <Float delay={1000} duration={4500} range={-15}>
-          <View style={[styles.chatBubbleLeft, { top: 40, left: 20, transform: [{ rotate: '-3deg' }] }]}>
+        <Float delay={1000} duration={4500} range={-12}>
+          <View style={[styles.chatBubbleLeft, { top: 75, left: 20, transform: [{ rotate: '-2deg' }] }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-              <Ionicons name="sparkles" size={14} color={THEME.primary} />
+              <Ionicons name="sparkles" size={13} color={THEME.primary} />
               <Text style={styles.aiTag}>AI Assistant</Text>
             </View>
             <Text style={styles.chatTextLeft}>Added ₹250 to Food & Drinks!</Text>
             <View style={styles.miniCard}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: THEME.textMain }}>Food budget:</Text>
-              <Text style={{ fontSize: 12, color: THEME.success, fontWeight: '600' }}>₹1,250 left</Text>
+              <Text style={{ fontSize: 11.5, fontWeight: '700', color: THEME.textMain }}>Food budget:</Text>
+              <Text style={{ fontSize: 11.5, color: THEME.success, fontWeight: '700' }}>₹1,250 left</Text>
             </View>
           </View>
         </Float>
 
-        <View style={[styles.floatingIcon, { bottom: 140, right: 50, backgroundColor: '#25D366', elevation: 15 }]}>
-          <Ionicons name="logo-whatsapp" size={32} color="#FFF" />
+        <View style={[styles.floatingIcon, { top: 60, right: 26, backgroundColor: '#25D366', elevation: 12 }]}>
+          <Ionicons name="logo-whatsapp" size={28} color="#FFF" />
         </View>
       </View>
     );
@@ -215,14 +215,36 @@ const ElegantArt = ({ type }) => {
   
   if (type === 'auth') {
     return (
-      <View style={{ height: height * 0.45, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
-        {/* Soft abstract background blobs - perfectly centered behind the logo */}
-        <View style={[styles.largeCircle, { backgroundColor: THEME.primaryLight, opacity: 0.8, width: 220, height: 220, borderRadius: 110 }]} />
-        <View style={[styles.largeCircle, { backgroundColor: '#F3E8FF', opacity: 0.5, width: 300, height: 300, borderRadius: 150, position: 'absolute' }]} />
+      <View style={styles.authArtBox}>
+        {/* Soft glowing ambient rings */}
+        <View style={styles.authAuraOuter} />
+        <View style={styles.authAuraInner} />
         
         {/* Central Logo */}
-        <Float delay={0} duration={4000}>
-          <Logo size={1} circle={true} showText={false} />
+        <Float delay={0} duration={3800} range={-6}>
+          <Logo size={1.05} circle={true} showText={false} />
+        </Float>
+
+        {/* Floating Mini Badges */}
+        <Float delay={200} duration={3200} range={-5}>
+          <View style={styles.authBadgeTopLeft}>
+            <Ionicons name="shield-checkmark" size={13} color="#10B981" />
+            <Text style={styles.authMiniBadgeText}>100% Private</Text>
+          </View>
+        </Float>
+
+        <Float delay={400} duration={3500} range={6}>
+          <View style={styles.authBadgeTopRight}>
+            <Ionicons name="flash" size={13} color="#F59E0B" />
+            <Text style={styles.authMiniBadgeText}>Zero Effort</Text>
+          </View>
+        </Float>
+
+        <Float delay={600} duration={4000} range={-6}>
+          <View style={styles.authBadgeBottomRight}>
+            <Ionicons name="logo-whatsapp" size={13} color="#22C55E" />
+            <Text style={styles.authMiniBadgeText}>WhatsApp AI</Text>
+          </View>
         </Float>
       </View>
     );
@@ -302,21 +324,43 @@ export default function WelcomeScreen({ navigation, route }) {
     if (item.layout === 'auth-final') {
       return (
         <View style={[styles.slide, styles.authFinalSlide]}>
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 12 }}>
             <ElegantArt type={item.artType} />
           </View>
 
-          <View style={{ alignItems: 'center', marginBottom: 28 }}>
-            <Text style={[styles.titleText, { textAlign: 'center', fontSize: 32, lineHeight: 40 }]}>
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <View style={styles.heroPillBadge}>
+              <Ionicons name="sparkles" size={12} color="#2563EB" />
+              <Text style={styles.heroPillBadgeText}>SMART EXPENSE COACH</Text>
+            </View>
+
+            <Text style={styles.authTitleText}>
               {isTourMode ? "You're All Set!\n" : item.titleMain}
-              <Text style={{ color: THEME.primary, fontWeight: '800' }}>{item.titleBold}</Text>
+              <Text style={{ color: '#2563EB', fontWeight: '800' }}>{item.titleBold}</Text>
             </Text>
             
-            <Text style={[styles.subtitleText, { textAlign: 'center', marginTop: 10, paddingHorizontal: 16 }]}>
+            <Text style={styles.authSubtitleText}>
               {isTourMode
                 ? "You are logged in and ready to track your expenses effortlessly with AI voice and WhatsApp logging."
-                : item.subtitle}
+                : "Track expenses in seconds via Voice & WhatsApp, set smart budgets, and boost your savings effortlessly."}
             </Text>
+
+            {!isTourMode && (
+              <View style={styles.featureHighlightsRow}>
+                <View style={styles.featureChip}>
+                  <Ionicons name="mic" size={11} color="#6366F1" />
+                  <Text style={styles.featureChipText}>Voice AI</Text>
+                </View>
+                <View style={styles.featureChip}>
+                  <Ionicons name="logo-whatsapp" size={11} color="#16A34A" />
+                  <Text style={styles.featureChipText}>WhatsApp</Text>
+                </View>
+                <View style={styles.featureChip}>
+                  <Ionicons name="shield-checkmark" size={11} color="#10B981" />
+                  <Text style={styles.featureChipText}>100% Private</Text>
+                </View>
+              </View>
+            )}
           </View>
 
           <View style={{ width: '100%', paddingHorizontal: 32 }}>
@@ -368,16 +412,16 @@ export default function WelcomeScreen({ navigation, route }) {
                     end={{ x: 1, y: 0 }}
                     style={styles.registerBtnGradient}
                   >
-                    <Text style={styles.registerBtnText}>Register</Text>
-                    <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                    <Text style={styles.registerBtnText}>Get Started Free</Text>
+                    <Ionicons name="arrow-forward" size={19} color="#FFF" />
                   </LinearGradient>
                 </TouchableOpacity>
 
                 {/* Login Link with safe spacing above Android gesture pill */}
                 <View style={styles.loginLinkRow}>
-                  <Text style={{ color: THEME.textSub, fontSize: 15 }}>Already have account? </Text>
+                  <Text style={{ color: THEME.textSub, fontSize: 14.5 }}>Already have account? </Text>
                   <TouchableOpacity activeOpacity={0.6} onPress={() => navigation.navigate('Login')} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                    <Text style={{ color: '#2563EB', fontSize: 16, fontWeight: '800' }}>Login</Text>
+                    <Text style={{ color: '#2563EB', fontSize: 15.5, fontWeight: '800' }}>Login</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -391,12 +435,16 @@ export default function WelcomeScreen({ navigation, route }) {
       return (
         <View style={styles.slide}>
           <View style={styles.textTopContainer}>
-            <Text style={styles.titleText}>
+            <View style={styles.slidePillBadge}>
+              <Ionicons name="mic" size={11} color="#6366F1" />
+              <Text style={styles.slidePillBadgeText}>AI VOICE LOGGING</Text>
+            </View>
+            <Text style={styles.slideTitleText}>
               <Text style={{ fontWeight: '800' }}>{item.titleMain}</Text>
               <Text style={{ fontWeight: '400' }}>{item.titleNormal}</Text>
-              <Text style={{ fontWeight: '800' }}>{item.titleBold}</Text>
+              <Text style={{ fontWeight: '800', color: '#4F46E5' }}>{item.titleBold}</Text>
             </Text>
-            {item.subtitle && <Text style={styles.subtitleText}>{item.subtitle}</Text>}
+            {item.subtitle && <Text style={styles.slideSubtitleText}>{item.subtitle}</Text>}
           </View>
           <ElegantArt type={item.artType} />
         </View>
@@ -407,14 +455,18 @@ export default function WelcomeScreen({ navigation, route }) {
       <View style={styles.slide}>
         <ElegantArt type={item.artType} />
         <View style={styles.textBottomContainer}>
-          <Text style={[styles.titleText, { fontSize: 36, lineHeight: 44 }]}>
+          <View style={[styles.slidePillBadge, { backgroundColor: '#F0FDF4' }]}>
+            <Ionicons name="logo-whatsapp" size={11} color="#16A34A" />
+            <Text style={[styles.slidePillBadgeText, { color: '#16A34A' }]}>WHATSAPP ASSISTANT</Text>
+          </View>
+          <Text style={styles.slideTitleText}>
             <Text style={{ fontWeight: '800' }}>{item.titleHeader || item.titleMain}</Text>
             {item.titleHighlight && (
-              <Text style={{ fontWeight: '900', color: '#22C55E' }}>{item.titleHighlight}</Text>
+              <Text style={{ fontWeight: '900', color: '#16A34A' }}>{item.titleHighlight}</Text>
             )}
             <Text style={{ fontWeight: '800' }}>{item.titleBody || item.titleBold}</Text>
           </Text>
-          {item.subtitle && <Text style={styles.subtitleText}>{item.subtitle}</Text>}
+          {item.subtitle && <Text style={styles.slideSubtitleText}>{item.subtitle}</Text>}
         </View>
       </View>
     );
@@ -510,42 +562,92 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   slide: { width, height: '100%' },
 
-  textTopContainer: { paddingTop: Platform.OS === 'android' ? height * 0.08 : height * 0.10, paddingHorizontal: 32, zIndex: 10 },
+  slidePillBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  slidePillBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#4F46E5',
+    letterSpacing: 0.5,
+  },
+  slideTitleText: {
+    fontSize: 27,
+    color: THEME.textMain,
+    lineHeight: 34,
+    letterSpacing: -0.5,
+  },
+  slideSubtitleText: {
+    marginTop: 8,
+    fontSize: 13.5,
+    color: THEME.textSub,
+    lineHeight: 20,
+    paddingRight: 12,
+  },
+
+  textTopContainer: {
+    paddingTop: Platform.OS === 'android' ? 24 : 32,
+    paddingHorizontal: 28,
+    zIndex: 10,
+  },
   textBottomContainer: {
     flex: 1,
-    paddingHorizontal: 32,
-    paddingTop: 10,
+    paddingHorizontal: 28,
+    paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 120 : 105,
     justifyContent: 'flex-start',
   },
 
-  titleText: { fontSize: 44, color: THEME.textMain, lineHeight: 50, letterSpacing: -1 },
-  subtitleText: { marginTop: 14, fontSize: 16, color: THEME.textSub, lineHeight: 24, paddingRight: 10 },
+  titleText: { fontSize: 32, color: THEME.textMain, lineHeight: 40, letterSpacing: -0.8 },
+  subtitleText: { marginTop: 10, fontSize: 14, color: THEME.textSub, lineHeight: 21, paddingRight: 10 },
 
   // Abstract Containers
-  artContainerBottom: { position: 'absolute', bottom: 40, left: 0, right: 0, width: width, height: height * 0.46, alignItems: 'center', justifyContent: 'center' },
-  artContainerTop: { height: height * 0.55, width: '100%', justifyContent: 'center', alignItems: 'center', paddingTop: 20 },
+  artContainerBottom: {
+    position: 'absolute',
+    bottom: 95,
+    left: 0,
+    right: 0,
+    width: width,
+    height: height * 0.38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  artContainerTop: {
+    height: height * 0.38,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 10,
+  },
 
   // Elements
   largeCircle: { position: 'absolute', width: 320, height: 320, borderRadius: 160, backgroundColor: THEME.primaryLight, opacity: 0.6 },
   
   // Voice Art
-  micCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', shadowColor: THEME.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 15 },
-  soundwaves: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: -1 },
-  waveBar: { width: 8, backgroundColor: 'rgba(139, 92, 246, 0.2)', borderRadius: 4 },
+  micCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', shadowColor: THEME.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 12 },
+  soundwaves: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 7, zIndex: -1 },
+  waveBar: { width: 7, backgroundColor: 'rgba(139, 92, 246, 0.2)', borderRadius: 3.5 },
   
   // Voice Mock Card & Floating Pills (Safely Positioned)
   voiceCardWrapper: { position: 'absolute', top: 10, right: 18, zIndex: 10 },
-  voiceMockCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 8 },
-  voicePillWrapperLeft: { position: 'absolute', top: 96, left: 20, zIndex: 10 },
-  voicePillWrapperRight: { position: 'absolute', bottom: 85, right: 24, zIndex: 10 },
+  voiceMockCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', paddingVertical: 10, paddingHorizontal: 13, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 6 },
+  voicePillWrapperLeft: { position: 'absolute', top: 80, left: 16, zIndex: 10 },
+  voicePillWrapperRight: { position: 'absolute', bottom: 40, right: 20, zIndex: 10 },
 
-  mockCard: { position: 'absolute', flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 16, borderRadius: 20, width: width * 0.75, shadowColor: '#000', shadowOffset: { width: 0, height: 15 }, shadowOpacity: 0.08, shadowRadius: 25, elevation: 10 },
-  iconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: THEME.textMain, marginBottom: 2 },
-  cardSub: { fontSize: 13, color: THEME.textSub },
-  cardAmt: { fontSize: 17, fontWeight: '800', color: THEME.textMain },
-  floatingPill: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 8 },
+  mockCard: { position: 'absolute', flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 14, borderRadius: 18, width: width * 0.72, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 8 },
+  iconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: THEME.textMain, marginBottom: 2 },
+  cardSub: { fontSize: 12, color: THEME.textSub },
+  cardAmt: { fontSize: 16, fontWeight: '800', color: THEME.textMain },
+  floatingPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 6 },
 
   // Chat Art
   chatBubbleRight: { position: 'absolute', backgroundColor: THEME.primary, paddingVertical: 14, paddingHorizontal: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 4, shadowColor: THEME.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 10 },
@@ -571,16 +673,148 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: Platform.OS === 'android' ? 44 : 28,
   },
+  authArtBox: {
+    height: height * 0.36,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  authAuraOuter: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: '#EEF2FF',
+    opacity: 0.85,
+  },
+  authAuraInner: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: '#E0E7FF',
+    opacity: 0.9,
+  },
+  authBadgeTopLeft: {
+    position: 'absolute',
+    top: 28,
+    left: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5.5,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    gap: 4,
+  },
+  authBadgeTopRight: {
+    position: 'absolute',
+    top: 36,
+    right: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5.5,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    gap: 4,
+  },
+  authBadgeBottomRight: {
+    position: 'absolute',
+    bottom: 24,
+    right: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5.5,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    gap: 4,
+  },
+  authMiniBadgeText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: THEME.textMain,
+  },
+  heroPillBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  heroPillBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#2563EB',
+    letterSpacing: 0.5,
+  },
+  authTitleText: {
+    fontSize: 27,
+    color: THEME.textMain,
+    lineHeight: 34,
+    letterSpacing: -0.5,
+    textAlign: 'center',
+  },
+  authSubtitleText: {
+    marginTop: 8,
+    fontSize: 13.5,
+    color: THEME.textSub,
+    lineHeight: 20,
+    textAlign: 'center',
+    paddingHorizontal: 28,
+  },
+  featureHighlightsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  featureChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: 12,
+  },
+  featureChipText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: THEME.textMain,
+  },
   registerBtnShadow: {
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 10,
-    marginBottom: 18,
+    marginBottom: 16,
   },
   registerBtnGradient: {
-    height: 56,
+    height: 54,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
@@ -588,7 +822,7 @@ const styles = StyleSheet.create({
   },
   registerBtnText: {
     color: '#FFF',
-    fontSize: 17,
+    fontSize: 16.5,
     fontWeight: '700',
     marginRight: 8,
   },
@@ -600,23 +834,52 @@ const styles = StyleSheet.create({
   },
 
   // Absolute Footer
-  footerAbsolute: { position: 'absolute', bottom: Platform.OS === 'ios' ? 36 : 24, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 20 },
-  skipWrapper: { padding: 10, paddingLeft: 0 },
-  skipText: { fontSize: 16, fontWeight: '700', color: THEME.textMain },
+  footerAbsolute: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 36 : 24,
+    left: 28,
+    right: 28,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  skipWrapper: { padding: 8, paddingLeft: 0 },
+  skipText: { fontSize: 15, fontWeight: '700', color: THEME.textMain },
   paginationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   paginationDot: {
-    height: 7,
-    borderRadius: 3.5,
+    height: 6,
+    borderRadius: 3,
   },
   paginationDotActive: {
-    height: 7,
+    height: 6,
   },
-  nextBtnRing: { width: 70, height: 70, borderRadius: 35, borderWidth: 1.5, borderColor: 'rgba(139, 92, 246, 0.4)', justifyContent: 'center', alignItems: 'center' },
-  nextBtnFill: { width: 54, height: 54, borderRadius: 27, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', shadowColor: THEME.primary, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.4, shadowRadius: 10 },
+  nextBtnRing: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: 'rgba(99, 102, 241, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nextBtnFill: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: THEME.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
   
   // Tour Mode Additions
   topNavRow: {
