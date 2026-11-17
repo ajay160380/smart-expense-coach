@@ -1,10 +1,10 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — REFINED WORLD-CLASS ONBOARDING
- * Clean, modern fintech aesthetic with seamless navigation:
- * - Clean Top Header on all slides (Back on slides 2 & 3, Skip, X / 3)
+ * EXPENSE TRACKER — REFINED WORLD-CLASS ONBOARDING (ULTRA PREMIUM)
+ * Designed like a Tier-1 Fintech App (Revolut / Apple Card / Cred):
+ * - Seamless Top & Bottom Navigation (Back on slides 2 & 3, Skip, Step Dots, Next)
  * - Slide 1: AI Voice Logging with 3D Mic, Receipt, Glowing Pulsing Mic, Next
- * - Slide 2: Chat on Smarter Way with Interactive WhatsApp AI Coach & 3 Centered Feature Cards
+ * - Slide 2: Chat on Smarter Way with Authentic WhatsApp AI Coach & 3 Premium Glassmorphic Cards
  * - Slide 3: Welcome to Expense Tracker (Compact layout, Register & Login moved UP, Zero dead gap)
  * ═══════════════════════════════════════════════════════════════
  */
@@ -45,6 +45,33 @@ const Float = ({ children, delay = 0, range = -6, duration = 3200 }) => {
   }, []);
   const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [0, range] });
   return <Animated.View style={{ transform: [{ translateY }] }}>{children}</Animated.View>;
+};
+
+// ── Continuous Pulse Animation Component (For Tap-To-Speak Mic) ──
+const PulseRing = ({ children }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(0.25)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(scale, { toValue: 1.15, duration: 1800, useNativeDriver: true }),
+          Animated.timing(scale, { toValue: 1, duration: 1800, useNativeDriver: true }),
+        ]),
+        Animated.sequence([
+          Animated.timing(opacity, { toValue: 0.08, duration: 1800, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0.25, duration: 1800, useNativeDriver: true }),
+        ]),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View style={[artStyles.pulseOuterWrapper, { transform: [{ scale }], opacity }]}>
+      {children}
+    </Animated.View>
+  );
 };
 
 // ── Stylized Curved Underline Graphic ──
@@ -105,36 +132,38 @@ const NativeMicReceiptArt = () => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 2. NATIVE WHATSAPP AI CHAT & COACH HERO (Slide 2 Hero Graphic)
+// 2. AUTHENTIC WHATSAPP AI COACH HERO (Slide 2 Hero Graphic)
 // ═══════════════════════════════════════════════════════════════
 const NativeWhatsAppChatHero = () => {
   return (
     <View style={artStyles.chatHeroContainer}>
-      {/* Background Soft Glow */}
       <View style={artStyles.chatAmbientCircle} />
 
-      {/* User Outgoing Speech Bubble */}
+      {/* User Outgoing WhatsApp Bubble with Tail & Double Checkmarks */}
       <Float delay={0} duration={3200} range={-5}>
         <View style={artStyles.waUserBubble}>
           <Text style={artStyles.waUserBubbleText}>Spent ₹250 on coffee ☕</Text>
+          <View style={artStyles.waMetaRow}>
+            <Text style={artStyles.waTimeText}>10:32 AM</Text>
+            <Ionicons name="checkmark-done" size={13} color="#60A5FA" style={{ marginLeft: 2 }} />
+          </View>
           <View style={artStyles.waUserBubbleTail} />
         </View>
       </Float>
 
-      {/* AI Assistant Incoming Card */}
+      {/* AI Assistant Incoming Card with Live Budget Pacing */}
       <Float delay={500} duration={3600} range={-6}>
         <View style={artStyles.waBotCard}>
           <View style={artStyles.waBotHeader}>
             <View style={artStyles.waBotAvatar}>
-              <Ionicons name="sparkles" size={13} color="#10B981" />
+              <Ionicons name="sparkles" size={12} color="#10B981" />
             </View>
             <Text style={artStyles.waBotName}>AI Expense Coach</Text>
             <View style={artStyles.waLiveDot} />
           </View>
 
-          <Text style={artStyles.waBotText}>Added ₹250 to Food & Dining!</Text>
+          <Text style={artStyles.waBotText}>✅ Logged to Food & Dining!</Text>
 
-          {/* Mini Budget Bar */}
           <View style={artStyles.waBudgetBox}>
             <View style={artStyles.waBudgetLabels}>
               <Text style={artStyles.waBudgetTitle}>Food Budget:</Text>
@@ -147,7 +176,7 @@ const NativeWhatsAppChatHero = () => {
         </View>
       </Float>
 
-      {/* Floating 3D WhatsApp Badge */}
+      {/* Floating 3D WhatsApp Badge with Glow */}
       <View style={artStyles.waFloatingBadge}>
         <Ionicons name="logo-whatsapp" size={26} color="#FFFFFF" />
       </View>
@@ -166,10 +195,10 @@ export default function WelcomeScreen({ navigation, route }) {
   const safeTopPadding = Math.max(
     insets.top,
     Platform.OS === 'android' ? (RNStatusBar.currentHeight || 28) : 20
-  ) + 6;
+  ) + 8;
 
   // Safe bottom padding above Android gesture bar
-  const safeBottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 22);
+  const safeBottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 24);
 
   useEffect(() => {
     let isMounted = true;
@@ -236,9 +265,9 @@ export default function WelcomeScreen({ navigation, route }) {
   // SLIDE 1: AI VOICE LOGGING (Mockup 1)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide1 = () => (
-    <LinearGradient colors={['#F3F7FF', '#FFFFFF']} style={styles.slide}>
-      <View style={[styles.bgBlob, { top: -40, right: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.5 }]} />
-      <View style={[styles.bgBlob, { bottom: 60, left: -60, width: 260, height: 260, backgroundColor: '#EFF6FF', opacity: 0.7 }]} />
+    <LinearGradient colors={['#F0F6FF', '#F8FAFC', '#FFFFFF']} style={styles.slide}>
+      <View style={[styles.bgBlob, { top: -40, right: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.55 }]} />
+      <View style={[styles.bgBlob, { bottom: 60, left: -60, width: 260, height: 260, backgroundColor: '#EFF6FF', opacity: 0.75 }]} />
 
       <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
         {/* Top Header Row with AI Badge & 1/3 + Skip */}
@@ -248,7 +277,7 @@ export default function WelcomeScreen({ navigation, route }) {
             <Text style={styles.voiceBadgeText}>AI Voice Logging</Text>
           </View>
           <View style={styles.topRightControls}>
-            <TouchableOpacity onPress={skipToEnd} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity onPress={skipToEnd} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Text style={styles.topSkipText}>Skip</Text>
             </TouchableOpacity>
             <View style={styles.stepPill}>
@@ -276,42 +305,45 @@ export default function WelcomeScreen({ navigation, route }) {
           Speak naturally in Hindi or English. AI instantly categorizes your spending with zero manual typing.
         </Text>
 
-        {/* Category Pills Row */}
+        {/* Category Pills Row with Soft Micro-Tints */}
         <View style={styles.categoryRow}>
-          <View style={styles.catPill}>
-            <Text style={styles.catPillText}>🍔 Food & Dining</Text>
+          <View style={[styles.catPill, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}>
+            <Text style={[styles.catPillText, { color: '#92400E' }]}>🍔 Food & Dining</Text>
           </View>
-          <View style={styles.catPill}>
-            <Text style={styles.catPillText}>🚙 Travel & Transport</Text>
+          <View style={[styles.catPill, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
+            <Text style={[styles.catPillText, { color: '#1E40AF' }]}>🚙 Travel & Transport</Text>
           </View>
-          <View style={styles.catPill}>
-            <Text style={styles.catPillText}>🛍️ Shopping & More</Text>
+          <View style={[styles.catPill, { backgroundColor: '#FDF2F8', borderColor: '#FBCFE8' }]}>
+            <Text style={[styles.catPillText, { color: '#9D174D' }]}>🛍️ Shopping & More</Text>
           </View>
         </View>
 
-        {/* Center Glowing 3D Microphone Action */}
+        {/* Center Glowing 3D Microphone Action with Animated Pulse */}
         <View style={styles.centerMicSection}>
-          <View style={styles.micGlowRingOuter}>
-            <View style={styles.micGlowRingInner}>
-              <Float delay={300} duration={2800} range={-5}>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch (e) {}
-                  }}
-                  style={styles.micButtonContainer}
+          <PulseRing>
+            <View style={styles.micGlowRingOuter} />
+          </PulseRing>
+
+          <View style={styles.micGlowRingInner}>
+            <Float delay={300} duration={2800} range={-5}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch (e) {}
+                  scrollToNext();
+                }}
+                style={styles.micButtonContainer}
+              >
+                <LinearGradient
+                  colors={['#3B82F6', '#2563EB', '#1D4ED8']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.glowingMicButton}
                 >
-                  <LinearGradient
-                    colors={['#3B82F6', '#1D4ED8', '#1E40AF']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.glowingMicButton}
-                  >
-                    <Ionicons name="mic" size={44} color="#FFFFFF" />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Float>
-            </View>
+                  <Ionicons name="mic" size={44} color="#FFFFFF" />
+                </LinearGradient>
+              </TouchableOpacity>
+            </Float>
           </View>
 
           <View style={styles.tapToSpeakRow}>
@@ -330,7 +362,7 @@ export default function WelcomeScreen({ navigation, route }) {
               </View>
               <View style={styles.transTextBox}>
                 <Text style={styles.transTitle}>Dinner at Taj</Text>
-                <Text style={styles.transTime}>Just now</Text>
+                <Text style={styles.transTime}>Food & Dining • Just now</Text>
               </View>
               <Text style={styles.transAmount}>- ₹4,500</Text>
             </View>
@@ -395,7 +427,7 @@ export default function WelcomeScreen({ navigation, route }) {
           </TouchableOpacity>
 
           <View style={styles.topRightControls}>
-            <TouchableOpacity onPress={skipToEnd} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity onPress={skipToEnd} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Text style={[styles.topSkipText, { color: '#059669' }]}>Skip</Text>
             </TouchableOpacity>
             <View style={[styles.stepPill, { backgroundColor: '#E6F9F0', borderColor: '#A7F3D0' }]}>
@@ -503,9 +535,9 @@ export default function WelcomeScreen({ navigation, route }) {
   // SLIDE 3: WELCOME TO EXPENSE TRACKER (Compact, Register/Login UP)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide3 = () => (
-    <LinearGradient colors={['#F3F7FF', '#FFFFFF']} style={styles.slide}>
-      <View style={[styles.bgBlob, { top: -40, left: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.5 }]} />
-      <View style={[styles.bgBlob, { bottom: 80, right: -50, width: 240, height: 240, backgroundColor: '#EFF6FF', opacity: 0.7 }]} />
+    <LinearGradient colors={['#F0F6FF', '#F8FAFC', '#FFFFFF']} style={styles.slide}>
+      <View style={[styles.bgBlob, { top: -40, left: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.55 }]} />
+      <View style={[styles.bgBlob, { bottom: 80, right: -50, width: 240, height: 240, backgroundColor: '#EFF6FF', opacity: 0.75 }]} />
 
       <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
         {/* Top Header Row with Previous (← Back) & 3/3 */}
@@ -568,7 +600,7 @@ export default function WelcomeScreen({ navigation, route }) {
               : "Start tracking effortlessly, stay on pace with your daily budget, and boost your savings today!"}
           </Text>
 
-          {/* Action Buttons (Shifted UP, 16px from subtitle) */}
+          {/* Action Buttons (Shifted UP, 14px from subtitle) */}
           <View style={styles.slide3CompactActionSection}>
             {isTourMode ? (
               <TouchableOpacity
@@ -795,7 +827,7 @@ const artStyles = StyleSheet.create({
 
   // ── Slide 2: Interactive WhatsApp AI Chat Hero ──
   chatHeroContainer: {
-    width: 160,
+    width: 165,
     height: 155,
     position: 'relative',
     justifyContent: 'center',
@@ -803,14 +835,14 @@ const artStyles = StyleSheet.create({
   },
   chatAmbientCircle: {
     position: 'absolute',
-    width: 130,
-    height: 130,
-    borderRadius: 65,
+    width: 135,
+    height: 135,
+    borderRadius: 68,
     backgroundColor: 'rgba(16, 185, 129, 0.12)',
   },
   waUserBubble: {
     position: 'absolute',
-    top: 6,
+    top: 4,
     right: 4,
     backgroundColor: '#2563EB',
     paddingVertical: 7,
@@ -829,6 +861,17 @@ const artStyles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  waMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 2,
+  },
+  waTimeText: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 9,
+    fontWeight: '600',
+  },
   waUserBubbleTail: {
     position: 'absolute',
     bottom: 0,
@@ -842,7 +885,7 @@ const artStyles = StyleSheet.create({
     position: 'absolute',
     bottom: 12,
     left: 4,
-    width: 148,
+    width: 152,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderBottomLeftRadius: 2,
@@ -922,11 +965,11 @@ const artStyles = StyleSheet.create({
   },
   waFloatingBadge: {
     position: 'absolute',
-    top: 48,
-    right: 2,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    top: 50,
+    right: 0,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: '#25D366',
     justifyContent: 'center',
     alignItems: 'center',
@@ -935,6 +978,9 @@ const artStyles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 8,
+  },
+  pulseOuterWrapper: {
+    position: 'absolute',
   },
 });
 
@@ -1093,12 +1139,10 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   catPill: {
-    backgroundColor: '#FFFFFF',
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -1108,7 +1152,6 @@ const styles = StyleSheet.create({
   catPillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#1E293B',
   },
 
   // ── Glowing Center Mic Section ──
@@ -1116,25 +1159,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 2,
+    position: 'relative',
   },
   micGlowRingOuter: {
-    width: 136,
-    height: 136,
-    borderRadius: 68,
-    backgroundColor: 'rgba(37, 99, 235, 0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 144,
+    height: 144,
+    borderRadius: 72,
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
   },
   micGlowRingInner: {
-    width: 108,
-    height: 108,
-    borderRadius: 54,
-    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: 'rgba(37, 99, 235, 0.14)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   micButtonContainer: {
-    borderRadius: 42,
+    borderRadius: 44,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.38,
@@ -1142,9 +1184,9 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   glowingMicButton: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1315,24 +1357,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   slide3ShieldFrameOuter: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: 152,
+    height: 152,
+    borderRadius: 76,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.16,
     shadowRadius: 18,
     elevation: 6,
     marginBottom: 10,
   },
   slide3ShieldFrameInner: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 122,
+    height: 122,
+    borderRadius: 61,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1343,9 +1385,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   slide3OfficialLogoImg: {
-    width: 92,
-    height: 92,
-    borderRadius: 20,
+    width: 94,
+    height: 94,
+    borderRadius: 22,
   },
   shieldBadgeCompanion: {
     position: 'absolute',
