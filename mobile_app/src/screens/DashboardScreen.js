@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, ActivityIndicator, Image, StyleSheet, Dimensions, Platform, Alert, Animated, Easing, FlatList, Modal, Switch, Pressable, Keyboard, SectionList, DeviceEventEmitter, RefreshControl, Linking } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -166,6 +166,22 @@ export default function DashboardScreen({ navigation, route }) {
 
   const hasRevealedRef = useRef(true);
 
+  // ── CINEMATIC "DEEM TO DHEERE DHEERE LIGHT UP" TRANSITION ──
+  const lightUpProgress = useRef(new Animated.Value(0)).current;
+  const hasLightedUpRef = useRef(false);
+
+  const triggerLightUpAnimation = useCallback(() => {
+    lightUpProgress.setValue(0);
+    Animated.timing(lightUpProgress, {
+      toValue: 1,
+      duration: 750,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => {
+      hasLightedUpRef.current = true;
+    });
+  }, [lightUpProgress]);
+
   const runEntranceAnimation = useCallback(() => {
     // Keep opacities at 100% so nothing ever flashes blank or stays hidden!
     animGreetingOpacity.setValue(1);
@@ -201,7 +217,15 @@ export default function DashboardScreen({ navigation, route }) {
     const sub = DeviceEventEmitter.addListener('splash_reveal', () => {
       hasRevealedRef.current = true;
       runEntranceAnimation();
+      triggerLightUpAnimation();
     });
+
+    // Fallback: If splash didn't run or completed early, light up gracefully
+    const fallbackTimer = setTimeout(() => {
+      if (!hasLightedUpRef.current) {
+        triggerLightUpAnimation();
+      }
+    }, 1100);
 
     // Listen for expense created / edited / deleted to refresh instantly
     const expSub = DeviceEventEmitter.addListener('EXPENSE_UPDATED', () => {
@@ -211,13 +235,17 @@ export default function DashboardScreen({ navigation, route }) {
     return () => {
       sub.remove();
       expSub.remove();
+      clearTimeout(fallbackTimer);
     };
-  }, [runEntranceAnimation]);
+  }, [runEntranceAnimation, triggerLightUpAnimation]);
 
   useFocusEffect(
     useCallback(() => {
       runEntranceAnimation();
-    }, [runEntranceAnimation])
+      if (!hasLightedUpRef.current) {
+        triggerLightUpAnimation();
+      }
+    }, [runEntranceAnimation, triggerLightUpAnimation])
   );
 
   // ── Quick Action Dock Customizable State (1-8 items) ──
@@ -922,9 +950,27 @@ export default function DashboardScreen({ navigation, route }) {
         }}
       />
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={styles.scrollContent}
+      {/* ── CINEMATIC ILLUMINATION CONTAINER (DHEERE DHEERE LIGHT UP) ── */}
+      <Animated.View
+        style={{
+          flex: 1,
+          opacity: lightUpProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.25, 1],
+          }),
+          transform: [
+            {
+              scale: lightUpProgress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.95, 1],
+              }),
+            },
+          ],
+        }}
+      >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
         onScroll={(e) => {
           const offsetY = e.nativeEvent.contentOffset.y;
           if (offsetY > 40 && !isScrolled) setIsScrolled(true);
@@ -2129,6 +2175,23 @@ export default function DashboardScreen({ navigation, route }) {
           <View style={{ height: 110 }} />
         </View>
       </ScrollView>
+      </Animated.View>
+
+      {/* ── CINEMATIC AMBIENT DEEM TO LIGHT-UP VEIL ── */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            backgroundColor: '#030712',
+            opacity: lightUpProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.85, 0],
+            }),
+            zIndex: 9998,
+          },
+        ]}
+      />
 
 
 
