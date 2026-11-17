@@ -188,7 +188,7 @@ export default function RegisterScreen({ navigation, route }) {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoSmall}>
-                <Logo size={0.52} circle={true} showText={false} />
+                <Logo size={0.42} circle={true} showText={false} />
               </View>
               <Text style={styles.title}>Create Account</Text>
               <Text style={styles.subtitle}>Join Expense Tracker — it&apos;s free!</Text>
@@ -198,6 +198,21 @@ export default function RegisterScreen({ navigation, route }) {
             <View style={styles.formSection}>
               {step === 1 ? (
                 <>
+                  {/* Google Sign-In at TOP (1-Tap & Instant) */}
+                  <GoogleSignInButton
+                    onPress={signInWithGoogle}
+                    loading={googleLoading}
+                    disabled={loading}
+                    title="Sign up with Google"
+                  />
+
+                  {/* Divider */}
+                  <View style={styles.dividerRow}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR SIGN UP WITH DETAILS</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
                   <Text style={styles.label}>USERNAME</Text>
                   <TextInput
                     style={styles.input}
@@ -302,21 +317,6 @@ export default function RegisterScreen({ navigation, route }) {
                       {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.buttonText}>Send OTP</Text>}
                     </LinearGradient>
                   </TouchableOpacity>
-
-                  {/* Divider */}
-                  <View style={styles.dividerRow}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>OR</Text>
-                    <View style={styles.dividerLine} />
-                  </View>
-
-                  {/* Google Sign-In */}
-                  <GoogleSignInButton
-                    onPress={signInWithGoogle}
-                    loading={googleLoading}
-                    disabled={loading}
-                    title="Sign up with Google"
-                  />
                 </>
               ) : (
                 <>
@@ -381,73 +381,73 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F7FB' },
   safeArea: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 36) : 0,
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 4 : 24) : 0,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'android' ? 16 : 8,
-    paddingBottom: Platform.OS === 'android' ? 36 : 24,
+    paddingHorizontal: 22,
+    paddingTop: Platform.OS === 'android' ? 6 : 4,
+    paddingBottom: Platform.OS === 'android' ? 20 : 16,
   },
 
   topNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
-    minHeight: 44,
+    marginBottom: 2,
+    minHeight: 38,
   },
 
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  header: { alignItems: 'center', marginBottom: 18, marginTop: 0 },
-  logoSmall: { marginBottom: 10 },
-  title: { fontSize: 26, fontWeight: '900', color: '#111827', marginBottom: 4, textAlign: 'center' },
-  subtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
+  header: { alignItems: 'center', marginBottom: 10, marginTop: 0 },
+  logoSmall: { marginBottom: 4 },
+  title: { fontSize: 22, fontWeight: '900', color: '#111827', marginBottom: 2, textAlign: 'center' },
+  subtitle: { fontSize: 13, color: '#6B7280', textAlign: 'center' },
 
-  formSection: { gap: 10 },
-  label: { fontSize: 11, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -4 },
+  formSection: { gap: 9 },
+  label: { fontSize: 10.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -4 },
   input: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14,
+    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 11, paddingHorizontal: 14,
     color: '#111827', fontSize: 15, borderWidth: 1, borderColor: '#E5E7EB',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
   passwordRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 14,
+    backgroundColor: '#FFFFFF', borderRadius: 12,
     borderWidth: 1, borderColor: '#E5E7EB',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
-  passwordInput: { flex: 1, padding: 14, color: '#111827', fontSize: 15 },
-  eyeBtn: { padding: 14 },
-  matchIcon: { padding: 14 },
+  passwordInput: { flex: 1, paddingVertical: 11, paddingHorizontal: 14, color: '#111827', fontSize: 15 },
+  eyeBtn: { padding: 12 },
+  matchIcon: { padding: 12 },
   strengthRow: { flexDirection: 'row', alignItems: 'center', marginTop: -4 },
   strengthBg: { flex: 1, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, overflow: 'hidden', marginRight: 10 },
   strengthFill: { height: '100%', borderRadius: 2 },
   strengthLabel: { fontSize: 11, fontWeight: 'bold' },
   mismatchText: { color: COLORS.red, fontSize: 12, marginTop: -4 },
   button: {
-    height: 54, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
-    marginTop: 4,
-    shadowColor: '#2563EB', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
+    height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    marginTop: 2,
+    shadowColor: '#2563EB', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
   },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   dividerLine: {
     flex: 1,
@@ -456,13 +456,13 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: 12,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#9CA3AF',
     textTransform: 'uppercase',
   },
 
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, paddingBottom: 6 },
-  footerText: { color: '#6B7280', fontSize: 14 },
-  linkText: { color: '#FF6B35', fontSize: 14, fontWeight: 'bold' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 14, paddingBottom: 6 },
+  footerText: { color: '#6B7280', fontSize: 13.5 },
+  linkText: { color: '#FF6B35', fontSize: 13.5, fontWeight: 'bold' },
 });

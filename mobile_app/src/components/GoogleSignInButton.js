@@ -48,9 +48,9 @@ export default function GoogleSignInButton({
 
 const styles = StyleSheet.create({
   button: {
-    height: 52,
+    height: 48,
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1.2,
     borderColor: '#E5E7EB',
     justifyContent: 'center',

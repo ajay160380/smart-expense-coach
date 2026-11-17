@@ -249,7 +249,7 @@ export default function LoginScreen({ navigation }) {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoSmall}>
-                <Logo size={0.6} circle={true} showText={false} />
+                <Logo size={0.42} circle={true} showText={false} />
               </View>
               <Text style={styles.title}>Welcome Back</Text>
               <Text style={styles.subtitle}>Sign in to your account</Text>
@@ -495,88 +495,88 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F7FB' },
   safeArea: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 36) : 0,
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 4 : 24) : 0,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'android' ? 16 : 8,
-    paddingBottom: Platform.OS === 'android' ? 36 : 24,
+    paddingHorizontal: 22,
+    paddingTop: Platform.OS === 'android' ? 6 : 4,
+    paddingBottom: Platform.OS === 'android' ? 18 : 14,
   },
 
   topNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
-    minHeight: 44,
+    marginBottom: 2,
+    minHeight: 38,
   },
 
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     marginTop: 0,
   },
   logoSmall: {
-    marginBottom: 10,
+    marginBottom: 4,
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '900',
     color: '#111827',
-    marginBottom: 4,
+    marginBottom: 2,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B7280',
     textAlign: 'center',
   },
 
-  formSection: { gap: 14 },
+  formSection: { gap: 10 },
   throttleBox: {
-    backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, padding: 12,
+    backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, padding: 10,
     borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
   },
   throttleText: { color: COLORS.red, fontSize: 13, textAlign: 'center' },
-  label: { fontSize: 11, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -6 },
+  label: { fontSize: 10.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: -6 },
   input: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16,
-    color: '#111827', fontSize: 16, borderWidth: 1, borderColor: '#E5E7EB',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
+    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14,
+    color: '#111827', fontSize: 15, borderWidth: 1, borderColor: '#E5E7EB',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
   passwordRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 14,
+    backgroundColor: '#FFFFFF', borderRadius: 12,
     borderWidth: 1, borderColor: '#E5E7EB',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
-  passwordInput: { flex: 1, padding: 16, color: '#111827', fontSize: 16 },
-  eyeBtn: { padding: 16 },
+  passwordInput: { flex: 1, paddingVertical: 12, paddingHorizontal: 14, color: '#111827', fontSize: 15 },
+  eyeBtn: { padding: 12 },
   button: {
-    height: 56, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
-    marginTop: 4,
-    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
+    height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    marginTop: 2,
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
   },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   dividerLine: {
     flex: 1,
@@ -585,30 +585,30 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: 12,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#9CA3AF',
     textTransform: 'uppercase',
   },
 
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24, paddingBottom: 6 },
-  footerText: { color: '#6B7280', fontSize: 14 },
-  linkText: { color: '#FF6B35', fontSize: 14, fontWeight: 'bold' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 12, paddingBottom: 4 },
+  footerText: { color: '#6B7280', fontSize: 13.5 },
+  linkText: { color: '#FF6B35', fontSize: 13.5, fontWeight: 'bold' },
 
   methodToggleWrap: {
     flexDirection: 'row',
     backgroundColor: '#EEF2F6',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 4,
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 2,
   },
   methodTab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 8,
+    borderRadius: 9,
   },
   methodTabActive: {
     backgroundColor: '#FFFFFF',
