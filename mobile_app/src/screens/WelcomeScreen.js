@@ -4,7 +4,7 @@
  * Designed like a Tier-1 Fintech App (Revolut / Apple Card / Cred):
  * - Seamless Top & Bottom Navigation (Back on slides 2 & 3, Skip, Step Dots, Next)
  * - Slide 1: AI Voice Logging with 3D Mic, Receipt, Glowing Pulsing Mic, Next
- * - Slide 2: Chat on Smarter Way with 3D Cute AI Companion, 3 Clean Feature Cards, Unified Navigation
+ * - Slide 2: Chat on Smarter Way with 3D Cute AI Companion, Ultra-Premium 3 Feature Cards, Unified Navigation
  * - Slide 3: Welcome to Expense Tracker (Compact layout, Register & Login moved UP, Zero dead gap)
  * ═══════════════════════════════════════════════════════════════
  */
@@ -162,7 +162,7 @@ const NativeGreenRobotHero = () => {
 
           {/* Robot Head Capsule */}
           <LinearGradient
-            colors={['#FFFFFF', '#F1F5F9']}
+            colors={['#FFFFFF', '#F8FAFC', '#E2E8F0']}
             style={artStyles.robotHead}
           >
             {/* Dark Visor */}
@@ -181,9 +181,12 @@ const NativeGreenRobotHero = () => {
           </LinearGradient>
 
           {/* Thumbs-up Floating Badge */}
-          <View style={artStyles.robotThumbsBadge}>
+          <LinearGradient
+            colors={['#ECFDF5', '#D1FAE5']}
+            style={artStyles.robotThumbsBadge}
+          >
             <Ionicons name="thumbs-up" size={14} color="#059669" />
-          </View>
+          </LinearGradient>
         </View>
       </Float>
 
@@ -363,19 +366,36 @@ export default function WelcomeScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Floating Transaction Card */}
+        {/* Floating Transaction Card (Refined Ultra-Premium) */}
         <View style={styles.transactionCardWrapper}>
           <Float delay={500} duration={3400} range={-4}>
-            <View style={styles.transactionCard}>
-              <View style={styles.transIconBoxGreen}>
-                <Ionicons name="trending-up" size={20} color="#16A34A" />
-              </View>
+            <LinearGradient
+              colors={['#FFFFFF', '#F8FAFC']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.transactionCard}
+            >
+              <LinearGradient
+                colors={['#DCFCE7', '#BBF7D0']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.transIconBoxGreen}
+              >
+                <Ionicons name="trending-up" size={20} color="#15803D" />
+              </LinearGradient>
               <View style={styles.transTextBox}>
                 <Text style={styles.transTitle}>Dinner at Taj</Text>
-                <Text style={styles.transTime}>Food & Dining • Just now</Text>
+                <View style={styles.transCategoryRow}>
+                  <Text style={styles.transTime}>Food & Dining</Text>
+                  <View style={styles.transDot} />
+                  <View style={styles.autoLoggedBadge}>
+                    <Ionicons name="checkmark-circle" size={11} color="#16A34A" />
+                    <Text style={styles.autoLoggedText}>Auto-Logged</Text>
+                  </View>
+                </View>
               </View>
               <Text style={styles.transAmount}>- ₹4,500</Text>
-            </View>
+            </LinearGradient>
           </Float>
         </View>
 
@@ -417,7 +437,7 @@ export default function WelcomeScreen({ navigation, route }) {
   );
 
   // ═══════════════════════════════════════════════════════════════
-  // SLIDE 2: CHAT ON SMARTER WAY (Clean, 3D Robot, 3 Balanced Cards, Unified Footer)
+  // SLIDE 2: CHAT ON SMARTER WAY (Clean, 3D Robot, 3 Ultra-Premium Feature Cards)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide2 = () => (
     <LinearGradient colors={['#F0FDF4', '#F8FAFC', '#FFFFFF']} style={styles.slide}>
@@ -464,34 +484,82 @@ export default function WelcomeScreen({ navigation, route }) {
           Send a quick text or voice note and keep your budgets updated.
         </Text>
 
-        {/* 3 Perfectly Balanced Feature Cards (Matches Reference Mockup) */}
+        {/* 3 Perfectly Balanced Ultra-Premium Feature Cards */}
         <View style={styles.featureCardsRow}>
           {/* Card 1: Track Expenses */}
-          <View style={styles.featureCardEnhanced}>
-            <View style={styles.featureIconWrap}>
-              <Ionicons name="stats-chart" size={22} color="#059669" />
+          <LinearGradient
+            colors={['#FFFFFF', '#F8FCF9', '#EFFBF4']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={styles.featureCardEnhanced}
+          >
+            <View style={styles.cardTopShimmer} />
+            <View style={styles.featureIconContainerShadow}>
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.featureIconWrap}
+              >
+                <Ionicons name="stats-chart" size={20} color="#FFFFFF" />
+              </LinearGradient>
             </View>
             <Text style={styles.featureCardTitle}>Track Expenses</Text>
-            <Text style={styles.featureCardSub}>in Real-time</Text>
-          </View>
+            <View style={styles.cardMicroPill}>
+              <View style={[styles.cardPillDot, { backgroundColor: '#10B981' }]} />
+              <Text style={styles.cardMicroPillText}>Real-time</Text>
+            </View>
+          </LinearGradient>
 
           {/* Card 2: Voice & Text */}
-          <View style={styles.featureCardEnhanced}>
-            <View style={styles.featureIconWrap}>
-              <Ionicons name="mic" size={22} color="#059669" />
+          <LinearGradient
+            colors={['#FFFFFF', '#F8FCF9', '#EFFBF4']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={styles.featureCardEnhanced}
+          >
+            <View style={styles.cardTopShimmer} />
+            <View style={styles.featureIconContainerShadow}>
+              <LinearGradient
+                colors={['#059669', '#047857']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.featureIconWrap}
+              >
+                <Ionicons name="mic" size={20} color="#FFFFFF" />
+              </LinearGradient>
             </View>
             <Text style={styles.featureCardTitle}>Voice & Text</Text>
-            <Text style={styles.featureCardSub}>Both Work</Text>
-          </View>
+            <View style={styles.cardMicroPill}>
+              <View style={[styles.cardPillDot, { backgroundColor: '#059669' }]} />
+              <Text style={styles.cardMicroPillText}>Both Work</Text>
+            </View>
+          </LinearGradient>
 
           {/* Card 3: Smart Insights */}
-          <View style={styles.featureCardEnhanced}>
-            <View style={styles.featureIconWrap}>
-              <Ionicons name="shield-checkmark" size={22} color="#059669" />
+          <LinearGradient
+            colors={['#FFFFFF', '#F8FCF9', '#EFFBF4']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={styles.featureCardEnhanced}
+          >
+            <View style={styles.cardTopShimmer} />
+            <View style={styles.featureIconContainerShadow}>
+              <LinearGradient
+                colors={['#10B981', '#047857']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.featureIconWrap}
+              >
+                <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" />
+              </LinearGradient>
             </View>
             <Text style={styles.featureCardTitle}>Smart Insights</Text>
-            <Text style={styles.featureCardSub}>Better Planning</Text>
-          </View>
+            <View style={styles.cardMicroPill}>
+              <View style={[styles.cardPillDot, { backgroundColor: '#047857' }]} />
+              <Text style={styles.cardMicroPillText}>Smart AI</Text>
+            </View>
+          </LinearGradient>
         </View>
 
         {/* Decorative subtle receipt art & sparkles */}
@@ -856,23 +924,23 @@ const artStyles = StyleSheet.create({
   robotSpeechBubble: {
     position: 'absolute',
     top: 6,
-    left: 4,
-    width: 38,
-    height: 34,
+    left: 2,
+    width: 40,
+    height: 36,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 13,
     borderWidth: 1.5,
     borderColor: '#A7F3D0',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
     elevation: 4,
   },
   robotSpeechRupee: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '900',
     color: '#059669',
   },
@@ -937,7 +1005,6 @@ const artStyles = StyleSheet.create({
     width: 68,
     height: 60,
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#E2E8F0',
     alignItems: 'center',
@@ -993,8 +1060,7 @@ const artStyles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: '#A7F3D0',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1242,33 +1308,33 @@ const styles = StyleSheet.create({
     marginHorizontal: 3,
   },
 
-  // ── Floating Transaction Card ──
+  // ── Floating Transaction Card (Slide 1) ──
   transactionCardWrapper: {
     marginVertical: 2,
   },
   transactionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   transIconBoxGreen: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: '#DCFCE7',
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
   },
   transTextBox: {
     flex: 1,
@@ -1278,15 +1344,36 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#0F172A',
   },
+  transCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 5,
+  },
   transTime: {
     fontSize: 11,
     color: '#64748B',
-    marginTop: 1,
+  },
+  transDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#94A3B8',
+  },
+  autoLoggedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  autoLoggedText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#16A34A',
   },
   transAmount: {
-    fontSize: 15,
+    fontSize: 15.5,
     fontWeight: '900',
-    color: '#1E40AF',
+    color: '#DC2626',
   },
 
   // ── Slide 2 Styling ──
@@ -1298,51 +1385,83 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // ── Slide 2 3 Feature Cards (Matches Reference Mockup) ──
+  // ── Slide 2 3 Feature Cards (Ultra-Premium Redesign) ──
   featureCardsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 8,
-    marginVertical: 4,
+    marginVertical: 6,
   },
   featureCardEnhanced: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     paddingVertical: 14,
     paddingHorizontal: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: '#A7F3D0',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: 'rgba(52, 211, 153, 0.45)',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    elevation: 5,
     alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  cardTopShimmer: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 2.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 1.5,
+  },
+  featureIconContainerShadow: {
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.32,
+    shadowRadius: 8,
+    elevation: 6,
+    marginBottom: 8,
   },
   featureIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#ECFDF5',
+    width: 46,
+    height: 46,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
   },
   featureCardTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#064E3B',
+    color: '#0F172A',
     lineHeight: 15,
     textAlign: 'center',
-    marginBottom: 2,
+    marginBottom: 6,
+    minHeight: 30, // Perfectly balances 1-line and 2-line titles across all cards!
   },
-  featureCardSub: {
-    fontSize: 10.5,
-    fontWeight: '600',
+  cardMicroPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 3.5,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  cardPillDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  cardMicroPillText: {
+    fontSize: 9.5,
+    fontWeight: '800',
     color: '#059669',
-    lineHeight: 13,
-    textAlign: 'center',
+    letterSpacing: 0.2,
   },
 
   // ── Slide 2 Decorative Elements ──
