@@ -1,13 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — 100% PURE NATIVE ONBOARDING (ZERO SCREENSHOTS)
- * Crystal-clear, razor-sharp on 4K & Retina displays.
- * Built with native React Native vector components, smooth gradients,
- * responsive safe-area handling, and interactive haptics.
- *
- * Slide 1: AI Voice Logging (Native 3D Capsule Mic, Receipt, Glowing Pulsing Rings, Next Button)
- * Slide 2: Chat on Smarter Way (Mint Green theme, Native Robot Mascot, 3 Feature Cards, Get Started)
- * Slide 3: Welcome to Expense Tracker (Official High-Res Shield Mascot, Smart Coach Badge, Register & Login)
+ * EXPENSE TRACKER — REFINED PREMIUM ONBOARDING
+ * Clean, modern fintech design with seamless navigation:
+ * - Full Navigation on ALL slides: Previous (← Back), Skip, Next (→)
+ * - Slide 1: AI Voice Logging with 3D Mic, Receipt, Glowing Pulsing Mic, Next
+ * - Slide 2: Chat on Smarter Way with High-End Feature Boxes (Live Sync, Voice & Chat, Smart Budget), Back/Next
+ * - Slide 3: Welcome to Expense Tracker (Compact layout, Register & Login moved UP, Zero dead gap)
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -49,7 +47,7 @@ const Float = ({ children, delay = 0, range = -6, duration = 3200 }) => {
   return <Animated.View style={{ transform: [{ translateY }] }}>{children}</Animated.View>;
 };
 
-// ── Stylized Curved Underline Graphic (Pure Vector) ──
+// ── Stylized Curved Underline Graphic ──
 const UnderlineCurve = ({ color = '#2563EB', width = 110 }) => (
   <View style={{ width, height: 6, marginTop: -2, marginBottom: 6 }}>
     <View
@@ -82,7 +80,6 @@ const NativeMicReceiptArt = () => {
         <View style={artStyles.receiptLineLong} />
         <View style={artStyles.receiptLineMedium} />
         <View style={artStyles.receiptLineShort} />
-        {/* Perforated bottom edge */}
         <View style={artStyles.perforatedRow}>
           {[...Array(6)].map((_, i) => (
             <View key={i} style={artStyles.perforatedDot} />
@@ -96,11 +93,9 @@ const NativeMicReceiptArt = () => {
           colors={['#60A5FA', '#2563EB', '#1D4ED8']}
           style={artStyles.micCapsuleBody}
         >
-          {/* Metallic Top Grille Highlight */}
           <View style={artStyles.micGrilleRing} />
           <Ionicons name="mic" size={28} color="#FFFFFF" />
         </LinearGradient>
-        {/* Mic Neck & Stand Base */}
         <View style={artStyles.micNeck} />
         <View style={artStyles.micStandBase} />
       </View>
@@ -119,35 +114,24 @@ const NativeMicReceiptArt = () => {
 const NativeRobotDJArt = () => {
   return (
     <View style={artStyles.slide2HeroBox}>
-      {/* Background Soft Glow */}
       <View style={artStyles.robotAmbientGlow} />
-
-      {/* Antenna Pole & Glowing Ball */}
       <View style={artStyles.robotAntennaPole} />
       <View style={artStyles.robotAntennaBall} />
-
-      {/* Green DJ Headphone Arc */}
       <View style={artStyles.headphoneArc} />
 
-      {/* White 3D Robot Head */}
       <View style={artStyles.robotHeadOuter}>
-        {/* Left & Right Green Earcups */}
         <View style={[artStyles.headphoneEarcup, { left: -12 }]} />
         <View style={[artStyles.headphoneEarcup, { right: -12 }]} />
 
-        {/* Dark Visor */}
         <View style={artStyles.robotVisor}>
-          {/* Glowing Green Happy Arc Eyes (^ ^) */}
           <View style={artStyles.happyEyesRow}>
             <View style={artStyles.happyEyeArc} />
             <View style={artStyles.happyEyeArc} />
           </View>
-          {/* Cute Smile */}
           <View style={artStyles.happySmileArc} />
         </View>
       </View>
 
-      {/* Robot Torso & Chest Meter */}
       <View style={artStyles.robotTorso}>
         <View style={artStyles.torsoBarRow}>
           <View style={[artStyles.torsoBar, { height: 7, backgroundColor: '#10B981' }]} />
@@ -156,12 +140,10 @@ const NativeRobotDJArt = () => {
         </View>
       </View>
 
-      {/* Thumbs Up Hand Badge */}
       <View style={artStyles.thumbsUpBadge}>
         <Ionicons name="thumbs-up" size={17} color="#10B981" />
       </View>
 
-      {/* Sparkle/Sound Radiance dashes */}
       <View style={[artStyles.greenDash, { top: 6, left: 16, transform: [{ rotate: '-30deg' }] }]} />
       <View style={[artStyles.greenDash, { top: 0, left: 34 }]} />
       <View style={[artStyles.greenDash, { top: 6, left: 52, transform: [{ rotate: '30deg' }] }]} />
@@ -226,6 +208,15 @@ export default function WelcomeScreen({ navigation, route }) {
     }
   };
 
+  const scrollToPrevious = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+    if (currentIndex > 0) {
+      slidesRef.current?.scrollToIndex({ index: currentIndex - 1 });
+    }
+  };
+
   const skipToEnd = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -242,19 +233,23 @@ export default function WelcomeScreen({ navigation, route }) {
   // ═══════════════════════════════════════════════════════════════
   const renderSlide1 = () => (
     <LinearGradient colors={['#F3F7FF', '#FFFFFF']} style={styles.slide}>
-      {/* Background Soft Blobs */}
       <View style={[styles.bgBlob, { top: -40, right: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.5 }]} />
       <View style={[styles.bgBlob, { bottom: 60, left: -60, width: 260, height: 260, backgroundColor: '#EFF6FF', opacity: 0.7 }]} />
 
       <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
-        {/* Top Header Row */}
+        {/* Top Header Row with AI Badge & 1/3 + Skip */}
         <View style={styles.topHeaderRow}>
           <View style={styles.voiceBadgePill}>
             <Ionicons name="pulse" size={14} color="#2563EB" />
             <Text style={styles.voiceBadgeText}>AI Voice Logging</Text>
           </View>
-          <View style={styles.stepPill}>
-            <Text style={styles.stepPillText}>1 / 3</Text>
+          <View style={styles.topRightControls}>
+            <TouchableOpacity onPress={skipToEnd} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.topSkipText}>Skip</Text>
+            </TouchableOpacity>
+            <View style={styles.stepPill}>
+              <Text style={styles.stepPillText}>1 / 3</Text>
+            </View>
           </View>
         </View>
 
@@ -267,7 +262,6 @@ export default function WelcomeScreen({ navigation, route }) {
             <UnderlineCurve color="#2563EB" width={95} />
           </View>
 
-          {/* 100% Native Vector 3D Mic & Receipt */}
           <Float delay={200} duration={3400} range={-6}>
             <NativeMicReceiptArt />
           </Float>
@@ -355,7 +349,6 @@ export default function WelcomeScreen({ navigation, route }) {
             <View style={styles.dotCircleInactive} />
           </View>
 
-          {/* Sleek Royal-Blue Next Button */}
           <TouchableOpacity
             activeOpacity={0.88}
             onPress={scrollToNext}
@@ -378,32 +371,45 @@ export default function WelcomeScreen({ navigation, route }) {
   );
 
   // ═══════════════════════════════════════════════════════════════
-  // SLIDE 2: CHAT ON SMARTER WAY (Mockup 2)
+  // SLIDE 2: CHAT ON SMARTER WAY (Full Navigation + Enhanced Cards)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide2 = () => (
-    <LinearGradient colors={['#F0FDF4', '#FFFFFF']} style={styles.slide}>
-      {/* Background Mint Hills */}
+    <LinearGradient colors={['#F0FDF4', '#F8FAFC', '#FFFFFF']} style={styles.slide}>
       <View style={[styles.bgBlob, { top: -50, right: -50, width: 240, height: 240, backgroundColor: '#DCFCE7', opacity: 0.6 }]} />
       <View style={[styles.bgBlob, { bottom: 100, left: -60, width: 250, height: 250, backgroundColor: '#E8FBF0', opacity: 0.8 }]} />
 
       <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
-        {/* Top Header Row with Logo Card & Rupee Badge */}
+        {/* Top Header Row with Previous (← Back), Logo, Rupee, Skip, 2/3 */}
         <View style={styles.topHeaderRow}>
-          <View style={styles.slide2LogoBox}>
-            <Ionicons name="trending-up" size={24} color="#10B981" />
-          </View>
+          <TouchableOpacity
+            activeOpacity={0.75}
+            onPress={scrollToPrevious}
+            style={styles.backCircleBtn}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="chevron-back" size={20} color="#0F172A" />
+          </TouchableOpacity>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={styles.slide2LogoBox}>
+              <Ionicons name="trending-up" size={20} color="#10B981" />
+            </View>
             <View style={styles.slide2RupeeBubble}>
               <Text style={styles.slide2RupeeText}>₹</Text>
             </View>
+          </View>
+
+          <View style={styles.topRightControls}>
+            <TouchableOpacity onPress={skipToEnd} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={[styles.topSkipText, { color: '#059669' }]}>Skip</Text>
+            </TouchableOpacity>
             <View style={[styles.stepPill, { backgroundColor: '#E6F9F0', borderColor: '#A7F3D0' }]}>
               <Text style={[styles.stepPillText, { color: '#059669' }]}>2 / 3</Text>
             </View>
           </View>
         </View>
 
-        {/* Hero Row: Left Title & Right 100% Native Vector Mascot */}
+        {/* Hero Row: Left Title & Right Mascot */}
         <View style={styles.heroRow}>
           <View style={styles.titleColumn}>
             <Text style={styles.heroTitleSmall}>Welcome to</Text>
@@ -413,7 +419,6 @@ export default function WelcomeScreen({ navigation, route }) {
             <Text style={styles.heroTitleMain}>Way</Text>
           </View>
 
-          {/* 100% Native Vector Headphone Robot Mascot */}
           <Float delay={150} duration={3200} range={-6}>
             <NativeRobotDJArt />
           </Float>
@@ -424,34 +429,61 @@ export default function WelcomeScreen({ navigation, route }) {
           Send a quick text or voice note and keep your budgets updated.
         </Text>
 
-        {/* 3 Green Feature Cards */}
+        {/* 3 Enhanced Fintech Feature Cards with Micro-Badges & Crisp Copy */}
         <View style={styles.featureCardsRow}>
-          <View style={styles.featureCard}>
-            <View style={styles.featureIconWrap}>
-              <Ionicons name="trending-up" size={24} color="#10B981" />
+          {/* Card 1: Real-time Sync */}
+          <LinearGradient
+            colors={['#FFFFFF', '#F0FDF4']}
+            style={styles.featureCardEnhanced}
+          >
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.featureIconWrap}>
+                <Ionicons name="stats-chart" size={20} color="#059669" />
+              </View>
+              <View style={styles.microBadgePill}>
+                <Text style={styles.microBadgeText}>● LIVE</Text>
+              </View>
             </View>
-            <Text style={styles.featureCardTitle}>Track Expenses</Text>
-            <Text style={styles.featureCardSub}>in Real-time</Text>
-          </View>
+            <Text style={styles.featureCardTitle}>Real-time Sync</Text>
+            <Text style={styles.featureCardSub}>Auto-tracks spends instantly</Text>
+          </LinearGradient>
 
-          <View style={styles.featureCard}>
-            <View style={styles.featureIconWrap}>
-              <Ionicons name="mic" size={24} color="#10B981" />
+          {/* Card 2: Voice & Chat */}
+          <LinearGradient
+            colors={['#FFFFFF', '#F0FDF4']}
+            style={styles.featureCardEnhanced}
+          >
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.featureIconWrap}>
+                <Ionicons name="chatbubbles" size={20} color="#059669" />
+              </View>
+              <View style={[styles.microBadgePill, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
+                <Text style={[styles.microBadgeText, { color: '#0284C7' }]}>● 24/7 AI</Text>
+              </View>
             </View>
-            <Text style={styles.featureCardTitle}>Voice & Text</Text>
-            <Text style={styles.featureCardSub}>Both Work</Text>
-          </View>
+            <Text style={styles.featureCardTitle}>Voice & Chat</Text>
+            <Text style={styles.featureCardSub}>Hindi, English & Hinglish</Text>
+          </LinearGradient>
 
-          <View style={styles.featureCard}>
-            <View style={styles.featureIconWrap}>
-              <Ionicons name="shield-checkmark" size={24} color="#10B981" />
+          {/* Card 3: Smart Budget */}
+          <LinearGradient
+            colors={['#FFFFFF', '#F0FDF4']}
+            style={styles.featureCardEnhanced}
+          >
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.featureIconWrap}>
+                <Ionicons name="shield-checkmark" size={20} color="#059669" />
+              </View>
+              <View style={[styles.microBadgePill, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+                <Text style={[styles.microBadgeText, { color: '#D97706' }]}>● SAFE</Text>
+              </View>
             </View>
-            <Text style={styles.featureCardTitle}>Smart Insights</Text>
-            <Text style={styles.featureCardSub}>for Better Planning</Text>
-          </View>
+            <Text style={styles.featureCardTitle}>Smart Budget</Text>
+            <Text style={styles.featureCardSub}>Daily pace & alerts</Text>
+          </LinearGradient>
         </View>
 
-        {/* Get Started Button */}
+        {/* Primary Action: Get Started Button */}
         <View style={styles.slide2ActionSection}>
           <TouchableOpacity
             activeOpacity={0.88}
@@ -468,44 +500,73 @@ export default function WelcomeScreen({ navigation, route }) {
               <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
             </LinearGradient>
           </TouchableOpacity>
+        </View>
 
-          {/* Pagination Dots */}
-          <View style={styles.dotsRowCenter}>
+        {/* Bottom Footer Row with Previous, Dots, Next */}
+        <View style={styles.bottomFooterRow}>
+          <TouchableOpacity
+            onPress={scrollToPrevious}
+            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+            style={styles.skipBtnWrap}
+          >
+            <Text style={[styles.footerSkipText, { color: '#059669' }]}>← Previous</Text>
+          </TouchableOpacity>
+
+          <View style={styles.dotsRow}>
             <View style={styles.dotCircleInactive} />
             <View style={[styles.dotPillActive, { backgroundColor: '#10B981' }]} />
             <View style={styles.dotCircleInactive} />
           </View>
-        </View>
 
-        {/* Bottom Floating Native Receipt Icon */}
-        <View style={styles.slide2ReceiptWrapper}>
-          <View style={styles.miniReceiptBox}>
-            <Ionicons name="receipt-outline" size={22} color="#10B981" />
-          </View>
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={scrollToNext}
+            style={[styles.nextBtnShadow, { shadowColor: '#10B981' }]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.nextPillBtnGradient}
+            >
+              <Text style={styles.nextPillBtnText}>Next</Text>
+              <Ionicons name="arrow-forward" size={17} color="#FFFFFF" style={{ marginLeft: 6 }} />
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
       </View>
     </LinearGradient>
   );
 
   // ═══════════════════════════════════════════════════════════════
-  // SLIDE 3: WELCOME TO EXPENSE TRACKER (Mockup 3)
+  // SLIDE 3: WELCOME TO EXPENSE TRACKER (Compact Layout, Register/Login Moved UP)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide3 = () => (
     <LinearGradient colors={['#F3F7FF', '#FFFFFF']} style={styles.slide}>
-      {/* Background Soft Blobs */}
       <View style={[styles.bgBlob, { top: -40, left: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.5 }]} />
       <View style={[styles.bgBlob, { bottom: 80, right: -50, width: 240, height: 240, backgroundColor: '#EFF6FF', opacity: 0.7 }]} />
 
       <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
-        {/* Top Header: 3 / 3 Pill on Right */}
-        <View style={[styles.topHeaderRow, { justifyContent: 'flex-end' }]}>
+        {/* Top Header Row with Previous (← Back) & 3/3 */}
+        <View style={styles.topHeaderRow}>
+          <TouchableOpacity
+            activeOpacity={0.75}
+            onPress={scrollToPrevious}
+            style={styles.backCircleBtn}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="chevron-back" size={20} color="#0F172A" />
+          </TouchableOpacity>
+
           <View style={styles.stepPill}>
             <Text style={styles.stepPillText}>3 / 3</Text>
           </View>
         </View>
 
-        {/* Center Hero: High-Res App Shield & 3D Companion Showcase */}
-        <View style={styles.slide3MascotSection}>
+        {/* Centered Cohesive Group (Mascot + Title + Subtitle + Register/Login) */}
+        <View style={styles.slide3CenterContainer}>
+          {/* High-Res App Shield & Companion Showcase */}
           <Float delay={0} duration={3400} range={-6}>
             <View style={styles.slide3ShieldFrameOuter}>
               <View style={styles.slide3ShieldFrameInner}>
@@ -516,12 +577,10 @@ export default function WelcomeScreen({ navigation, route }) {
                 />
               </View>
 
-              {/* Floating 3D Badge Companion (Thumbs-Up Mascot Shield) */}
               <View style={styles.shieldBadgeCompanion}>
-                <Ionicons name="thumbs-up" size={18} color="#2563EB" />
+                <Ionicons name="thumbs-up" size={17} color="#2563EB" />
               </View>
 
-              {/* Floating Sparkle Icons */}
               <View style={styles.sparkleIconTopLeft}>
                 <Ionicons name="sparkles" size={18} color="#60A5FA" />
               </View>
@@ -530,49 +589,31 @@ export default function WelcomeScreen({ navigation, route }) {
               </View>
             </View>
           </Float>
-        </View>
 
-        {/* Badge: SMART FINANCIAL COACH */}
-        <View style={styles.slide3TextSection}>
+          {/* Badge: SMART FINANCIAL COACH */}
           <View style={styles.smartCoachBadge}>
             <Ionicons name="sparkles" size={12} color="#2563EB" />
             <Text style={styles.smartCoachBadgeText}>SMART FINANCIAL COACH</Text>
           </View>
 
+          {/* Title */}
           <Text style={styles.welcomeText}>Welcome to</Text>
           <Text style={styles.expenseTrackerText}>Expense Tracker</Text>
           <UnderlineCurve color="#2563EB" width={180} />
 
+          {/* Subtitle */}
           <Text style={styles.slide3Subtitle}>
             {isTourMode
               ? "You are logged in and ready to track expenses effortlessly with AI voice and WhatsApp logging."
               : "Start tracking effortlessly, stay on pace with your daily budget, and boost your savings today!"}
           </Text>
-        </View>
 
-        {/* Action Button: Register or Back to App */}
-        <View style={styles.slide3ActionSection}>
-          {isTourMode ? (
-            <TouchableOpacity
-              activeOpacity={0.88}
-              onPress={exitTour}
-              style={styles.primaryBtnShadow}
-            >
-              <LinearGradient
-                colors={['#2563EB', '#1D4ED8']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.primaryBtnGradient}
-              >
-                <Text style={styles.primaryBtnText}>Back to App</Text>
-                <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
-              </LinearGradient>
-            </TouchableOpacity>
-          ) : (
-            <>
+          {/* Action Buttons (Moved UP immediately below subtitle with clean margin) */}
+          <View style={styles.slide3CompactActionSection}>
+            {isTourMode ? (
               <TouchableOpacity
                 activeOpacity={0.88}
-                onPress={() => navigation.navigate('Register')}
+                onPress={exitTour}
                 style={styles.primaryBtnShadow}
               >
                 <LinearGradient
@@ -581,23 +622,48 @@ export default function WelcomeScreen({ navigation, route }) {
                   end={{ x: 1, y: 0 }}
                   style={styles.primaryBtnGradient}
                 >
-                  <Text style={styles.primaryBtnText}>Register</Text>
+                  <Text style={styles.primaryBtnText}>Back to App</Text>
                   <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
                 </LinearGradient>
               </TouchableOpacity>
-
-              <View style={styles.loginLinkRow}>
-                <Text style={styles.loginPromptText}>Already have an account? </Text>
+            ) : (
+              <>
                 <TouchableOpacity
-                  activeOpacity={0.6}
-                  onPress={() => navigation.navigate('Login')}
-                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+                  activeOpacity={0.88}
+                  onPress={() => navigation.navigate('Register')}
+                  style={styles.primaryBtnShadow}
                 >
-                  <Text style={styles.loginHighlightText}>Login</Text>
+                  <LinearGradient
+                    colors={['#2563EB', '#1D4ED8']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryBtnGradient}
+                  >
+                    <Text style={styles.primaryBtnText}>Register</Text>
+                    <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
+                  </LinearGradient>
                 </TouchableOpacity>
-              </View>
-            </>
-          )}
+
+                <View style={styles.loginLinkRow}>
+                  <Text style={styles.loginPromptText}>Already have an account? </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.6}
+                    onPress={() => navigation.navigate('Login')}
+                    hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+                  >
+                    <Text style={styles.loginHighlightText}>Login</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* Subtle Bottom Indicator on Slide 3 */}
+        <View style={styles.dotsRowCenter}>
+          <View style={styles.dotCircleInactive} />
+          <View style={styles.dotCircleInactive} />
+          <View style={[styles.dotPillActive, { backgroundColor: '#2563EB' }]} />
         </View>
       </View>
     </LinearGradient>
@@ -627,38 +693,37 @@ export default function WelcomeScreen({ navigation, route }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// NATIVE VECTOR ARTWORK STYLES (Razor-Sharp, Scalable)
+// NATIVE VECTOR ARTWORK STYLES
 // ═══════════════════════════════════════════════════════════════
 const artStyles = StyleSheet.create({
-  // ── Slide 1: 3D Mic & Receipt ──
   slide1HeroBox: {
     width: 135,
-    height: 145,
+    height: 140,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
   soundArcOuter: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 118,
+    height: 118,
+    borderRadius: 59,
     borderWidth: 2,
     borderColor: 'rgba(96, 165, 250, 0.25)',
     borderStyle: 'dashed',
   },
   soundArcInner: {
     position: 'absolute',
-    width: 95,
-    height: 95,
-    borderRadius: 48,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
     borderWidth: 1.5,
     borderColor: 'rgba(96, 165, 250, 0.4)',
   },
   receiptCard: {
     position: 'absolute',
     right: 8,
-    top: 25,
+    top: 22,
     width: 64,
     height: 80,
     backgroundColor: '#FFFFFF',
@@ -770,17 +835,17 @@ const artStyles = StyleSheet.create({
 
   // ── Slide 2: Native Robot DJ Mascot ──
   slide2HeroBox: {
-    width: 145,
-    height: 155,
+    width: 140,
+    height: 145,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
   robotAmbientGlow: {
     position: 'absolute',
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 105,
+    height: 105,
+    borderRadius: 52,
     backgroundColor: 'rgba(16, 185, 129, 0.15)',
   },
   robotAntennaPole: {
@@ -807,18 +872,18 @@ const artStyles = StyleSheet.create({
   headphoneArc: {
     position: 'absolute',
     top: 14,
-    width: 82,
-    height: 40,
-    borderTopLeftRadius: 41,
-    borderTopRightRadius: 41,
+    width: 80,
+    height: 38,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
     borderWidth: 4,
     borderColor: '#10B981',
     borderBottomWidth: 0,
   },
   robotHeadOuter: {
-    width: 78,
-    height: 62,
-    borderRadius: 24,
+    width: 76,
+    height: 60,
+    borderRadius: 22,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -846,9 +911,9 @@ const artStyles = StyleSheet.create({
     elevation: 3,
   },
   robotVisor: {
-    width: 54,
-    height: 38,
-    borderRadius: 14,
+    width: 52,
+    height: 36,
+    borderRadius: 13,
     backgroundColor: '#0F172A',
     justifyContent: 'center',
     alignItems: 'center',
@@ -878,11 +943,11 @@ const artStyles = StyleSheet.create({
     borderTopWidth: 0,
   },
   robotTorso: {
-    width: 58,
-    height: 24,
+    width: 56,
+    height: 22,
     backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
     borderTopWidth: 0,
@@ -942,23 +1007,48 @@ const styles = StyleSheet.create({
   },
   slideInner: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     justifyContent: 'space-between',
   },
 
-  // ── Background Ambient Blobs ──
   bgBlob: {
     position: 'absolute',
     borderRadius: 200,
   },
 
-  // ── Top Header Rows ──
+  // ── Top Header Rows & Controls ──
   topHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 38,
     zIndex: 10,
+  },
+  backCircleBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  topRightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  topSkipText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#64748B',
+    paddingHorizontal: 4,
   },
   voiceBadgePill: {
     flexDirection: 'row',
@@ -983,7 +1073,7 @@ const styles = StyleSheet.create({
   },
   stepPill: {
     backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
+    paddingHorizontal: 11,
     paddingVertical: 5,
     borderRadius: 16,
     borderWidth: 1,
@@ -1013,52 +1103,52 @@ const styles = StyleSheet.create({
     marginBottom: -2,
   },
   heroTitleMain: {
-    fontSize: 29,
+    fontSize: 28,
     fontWeight: '800',
     color: '#0F172A',
-    lineHeight: 35,
+    lineHeight: 34,
     letterSpacing: -0.5,
   },
   heroTitleSub: {
-    fontSize: 29,
+    fontSize: 28,
     fontWeight: '700',
     color: '#0F172A',
-    lineHeight: 35,
+    lineHeight: 34,
     letterSpacing: -0.5,
   },
   heroTitleHighlightBlue: {
-    fontSize: 34,
+    fontSize: 33,
     fontWeight: '900',
     color: '#2563EB',
-    lineHeight: 38,
+    lineHeight: 37,
     letterSpacing: -0.5,
   },
   heroTitleHighlightGreen: {
-    fontSize: 34,
+    fontSize: 33,
     fontWeight: '900',
     color: '#10B981',
-    lineHeight: 38,
+    lineHeight: 37,
     letterSpacing: -0.5,
   },
 
   slideSubtitle: {
-    fontSize: 13.5,
+    fontSize: 13,
     color: '#475569',
-    lineHeight: 19,
+    lineHeight: 18.5,
     marginTop: 2,
     marginBottom: 4,
   },
   categoryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 7,
+    gap: 6,
     justifyContent: 'flex-start',
     marginVertical: 2,
   },
   catPill: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: 7,
-    paddingHorizontal: 11,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -1069,7 +1159,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   catPillText: {
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '700',
     color: '#1E293B',
   },
@@ -1078,26 +1168,26 @@ const styles = StyleSheet.create({
   centerMicSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   micGlowRingOuter: {
-    width: 144,
-    height: 144,
-    borderRadius: 72,
+    width: 136,
+    height: 136,
+    borderRadius: 68,
     backgroundColor: 'rgba(37, 99, 235, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   micGlowRingInner: {
-    width: 114,
-    height: 114,
-    borderRadius: 57,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     backgroundColor: 'rgba(37, 99, 235, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   micButtonContainer: {
-    borderRadius: 44,
+    borderRadius: 42,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.38,
@@ -1105,16 +1195,16 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   glowingMicButton: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
     justifyContent: 'center',
     alignItems: 'center',
   },
   tapToSpeakRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
   accentDash: {
     color: '#60A5FA',
@@ -1123,7 +1213,7 @@ const styles = StyleSheet.create({
   },
   tapToSpeakText: {
     color: '#2563EB',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
     marginHorizontal: 3,
   },
@@ -1136,50 +1226,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    borderRadius: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
-    shadowRadius: 14,
-    elevation: 4,
+    shadowRadius: 10,
+    elevation: 3,
   },
   transIconBoxGreen: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     backgroundColor: '#DCFCE7',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   transTextBox: {
     flex: 1,
   },
   transTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
     color: '#0F172A',
   },
   transTime: {
-    fontSize: 11.5,
+    fontSize: 11,
     color: '#64748B',
     marginTop: 1,
   },
   transAmount: {
-    fontSize: 15.5,
+    fontSize: 15,
     fontWeight: '900',
     color: '#1E40AF',
   },
 
   // ── Slide 2 Artwork & Elements ──
   slide2LogoBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1188,13 +1278,13 @@ const styles = StyleSheet.create({
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   slide2RupeeBubble: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#DCFCE7',
     borderWidth: 1,
     borderColor: '#86EFAC',
@@ -1202,60 +1292,79 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   slide2RupeeText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
     color: '#059669',
   },
   slideSubtitleGreen: {
-    fontSize: 13.5,
+    fontSize: 13,
     color: '#334155',
-    lineHeight: 19,
+    lineHeight: 18.5,
     marginTop: 2,
     marginBottom: 6,
   },
+
+  // ── Slide 2 Enhanced Feature Cards ──
   featureCardsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 8,
     marginVertical: 4,
   },
-  featureCard: {
+  featureCardEnhanced: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     paddingVertical: 12,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     borderRadius: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 1.5,
+    borderColor: '#A7F3D0',
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
-  featureIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#ECFDF5',
-    justifyContent: 'center',
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  featureCardTitle: {
-    fontSize: 11.5,
+  featureIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: '#DCFCE7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  microBadgePill: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  microBadgeText: {
+    fontSize: 8.5,
     fontWeight: '800',
-    color: '#0F172A',
-    textAlign: 'center',
+    color: '#059669',
+    letterSpacing: 0.3,
+  },
+  featureCardTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#064E3B',
     lineHeight: 15,
+    marginBottom: 2,
   },
   featureCardSub: {
-    fontSize: 10,
-    color: '#64748B',
-    textAlign: 'center',
-    marginTop: 2,
+    fontSize: 9.5,
+    color: '#059669',
+    lineHeight: 13,
   },
+
   slide2ActionSection: {
     alignItems: 'center',
     marginTop: 4,
@@ -1264,50 +1373,35 @@ const styles = StyleSheet.create({
     width: '100%',
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.32,
     shadowRadius: 14,
-    elevation: 8,
-    marginBottom: 10,
+    elevation: 7,
   },
   getStartedBtnGradient: {
-    height: 52,
-    borderRadius: 26,
+    height: 48,
+    borderRadius: 24,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
   },
   getStartedBtnText: {
-    fontSize: 16.5,
+    fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
   },
-  slide2ReceiptWrapper: {
-    alignItems: 'flex-start',
-    marginTop: 2,
-  },
-  miniReceiptBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#ECFDF5',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.8,
-  },
 
-  // ── Slide 3 Artwork & Elements ──
-  slide3MascotSection: {
-    alignItems: 'center',
+  // ── Slide 3 Centered & Compact Layout ──
+  slide3CenterContainer: {
+    flex: 1,
     justifyContent: 'center',
-    marginVertical: 4,
+    alignItems: 'center',
+    paddingHorizontal: 6,
   },
   slide3ShieldFrameOuter: {
-    width: 170,
-    height: 170,
-    borderRadius: 85,
+    width: 156,
+    height: 156,
+    borderRadius: 78,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1315,13 +1409,14 @@ const styles = StyleSheet.create({
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
-    shadowRadius: 20,
+    shadowRadius: 18,
     elevation: 6,
+    marginBottom: 12,
   },
   slide3ShieldFrameInner: {
-    width: 136,
-    height: 136,
-    borderRadius: 68,
+    width: 124,
+    height: 124,
+    borderRadius: 62,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1332,42 +1427,37 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   slide3OfficialLogoImg: {
-    width: 105,
-    height: 105,
-    borderRadius: 24,
+    width: 96,
+    height: 96,
+    borderRadius: 20,
   },
   shieldBadgeCompanion: {
     position: 'absolute',
-    bottom: 2,
-    right: 8,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    bottom: 0,
+    right: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#DBEAFE',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 4,
   },
   sparkleIconTopLeft: {
     position: 'absolute',
-    top: 6,
-    left: 10,
+    top: 4,
+    left: 8,
   },
   sparkleIconBottomRight: {
     position: 'absolute',
-    bottom: 20,
-    left: 6,
-  },
-  slide3TextSection: {
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    marginVertical: 2,
+    bottom: 16,
+    left: 4,
   },
   smartCoachBadge: {
     flexDirection: 'row',
@@ -1379,7 +1469,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#DBEAFE',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   smartCoachBadgeText: {
     fontSize: 11,
@@ -1388,51 +1478,52 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   welcomeText: {
-    fontSize: 27,
+    fontSize: 25,
     fontWeight: '800',
     color: '#0F172A',
-    lineHeight: 33,
+    lineHeight: 30,
     textAlign: 'center',
   },
   expenseTrackerText: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '900',
     color: '#2563EB',
-    lineHeight: 38,
+    lineHeight: 35,
     textAlign: 'center',
     letterSpacing: -0.5,
   },
   slide3Subtitle: {
-    fontSize: 13.5,
+    fontSize: 13,
     color: '#64748B',
-    lineHeight: 19,
+    lineHeight: 18.5,
     textAlign: 'center',
-    paddingHorizontal: 10,
-    marginTop: 2,
+    paddingHorizontal: 12,
+    marginTop: 4,
+    marginBottom: 16,
   },
-  slide3ActionSection: {
+  slide3CompactActionSection: {
     width: '100%',
     alignItems: 'center',
   },
   primaryBtnShadow: {
     width: '100%',
     shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
-    shadowRadius: 16,
+    shadowRadius: 14,
     elevation: 8,
     marginBottom: 10,
   },
   primaryBtnGradient: {
-    height: 52,
-    borderRadius: 26,
+    height: 50,
+    borderRadius: 25,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
   },
   primaryBtnText: {
-    fontSize: 16.5,
+    fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -1440,7 +1531,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   loginPromptText: {
     fontSize: 14,
@@ -1452,19 +1543,19 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 
-  // ── Bottom Footer Controls (Slide 1) ──
+  // ── Bottom Footer Controls ──
   bottomFooterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 48,
+    minHeight: 46,
   },
   skipBtnWrap: {
     paddingVertical: 8,
-    paddingRight: 12,
+    paddingRight: 10,
   },
   footerSkipText: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '700',
     color: '#64748B',
   },
@@ -1478,7 +1569,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    marginTop: 4,
+    paddingVertical: 4,
   },
   dotPillActive: {
     width: 22,
@@ -1502,12 +1593,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    paddingHorizontal: 22,
-    borderRadius: 22,
+    height: 42,
+    paddingHorizontal: 20,
+    borderRadius: 21,
   },
   nextPillBtnText: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '800',
     color: '#FFFFFF',
   },
