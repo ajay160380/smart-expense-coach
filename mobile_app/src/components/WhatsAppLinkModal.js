@@ -18,6 +18,7 @@ import {
   Platform,
   Linking,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -40,6 +41,9 @@ export default function WhatsAppLinkModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const pollRef = useRef(null);
 
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
   const clearPolling = () => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -55,6 +59,22 @@ export default function WhatsAppLinkModal({
       const tenDigits = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
       setPhone(tenDigits);
       setIsEditingPhone(!tenDigits);
+
+      scaleAnim.setValue(0.92);
+      fadeAnim.setValue(0);
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 65,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true,
+        }),
+      ]).start();
     } else {
       clearPolling();
     }
@@ -75,7 +95,6 @@ export default function WhatsAppLinkModal({
 
     Linking.openURL(waUrl).catch(() => {});
 
-    // Start background poll to see if user linked
     clearPolling();
     setCheckingStatus(true);
     let attempts = 0;
@@ -106,29 +125,43 @@ export default function WhatsAppLinkModal({
 
   if (!visible) return null;
 
+  const formattedDisplayPhone = phone.length === 10
+    ? `+91 ${phone.slice(0, 5)} ${phone.slice(5)}`
+    : (phone ? `+91 ${phone}` : '');
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.card, isDark && styles.cardDark]}>
+        <Animated.View
+          style={[
+            styles.card,
+            isDark && styles.cardDark,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
           {/* Close button */}
           <TouchableOpacity
-            style={styles.closeBtn}
+            style={[styles.closeBtn, isDark && styles.closeBtnDark]}
             onPress={handleClose}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.7}
           >
-            <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+            <Ionicons name="close" size={18} color={isDark ? '#94A3B8' : '#64748B'} />
           </TouchableOpacity>
 
           {isSuccess ? (
             /* SUCCESS STATE */
-            <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+            <View style={{ alignItems: 'center', paddingVertical: 24 }}>
               <View style={styles.successIconCircle}>
-                <Ionicons name="checkmark-circle" size={54} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={56} color="#10B981" />
               </View>
               <Text style={[styles.title, isDark && styles.titleDark, { marginTop: 16 }]}>
                 WhatsApp Bot Linked! 🎉
@@ -140,43 +173,44 @@ export default function WhatsAppLinkModal({
           ) : (
             /* MAIN PROMPT CONTENT */
             <>
-              {/* Badge & Icon */}
-              <View style={{ alignItems: 'center', marginBottom: 12 }}>
+              {/* Top Hero Icon & Badge */}
+              <View style={{ alignItems: 'center', marginBottom: 14 }}>
                 <View style={styles.iconCircle}>
-                  <Ionicons name="logo-whatsapp" size={38} color="#25D366" />
+                  <Ionicons name="logo-whatsapp" size={40} color="#25D366" />
                 </View>
                 <View style={styles.badgePill}>
-                  <Text style={styles.badgePillText}>⚡ 10X FASTER EXPENSE LOGGING</Text>
+                  <Ionicons name="flash" size={11} color="#059669" style={{ marginRight: 3 }} />
+                  <Text style={styles.badgePillText}>10X FASTER EXPENSE LOGGING</Text>
                 </View>
               </View>
 
               {/* Title & Subtitle */}
               <Text style={[styles.title, isDark && styles.titleDark]}>
-                Link WhatsApp Bot 🤖
+                Link WhatsApp Bot
               </Text>
               <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
-                Track expenses anytime without opening the app! Send a quick text or voice note on WhatsApp.
+                Log expenses in 3 seconds by sending a text or voice note without opening the app.
               </Text>
 
-              {/* Feature Points */}
+              {/* Clean Benefit Items */}
               <View style={[styles.featureList, isDark && styles.featureListDark]}>
                 <View style={styles.featureItem}>
                   <View style={[styles.featureDot, { backgroundColor: '#DCFCE7' }]}>
-                    <Text style={{ fontSize: 13 }}>💬</Text>
+                    <Ionicons name="chatbubble-ellipses" size={15} color="#15803D" />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.featureBold, isDark && styles.featureBoldDark]}>
-                      Quick 3-Sec Entry
+                      Quick Text Entry
                     </Text>
                     <Text style={styles.featureSub}>
-                      Text &quot;500 petrol&quot; or &quot;150 chai&quot; anytime
+                      Send &quot;150 chai&quot; or &quot;500 petrol&quot; anytime
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.featureItem}>
                   <View style={[styles.featureDot, { backgroundColor: '#EDE9FE' }]}>
-                    <Text style={{ fontSize: 13 }}>🎙️</Text>
+                    <Ionicons name="mic" size={15} color="#7C3AED" />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.featureBold, isDark && styles.featureBoldDark]}>
@@ -190,29 +224,29 @@ export default function WhatsAppLinkModal({
 
                 <View style={styles.featureItem}>
                   <View style={[styles.featureDot, { backgroundColor: '#E0F2FE' }]}>
-                    <Text style={{ fontSize: 13 }}>🔔</Text>
+                    <Ionicons name="notifications" size={15} color="#0284C7" />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.featureBold, isDark && styles.featureBoldDark]}>
-                      Daily Safe Spend Pace
+                      Daily Spend Alerts
                     </Text>
                     <Text style={styles.featureSub}>
-                      Get instant budget updates on WhatsApp
+                      Get safe limit & balance updates instantly
                     </Text>
                   </View>
                 </View>
               </View>
 
-              {/* Phone display / input */}
+              {/* Clean Phone Display / Input */}
               {isEditingPhone ? (
                 <View style={styles.phoneInputWrap}>
                   <View style={styles.countryCodeBadge}>
-                    <Text style={{ fontSize: 14 }}>🇮🇳</Text>
+                    <Text style={{ fontSize: 13 }}>🇮🇳</Text>
                     <Text style={styles.countryCodeText}>+91</Text>
                   </View>
                   <TextInput
                     style={[styles.phoneInput, isDark && styles.phoneInputDark]}
-                    placeholder="Enter 10-digit WhatsApp number"
+                    placeholder="Enter 10-digit mobile number"
                     placeholderTextColor="#94A3B8"
                     keyboardType="phone-pad"
                     maxLength={10}
@@ -220,16 +254,27 @@ export default function WhatsAppLinkModal({
                     onChangeText={setPhone}
                     autoFocus
                   />
+                  {phone.length === 10 && (
+                    <TouchableOpacity
+                      onPress={() => setIsEditingPhone(false)}
+                      style={styles.donePhoneBtn}
+                    >
+                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  )}
                 </View>
               ) : (
                 <View style={[styles.phonePill, isDark && styles.phonePillDark]}>
-                  <Ionicons name="call-outline" size={15} color="#25D366" />
-                  <Text style={[styles.phonePillText, isDark && styles.phonePillTextDark]}>
-                    Linking WhatsApp: +91 {phone}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                    <Ionicons name="phone-portrait-outline" size={15} color="#059669" />
+                    <Text style={[styles.phonePillText, isDark && styles.phonePillTextDark]}>
+                      {formattedDisplayPhone || 'No phone set'}
+                    </Text>
+                  </View>
                   <TouchableOpacity
                     onPress={() => setIsEditingPhone(true)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.changePhoneBtn}
                   >
                     <Text style={styles.editPhoneBtnText}>Change</Text>
                   </TouchableOpacity>
@@ -243,21 +288,20 @@ export default function WhatsAppLinkModal({
                 style={{ marginTop: 14 }}
               >
                 <LinearGradient
-                  colors={['#25D366', '#128C7E']}
+                  colors={['#10B981', '#059669']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.actionBtn}
                 >
                   <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-                  <Text style={styles.actionBtnText}>
-                    {phone ? `1-Tap Link WhatsApp (+91 ${phone})` : '1-Tap Link WhatsApp Bot'}
-                  </Text>
+                  <Text style={styles.actionBtnText}>Connect on WhatsApp</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" style={{ marginLeft: 6 }} />
                 </LinearGradient>
               </TouchableOpacity>
 
               {checkingStatus && (
                 <View style={styles.checkingRow}>
-                  <ActivityIndicator size="small" color="#25D366" />
+                  <ActivityIndicator size="small" color="#10B981" />
                   <Text style={styles.checkingText}>
                     Waiting for WhatsApp message to send...
                   </Text>
@@ -268,13 +312,14 @@ export default function WhatsAppLinkModal({
               <TouchableOpacity
                 onPress={handleClose}
                 style={styles.remindBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
+                hitSlop={{ top: 10, bottom: 10, left: 16, right: 16 }}
+                activeOpacity={0.65}
               >
-                <Text style={styles.remindBtnText}>Remind Me Later</Text>
+                <Text style={[styles.remindBtnText, isDark && { color: '#64748B' }]}>Remind Me Later</Text>
               </TouchableOpacity>
             </>
           )}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -283,14 +328,14 @@ export default function WhatsAppLinkModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   card: {
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 360,
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 22,
@@ -300,7 +345,7 @@ const styles = StyleSheet.create({
   cardDark: {
     backgroundColor: '#0F172A',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   closeBtn: {
     position: 'absolute',
@@ -309,21 +354,29 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
+  },
+  closeBtnDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   iconCircle: {
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#ECFDF5',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
-    borderWidth: 3,
-    borderColor: '#BBF7D0',
+    borderWidth: 2,
+    borderColor: '#A7F3D0',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
   },
   successIconCircle: {
     width: 80,
@@ -334,18 +387,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgePill: {
-    backgroundColor: '#F0FDF4',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 999,
+    paddingVertical: 3.5,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#86EFAC',
+    borderColor: '#A7F3D0',
   },
   badgePillText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#15803D',
-    letterSpacing: 0.5,
+    color: '#059669',
+    letterSpacing: 0.4,
   },
   title: {
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
@@ -353,7 +408,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#0F172A',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 5,
+    letterSpacing: -0.3,
   },
   titleDark: {
     color: '#F8FAFC',
@@ -363,8 +419,8 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 14,
-    paddingHorizontal: 10,
+    marginBottom: 16,
+    paddingHorizontal: 8,
   },
   subtitleDark: {
     color: '#94A3B8',
@@ -373,7 +429,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderRadius: 16,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     gap: 10,
@@ -388,14 +444,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   featureDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
   featureBold: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '700',
     color: '#0F172A',
   },
@@ -403,38 +459,42 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
   },
   featureSub: {
-    fontSize: 11,
+    fontSize: 11.5,
     color: '#64748B',
+    marginTop: 1,
   },
   phonePill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F0FDF4',
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#BBF7D0',
-    gap: 6,
   },
   phonePillDark: {
-    backgroundColor: 'rgba(37, 211, 102, 0.1)',
-    borderColor: 'rgba(37, 211, 102, 0.3)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: 'rgba(16, 185, 129, 0.25)',
   },
   phonePillText: {
-    flex: 1,
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: '#15803D',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#065F46',
   },
   phonePillTextDark: {
-    color: '#4ADE80',
+    color: '#34D399',
+  },
+  changePhoneBtn: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   editPhoneBtnText: {
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '700',
     color: '#0284C7',
-    textDecorationLine: 'underline',
   },
   phoneInputWrap: {
     flexDirection: 'row',
@@ -442,7 +502,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#CBD5E1',
+    borderColor: '#10B981',
     overflow: 'hidden',
   },
   countryCodeBadge: {
@@ -460,29 +520,36 @@ const styles = StyleSheet.create({
   },
   phoneInput: {
     flex: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 14,
+    fontWeight: '600',
     color: '#0F172A',
   },
   phoneInputDark: {
     color: '#F8FAFC',
+  },
+  donePhoneBtn: {
+    backgroundColor: '#10B981',
+    padding: 8,
+    borderRadius: 8,
+    marginRight: 6,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 13,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     borderRadius: 14,
-    shadowColor: '#25D366',
+    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   actionBtnText: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.2,
@@ -500,14 +567,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   remindBtn: {
-    marginTop: 12,
+    marginTop: 14,
     alignItems: 'center',
     paddingVertical: 4,
   },
   remindBtnText: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '600',
     color: '#94A3B8',
   },
 });
+
 

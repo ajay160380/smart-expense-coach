@@ -899,14 +899,19 @@ export default function DashboardScreen({ navigation, route }) {
   const daysLeftInMonth = Math.max(1, daysInMonth - currentDay);
   const monthElapsedPct = Math.min(100, Math.round((currentDay / daysInMonth) * 100));
 
-  const totalSpentVal = stats?.total_spent || 0;
-  const budgetVal = stats?.budget || 20000;
+  const totalSpentVal = Math.round(Number(stats?.total_spent) || 0);
+  const budgetVal = Math.round(Number(stats?.budget) || 20000);
   const budgetUsedPct = Math.min(100, Math.round((totalSpentVal / budgetVal) * 100));
-  const avgPerDayVal = stats?.avg_per_day || (currentDay > 0 ? Math.round(totalSpentVal / currentDay) : 0);
+  const avgPerDayVal = Math.round(Number(stats?.avg_per_day) || (currentDay > 0 ? (totalSpentVal / currentDay) : 0));
 
   const safeData = stats?.safe_to_spend;
-  const safeDailyVal = safeData?.safe_limit_today ?? Math.round(Math.max(0, budgetVal - totalSpentVal) / daysLeftInMonth);
-  const remainingTodayVal = safeData?.remaining_today ?? Math.max(0, safeDailyVal - (safeData?.today_spent || 0));
+  const safeDailyVal = Math.round(Number(safeData?.safe_limit_today ?? Math.max(0, budgetVal - totalSpentVal) / daysLeftInMonth));
+  const remainingTodayVal = Math.round(Number(safeData?.remaining_today ?? Math.max(0, safeDailyVal - (safeData?.today_spent || 0))));
+
+  const rawWaPhone = (userProfile?.phone_number || stats?.user_phone || '').replace(/[^0-9]/g, '');
+  const waFormattedPhone = rawWaPhone.length >= 10
+    ? `+91 ${rawWaPhone.slice(-10, -5)} ${rawWaPhone.slice(-5)}`
+    : (rawWaPhone ? `+${rawWaPhone}` : '');
 
   let velocityBadge = { label: 'Safe Pace 🔥', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' };
   if (totalSpentVal >= budgetVal) {
@@ -1083,25 +1088,25 @@ export default function DashboardScreen({ navigation, route }) {
           {(!stats?.whatsapp_linked && !userProfile?.whatsapp_linked && !dismissWhatsAppBanner) && (
             <Animated.View style={[styles.waPromoCard, { opacity: animGreetingOpacity }]}>
               <LinearGradient
-                colors={['#064E3B', '#065F46', '#047857']}
+                colors={isDark ? ['#064E3B', '#022C22'] : ['#065F46', '#047857']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.waPromoGradient}
               >
+                {/* Top Row: Icon, Title & Close Button */}
                 <View style={styles.waPromoHeaderRow}>
-                  <View style={styles.waPromoIconBox}>
-                    <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 12, paddingRight: 24 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                      <Text style={styles.waPromoTitle}>Link through WhatsApp</Text>
-                      <View style={styles.waPromoBadge}>
-                        <Text style={styles.waPromoBadgeText}>⚡ 10X FASTER</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                    <View style={styles.waPromoIconBox}>
+                      <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+                    </View>
+                    <View style={{ marginLeft: 10, flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <Text style={styles.waPromoTitle}>Link WhatsApp Bot</Text>
+                        <View style={styles.waPromoBadge}>
+                          <Text style={styles.waPromoBadgeText}>⚡ 10X FASTER</Text>
+                        </View>
                       </View>
                     </View>
-                    <Text style={styles.waPromoSubtitle}>
-                      Send &quot;₹150 Chai&quot; or voice notes on WhatsApp to log expenses automatically!
-                    </Text>
                   </View>
                   <TouchableOpacity
                     onPress={() => {
@@ -1111,23 +1116,35 @@ export default function DashboardScreen({ navigation, route }) {
                     }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={styles.waPromoCloseBtn}
+                    activeOpacity={0.7}
                   >
-                    <Ionicons name="close" size={16} color="rgba(255,255,255,0.7)" />
+                    <Ionicons name="close" size={16} color="rgba(255,255,255,0.75)" />
                   </TouchableOpacity>
                 </View>
 
+                {/* Subtitle */}
+                <Text style={styles.waPromoSubtitle}>
+                  Send &quot;₹150 Chai&quot; or voice notes on WhatsApp to log expenses automatically!
+                </Text>
+
+                {/* Modern CTA Button */}
                 <TouchableOpacity
                   onPress={openWhatsApp}
                   style={styles.waPromoActionBtn}
                   activeOpacity={0.85}
                 >
-                  <Ionicons name="logo-whatsapp" size={17} color="#064E3B" style={{ marginRight: 7 }} />
-                  <Text style={styles.waPromoActionBtnText}>
-                    {userProfile?.phone_number || stats?.user_phone
-                      ? `1-Tap Link WhatsApp (+${userProfile?.phone_number || stats?.user_phone})`
-                      : 'Connect WhatsApp Bot'}
-                  </Text>
-                  <Ionicons name="arrow-forward" size={14} color="#064E3B" style={{ marginLeft: 6 }} />
+                  <LinearGradient
+                    colors={['#10B981', '#059669']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.waPromoBtnGradient}
+                  >
+                    <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                    <Text style={styles.waPromoActionBtnText} numberOfLines={1}>
+                      {waFormattedPhone ? `1-Tap Link WhatsApp (${waFormattedPhone})` : 'Connect WhatsApp Bot'}
+                    </Text>
+                    <Ionicons name="arrow-forward" size={15} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                  </LinearGradient>
                 </TouchableOpacity>
               </LinearGradient>
             </Animated.View>
@@ -1729,34 +1746,32 @@ export default function DashboardScreen({ navigation, route }) {
               </View>
 
               {/* Dual Progress Runway Gauge */}
-              <View style={styles.runwayGaugeWrapper}>
-                <View style={styles.runwayLabelRow}>
-                  <Text style={[styles.runwayLabelText, isDark && { color: colors.textSecondary }]}>
+              <View style={styles.cleanRunwayWrapper}>
+                <View style={styles.cleanRunwayHeader}>
+                  <Text style={[styles.cleanRunwaySubtitle, isDark && { color: colors.textSecondary }]}>
                     Month: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>{currentDay}/{daysInMonth}d ({monthElapsedPct}%)</Text>
                   </Text>
-                  <Text style={[styles.runwayLabelText, isDark && { color: colors.textSecondary }]}>
-                    Budget Spent: <Text style={{ fontWeight: '700', color: budgetUsedPct > 90 ? '#EF4444' : (isDark ? colors.textPrimary : '#0F172A') }}>{budgetUsedPct}%</Text>
+                  <Text style={[styles.cleanRunwaySubtitle, isDark && { color: colors.textSecondary }]}>
+                    Budget Used: <Text style={{ fontWeight: '700', color: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }}>{budgetUsedPct}%</Text>
                   </Text>
                 </View>
-                {/* Progress Track */}
-                <View style={[styles.runwayTrack, isDark && { backgroundColor: colors.border }]}>
-                  <View style={[styles.runwayFillMonth, { width: `${monthElapsedPct}%` }]} />
-                  <View style={[styles.runwayFillBudget, { 
-                    width: `${budgetUsedPct}%`, 
-                    backgroundColor: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' 
-                  }]} />
+                {/* Single Sleek Progress Track */}
+                <View style={[styles.cleanRunwayTrack, isDark && { backgroundColor: colors.border }]}>
+                  <View 
+                    style={[
+                      styles.cleanRunwayFill, 
+                      { 
+                        width: `${Math.min(100, Math.max(3, budgetUsedPct))}%`,
+                        backgroundColor: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' 
+                      }
+                    ]} 
+                  />
                 </View>
-                <View style={styles.runwayLegendRow}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <View style={[styles.runwayDot, { backgroundColor: '#94A3B8' }]} />
-                    <Text style={[styles.runwayLegendCaption, isDark && { color: colors.textSecondary }]}>Timeline pace</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <View style={[styles.runwayDot, { backgroundColor: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }]} />
-                    <Text style={[styles.runwayLegendCaption, isDark && { color: colors.textSecondary }]}>
-                      {budgetUsedPct > monthElapsedPct ? 'Over timeline burn rate' : 'Under timeline burn rate 👍'}
-                    </Text>
-                  </View>
+                <View style={styles.cleanRunwayFooter}>
+                  <Text style={[styles.cleanRunwayPaceText, { color: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }]}>
+                    {budgetUsedPct > monthElapsedPct ? '⚠️ Pacing higher than monthly timeline' : '✅ Pacing safely within budget'}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={14} color={isDark ? colors.textSecondary : '#94A3B8'} />
                 </View>
               </View>
             </TouchableOpacity>
@@ -4498,55 +4513,38 @@ const styles = StyleSheet.create({
     height: 24,
     backgroundColor: '#E2E8F0',
   },
-  runwayGaugeWrapper: {
+  cleanRunwayWrapper: {
     marginTop: 12,
   },
-  runwayLabelRow: {
+  cleanRunwayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 6,
   },
-  runwayLabelText: {
-    fontSize: 11,
+  cleanRunwaySubtitle: {
+    fontSize: 11.5,
     color: '#64748B',
   },
-  runwayTrack: {
-    height: 8,
+  cleanRunwayTrack: {
+    height: 7,
     backgroundColor: '#E2E8F0',
     borderRadius: 4,
     overflow: 'hidden',
-    position: 'relative',
   },
-  runwayFillMonth: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(148, 163, 184, 0.45)',
+  cleanRunwayFill: {
+    height: '100%',
     borderRadius: 4,
   },
-  runwayFillBudget: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: 4,
-  },
-  runwayLegendRow: {
+  cleanRunwayFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 6,
   },
-  runwayDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  runwayLegendCaption: {
-    fontSize: 10,
-    color: '#64748B',
+  cleanRunwayPaceText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   savingsAmountCurrent: {
     fontSize: 16,
@@ -4820,31 +4818,34 @@ const styles = StyleSheet.create({
   },
   // ── WhatsApp Top Banner Styles ──
   waPromoCard: {
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
     marginBottom: 16,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
   },
   waPromoGradient: {
     padding: 16,
-    borderRadius: 20,
+    borderRadius: 22,
   },
   waPromoHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   waPromoIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(37, 211, 102, 0.15)',
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(37, 211, 102, 0.18)',
     borderWidth: 1,
-    borderColor: 'rgba(37, 211, 102, 0.3)',
+    borderColor: 'rgba(37, 211, 102, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -4869,40 +4870,39 @@ const styles = StyleSheet.create({
   },
   waPromoSubtitle: {
     color: '#D1FAE5',
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 3,
+    fontSize: 12.5,
+    lineHeight: 17,
+    marginBottom: 12,
     fontWeight: '500',
   },
   waPromoCloseBtn: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    zIndex: 10,
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   waPromoActionBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  waPromoBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#34D399',
-    paddingVertical: 11,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   waPromoActionBtnText: {
-    color: '#064E3B',
+    color: '#FFFFFF',
     fontSize: 13.5,
     fontWeight: '800',
+    letterSpacing: 0.2,
   },
 });
