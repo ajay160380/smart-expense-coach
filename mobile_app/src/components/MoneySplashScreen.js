@@ -1,8 +1,8 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * MONEY SPLASH SCREEN — True Display Center Edition
- * Centered with Flexbox (width: SW, height: SH, justifyContent: center, alignItems: center)
- * Zero negative margins, zero layout offsets — 100% pure display center.
+ * LUXURY BUTTERY-SMOOTH WELCOME SPLASH SCREEN
+ * Ultra-smooth 60fps native transition into Dashboard.
+ * Zero lag, zero heavy token loops, zero screen tearing/flicker.
  * ═══════════════════════════════════════════════════════════════
  */
 import React, { useEffect, useRef, memo } from 'react';
@@ -20,336 +20,160 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
-// ── 12 PERFECTLY SYMMETRICAL RADIAL CURRENCY TOKENS ─────────────
-// Clockwork 360° circle (30° apart):
-// Alternating: Gold Coin (🪙) ↔ Emerald Cash Note (💵)
-const TOKENS = [];
-
-for (let i = 0; i < 12; i++) {
-  // Start from 12 o'clock (-90deg) and move clockwise
-  const angle = (i / 12) * Math.PI * 2 - Math.PI / 2;
-  const isCoin = i % 2 === 1;
-
-  // Inward start distance
-  const startRadius = 220 + Math.abs(Math.sin(angle)) * 50;
-  const sx = Math.cos(angle) * startRadius;
-  const sy = Math.sin(angle) * startRadius;
-
-  // Radial burst outward distance
-  const burstRadius = 280 + Math.abs(Math.sin(angle)) * 40;
-  const bx = Math.cos(angle) * burstRadius;
-  const by = Math.sin(angle) * burstRadius;
-
-  TOKENS.push({
-    id: i,
-    type: isCoin ? 'coin' : 'note',
-    angle,
-    sx,
-    sy,
-    bx,
-    by,
-  });
-}
-
-// 4 Golden Sparkle Stars
-const SPARKLES = [
-  { id: 's1', sx: -140, sy: -140, bx: -240, by: -240 },
-  { id: 's2', sx: 140, sy: -140, bx: 240, by: -240 },
-  { id: 's3', sx: -140, sy: 140, bx: -240, by: 240 },
-  { id: 's4', sx: 140, sy: 140, bx: 240, by: 240 },
-];
-
 const MoneySplashScreen = memo(({ onFinish }) => {
-  const anim = useRef(new Animated.Value(0)).current;          // 0→1 (converge) → 2 (burst)
-  const logoAnim = useRef(new Animated.Value(0)).current;      // Center logo pop
-  const glowAnim = useRef(new Animated.Value(0)).current;      // Center aura
-  const burstRingAnim = useRef(new Animated.Value(0)).current;  // Shockwave expanding ring
-  const fadeAnim = useRef(new Animated.Value(1)).current;      // Screen dissolve
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const logoScale = useRef(new Animated.Value(0.82)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const glowScale = useRef(new Animated.Value(0.6)).current;
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const textFade = useRef(new Animated.Value(0)).current;
+  const textY = useRef(new Animated.Value(12)).current;
 
   useEffect(() => {
-    // Reveal dashboard right as starburst expansion begins
+    // 1. Entrance animation (Logo Pop + Glow Aura + Text Fade)
+    Animated.parallel([
+      Animated.spring(logoScale, {
+        toValue: 1,
+        friction: 6,
+        tension: 55,
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 350,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowScale, {
+        toValue: 1.25,
+        duration: 800,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowOpacity, {
+        toValue: 0.6,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.sequence([
+        Animated.delay(220),
+        Animated.parallel([
+          Animated.timing(textFade, {
+            toValue: 1,
+            duration: 380,
+            useNativeDriver: true,
+          }),
+          Animated.spring(textY, {
+            toValue: 0,
+            friction: 7,
+            tension: 50,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]),
+    ]).start();
+
+    // 2. Notify dashboard to prepare/reveal right before dissolve
     const revealTimer = setTimeout(() => {
       DeviceEventEmitter.emit('splash_reveal');
+    }, 700);
+
+    // 3. Smooth cross-dissolve to reveal dashboard seamlessly
+    const dissolveTimer = setTimeout(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 380,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start(() => {
+        DeviceEventEmitter.emit('splash_reveal');
+        if (onFinish) onFinish();
+      });
     }, 900);
-
-    Animated.parallel([
-      // ── Main Timeline: Radial convergence (0→1) then Radiant burst (1→2) ──
-      Animated.sequence([
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 800,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 2,
-          duration: 550,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-
-      // ── Center Logo Pop ──
-      Animated.sequence([
-        Animated.delay(400),
-        Animated.timing(logoAnim, {
-          toValue: 1,
-          duration: 380,
-          easing: Easing.out(Easing.back(1.5)),
-          useNativeDriver: true,
-        }),
-      ]),
-
-      // ── Luminous Center Aura Pulse ──
-      Animated.sequence([
-        Animated.delay(500),
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 350,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-
-      // ── Shockwave Expanding Ring (on Burst) ──
-      Animated.sequence([
-        Animated.delay(800),
-        Animated.timing(burstRingAnim, {
-          toValue: 1,
-          duration: 480,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-
-      // ── Smooth Screen Dissolve ──
-      Animated.sequence([
-        Animated.delay(1050),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 250,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start(() => {
-      DeviceEventEmitter.emit('splash_reveal');
-      onFinish && onFinish();
-    });
 
     const fallback = setTimeout(() => {
       DeviceEventEmitter.emit('splash_reveal');
-      onFinish && onFinish();
+      if (onFinish) onFinish();
     }, 1500);
 
     return () => {
       clearTimeout(revealTimer);
+      clearTimeout(dissolveTimer);
       clearTimeout(fallback);
     };
   }, []);
 
-  // Logo interpolations
-  const logoScale = logoAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 1],
-  });
-  const logoOpacity = logoAnim.interpolate({
-    inputRange: [0, 0.25, 1],
-    outputRange: [0, 1, 1],
-  });
-
-  // Center aura glow
-  const glowScale = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.5, 1.6],
-  });
-  const glowOpacity = glowAnim.interpolate({
-    inputRange: [0, 0.4, 1],
-    outputRange: [0, 0.65, 0],
-  });
-
-  // Shockwave burst ring
-  const burstRingScale = burstRingAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.4, 2.8],
-  });
-  const burstRingOpacity = burstRingAnim.interpolate({
-    inputRange: [0, 0.2, 0.8, 1],
-    outputRange: [0, 0.85, 0.3, 0],
-  });
-
   return (
     <Animated.View
       style={[
+        StyleSheet.absoluteFillObject,
         styles.container,
         { opacity: fadeAnim },
       ]}
-      pointerEvents="auto"
+      pointerEvents="none"
     >
-      {/* ── CENTER EMERALD AURA ── */}
+      <LinearGradient
+        colors={['#070D1E', '#0B1638', '#1E3A8A']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.3, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      {/* Luminous Center Ambient Glow */}
       <Animated.View
         style={[
-          styles.glowWrap,
-          { transform: [{ scale: glowScale }], opacity: glowOpacity },
-        ]}
-      >
-        <View style={styles.centerGlow} />
-      </Animated.View>
-
-      {/* ── SHOCKWAVE EXPANDING RING ── */}
-      <Animated.View
-        style={[
-          styles.ringWrap,
-          { transform: [{ scale: burstRingScale }], opacity: burstRingOpacity },
-        ]}
-      >
-        <View style={styles.burstRing} />
-      </Animated.View>
-
-      {/* ── 12 SYMMETRICAL CURRENCY TOKENS ── */}
-      {TOKENS.map((t) => {
-        const tx = anim.interpolate({
-          inputRange: [0, 1, 2],
-          outputRange: [t.sx, 0, t.bx],
-        });
-        const ty = anim.interpolate({
-          inputRange: [0, 1, 2],
-          outputRange: [t.sy, 0, t.by],
-        });
-        const opacity = anim.interpolate({
-          inputRange: [0, 0.15, 0.9, 1.8, 2],
-          outputRange: [0, 1, 1, 0.75, 0],
-        });
-        const scale = anim.interpolate({
-          inputRange: [0, 0.5, 1, 1.2, 2],
-          outputRange: [0.5, 1, 1.2, 1.05, 0.4],
-        });
-
-        if (t.type === 'coin') {
-          return (
-            <Animated.View
-              key={t.id}
-              style={[
-                styles.tokenWrap,
-                {
-                  transform: [{ translateX: tx }, { translateY: ty }, { scale }],
-                  opacity,
-                },
-              ]}
-            >
-              <View style={styles.coinOuter}>
-                <LinearGradient
-                  colors={['#FDE68A', '#F59E0B', '#D97706']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.coinGradient}
-                >
-                  <View style={styles.coinInnerRing}>
-                    <Text style={styles.coinSymbol}>₹</Text>
-                  </View>
-                </LinearGradient>
-              </View>
-            </Animated.View>
-          );
-        }
-
-        // Emerald Cash Note
-        return (
-          <Animated.View
-            key={t.id}
-            style={[
-              styles.tokenWrap,
-              {
-                transform: [{ translateX: tx }, { translateY: ty }, { scale }],
-                opacity,
-              },
-            ]}
-          >
-            <View style={styles.noteOuter}>
-              <LinearGradient
-                colors={['#34D399', '#10B981', '#047857']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.noteGradient}
-              >
-                <View style={styles.noteInnerBorder}>
-                  <View style={styles.noteCircle}>
-                    <Text style={styles.noteSymbol}>₹</Text>
-                  </View>
-                </View>
-              </LinearGradient>
-            </View>
-          </Animated.View>
-        );
-      })}
-
-      {/* ── 4 GOLDEN SPARKLE STARS ── */}
-      {SPARKLES.map((s) => {
-        const tx = anim.interpolate({
-          inputRange: [0, 1, 2],
-          outputRange: [s.sx, 0, s.bx],
-        });
-        const ty = anim.interpolate({
-          inputRange: [0, 1, 2],
-          outputRange: [s.sy, 0, s.by],
-        });
-        const opacity = anim.interpolate({
-          inputRange: [0, 0.2, 0.85, 1.8, 2],
-          outputRange: [0, 0.9, 1, 0.7, 0],
-        });
-        const scale = anim.interpolate({
-          inputRange: [0, 1, 2],
-          outputRange: [0.3, 1.3, 0.4],
-        });
-
-        return (
-          <Animated.View
-            key={s.id}
-            style={[
-              styles.tokenWrap,
-              {
-                transform: [{ translateX: tx }, { translateY: ty }, { scale }],
-                opacity,
-              },
-            ]}
-          >
-            <View style={styles.sparkleDiamond} />
-          </Animated.View>
-        );
-      })}
-
-      {/* ── CENTER BRAND BADGE (True Center Alignment) ── */}
-      <Animated.View
-        style={[
-          styles.centerBadge,
+          styles.glowAura,
           {
-            transform: [{ scale: logoScale }],
-            opacity: logoOpacity,
+            opacity: glowOpacity,
+            transform: [{ scale: glowScale }],
           },
         ]}
-      >
-        <LinearGradient
-          colors={['#8B5CF6', '#10B981']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.logoBorder}
-        >
-          <View style={styles.logoInner}>
-            <Image
-              source={require('../../assets/icon.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </View>
-        </LinearGradient>
+      />
 
-        <Text style={styles.brandTitle}>EXPENSE TRACKER</Text>
-        <View style={styles.tagRow}>
-          <View style={styles.dot} />
-          <Text style={styles.tagline}>SMART EXPENSE COACH</Text>
-          <View style={styles.dot} />
-        </View>
-      </Animated.View>
+      {/* Center Brand Badge & App Logo */}
+      <View style={styles.centerBox}>
+        <Animated.View
+          style={[
+            styles.logoWrap,
+            {
+              opacity: logoOpacity,
+              transform: [{ scale: logoScale }],
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={['#3B82F6', '#10B981']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.logoBorder}
+          >
+            <View style={styles.logoInner}>
+              <Image
+                source={require('../../assets/icon.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Brand Title & Tagline */}
+        <Animated.View
+          style={[
+            styles.brandTextBox,
+            {
+              opacity: textFade,
+              transform: [{ translateY: textY }],
+            },
+          ]}
+        >
+          <Text style={styles.brandTitle}>EXPENSE TRACKER</Text>
+          <View style={styles.taglinePill}>
+            <View style={styles.liveDot} />
+            <Text style={styles.taglineText}>Smart AI Expense Coach</Text>
+          </View>
+        </Animated.View>
+      </View>
     </Animated.View>
   );
 });
@@ -363,199 +187,84 @@ const styles = StyleSheet.create({
     height: SH,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0B0E14',
+    zIndex: 9999,
   },
-  glowWrap: {
+  glowAura: {
     position: 'absolute',
-    width: 240,
-    height: 240,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(59, 130, 246, 0.28)',
   },
-  centerGlow: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(16, 185, 129, 0.22)',
-    shadowColor: '#10B981',
-    shadowOpacity: 0.9,
-    shadowRadius: 50,
-  },
-  ringWrap: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  burstRing: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 2,
-    borderColor: '#34D399',
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-  },
-  tokenWrap: {
-    position: 'absolute',
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // ── LUXURY MINTED GOLD COIN ──
-  coinOuter: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  coinGradient: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FEF08A',
-  },
-  coinInnerRing: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: 'rgba(254, 240, 138, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(217, 119, 6, 0.25)',
-  },
-  coinSymbol: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-
-  // ── CRISP EMERALD CASH NOTE ──
-  noteOuter: {
-    width: 44,
-    height: 24,
-    borderRadius: 6,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.7,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  noteGradient: {
-    width: 44,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#6EE7B7',
-    padding: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  noteInnerBorder: {
-    flex: 1,
-    width: '100%',
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  noteCircle: {
-    width: 15,
-    height: 15,
-    borderRadius: 7.5,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  noteSymbol: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '900',
-  },
-
-  // ── SPARKLE DIAMOND STAR ──
-  sparkleDiamond: {
-    width: 10,
-    height: 10,
-    backgroundColor: '#FDE047',
-    transform: [{ rotate: '45deg' }],
-    shadowColor: '#FDE047',
-    shadowOpacity: 0.9,
-    shadowRadius: 6,
-  },
-
-  // ── CENTER BRAND BADGE ──
-  centerBadge: {
-    position: 'absolute',
+  centerBox: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logoWrap: {
+    width: 104,
+    height: 104,
+    borderRadius: 28,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 8,
   },
   logoBorder: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
+    width: 104,
+    height: 104,
+    borderRadius: 28,
     padding: 3,
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 18,
-    elevation: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoInner: {
-    flex: 1,
-    backgroundColor: '#0F1424',
-    borderRadius: 21,
-    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+    backgroundColor: '#0F172A',
     alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   logoImage: {
-    width: 58,
-    height: 58,
-    borderRadius: 14,
+    width: 88,
+    height: 88,
+    borderRadius: 22,
+  },
+  brandTextBox: {
+    alignItems: 'center',
+    marginTop: 20,
   },
   brandTitle: {
-    marginTop: 14,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 3.5,
+    letterSpacing: 2.2,
     textAlign: 'center',
-    textShadowColor: 'rgba(139, 92, 246, 0.4)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
   },
-  tagRow: {
+  taglinePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginTop: 10,
+    gap: 6,
   },
-  dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#10B981',
-    marginHorizontal: 6,
   },
-  tagline: {
-    fontSize: 9,
+  taglineText: {
+    fontSize: 11,
     fontWeight: '700',
-    color: '#10B981',
-    letterSpacing: 2,
-    textAlign: 'center',
+    color: '#E2E8F0',
+    letterSpacing: 0.5,
   },
 });

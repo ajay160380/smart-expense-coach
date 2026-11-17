@@ -1536,34 +1536,6 @@ export default function DashboardScreen({ navigation, route }) {
                 <Text style={[styles.sectionTitle, isDark && { color: colors.textPrimary }]} numberOfLines={1}>Financial Widgets</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                {(hideMicroSavingsWidget || hideRecurringRadarWidget) && (
-                  <TouchableOpacity
-                    style={[styles.restoreWidgetsBtn, isDark && { backgroundColor: 'rgba(148, 163, 184, 0.15)', borderColor: 'rgba(148, 163, 184, 0.3)' }]}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      Alert.alert(
-                        'Restore Widgets',
-                        'Do you want to show hidden widgets again on your dashboard?',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Restore',
-                            onPress: async () => {
-                              setHideMicroSavingsWidget(false);
-                              setHideRecurringRadarWidget(false);
-                              await AsyncStorage.removeItem('hide_micro_savings_widget');
-                              await AsyncStorage.removeItem('hide_recurring_radar_widget');
-                            },
-                          },
-                        ]
-                      );
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="eye-outline" size={12} color={isDark ? colors.textSecondary : '#64748B'} />
-                    <Text style={[styles.restoreWidgetsText, isDark && { color: colors.textSecondary }]}>Unhide</Text>
-                  </TouchableOpacity>
-                )}
                 {Platform.OS === 'android' && (
                   <TouchableOpacity
                     style={[styles.pinHomePill, isDark && { backgroundColor: 'rgba(37, 99, 235, 0.18)', borderColor: '#3B82F6' }]}

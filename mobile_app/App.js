@@ -793,21 +793,13 @@ function AppNavigatorContent({ isAuthenticated, linking, showSplash, setShowSpla
       </NavigationContainer>
       <CustomAlertModal />
 
-      {/* 💸 Money Burst Splash — Full-Screen Translucent Native Modal */}
-      {isAuthenticated && (
-        <Modal
-          visible={showSplash}
-          transparent={true}
-          animationType="none"
-          statusBarTranslucent={true}
-          onRequestClose={() => setShowSplash(false)}
-        >
-          <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }}>
-            <MoneySplashScreen
-              onFinish={() => setShowSplash(false)}
-            />
-          </View>
-        </Modal>
+      {/* 💸 Luxury Smooth Splash Overlay (Absolute Fill — No Native Dialog Flickering) */}
+      {isAuthenticated && showSplash && (
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+          <MoneySplashScreen
+            onFinish={() => setShowSplash(false)}
+          />
+        </View>
       )}
     </View>
   );

@@ -98,6 +98,31 @@ export default function AnalyticsScreen({ navigation }) {
   const topDay = analytics?.top_day;
   const maxTrend = Math.max(...trend.map((t) => t.total), 1);
 
+  // ── Smart Velocity & Burn Rate Calculations ──
+  const now = new Date();
+  const currentDay = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeftInMonth = Math.max(1, daysInMonth - currentDay);
+  const monthElapsedPct = Math.min(100, Math.round((currentDay / daysInMonth) * 100));
+
+  const totalSpentVal = Math.round(Number(stats?.total_spent) || 0);
+  const budgetVal = Math.round(Number(stats?.budget) || 20000);
+  const budgetUsedPct = Math.min(100, Math.round((totalSpentVal / budgetVal) * 100));
+  const avgPerDayVal = Math.round(Number(stats?.avg_per_day) || (currentDay > 0 ? (totalSpentVal / currentDay) : 0));
+
+  const safeData = analytics?.safe_to_spend || stats?.safe_to_spend;
+  const safeDailyVal = Math.round(Number(safeData?.safe_limit_today ?? Math.max(0, budgetVal - totalSpentVal) / daysLeftInMonth));
+  const remainingTodayVal = Math.round(Number(safeData?.remaining_today ?? Math.max(0, safeDailyVal - (safeData?.today_spent || 0))));
+
+  let velocityBadge = { label: 'Safe Pace 🔥', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' };
+  if (totalSpentVal >= budgetVal) {
+    velocityBadge = { label: 'Exceeded 🚨', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.12)' };
+  } else if (avgPerDayVal > safeDailyVal * 1.25) {
+    velocityBadge = { label: 'High Burn ⚡', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.12)' };
+  } else if (avgPerDayVal > safeDailyVal) {
+    velocityBadge = { label: 'Moderate ⚠️', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' };
+  }
+
   return (
     <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
@@ -189,6 +214,77 @@ export default function AnalyticsScreen({ navigation }) {
                 </Text>
               </View>
             </LinearGradient>
+          </View>
+
+          {/* ── BURN RATE & RUNWAY FORECASTER ── */}
+          <View style={[styles.burnCard, isDark && styles.burnCardDark]}>
+            {/* Header */}
+            <View style={styles.burnHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={[styles.burnIconBox, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7' }]}>
+                  <Ionicons name="speedometer-outline" size={18} color="#F59E0B" />
+                </View>
+                <View>
+                  <Text style={[styles.burnCardTitle, isDark && { color: colors.textPrimary }]}>Burn Rate & Runway</Text>
+                  <Text style={[styles.burnCardSubtitle, isDark && { color: colors.textSecondary }]}>Daily velocity vs safe limit</Text>
+                </View>
+              </View>
+              <View style={[styles.burnStatusBadge, { backgroundColor: velocityBadge.bg }]}>
+                <Text style={[styles.burnStatusText, { color: velocityBadge.color }]}>{velocityBadge.label}</Text>
+              </View>
+            </View>
+
+            {/* Metric Comparison Numbers */}
+            <View style={[styles.burnMetricsRow, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+              <View style={styles.burnMetricCol}>
+                <Text style={[styles.burnMetricCaption, isDark && { color: colors.textSecondary }]}>ACTUAL BURN</Text>
+                <Text style={[styles.burnMetricValue, isDark && { color: colors.textPrimary }]}>
+                  ₹{avgPerDayVal.toLocaleString('en-IN')}<Text style={styles.burnMetricUnit}>/d</Text>
+                </Text>
+              </View>
+              <View style={[styles.burnMetricDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+              <View style={styles.burnMetricCol}>
+                <Text style={[styles.burnMetricCaption, isDark && { color: colors.textSecondary }]}>SAFE CEILING</Text>
+                <Text style={[styles.burnMetricValue, { color: '#10B981' }]}>
+                  ₹{Math.max(0, safeDailyVal).toLocaleString('en-IN')}<Text style={styles.burnMetricUnit}>/d</Text>
+                </Text>
+              </View>
+              <View style={[styles.burnMetricDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+              <View style={styles.burnMetricCol}>
+                <Text style={[styles.burnMetricCaption, isDark && { color: colors.textSecondary }]}>LEFT TODAY</Text>
+                <Text style={[styles.burnMetricValue, { color: remainingTodayVal > 0 ? (isDark ? '#60A5FA' : '#2563EB') : '#EF4444' }]}>
+                  ₹{Math.max(0, remainingTodayVal).toLocaleString('en-IN')}
+                </Text>
+              </View>
+            </View>
+
+            {/* Clean Single Runway Gauge */}
+            <View style={{ marginTop: 12 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <Text style={{ fontSize: 11.5, color: isDark ? colors.textSecondary : '#64748B' }}>
+                  Month: <Text style={{ fontWeight: '700', color: isDark ? colors.textPrimary : '#0F172A' }}>{currentDay}/{daysInMonth}d ({monthElapsedPct}%)</Text>
+                </Text>
+                <Text style={{ fontSize: 11.5, color: isDark ? colors.textSecondary : '#64748B' }}>
+                  Budget Used: <Text style={{ fontWeight: '700', color: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }}>{budgetUsedPct}%</Text>
+                </Text>
+              </View>
+              {/* Single Sleek Progress Track */}
+              <View style={{ height: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
+                <View 
+                  style={{ 
+                    height: '100%',
+                    width: `${Math.min(100, Math.max(3, budgetUsedPct))}%`,
+                    backgroundColor: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981',
+                    borderRadius: 3
+                  }} 
+                />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                <Text style={{ fontSize: 11.5, fontWeight: '600', color: budgetUsedPct > monthElapsedPct ? '#EF4444' : '#10B981' }}>
+                  {budgetUsedPct > monthElapsedPct ? '⚠️ Pacing higher than monthly timeline' : '✅ Pacing safely within budget'}
+                </Text>
+              </View>
+            </View>
           </View>
 
           {/* ── Expense Breakdown Card with Donut Chart ── */}
@@ -553,5 +649,91 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     lineHeight: 20,
     fontWeight: '500',
+  },
+
+  // ── Burn Rate & Runway Styles ──
+  burnCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...SHADOW.card,
+  },
+  burnCardDark: {
+    backgroundColor: '#1E293B',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  burnHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  burnIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  burnCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  burnCardSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  burnStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  burnStatusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  burnMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  burnMetricCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  burnMetricCaption: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  burnMetricValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  burnMetricUnit: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#94A3B8',
+  },
+  burnMetricDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E2E8F0',
   },
 });
