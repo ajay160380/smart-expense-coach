@@ -1,10 +1,13 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * EXPENSE TRACKER — PREMIUM LIGHT ONBOARDING (PIXEL PERFECT)
- * 100% faithful to the 3 visual mockups:
- * Slide 1: AI Voice Logging with 3D Mic, Category Chips, Glowing Center Button
- * Slide 2: Chat on Smarter Way (Mint Green theme) with 3D Headphone Robot & 3 Feature Cards
- * Slide 3: Welcome to Expense Tracker with 3D Robot holding Shield, Register & Login
+ * EXPENSE TRACKER — 100% PURE NATIVE ONBOARDING (ZERO SCREENSHOTS)
+ * Crystal-clear, razor-sharp on 4K & Retina displays.
+ * Built with native React Native vector components, smooth gradients,
+ * responsive safe-area handling, and interactive haptics.
+ *
+ * Slide 1: AI Voice Logging (Native 3D Capsule Mic, Receipt, Glowing Pulsing Rings, Next Button)
+ * Slide 2: Chat on Smarter Way (Mint Green theme, Native Robot Mascot, 3 Feature Cards, Get Started)
+ * Slide 3: Welcome to Expense Tracker (Official High-Res Shield Mascot, Smart Coach Badge, Register & Login)
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -46,21 +49,125 @@ const Float = ({ children, delay = 0, range = -6, duration = 3200 }) => {
   return <Animated.View style={{ transform: [{ translateY }] }}>{children}</Animated.View>;
 };
 
-// ── Stylized Curved Underline Graphic ──
-const UnderlineCurve = ({ color = '#2563EB', width = 110, height = 7 }) => (
-  <View style={{ width, height, marginTop: -2, marginBottom: 6 }}>
+// ── Stylized Curved Underline Graphic (Pure Vector) ──
+const UnderlineCurve = ({ color = '#2563EB', width = 110 }) => (
+  <View style={{ width, height: 6, marginTop: -2, marginBottom: 6 }}>
     <View
       style={{
         width: '100%',
         height: 3.5,
         backgroundColor: color,
         borderRadius: 2,
-        opacity: 0.85,
-        transform: [{ scaleY: 0.85 }, { rotate: '-0.5deg' }],
+        opacity: 0.9,
       }}
     />
   </View>
 );
+
+// ═══════════════════════════════════════════════════════════════
+// 1. NATIVE VECTOR 3D MIC & RECEIPT (Slide 1 Hero Graphic)
+// ═══════════════════════════════════════════════════════════════
+const NativeMicReceiptArt = () => {
+  return (
+    <View style={artStyles.slide1HeroBox}>
+      {/* Background Radiating Wave Arcs */}
+      <View style={artStyles.soundArcOuter} />
+      <View style={artStyles.soundArcInner} />
+
+      {/* Floating 3D Receipt Paper */}
+      <View style={artStyles.receiptCard}>
+        <View style={artStyles.receiptRupeeCircle}>
+          <Text style={artStyles.receiptRupeeText}>₹</Text>
+        </View>
+        <View style={artStyles.receiptLineLong} />
+        <View style={artStyles.receiptLineMedium} />
+        <View style={artStyles.receiptLineShort} />
+        {/* Perforated bottom edge */}
+        <View style={artStyles.perforatedRow}>
+          {[...Array(6)].map((_, i) => (
+            <View key={i} style={artStyles.perforatedDot} />
+          ))}
+        </View>
+      </View>
+
+      {/* 3D Capsule Royal Blue Microphone */}
+      <View style={artStyles.micCapsuleWrapper}>
+        <LinearGradient
+          colors={['#60A5FA', '#2563EB', '#1D4ED8']}
+          style={artStyles.micCapsuleBody}
+        >
+          {/* Metallic Top Grille Highlight */}
+          <View style={artStyles.micGrilleRing} />
+          <Ionicons name="mic" size={28} color="#FFFFFF" />
+        </LinearGradient>
+        {/* Mic Neck & Stand Base */}
+        <View style={artStyles.micNeck} />
+        <View style={artStyles.micStandBase} />
+      </View>
+
+      {/* Radiating sound dashes */}
+      <View style={[artStyles.soundDash, { top: 12, right: 10, transform: [{ rotate: '45deg' }] }]} />
+      <View style={[artStyles.soundDash, { top: 32, right: 2, transform: [{ rotate: '15deg' }] }]} />
+      <View style={[artStyles.soundDash, { bottom: 28, left: 2, transform: [{ rotate: '-35deg' }] }]} />
+    </View>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 2. NATIVE VECTOR ROBOT WITH HEADPHONES (Slide 2 Hero Graphic)
+// ═══════════════════════════════════════════════════════════════
+const NativeRobotDJArt = () => {
+  return (
+    <View style={artStyles.slide2HeroBox}>
+      {/* Background Soft Glow */}
+      <View style={artStyles.robotAmbientGlow} />
+
+      {/* Antenna Pole & Glowing Ball */}
+      <View style={artStyles.robotAntennaPole} />
+      <View style={artStyles.robotAntennaBall} />
+
+      {/* Green DJ Headphone Arc */}
+      <View style={artStyles.headphoneArc} />
+
+      {/* White 3D Robot Head */}
+      <View style={artStyles.robotHeadOuter}>
+        {/* Left & Right Green Earcups */}
+        <View style={[artStyles.headphoneEarcup, { left: -12 }]} />
+        <View style={[artStyles.headphoneEarcup, { right: -12 }]} />
+
+        {/* Dark Visor */}
+        <View style={artStyles.robotVisor}>
+          {/* Glowing Green Happy Arc Eyes (^ ^) */}
+          <View style={artStyles.happyEyesRow}>
+            <View style={artStyles.happyEyeArc} />
+            <View style={artStyles.happyEyeArc} />
+          </View>
+          {/* Cute Smile */}
+          <View style={artStyles.happySmileArc} />
+        </View>
+      </View>
+
+      {/* Robot Torso & Chest Meter */}
+      <View style={artStyles.robotTorso}>
+        <View style={artStyles.torsoBarRow}>
+          <View style={[artStyles.torsoBar, { height: 7, backgroundColor: '#10B981' }]} />
+          <View style={[artStyles.torsoBar, { height: 12, backgroundColor: '#10B981' }]} />
+          <View style={[artStyles.torsoBar, { height: 9, backgroundColor: '#34D399' }]} />
+        </View>
+      </View>
+
+      {/* Thumbs Up Hand Badge */}
+      <View style={artStyles.thumbsUpBadge}>
+        <Ionicons name="thumbs-up" size={17} color="#10B981" />
+      </View>
+
+      {/* Sparkle/Sound Radiance dashes */}
+      <View style={[artStyles.greenDash, { top: 6, left: 16, transform: [{ rotate: '-30deg' }] }]} />
+      <View style={[artStyles.greenDash, { top: 0, left: 34 }]} />
+      <View style={[artStyles.greenDash, { top: 6, left: 52, transform: [{ rotate: '30deg' }] }]} />
+    </View>
+  );
+};
 
 export default function WelcomeScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -73,10 +180,10 @@ export default function WelcomeScreen({ navigation, route }) {
   const safeTopPadding = Math.max(
     insets.top,
     Platform.OS === 'android' ? (RNStatusBar.currentHeight || 28) : 20
-  ) + 8;
+  ) + 6;
 
   // Safe bottom padding above Android gesture bar
-  const safeBottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 14 : 20);
+  const safeBottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 16 : 22);
 
   useEffect(() => {
     let isMounted = true;
@@ -112,7 +219,7 @@ export default function WelcomeScreen({ navigation, route }) {
 
   const scrollToNext = () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (e) {}
     if (currentIndex < 2) {
       slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
@@ -134,16 +241,16 @@ export default function WelcomeScreen({ navigation, route }) {
   // SLIDE 1: AI VOICE LOGGING (Mockup 1)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide1 = () => (
-    <LinearGradient colors={['#F1F6FF', '#FFFFFF']} style={styles.slide}>
+    <LinearGradient colors={['#F3F7FF', '#FFFFFF']} style={styles.slide}>
       {/* Background Soft Blobs */}
-      <View style={[styles.bgBlob, { top: -40, right: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.45 }]} />
-      <View style={[styles.bgBlob, { bottom: 80, left: -60, width: 260, height: 260, backgroundColor: '#EFF6FF', opacity: 0.7 }]} />
+      <View style={[styles.bgBlob, { top: -40, right: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.5 }]} />
+      <View style={[styles.bgBlob, { bottom: 60, left: -60, width: 260, height: 260, backgroundColor: '#EFF6FF', opacity: 0.7 }]} />
 
-      <View style={[styles.slideInner, { paddingTop: safeTopPadding }]}>
+      <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
         {/* Top Header Row */}
         <View style={styles.topHeaderRow}>
           <View style={styles.voiceBadgePill}>
-            <Ionicons name="mic-outline" size={13} color="#2563EB" />
+            <Ionicons name="pulse" size={14} color="#2563EB" />
             <Text style={styles.voiceBadgeText}>AI Voice Logging</Text>
           </View>
           <View style={styles.stepPill}>
@@ -151,24 +258,18 @@ export default function WelcomeScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Title & 3D Hero Row */}
+        {/* Title & Native Vector Hero Row */}
         <View style={styles.heroRow}>
           <View style={styles.titleColumn}>
             <Text style={styles.heroTitleMain}>Track Expenses</Text>
             <Text style={styles.heroTitleSub}>With Just Your</Text>
             <Text style={styles.heroTitleHighlightBlue}>Voice</Text>
-            <UnderlineCurve color="#2563EB" width={92} />
+            <UnderlineCurve color="#2563EB" width={95} />
           </View>
 
-          {/* 3D Mic & Receipt Paper Hero Image */}
+          {/* 100% Native Vector 3D Mic & Receipt */}
           <Float delay={200} duration={3400} range={-6}>
-            <View style={styles.slide1HeroImgWrapper}>
-              <Image
-                source={require('../../assets/onboarding/slide1_mic_hero.jpg')}
-                style={styles.slide1HeroImg}
-                resizeMode="contain"
-              />
-            </View>
+            <NativeMicReceiptArt />
           </Float>
         </View>
 
@@ -194,18 +295,21 @@ export default function WelcomeScreen({ navigation, route }) {
         <View style={styles.centerMicSection}>
           <View style={styles.micGlowRingOuter}>
             <View style={styles.micGlowRingInner}>
-              <Float delay={400} duration={3000} range={-5}>
+              <Float delay={300} duration={2800} range={-5}>
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={() => {
-                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) {}
+                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch (e) {}
                   }}
+                  style={styles.micButtonContainer}
                 >
                   <LinearGradient
-                    colors={['#3B82F6', '#1D4ED8']}
+                    colors={['#3B82F6', '#1D4ED8', '#1E40AF']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={styles.glowingMicButton}
                   >
-                    <Ionicons name="mic" size={42} color="#FFFFFF" />
+                    <Ionicons name="mic" size={44} color="#FFFFFF" />
                   </LinearGradient>
                 </TouchableOpacity>
               </Float>
@@ -221,7 +325,7 @@ export default function WelcomeScreen({ navigation, route }) {
 
         {/* Floating Transaction Card */}
         <View style={styles.transactionCardWrapper}>
-          <Float delay={600} duration={3600} range={-5}>
+          <Float delay={500} duration={3400} range={-4}>
             <View style={styles.transactionCard}>
               <View style={styles.transIconBoxGreen}>
                 <Ionicons name="trending-up" size={20} color="#16A34A" />
@@ -235,9 +339,13 @@ export default function WelcomeScreen({ navigation, route }) {
           </Float>
         </View>
 
-        {/* Bottom Footer Controls */}
-        <View style={[styles.bottomFooterRow, { paddingBottom: safeBottomPadding }]}>
-          <TouchableOpacity onPress={skipToEnd} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+        {/* Bottom Footer Controls: Skip, Dots, Next Button */}
+        <View style={styles.bottomFooterRow}>
+          <TouchableOpacity
+            onPress={skipToEnd}
+            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+            style={styles.skipBtnWrap}
+          >
             <Text style={styles.footerSkipText}>Skip</Text>
           </TouchableOpacity>
 
@@ -247,13 +355,22 @@ export default function WelcomeScreen({ navigation, route }) {
             <View style={styles.dotCircleInactive} />
           </View>
 
+          {/* Sleek Royal-Blue Next Button */}
           <TouchableOpacity
-            activeOpacity={0.85}
+            activeOpacity={0.88}
             onPress={scrollToNext}
-            style={styles.nextPillBtn}
+            style={styles.nextBtnShadow}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.nextPillBtnText}>Next</Text>
-            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" style={{ marginLeft: 4 }} />
+            <LinearGradient
+              colors={['#2563EB', '#1D4ED8']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.nextPillBtnGradient}
+            >
+              <Text style={styles.nextPillBtnText}>Next</Text>
+              <Ionicons name="arrow-forward" size={17} color="#FFFFFF" style={{ marginLeft: 6 }} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
@@ -266,27 +383,19 @@ export default function WelcomeScreen({ navigation, route }) {
   const renderSlide2 = () => (
     <LinearGradient colors={['#F0FDF4', '#FFFFFF']} style={styles.slide}>
       {/* Background Mint Hills */}
-      <View style={[styles.bgBlob, { top: -50, right: -50, width: 240, height: 240, backgroundColor: '#DCFCE7', opacity: 0.55 }]} />
-      <View style={[styles.bgBlob, { bottom: 120, left: -60, width: 250, height: 250, backgroundColor: '#E8FBF0', opacity: 0.7 }]} />
+      <View style={[styles.bgBlob, { top: -50, right: -50, width: 240, height: 240, backgroundColor: '#DCFCE7', opacity: 0.6 }]} />
+      <View style={[styles.bgBlob, { bottom: 100, left: -60, width: 250, height: 250, backgroundColor: '#E8FBF0', opacity: 0.8 }]} />
 
-      <View style={[styles.slideInner, { paddingTop: safeTopPadding }]}>
-        {/* Top Header Row with Logo & Rupee Coin */}
+      <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
+        {/* Top Header Row with Logo Card & Rupee Badge */}
         <View style={styles.topHeaderRow}>
           <View style={styles.slide2LogoBox}>
-            <Image
-              source={require('../../assets/onboarding/slide2_logo_box.jpg')}
-              style={styles.slide2LogoImg}
-              resizeMode="contain"
-            />
+            <Ionicons name="trending-up" size={24} color="#10B981" />
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={styles.slide2RupeeBubble}>
-              <Image
-                source={require('../../assets/onboarding/slide2_rupee_bubble.jpg')}
-                style={styles.slide2RupeeImg}
-                resizeMode="contain"
-              />
+              <Text style={styles.slide2RupeeText}>₹</Text>
             </View>
             <View style={[styles.stepPill, { backgroundColor: '#E6F9F0', borderColor: '#A7F3D0' }]}>
               <Text style={[styles.stepPillText, { color: '#059669' }]}>2 / 3</Text>
@@ -294,7 +403,7 @@ export default function WelcomeScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Hero Row: Left Title & Right 3D Headphone Mascot */}
+        {/* Hero Row: Left Title & Right 100% Native Vector Mascot */}
         <View style={styles.heroRow}>
           <View style={styles.titleColumn}>
             <Text style={styles.heroTitleSmall}>Welcome to</Text>
@@ -304,15 +413,9 @@ export default function WelcomeScreen({ navigation, route }) {
             <Text style={styles.heroTitleMain}>Way</Text>
           </View>
 
-          {/* 3D Headphone Robot Mascot */}
+          {/* 100% Native Vector Headphone Robot Mascot */}
           <Float delay={150} duration={3200} range={-6}>
-            <View style={styles.slide2HeroImgWrapper}>
-              <Image
-                source={require('../../assets/onboarding/slide2_robot_hero.jpg')}
-                style={styles.slide2HeroImg}
-                resizeMode="contain"
-              />
-            </View>
+            <NativeRobotDJArt />
           </Float>
         </View>
 
@@ -374,13 +477,11 @@ export default function WelcomeScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Bottom Floating Receipt */}
-        <View style={[styles.slide2ReceiptWrapper, { bottom: safeBottomPadding + 4 }]}>
-          <Image
-            source={require('../../assets/onboarding/slide2_receipt_paper.jpg')}
-            style={styles.slide2ReceiptImg}
-            resizeMode="contain"
-          />
+        {/* Bottom Floating Native Receipt Icon */}
+        <View style={styles.slide2ReceiptWrapper}>
+          <View style={styles.miniReceiptBox}>
+            <Ionicons name="receipt-outline" size={22} color="#10B981" />
+          </View>
         </View>
       </View>
     </LinearGradient>
@@ -390,12 +491,12 @@ export default function WelcomeScreen({ navigation, route }) {
   // SLIDE 3: WELCOME TO EXPENSE TRACKER (Mockup 3)
   // ═══════════════════════════════════════════════════════════════
   const renderSlide3 = () => (
-    <LinearGradient colors={['#F1F6FF', '#FFFFFF']} style={styles.slide}>
+    <LinearGradient colors={['#F3F7FF', '#FFFFFF']} style={styles.slide}>
       {/* Background Soft Blobs */}
-      <View style={[styles.bgBlob, { top: -40, left: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.45 }]} />
-      <View style={[styles.bgBlob, { bottom: 100, right: -50, width: 240, height: 240, backgroundColor: '#EFF6FF', opacity: 0.6 }]} />
+      <View style={[styles.bgBlob, { top: -40, left: -40, width: 220, height: 220, backgroundColor: '#DBEAFE', opacity: 0.5 }]} />
+      <View style={[styles.bgBlob, { bottom: 80, right: -50, width: 240, height: 240, backgroundColor: '#EFF6FF', opacity: 0.7 }]} />
 
-      <View style={[styles.slideInner, { paddingTop: safeTopPadding }]}>
+      <View style={[styles.slideInner, { paddingTop: safeTopPadding, paddingBottom: safeBottomPadding }]}>
         {/* Top Header: 3 / 3 Pill on Right */}
         <View style={[styles.topHeaderRow, { justifyContent: 'flex-end' }]}>
           <View style={styles.stepPill}>
@@ -403,14 +504,31 @@ export default function WelcomeScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Center Mascot: 3D Robot Holding Shield */}
+        {/* Center Hero: High-Res App Shield & 3D Companion Showcase */}
         <View style={styles.slide3MascotSection}>
-          <Float delay={0} duration={3500} range={-6}>
-            <Image
-              source={require('../../assets/onboarding/slide3_robot_hero.jpg')}
-              style={styles.slide3MascotImg}
-              resizeMode="contain"
-            />
+          <Float delay={0} duration={3400} range={-6}>
+            <View style={styles.slide3ShieldFrameOuter}>
+              <View style={styles.slide3ShieldFrameInner}>
+                <Image
+                  source={require('../../assets/icon.png')}
+                  style={styles.slide3OfficialLogoImg}
+                  resizeMode="contain"
+                />
+              </View>
+
+              {/* Floating 3D Badge Companion (Thumbs-Up Mascot Shield) */}
+              <View style={styles.shieldBadgeCompanion}>
+                <Ionicons name="thumbs-up" size={18} color="#2563EB" />
+              </View>
+
+              {/* Floating Sparkle Icons */}
+              <View style={styles.sparkleIconTopLeft}>
+                <Ionicons name="sparkles" size={18} color="#60A5FA" />
+              </View>
+              <View style={styles.sparkleIconBottomRight}>
+                <Ionicons name="sparkles" size={14} color="#3B82F6" />
+              </View>
+            </View>
           </Float>
         </View>
 
@@ -433,7 +551,7 @@ export default function WelcomeScreen({ navigation, route }) {
         </View>
 
         {/* Action Button: Register or Back to App */}
-        <View style={[styles.slide3ActionSection, { paddingBottom: safeBottomPadding + 6 }]}>
+        <View style={styles.slide3ActionSection}>
           {isTourMode ? (
             <TouchableOpacity
               activeOpacity={0.88}
@@ -473,7 +591,7 @@ export default function WelcomeScreen({ navigation, route }) {
                 <TouchableOpacity
                   activeOpacity={0.6}
                   onPress={() => navigation.navigate('Login')}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                 >
                   <Text style={styles.loginHighlightText}>Login</Text>
                 </TouchableOpacity>
@@ -508,6 +626,309 @@ export default function WelcomeScreen({ navigation, route }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// NATIVE VECTOR ARTWORK STYLES (Razor-Sharp, Scalable)
+// ═══════════════════════════════════════════════════════════════
+const artStyles = StyleSheet.create({
+  // ── Slide 1: 3D Mic & Receipt ──
+  slide1HeroBox: {
+    width: 135,
+    height: 145,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  soundArcOuter: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: 'rgba(96, 165, 250, 0.25)',
+    borderStyle: 'dashed',
+  },
+  soundArcInner: {
+    position: 'absolute',
+    width: 95,
+    height: 95,
+    borderRadius: 48,
+    borderWidth: 1.5,
+    borderColor: 'rgba(96, 165, 250, 0.4)',
+  },
+  receiptCard: {
+    position: 'absolute',
+    right: 8,
+    top: 25,
+    width: 64,
+    height: 80,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 6,
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    transform: [{ rotate: '12deg' }],
+  },
+  receiptRupeeCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  receiptRupeeText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#1E40AF',
+  },
+  receiptLineLong: {
+    width: '85%',
+    height: 3,
+    backgroundColor: '#CBD5E1',
+    borderRadius: 1.5,
+    marginBottom: 4,
+  },
+  receiptLineMedium: {
+    width: '65%',
+    height: 3,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 1.5,
+    marginBottom: 4,
+  },
+  receiptLineShort: {
+    width: '45%',
+    height: 3,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 1.5,
+  },
+  perforatedRow: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    right: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  perforatedDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+  },
+  micCapsuleWrapper: {
+    position: 'absolute',
+    left: 10,
+    top: 15,
+    alignItems: 'center',
+    zIndex: 5,
+  },
+  micCapsuleBody: {
+    width: 48,
+    height: 72,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  micGrilleRing: {
+    position: 'absolute',
+    top: 10,
+    width: 32,
+    height: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 1,
+  },
+  micNeck: {
+    width: 6,
+    height: 14,
+    backgroundColor: '#94A3B8',
+    borderRadius: 3,
+  },
+  micStandBase: {
+    width: 32,
+    height: 6,
+    backgroundColor: '#64748B',
+    borderRadius: 3,
+  },
+  soundDash: {
+    position: 'absolute',
+    width: 8,
+    height: 2.5,
+    backgroundColor: '#3B82F6',
+    borderRadius: 1,
+  },
+
+  // ── Slide 2: Native Robot DJ Mascot ──
+  slide2HeroBox: {
+    width: 145,
+    height: 155,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  robotAmbientGlow: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  robotAntennaPole: {
+    position: 'absolute',
+    top: 6,
+    width: 3,
+    height: 12,
+    backgroundColor: '#10B981',
+    borderRadius: 1.5,
+  },
+  robotAntennaBall: {
+    position: 'absolute',
+    top: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#34D399',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headphoneArc: {
+    position: 'absolute',
+    top: 14,
+    width: 82,
+    height: 40,
+    borderTopLeftRadius: 41,
+    borderTopRightRadius: 41,
+    borderWidth: 4,
+    borderColor: '#10B981',
+    borderBottomWidth: 0,
+  },
+  robotHeadOuter: {
+    width: 78,
+    height: 62,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    position: 'relative',
+    marginTop: 10,
+  },
+  headphoneEarcup: {
+    position: 'absolute',
+    top: 12,
+    width: 14,
+    height: 28,
+    borderRadius: 7,
+    backgroundColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  robotVisor: {
+    width: 54,
+    height: 38,
+    borderRadius: 14,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  happyEyesRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 3,
+  },
+  happyEyeArc: {
+    width: 10,
+    height: 5,
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+    borderWidth: 2,
+    borderColor: '#34D399',
+    borderBottomWidth: 0,
+  },
+  happySmileArc: {
+    width: 12,
+    height: 5,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#34D399',
+    borderTopWidth: 0,
+  },
+  robotTorso: {
+    width: 58,
+    height: 24,
+    backgroundColor: '#FFFFFF',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderTopWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -2,
+  },
+  torsoBarRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3,
+  },
+  torsoBar: {
+    width: 4,
+    borderRadius: 2,
+  },
+  thumbsUpBadge: {
+    position: 'absolute',
+    right: 8,
+    bottom: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1.5,
+    borderColor: '#A7F3D0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  greenDash: {
+    position: 'absolute',
+    width: 8,
+    height: 2.5,
+    backgroundColor: '#10B981',
+    borderRadius: 1,
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN SCREEN STYLES
+// ═══════════════════════════════════════════════════════════════
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -536,7 +957,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 36,
+    minHeight: 38,
     zIndex: 10,
   },
   voiceBadgePill: {
@@ -579,7 +1000,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: 2,
   },
   titleColumn: {
     flex: 1,
@@ -620,31 +1041,19 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
 
-  // ── Slide 1 Artwork & Elements ──
-  slide1HeroImgWrapper: {
-    width: 145,
-    height: 155,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  slide1HeroImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
-  },
   slideSubtitle: {
     fontSize: 13.5,
     color: '#475569',
     lineHeight: 19,
-    marginTop: 4,
-    marginBottom: 8,
+    marginTop: 2,
+    marginBottom: 4,
   },
   categoryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 7,
     justifyContent: 'flex-start',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   catPill: {
     backgroundColor: '#FFFFFF',
@@ -672,32 +1081,35 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   micGlowRingOuter: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(37, 99, 235, 0.07)',
+    width: 144,
+    height: 144,
+    borderRadius: 72,
+    backgroundColor: 'rgba(37, 99, 235, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   micGlowRingInner: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: 'rgba(37, 99, 235, 0.14)',
+    width: 114,
+    height: 114,
+    borderRadius: 57,
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  glowingMicButton: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    justifyContent: 'center',
-    alignItems: 'center',
+  micButtonContainer: {
+    borderRadius: 44,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.38,
     shadowRadius: 16,
     elevation: 10,
+  },
+  glowingMicButton: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tapToSpeakRow: {
     flexDirection: 'row',
@@ -718,7 +1130,7 @@ const styles = StyleSheet.create({
 
   // ── Floating Transaction Card ──
   transactionCardWrapper: {
-    marginVertical: 4,
+    marginVertical: 2,
   },
   transactionCard: {
     flexDirection: 'row',
@@ -778,39 +1190,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
-    overflow: 'hidden',
-  },
-  slide2LogoImg: {
-    width: 38,
-    height: 38,
   },
   slide2RupeeBubble: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    overflow: 'hidden',
-  },
-  slide2RupeeImg: {
-    width: '100%',
-    height: '100%',
-  },
-  slide2HeroImgWrapper: {
-    width: 155,
-    height: 165,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1,
+    borderColor: '#86EFAC',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  slide2HeroImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
+  slide2RupeeText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#059669',
   },
   slideSubtitleGreen: {
     fontSize: 13.5,
     color: '#334155',
     lineHeight: 19,
     marginTop: 2,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   featureCardsRow: {
     flexDirection: 'row',
@@ -857,7 +1258,7 @@ const styles = StyleSheet.create({
   },
   slide2ActionSection: {
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 4,
   },
   getStartedBtnShadow: {
     width: '100%',
@@ -866,7 +1267,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 14,
     elevation: 8,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   getStartedBtnGradient: {
     height: 52,
@@ -882,15 +1283,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   slide2ReceiptWrapper: {
-    position: 'absolute',
-    left: 20,
-    width: 60,
-    height: 60,
-    opacity: 0.9,
+    alignItems: 'flex-start',
+    marginTop: 2,
   },
-  slide2ReceiptImg: {
-    width: '100%',
-    height: '100%',
+  miniReceiptBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.8,
   },
 
   // ── Slide 3 Artwork & Elements ──
@@ -899,14 +1304,70 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 4,
   },
-  slide3MascotImg: {
-    width: width * 0.78,
-    height: height * 0.28,
+  slide3ShieldFrameOuter: {
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  slide3ShieldFrameInner: {
+    width: 136,
+    height: 136,
+    borderRadius: 68,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  slide3OfficialLogoImg: {
+    width: 105,
+    height: 105,
+    borderRadius: 24,
+  },
+  shieldBadgeCompanion: {
+    position: 'absolute',
+    bottom: 2,
+    right: 8,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  sparkleIconTopLeft: {
+    position: 'absolute',
+    top: 6,
+    left: 10,
+  },
+  sparkleIconBottomRight: {
+    position: 'absolute',
+    bottom: 20,
+    left: 6,
   },
   slide3TextSection: {
     alignItems: 'center',
     paddingHorizontal: 8,
-    marginVertical: 4,
+    marginVertical: 2,
   },
   smartCoachBadge: {
     flexDirection: 'row',
@@ -918,7 +1379,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#DBEAFE',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   smartCoachBadgeText: {
     fontSize: 11,
@@ -947,7 +1408,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     textAlign: 'center',
     paddingHorizontal: 10,
-    marginTop: 4,
+    marginTop: 2,
   },
   slide3ActionSection: {
     width: '100%',
@@ -960,7 +1421,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 8,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   primaryBtnGradient: {
     height: 52,
@@ -996,12 +1457,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 46,
+    minHeight: 48,
+  },
+  skipBtnWrap: {
+    paddingVertical: 8,
+    paddingRight: 12,
   },
   footerSkipText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#475569',
+    color: '#64748B',
   },
   dotsRow: {
     flexDirection: 'row',
@@ -1026,21 +1491,23 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#CBD5E1',
   },
-  nextPillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 18,
-    height: 40,
-    borderRadius: 20,
+  nextBtnShadow: {
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  nextPillBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    paddingHorizontal: 22,
+    borderRadius: 22,
   },
   nextPillBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
     color: '#FFFFFF',
   },
