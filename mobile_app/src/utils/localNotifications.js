@@ -1,10 +1,10 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * SMART EXPENSE COACH — AUTOMATED LOCAL NOTIFICATION SCHEDULER
+ * SMART EXPENSE COACH — DYNAMIC LOCAL NOTIFICATION SCHEDULER
  * ═══════════════════════════════════════════════════════════════
- * Sends 1-2 thoughtful, motivational, and timely expense notifications
- * per day (Morning Budget & Night Review) at natural randomized times,
- * even when offline or when backend FCM is idle.
+ * Sends 1-2 thoughtful, engaging, and timely expense notifications
+ * in pure English at natural randomized times across morning,
+ * afternoon, day, and night.
  */
 
 import * as Notifications from 'expo-notifications';
@@ -20,68 +20,121 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// ── SMART MESSAGE POOLS (HINDI / ENGLISH BLEND) ──
+// ── 100% ENGLISH SMART MESSAGE POOLS ──
+
 const MORNING_MESSAGES = [
   {
-    title: '🌅 Good Morning! Aaj Ka Daily Target',
+    title: "🌅 Good Morning! Today's Spending Plan",
     getBody: (ctx) =>
       ctx?.safeDailySpend
-        ? `Naya din, fresh target! Aaj ka safe spending limit ₹${ctx.safeDailySpend.toLocaleString('en-IN')} hai. Mindful shuruat karein! 💰`
-        : 'Naya din, fresh target! Aaj ka daily budget check karein aur smart spending karein. 💰',
+        ? `A brand new day begins! Your safe daily spend target is ₹${ctx.safeDailySpend.toLocaleString('en-IN')}. Make it count! 💰`
+        : 'A brand new day begins! Take a quick moment to check your daily budget. 💰',
   },
   {
-    title: '☕ Morning Habit: Chai & Breakfast',
-    getBody: (ctx) =>
-      `Chai, nashta ya travel ka kharcha hua? ☕ 2 second me voice ya WhatsApp se log karein!`,
+    title: '☕ Morning Coffee or Breakfast?',
+    getBody: () =>
+      'Enjoying your morning tea, coffee, or commute? Log it in seconds with Voice or WhatsApp! 📝',
   },
   {
-    title: '🎯 Daily Safe Spend Reminder',
+    title: '🚀 Wake Up & Win Your Day',
     getBody: (ctx) =>
       ctx?.name
-        ? `Shubh prabhat ${ctx.name}! Subah ka 1 minute aapke hazaron rupaye bacha sakta hai. Stay on track! 🚀`
-        : 'Subah ka 1 minute aapke mahine ke hazaron rupaye bacha sakta hai. Aaj ke spends track karein! 🚀',
+        ? `Good morning ${ctx.name}! 1 minute of money mindfulness today saves thousands this month. 💪`
+        : '1 minute of financial awareness today saves thousands this month. Have a great day! 🚀',
   },
   {
-    title: '💡 Smart Money Start',
+    title: '💡 Smart Morning Money Tip',
     getBody: (ctx) =>
       ctx?.safeDailySpend
-        ? `Aaj ka safe quota ₹${ctx.safeDailySpend.toLocaleString('en-IN')} hai. Zaroori kharchon ko pehle plan karein! 📊`
-        : 'Aaj ke zaroori kharchon ko pehle plan karein, extra impulse buying se bachein! 📊',
+        ? `Today's safe allowance is ₹${ctx.safeDailySpend.toLocaleString('en-IN')}. Plan your essentials first and avoid impulse buys! 📊`
+        : 'Plan your essential expenses first today and stay ahead of your monthly target! 📊',
   },
   {
     title: '☀️ Daily Financial Focus',
+    getBody: () =>
+      'Start your morning with clear financial control. Track expenses as you go and build wealth! ✨',
+  },
+];
+
+const AFTERNOON_MESSAGES = [
+  {
+    title: '🍽️ Lunch Break Check-In',
+    getBody: () =>
+      "Dined out or ordered lunch? Don't forget to record your meal expenses right away! 🍛",
+  },
+  {
+    title: '⚡ Mid-Day Spending Pulse',
     getBody: (ctx) =>
-      `Din ki shuruat clear financial control ke sath karein. Check your dashboard today! ✨`,
+      ctx?.safeDailySpend
+        ? `Half the day has passed! Your safe limit for today is ₹${ctx.safeDailySpend.toLocaleString('en-IN')}. Stay right on track! 📈`
+        : "Half the day has passed! Take a quick 10-second glance at your spending pace today. 📈",
+  },
+  {
+    title: '💡 Quick 10-Second Expense Log',
+    getBody: () =>
+      'Small daily expenses add up fast! Tap the mic to log any morning or afternoon spends. 🎙️',
+  },
+  {
+    title: '🏃 Mid-Day Habit Check',
+    getBody: (ctx) =>
+      ctx?.name
+        ? `Hey ${ctx.name}, quick check-in! Did any unexpected expenses come up this afternoon? 📝`
+        : 'Take 20 seconds to update your expense tracker and keep your finances crystal clear! 📝',
+  },
+  {
+    title: '🛒 Shopping or Errands Today?',
+    getBody: () =>
+      'Picked up any quick groceries or essentials? Add them now so you never forget! 🛍️',
+  },
+];
+
+const EVENING_MESSAGES = [
+  {
+    title: '🌆 Evening Refreshment & Commute',
+    getBody: () =>
+      'Evening tea, snacks, or cab ride? Log it in 2 seconds and keep your daily streak alive! ☕',
+  },
+  {
+    title: '🛋️ Evening Financial Wind-Down',
+    getBody: () =>
+      'How did your spending go today? Check your dashboard and relax with complete peace of mind. 🛋️',
+  },
+  {
+    title: '🥬 Groceries & Daily Needs',
+    getBody: () =>
+      'Picked up supplies on the way home? Keep your budget 100% accurate by logging them now! 🥬',
   },
 ];
 
 const NIGHT_MESSAGES = [
   {
-    title: '🌙 Din Ka Hisab-Kitab Time!',
-    getBody: (ctx) =>
-      `Sone se pehle aaj ke saare kharche check kar lijiye. Kya koi chhota spend log karna reh gaya? 📝`,
+    title: '🌙 Daily Wrap-Up: Check Your Expenses',
+    getBody: () =>
+      'Before heading to bed, take a quick look: did you log all of today’s expenses? 📝',
   },
   {
-    title: '😴 Nightly Expense Wrap-Up',
-    getBody: (ctx) =>
-      `Dinner ya grocery ka kharcha log ho gaya? Ek quick glance dalein aur peaceful sleep lein! 🛌`,
-  },
-  {
-    title: '⭐ Consistency Is Key!',
+    title: '😴 Sleep Easy With A Balanced Budget',
     getBody: (ctx) =>
       ctx?.name
-        ? `Well done ${ctx.name}! Apni daily expense logging streak maintain karein aur savings boost karein! 🎯`
-        : 'Apni daily expense logging streak maintain karein aur har din savings boost karein! 🎯',
+        ? `Great job today, ${ctx.name}! Review your daily spending and rest with confidence. 🛌`
+        : 'Review your daily spending one last time before bed. Sleep peacefully and dream big! 🛌',
   },
   {
-    title: '📊 Daily Review Complete?',
-    getBody: (ctx) =>
-      `Aaj ka aakhri hisab update karein. Kal fresh budget aur nayi energy ke sath shuru karenge! ✨`,
+    title: '⭐ Consistency Is Key To Savings',
+    getBody: () =>
+      'Consistency is the foundation of wealth. Log your final spend and keep your streak strong! 🎯',
   },
   {
-    title: '💸 Money Mindfulness Check',
+    title: '📊 Daily Financial Review',
+    getBody: () =>
+      'Check your remaining monthly budget before calling it a day. Tomorrow is a fresh start! ✨',
+  },
+  {
+    title: '💸 Evening Budget Check',
     getBody: (ctx) =>
-      `Aaj kitna kharch hua aur kitna bacha? Check your remaining budget before calling it a day! 🌙`,
+      ctx?.safeDailySpend
+        ? `Check how close you stayed to your ₹${ctx.safeDailySpend.toLocaleString('en-IN')} target today! 🌙`
+        : 'Take a quick glance at your daily spending summary before you sleep. Good night! 🌙',
   },
 ];
 
@@ -106,8 +159,8 @@ async function setupChannel() {
 }
 
 /**
- * Schedules 1-2 auto notifications per day (Morning Budget & Night Review)
- * at slightly randomized, natural times.
+ * Schedules 1-2 auto notifications per day in pure English at dynamic,
+ * randomized times across morning, afternoon, day, and night.
  *
  * @param {Object} userContext { name?: string, safeDailySpend?: number }
  */
@@ -124,74 +177,99 @@ export async function scheduleRandomNotifications(userContext = {}) {
       return;
     }
 
-    // Check if we already scheduled today (to avoid thrashing the alarm manager on every re-render)
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const lastScheduled = await AsyncStorage.getItem(LAST_SCHEDULE_KEY);
-
     // Cancel existing scheduled local notifications to prevent duplicate stacking
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    // Select random rich templates
-    const morningTemplate = MORNING_MESSAGES[Math.floor(Math.random() * MORNING_MESSAGES.length)];
-    const nightTemplate = NIGHT_MESSAGES[Math.floor(Math.random() * NIGHT_MESSAGES.length)];
+    // Pick 2 random slots for the day (e.g., Morning + Night, or Afternoon + Night, or Morning + Afternoon)
+    // to keep it naturally spaced and strictly 1-2 notifications per day.
+    const allSlots = ['morning', 'afternoon', 'night'];
+    // Shuffle slots
+    const shuffledSlots = [...allSlots].sort(() => 0.5 - Math.random());
+    const selectedSlots = shuffledSlots.slice(0, 2); // Always 2 distinct slots per day
 
-    const morningTitle = morningTemplate.title;
-    const morningBody = morningTemplate.getBody(userContext);
+    for (const slot of selectedSlots) {
+      if (slot === 'morning') {
+        const template = MORNING_MESSAGES[Math.floor(Math.random() * MORNING_MESSAGES.length)];
+        // Random morning time between 8:15 AM and 9:45 AM
+        const hour = 8 + (Math.random() < 0.5 ? 0 : 1);
+        const minute = 15 + Math.floor(Math.random() * 40); // 15 to 54 min
 
-    const nightTitle = nightTemplate.title;
-    const nightBody = nightTemplate.getBody(userContext);
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: template.title,
+            body: template.getBody(userContext),
+            data: { screen: 'Dashboard', type: 'morning_reminder' },
+            sound: 'default',
+            channelId: 'expense_tracker_alerts_v2',
+          },
+          trigger: {
+            hour,
+            minute,
+            repeats: true,
+          },
+        });
+      } else if (slot === 'afternoon') {
+        const pool = Math.random() < 0.65 ? AFTERNOON_MESSAGES : EVENING_MESSAGES;
+        const template = pool[Math.floor(Math.random() * pool.length)];
+        // Random daytime/afternoon time between 1:15 PM and 3:45 PM (13:15 - 15:45)
+        const hour = 13 + Math.floor(Math.random() * 3); // 13, 14, or 15
+        const minute = 10 + Math.floor(Math.random() * 45); // 10 to 54 min
 
-    // 1. Morning Notification: Natural time between 8:30 AM and 9:15 AM
-    const morningMinute = 30 + Math.floor(Math.random() * 20); // 30 - 49 min past 8 AM
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: morningTitle,
-        body: morningBody,
-        data: { screen: 'Dashboard', type: 'morning_nudge' },
-        sound: 'default',
-        channelId: 'expense_tracker_alerts_v2',
-      },
-      trigger: {
-        hour: 8,
-        minute: morningMinute,
-        repeats: true,
-      },
-    });
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: template.title,
+            body: template.getBody(userContext),
+            data: { screen: 'Dashboard', type: 'afternoon_reminder' },
+            sound: 'default',
+            channelId: 'expense_tracker_alerts_v2',
+          },
+          trigger: {
+            hour,
+            minute,
+            repeats: true,
+          },
+        });
+      } else if (slot === 'night') {
+        const template = NIGHT_MESSAGES[Math.floor(Math.random() * NIGHT_MESSAGES.length)];
+        // Random night time between 8:45 PM and 10:15 PM (20:45 - 22:15)
+        const hour = Math.random() < 0.7 ? 21 : (Math.random() < 0.5 ? 20 : 22);
+        const minute = 10 + Math.floor(Math.random() * 40); // 10 to 49 min
 
-    // 2. Night Notification: Natural time between 9:00 PM and 9:30 PM (21:00 - 21:30)
-    const nightMinute = 5 + Math.floor(Math.random() * 25); // 05 - 29 min past 9 PM
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: nightTitle,
-        body: nightBody,
-        data: { screen: 'Dashboard', type: 'night_summary' },
-        sound: 'default',
-        channelId: 'expense_tracker_alerts_v2',
-      },
-      trigger: {
-        hour: 21,
-        minute: nightMinute,
-        repeats: true,
-      },
-    });
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: template.title,
+            body: template.getBody(userContext),
+            data: { screen: 'Dashboard', type: 'night_reminder' },
+            sound: 'default',
+            channelId: 'expense_tracker_alerts_v2',
+          },
+          trigger: {
+            hour,
+            minute,
+            repeats: true,
+          },
+        });
+      }
+    }
 
+    const todayStr = new Date().toISOString().slice(0, 10);
     await AsyncStorage.setItem(LAST_SCHEDULE_KEY, todayStr);
-    console.log(`[AutoNotif] Scheduled 2 daily reminders: Morning ~08:${morningMinute}, Night ~21:${nightMinute}`);
+    console.log(`[AutoNotif] Scheduled 2 dynamic English reminders for slots: ${selectedSlots.join(', ')}`);
   } catch (error) {
     console.log('[AutoNotif] Schedule Error (silent fallback):', error);
   }
 }
 
 /**
- * Fires an instant preview notification to test sound and appearance immediately.
+ * Fires an instant preview notification in English to test appearance immediately.
  */
 export async function triggerInstantTestNotification() {
   try {
     await setupChannel();
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '💡 Smart Expense Coach Active!',
-        body: 'Aapke auto daily reminders set ho gaye hain! Morning aur Night me 1-2 smart budget updates milte rahenge. 🚀',
+        title: '💡 Smart Expense Coach Active',
+        body: 'Automatic daily expense reminders are active! You will receive 1-2 timely updates throughout the day. 🚀',
         data: { screen: 'Dashboard' },
         sound: 'default',
         channelId: 'expense_tracker_alerts_v2',
