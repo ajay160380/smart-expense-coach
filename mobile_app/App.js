@@ -550,6 +550,7 @@ export default function App() {
 
     let unsubscribe = () => {};
     let notifResponseSub = null;
+    let notifReceivedSub = null;
 
     try {
       unsubscribe = messaging().onMessage(async remoteMessage => {
@@ -606,6 +607,22 @@ export default function App() {
           navigationRef.navigate(data.screen);
         }
       });
+
+      notifReceivedSub = Notifications.addNotificationReceivedListener(async notification => {
+        try {
+          const content = notification?.request?.content;
+          if (content?.title) {
+            await saveNotification({
+              messageId: notification?.request?.identifier || String(Date.now()),
+              notification: {
+                title: content.title,
+                body: content.body,
+              },
+              data: content.data,
+            });
+          }
+        } catch (e) {}
+      });
     } catch (msgErr) {
       console.log('FCM messaging listener error:', msgErr);
     }
@@ -659,6 +676,7 @@ export default function App() {
       if (authListener && authListener.remove) authListener.remove();
       if (typeof unsubscribe === 'function') unsubscribe();
       if (notifResponseSub && notifResponseSub.remove) notifResponseSub.remove();
+      if (notifReceivedSub && notifReceivedSub.remove) notifReceivedSub.remove();
     };
   }, []);
 

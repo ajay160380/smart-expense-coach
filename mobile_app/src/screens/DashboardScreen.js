@@ -33,6 +33,7 @@ import { getUsername, clearAuthData, getToken } from '../utils/auth';
 import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '../utils/theme';
 import { formatApiError } from '../utils/errors';
 import { useAutoCapture } from '../utils/useAutoCapture';
+import { scheduleRandomNotifications } from '../utils/localNotifications';
 
 const { width } = Dimensions.get('window');
 
@@ -719,6 +720,16 @@ export default function DashboardScreen({ navigation, route }) {
             widgetNotFound: () => {},
           });
         }
+      } catch (e) {}
+
+      // ── 7. SCHEDULE AUTO SMART NOTIFICATIONS (1-2 PER DAY: MORNING & NIGHT) ──
+      try {
+        const liveStats = newStats || stats;
+        const safeLimit = liveStats?.safe_to_spend?.safe_limit_today;
+        scheduleRandomNotifications({
+          safeDailySpend: safeLimit ? Math.round(Number(safeLimit)) : null,
+          name: userProfile?.name || userProfile?.username,
+        });
       } catch (e) {}
 
     } catch (error) {
