@@ -11,7 +11,7 @@ for rv in "${runtimes[@]}"; do
     app.expo.runtimeVersion = '$rv';
     fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
   "
-  npx eas-cli update --branch production --environment production --message "multi-runtime live sync $rv" --non-interactive
+  npx --yes eas-cli update --branch production --environment production --message "multi-runtime live sync $rv" --non-interactive
 done
 
 # Finally leave app.json on 1.4.2
