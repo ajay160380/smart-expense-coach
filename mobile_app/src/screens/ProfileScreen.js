@@ -598,97 +598,23 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── SECTION 3: PREFERENCES & SECURITY ── */}
+        {/* ── SECTION 3: SMART TOOLS & AUTOMATIONS ── */}
         <View style={styles.sectionHeaderWrap}>
-          <Ionicons name="shield-checkmark-outline" size={13} color="#10B981" style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>PREFERENCES & SECURITY</Text>
+          <Ionicons name="flash" size={13} color="#F59E0B" style={{ marginRight: 6 }} />
+          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>SMART TOOLS & AUTOMATIONS</Text>
         </View>
         <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <MenuItem
-            ionIcon={profile?.email_verified ? 'shield-checkmark' : 'mail-outline'}
-            iconColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#94A3B8')}
-            label="Email Verification"
-            sub={
-              profile?.email
-                ? (profile?.email_verified ? `${profile.email} • Verified` : `${profile.email} • Tap to verify`)
-                : 'Add an email to protect your account'
-            }
-            badge={profile?.email_verified ? 'Verified' : (profile?.email ? 'Verify' : 'Add')}
-            badgeColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#64748B')}
-            onPress={() => {
-              if (!profile?.email) {
-                openEditProfile();
-              } else if (!profile?.email_verified) {
-                handleSendEmailVerification();
-              } else {
-                Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
-              }
-            }}
-          />
-          <MenuItem
-            ionIcon={isDark ? "moon" : "sunny-outline"}
-            iconColor="#818CF8"
-            label="Night Theme (Dark Mode)"
-            sub={isDark ? "Layered dark slate active • Tap to switch" : "Clean light theme active • Tap to switch"}
-            badge={isDark ? "Dark ON" : "Light"}
-            badgeColor={isDark ? "#818CF8" : "#94A3B8"}
-            rightComponent={<ThemeToggle size="small" />}
-            onPress={toggleTheme}
-          />
-          <MenuItem
-            ionIcon={biometricEnabled ? 'shield-checkmark' : 'shield-outline'}
-            iconColor="#10B981"
-            label="App Lock (Biometric)"
-            sub={biometricEnabled ? 'Biometric security is active' : 'Protect app with fingerprint/PIN'}
-            badge={biometricEnabled ? 'Enabled' : 'Off'}
-            badgeColor={biometricEnabled ? '#10B981' : '#64748B'}
-            onPress={toggleBiometric}
-          />
-          <MenuItem
-            ionIcon="phone-portrait-outline"
-            iconColor="#F59E0B"
-            label="Shake Sensitivity"
-            sub={`Magic Shake: ${getShakeText(shakeLevel)}`}
-            badge={shakeLevel === 'disabled' || shakeLevel === 'off' ? 'Off' : getShakeText(shakeLevel).split(' ')[0]}
-            badgeColor={shakeLevel === 'disabled' || shakeLevel === 'off' ? '#64748B' : '#F59E0B'}
-            onPress={toggleShake}
-          />
-          <MenuItem
-            ionIcon="notifications-outline"
-            iconColor="#38BDF8"
-            label="Push Notifications"
-            sub="Instant spending alerts & daily reminders"
-            onPress={async () => {
-              try {
-                if (Platform.OS === 'android' && Platform.Version >= 33) {
-                  await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-                }
-                const authStatus = await messaging().requestPermission();
-                if (
-                  authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-                  authStatus === messaging.AuthorizationStatus.PROVISIONAL
-                ) {
-                  await messaging().subscribeToTopic('all_users');
-                  Alert.alert('Success', 'Push notifications enabled! 🔔');
-                } else {
-                  Alert.alert('Notice', 'Notification permission was denied.');
-                }
-              } catch (e) {
-                Alert.alert('Error', 'Could not enable notifications.');
-              }
-            }}
-          />
-          <MenuItem
             ionIcon="logo-whatsapp"
             iconColor="#25D366"
-            label="WhatsApp Expense Bot"
+            label="WhatsApp Smart Logger"
             sub={
               profile?.whatsapp_linked
-                ? 'Linked to +91 7379053923 • Active'
-                : '1-tap link to log expenses via WhatsApp'
+                ? 'Active • Log spends by texting ₹150 Chai or voice note'
+                : '1-tap link to log expenses automatically via WhatsApp'
             }
-            badge={profile?.whatsapp_linked ? 'Linked' : 'Not Linked'}
-            badgeColor={profile?.whatsapp_linked ? '#10B981' : '#F59E0B'}
+            badge={profile?.whatsapp_linked ? 'Active' : 'Setup'}
+            badgeColor={profile?.whatsapp_linked ? '#10B981' : '#25D366'}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               const rawPhone = profile?.phone_number || profile?.user_phone || '';
@@ -723,9 +649,11 @@ export default function ProfileScreen({ navigation }) {
           />
           <MenuItem
             ionIcon="notifications-outline"
-            iconColor="#6C5CE7"
-            label="Daily Budget & Notifications"
-            sub="Morning/night pushes, roast tone, rollover"
+            iconColor="#6366F1"
+            label="Daily Budget & Smart Alerts"
+            sub="Automatic morning & night nudges, rollover target"
+            badge="Active"
+            badgeColor="#6366F1"
             onPress={() => navigation.navigate('Notifications')}
           />
           {Platform.OS === 'android' && (
@@ -733,7 +661,9 @@ export default function ProfileScreen({ navigation }) {
               ionIcon="grid-outline"
               iconColor="#A855F7"
               label="Home Screen Widget"
-              sub="Choose layout & pin to home screen"
+              sub="Instant glanceable balance & burn rate on home screen"
+              badge="Widget"
+              badgeColor="#A855F7"
               onPress={() => {
                 AsyncStorage.getItem('dashboard_cache').then(c => {
                   if (c) {
@@ -745,11 +675,103 @@ export default function ProfileScreen({ navigation }) {
             />
           )}
           <MenuItem
+            ionIcon="phone-portrait-outline"
+            iconColor="#F59E0B"
+            label="Magic Shake to Add"
+            sub={`Quick gesture: ${getShakeText(shakeLevel)}`}
+            badge={shakeLevel === 'disabled' || shakeLevel === 'off' ? 'Off' : getShakeText(shakeLevel).split(' ')[0]}
+            badgeColor={shakeLevel === 'disabled' || shakeLevel === 'off' ? '#64748B' : '#F59E0B'}
+            onPress={toggleShake}
+            isLast
+          />
+        </View>
+
+        {/* ── SECTION 4: SECURITY & PREFERENCES ── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Ionicons name="shield-checkmark-outline" size={13} color="#10B981" style={{ marginRight: 6 }} />
+          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>SECURITY & PREFERENCES</Text>
+        </View>
+        <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <MenuItem
+            ionIcon={biometricEnabled ? 'shield-checkmark' : 'finger-print-outline'}
+            iconColor="#10B981"
+            label="App Lock & Biometric"
+            sub={biometricEnabled ? 'Biometric security is active' : 'Protect app with fingerprint/PIN'}
+            badge={biometricEnabled ? 'Enabled' : 'Off'}
+            badgeColor={biometricEnabled ? '#10B981' : '#64748B'}
+            onPress={toggleBiometric}
+          />
+          <MenuItem
+            ionIcon={profile?.email_verified ? 'shield-checkmark' : 'mail-outline'}
+            iconColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#94A3B8')}
+            label="Email Verification & Recovery"
+            sub={
+              profile?.email
+                ? (profile?.email_verified ? `${profile.email} • Verified` : `${profile.email} • Tap to verify`)
+                : 'Add an email to protect your account'
+            }
+            badge={profile?.email_verified ? 'Verified' : (profile?.email ? 'Verify' : 'Add')}
+            badgeColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#64748B')}
+            onPress={() => {
+              if (!profile?.email) {
+                openEditProfile();
+              } else if (!profile?.email_verified) {
+                handleSendEmailVerification();
+              } else {
+                Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
+              }
+            }}
+          />
+          <MenuItem
+            ionIcon={isDark ? "moon" : "sunny-outline"}
+            iconColor="#38BDF8"
+            label="Theme & Appearance"
+            sub={isDark ? "Dark theme active • Tap to switch" : "Clean light theme active • Tap to switch"}
+            badge={isDark ? "Dark" : "Light"}
+            badgeColor={isDark ? "#38BDF8" : "#94A3B8"}
+            rightComponent={<ThemeToggle size="small" />}
+            onPress={toggleTheme}
+          />
+          <MenuItem
+            ionIcon="paper-plane-outline"
+            iconColor="#EC4899"
+            label="Push Notification Channel"
+            sub="Cloud sync for instant split & spending alerts"
+            onPress={async () => {
+              try {
+                if (Platform.OS === 'android' && Platform.Version >= 33) {
+                  await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+                }
+                const authStatus = await messaging().requestPermission();
+                if (
+                  authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                  authStatus === messaging.AuthorizationStatus.PROVISIONAL
+                ) {
+                  await messaging().subscribeToTopic('all_users');
+                  Alert.alert('Success', 'Push notifications enabled! 🔔');
+                } else {
+                  Alert.alert('Notice', 'Notification permission was denied.');
+                }
+              } catch (e) {
+                Alert.alert('Error', 'Could not enable notifications.');
+              }
+            }}
+            isLast
+          />
+        </View>
+
+        {/* ── SECTION 5: HELP & EXPERIENCE ── */}
+        <View style={styles.sectionHeaderWrap}>
+          <Ionicons name="sparkles-outline" size={13} color="#8B5CF6" style={{ marginRight: 6 }} />
+          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>HELP & EXPERIENCE</Text>
+        </View>
+        <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <MenuItem
             ionIcon="sparkles"
             iconColor="#8B5CF6"
-            label="App Feature Tour & Walkthrough"
-            sub="Explore WhatsApp bot, Center '+', Widgets & Tools"
-            badge="Guide"
+            label="Interactive Feature Tour"
+            sub="Walkthrough of WhatsApp Bot, Center '+', Widgets & Tools"
+            badge="Tour"
             badgeColor="#8B5CF6"
             onPress={() => {
               navigation.navigate('Home');
@@ -759,12 +781,27 @@ export default function ProfileScreen({ navigation }) {
             }}
           />
           <MenuItem
-            ionIcon="cloud-download-outline"
+            ionIcon="chatbubble-ellipses-outline"
             iconColor="#06B6D4"
+            label="Submit Feedback & Ideas"
+            sub="Share your ideas & feature suggestions"
+            onPress={() => setFeedbackVisible(true)}
+          />
+          <MenuItem
+            ionIcon="globe-outline"
+            iconColor="#3B82F6"
+            label="Web Dashboard"
+            sub="Access desktop analytics & detailed export"
+            onPress={() => openLink('https://expense-coach-prxm.onrender.com')}
+            showArrow
+          />
+          <MenuItem
+            ionIcon="cloud-download-outline"
+            iconColor="#10B981"
             label="Check for Updates"
-            sub="Check for latest EAS OTA update"
+            sub="Check for latest live features & bug fixes"
             badge={`v${CURRENT_APP_VERSION}`}
-            badgeColor="#06B6D4"
+            badgeColor="#10B981"
             onPress={async () => {
               try {
                 const update = await Updates.checkForUpdateAsync();
@@ -781,21 +818,6 @@ export default function ProfileScreen({ navigation }) {
                 Alert.alert('No Update Available', 'Your app is up to date.');
               }
             }}
-          />
-          <MenuItem
-            ionIcon="chatbubble-ellipses-outline"
-            iconColor="#EC4899"
-            label="Submit Feedback"
-            sub="Share your ideas & suggestions"
-            onPress={() => setFeedbackVisible(true)}
-          />
-          <MenuItem
-            ionIcon="globe-outline"
-            iconColor="#3B82F6"
-            label="Web Dashboard"
-            sub="expense-coach-prxm.onrender.com"
-            onPress={() => openLink('https://expense-coach-prxm.onrender.com')}
-            showArrow
             isLast
           />
         </View>
@@ -1084,28 +1106,37 @@ export default function ProfileScreen({ navigation }) {
 
 function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast, danger = false, rightComponent }) {
   const { isDark, colors } = useTheme();
+
+  const handlePress = () => {
+    if (!onPress) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+    onPress();
+  };
+
   return (
     <>
       <TouchableOpacity
         style={styles.menuItem}
-        onPress={onPress}
-        activeOpacity={onPress ? 0.7 : 1}
+        onPress={handlePress}
+        activeOpacity={onPress ? 0.72 : 1}
       >
-        <View style={[styles.menuIconBox, { backgroundColor: iconColor + '18', borderColor: iconColor + '30' }]}>
+        <View style={[styles.menuIconBox, { backgroundColor: iconColor + '18', borderColor: iconColor + '32' }]}>
           {ionIcon ? (
-            <Ionicons name={ionIcon} size={19} color={iconColor} />
+            <Ionicons name={ionIcon} size={20} color={iconColor} />
           ) : (
             <Text style={{ fontSize: 18 }}>{icon}</Text>
           )}
         </View>
 
         <View style={{ flex: 1, paddingRight: 8 }}>
-          <Text style={[styles.menuLabel, isDark && { color: colors.textPrimary }, danger && { color: '#DC2626' }]}>{label}</Text>
-          {Boolean(sub) && <Text style={[styles.menuSub, isDark && { color: colors.textSecondary }, danger && { color: '#EF4444' }]} numberOfLines={1}>{sub}</Text>}
+          <Text style={[styles.menuLabel, isDark && { color: colors.textPrimary }, danger && { color: '#EF4444' }]}>{label}</Text>
+          {Boolean(sub) && <Text style={[styles.menuSub, isDark && { color: colors.textSecondary }, danger && { color: '#F87171' }]} numberOfLines={1}>{sub}</Text>}
         </View>
 
         {Boolean(badge) && (
-          <View style={[styles.menuBadge, { backgroundColor: badgeColor + '18', borderColor: badgeColor + '35' }]}>
+          <View style={[styles.menuBadge, { backgroundColor: badgeColor + '18', borderColor: badgeColor + '38' }]}>
             <Text style={[styles.menuBadgeText, { color: badgeColor }]}>{badge}</Text>
           </View>
         )}
@@ -1114,11 +1145,11 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
           rightComponent
         ) : (
           (onPress || showArrow) && (
-            <Ionicons name="chevron-forward" size={16} color={danger ? '#EF4444' : (isDark ? colors.textMuted : '#475569')} style={{ marginLeft: 6 }} />
+            <Ionicons name="chevron-forward" size={17} color={danger ? '#EF4444' : (isDark ? '#64748B' : '#94A3B8')} style={{ marginLeft: 6 }} />
           )
         )}
       </TouchableOpacity>
-      {!isLast && <View style={[styles.itemDivider, isDark && { backgroundColor: colors.border }]} />}
+      {!isLast && <View style={[styles.itemDivider, isDark && { backgroundColor: 'rgba(255,255,255,0.06)' }]} />}
     </>
   );
 }
@@ -1418,69 +1449,72 @@ const styles = StyleSheet.create({
   sectionHeaderWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 22,
     marginBottom: 8,
     paddingHorizontal: 20,
   },
   sectionHeaderTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#6B7280',
-    letterSpacing: 0.8,
+    color: '#64748B',
+    letterSpacing: 0.9,
   },
   menuGroupCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
     marginHorizontal: 16,
     paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#F1F3F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 24,
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 18,
     elevation: 2,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 13,
   },
   menuIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    marginRight: 12,
+    borderWidth: 1.2,
+    marginRight: 13,
   },
   menuLabel: {
-    color: '#1F2937',
-    fontSize: 13.5,
+    color: '#0F172A',
+    fontSize: 14.2,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   menuSub: {
-    color: '#6B7280',
-    fontSize: 11,
-    marginTop: 2,
+    color: '#64748B',
+    fontSize: 11.5,
+    marginTop: 2.5,
+    lineHeight: 15,
   },
   menuBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     borderWidth: 1,
     marginRight: 4,
   },
   menuBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   itemDivider: {
     height: 1,
-    backgroundColor: '#F3F4F6',
-    marginLeft: 48,
+    backgroundColor: '#F1F5F9',
+    marginLeft: 53,
   },
 
 
