@@ -255,6 +255,25 @@ export async function scheduleRandomNotifications(userContext = {}) {
     const todayStr = new Date().toISOString().slice(0, 10);
     await AsyncStorage.setItem(LAST_SCHEDULE_KEY, todayStr);
     console.log(`[AutoNotif] Scheduled 2 dynamic English reminders for slots: ${selectedSlots.join(', ')}`);
+
+    // Schedule a one-time instant confirmation alert (8 seconds after open)
+    // so user gets visible & audible proof on their phone's notification bar immediately!
+    const welcomed = await AsyncStorage.getItem('@auto_notif_welcomed_v2');
+    if (!welcomed) {
+      await AsyncStorage.setItem('@auto_notif_welcomed_v2', 'true');
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '💡 Smart Expense Coach Active',
+          body: 'Daily budget & expense reminders are now enabled! You will receive 1-2 smart updates throughout the day. 🚀',
+          data: { screen: 'Dashboard' },
+          sound: 'default',
+          channelId: 'expense_tracker_alerts_v2',
+        },
+        trigger: {
+          seconds: 8,
+        },
+      });
+    }
   } catch (error) {
     console.log('[AutoNotif] Schedule Error (silent fallback):', error);
   }
