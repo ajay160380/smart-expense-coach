@@ -23,8 +23,6 @@ import {
   StatusBar as RNStatusBar,
   RefreshControl,
   DeviceEventEmitter,
-  PermissionsAndroid,
-  NativeModules,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,13 +31,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { requestPinWidget } from '../utils/widgetCompat';
 import { CURRENT_APP_VERSION } from '../utils/versionCheck';
 
 import api from '../api/config';
-import messaging from '../utils/messaging';
 import { clearAuthData } from '../utils/auth';
-import { COLORS, RADIUS, SHADOW } from '../utils/theme';
+import { COLORS, SHADOW } from '../utils/theme';
 import { useTheme } from '../theme/ThemeContext';
 import ThemeToggle from '../components/ThemeToggle';
 import { formatApiError } from '../utils/errors';
@@ -76,7 +72,6 @@ export default function ProfileScreen({ navigation }) {
   const [verifyOtp, setVerifyOtp] = useState('');
   const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
-  const [autoCaptureEnabled, setAutoCaptureEnabled] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -107,9 +102,6 @@ export default function ProfileScreen({ navigation }) {
       });
       AsyncStorage.getItem('biometric_enabled').then((val) => {
         setBiometricEnabled(val === 'true');
-      });
-      AsyncStorage.getItem('auto_capture_enabled').then((val) => {
-        setAutoCaptureEnabled(val === 'true');
       });
     }, [])
   );
@@ -288,10 +280,10 @@ export default function ProfileScreen({ navigation }) {
   const openLink = (url) => Linking.openURL(url);
 
   const getShakeText = (level) => {
-    if (level === '1.2' || level === '2.0') return 'High (Very Sensitive)';
-    if (level === '1.8' || level === '3.5') return 'Medium (Normal)';
-    if (level === '2.6' || level === '5.0') return 'Low (Hard Shake)';
-    return 'Off (Disabled)';
+    if (level === '1.2' || level === '2.0') return 'High';
+    if (level === '1.8' || level === '3.5') return 'Medium';
+    if (level === '2.6' || level === '5.0') return 'Low';
+    return 'Off';
   };
 
   const toggleShake = async () => {
@@ -349,10 +341,8 @@ export default function ProfileScreen({ navigation }) {
   const initialLetter = (fullName ? fullName.charAt(0) : (username ? username.charAt(0) : 'U')).toUpperCase();
   const joined = profile?.joined || '';
   const lifetimeSpent = profile?.lifetime_spent || 0;
-  const totalTxns = profile?.total_txns || 0;
   const memberDays = profile?.member_days || 0;
   const budget = profile?.budget || 20000;
-  const email = profile?.email || `${username.toLowerCase()}@user.expensetracker`;
 
   return (
     <SafeAreaView style={[styles.container, isDark && { backgroundColor: colors.bg }]}>
@@ -368,11 +358,11 @@ export default function ProfileScreen({ navigation }) {
           >
             <Ionicons name="arrow-back" size={20} color={isDark ? colors.textPrimary : "#1F2937"} />
           </TouchableOpacity>
-          <Text style={[styles.topBarTitle, isDark && { color: colors.textPrimary }]}>User Profile</Text>
+          <Text style={[styles.topBarTitle, isDark && { color: colors.textPrimary }]}>My Profile & Settings</Text>
         </View>
         <TouchableOpacity onPress={openEditProfile} style={styles.topEditBtn} activeOpacity={0.7}>
-          <Ionicons name="create-outline" size={17} color="#FF6B35" style={{ marginRight: 4 }} />
-          <Text style={styles.topEditText}>Edit</Text>
+          <Ionicons name="create-outline" size={16} color="#2563EB" style={{ marginRight: 4 }} />
+          <Text style={styles.topEditText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
 
@@ -381,15 +371,15 @@ export default function ProfileScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── 1. TITANIUM BLACK MEMBER CARD (CRED / APPLE WALLET STYLE) ── */}
+        {/* ── 1. SIGNATURE ROYAL BLUE MEMBER CARD (MATCHING ICONIC DASHBOARD THEME) ── */}
         <View style={styles.cardContainer}>
           <LinearGradient
-            colors={isDark ? ['#1E293B', '#0F172A', '#020617'] : ['#0F172A', '#1E293B', '#020617']}
+            colors={isDark ? ['#1E3A8A', '#1D4ED8', '#0F172A'] : ['#2563EB', '#1D4ED8', '#1E40AF']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.titaniumCard}
+            style={styles.royalMemberCard}
           >
-            {/* Top Row: EMV Gold Chip & Brand Tier */}
+            {/* Top Row: Gold EMV Chip, Pro Tier Badge & Edit */}
             <View style={styles.cardTopRow}>
               <View style={styles.cardChipSection}>
                 <LinearGradient
@@ -400,12 +390,12 @@ export default function ProfileScreen({ navigation }) {
                 >
                   <View style={styles.goldChipGrid} />
                 </LinearGradient>
-                <Ionicons name="wifi" size={17} color="rgba(255,255,255,0.7)" style={{ marginLeft: 8, transform: [{ rotate: '90deg' }] }} />
+                <Ionicons name="wifi" size={17} color="rgba(255,255,255,0.75)" style={{ marginLeft: 8, transform: [{ rotate: '90deg' }] }} />
               </View>
 
               <View style={styles.cardTierBadge}>
                 <Ionicons name="shield-checkmark" size={11} color="#34D399" style={{ marginRight: 4 }} />
-                <Text style={styles.cardTierText}>PAISAMITRA BLACK</Text>
+                <Text style={styles.cardTierText}>PAISAMITRA PRO</Text>
               </View>
 
               <TouchableOpacity
@@ -418,11 +408,11 @@ export default function ProfileScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            {/* Middle Row: User Identity with Metallic Typography */}
+            {/* Middle Row: User Avatar & Details */}
             <View style={styles.cardUserRow}>
               <View style={styles.cardAvatarOuter}>
                 <LinearGradient
-                  colors={['#38BDF8', '#818CF8', '#C084FC']}
+                  colors={['#60A5FA', '#93C5FD', '#FFFFFF']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.cardAvatarGradient}
@@ -431,19 +421,24 @@ export default function ProfileScreen({ navigation }) {
                     <Text style={styles.cardAvatarLetter}>{initialLetter}</Text>
                   </View>
                 </LinearGradient>
+                <View style={styles.avatarVerifiedBadge}>
+                  <Ionicons name="checkmark" size={9} color="#FFFFFF" />
+                </View>
               </View>
 
               <View style={{ flex: 1, marginLeft: 13 }}>
                 <Text style={styles.cardUserName} numberOfLines={1}>{fullName}</Text>
                 <View style={styles.cardHandleRow}>
-                  <Text style={styles.cardHandleText}>@{username}</Text>
+                  <View style={styles.usernamePill}>
+                    <Text style={styles.cardHandleText}>@{username}</Text>
+                  </View>
                   <View style={styles.cardDot} />
                   <Text style={styles.cardJoinYear}>SINCE {joined ? joined.slice(-4) : '2026'}</Text>
                 </View>
               </View>
             </View>
 
-            {/* Bottom Row: Bento Stats Inside the Card */}
+            {/* Bottom Row: Frosted Glass Stats Bar */}
             <View style={styles.cardStatsRow}>
               <View style={styles.cardStatColumn}>
                 <Text style={styles.cardStatLabel}>LIFETIME SPENT</Text>
@@ -456,14 +451,14 @@ export default function ProfileScreen({ navigation }) {
               </View>
               <View style={styles.cardStatDivider} />
               <View style={styles.cardStatColumn}>
-                <Text style={styles.cardStatLabel}>ACTIVITY</Text>
+                <Text style={styles.cardStatLabel}>ACTIVE STREAK</Text>
                 <Text style={styles.cardStatVal}>{memberDays} {memberDays === 1 ? 'Day' : 'Days'} 🔥</Text>
               </View>
             </View>
           </LinearGradient>
         </View>
 
-        {/* ── 2. HERO FEATURE BENTO: WHATSAPP SMART LOGGER ── */}
+        {/* ── 2. FEATURED INTEGRATION: WHATSAPP SMART LOGGER ── */}
         <View style={styles.sectionWrap}>
           <TouchableOpacity
             style={[styles.waHeroBento, isDark && { backgroundColor: '#0B132B', borderColor: 'rgba(37, 211, 102, 0.35)' }]}
@@ -524,9 +519,9 @@ export default function ProfileScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* ── 3. FINTECH 2-COLUMN FEATURE BENTO TILES ── */}
+        {/* ── 3. SMART CONTROLS BENTO TILES (2-COLUMN GRID) ── */}
         <View style={styles.sectionWrap}>
-          <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>SMART TOOLS & CONTROLS</Text>
+          <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>SMART TOOLS & AUTOMATION</Text>
           <View style={styles.bentoGrid}>
             {/* Tile 1: Daily Budget & Smart Notifications */}
             <TouchableOpacity
@@ -537,13 +532,13 @@ export default function ProfileScreen({ navigation }) {
               }}
               activeOpacity={0.8}
             >
-              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(99, 102, 241, 0.15)', borderColor: 'rgba(99, 102, 241, 0.3)' }]}>
+              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(99, 102, 241, 0.12)', borderColor: 'rgba(99, 102, 241, 0.25)' }]}>
                 <Ionicons name="notifications" size={20} color="#6366F1" />
               </View>
               <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>Smart Alerts</Text>
               <Text style={[styles.bentoSub, isDark && { color: colors.textSecondary }]}>Morning & night nudges</Text>
               <View style={[styles.bentoPill, { backgroundColor: 'rgba(99, 102, 241, 0.12)' }]}>
-                <Text style={[styles.bentoPillText, { color: '#6366F1' }]}>1-2 / Day</Text>
+                <Text style={[styles.bentoPillText, { color: '#6366F1' }]}>1-2 / DAY</Text>
               </View>
             </TouchableOpacity>
 
@@ -553,7 +548,7 @@ export default function ProfileScreen({ navigation }) {
               onPress={toggleBiometric}
               activeOpacity={0.8}
             >
-              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.3)' }]}>
+              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.12)', borderColor: 'rgba(16, 185, 129, 0.25)' }]}>
                 <Ionicons name={biometricEnabled ? 'shield-checkmark' : 'finger-print'} size={20} color="#10B981" />
               </View>
               <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>App Lock</Text>
@@ -571,19 +566,19 @@ export default function ProfileScreen({ navigation }) {
               onPress={toggleShake}
               activeOpacity={0.8}
             >
-              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.3)' }]}>
+              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.12)', borderColor: 'rgba(245, 158, 11, 0.25)' }]}>
                 <Ionicons name="phone-portrait" size={20} color="#F59E0B" />
               </View>
               <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>Magic Shake</Text>
               <Text style={[styles.bentoSub, isDark && { color: colors.textSecondary }]}>Shake phone to add</Text>
               <View style={[styles.bentoPill, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
                 <Text style={[styles.bentoPillText, { color: '#F59E0B' }]}>
-                  {shakeLevel === 'disabled' || shakeLevel === 'off' ? 'OFF' : getShakeText(shakeLevel).split(' ')[0].toUpperCase()}
+                  {shakeLevel === 'disabled' || shakeLevel === 'off' ? 'OFF' : getShakeText(shakeLevel).toUpperCase()}
                 </Text>
               </View>
             </TouchableOpacity>
 
-            {/* Tile 4: Home Screen Widget (or Dark Theme) */}
+            {/* Tile 4: Home Screen Widget (Android) or Theme Toggle */}
             {Platform.OS === 'android' ? (
               <TouchableOpacity
                 style={[styles.bentoTile, isDark && styles.bentoTileDark]}
@@ -598,7 +593,7 @@ export default function ProfileScreen({ navigation }) {
                 }}
                 activeOpacity={0.8}
               >
-                <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.3)' }]}>
+                <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(168, 85, 247, 0.12)', borderColor: 'rgba(168, 85, 247, 0.25)' }]}>
                   <Ionicons name="grid" size={20} color="#A855F7" />
                 </View>
                 <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>Home Widget</Text>
@@ -613,7 +608,7 @@ export default function ProfileScreen({ navigation }) {
                 onPress={toggleTheme}
                 activeOpacity={0.8}
               >
-                <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(56, 189, 248, 0.15)', borderColor: 'rgba(56, 189, 248, 0.3)' }]}>
+                <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(56, 189, 248, 0.12)', borderColor: 'rgba(56, 189, 248, 0.25)' }]}>
                   <Ionicons name={isDark ? "moon" : "sunny"} size={20} color="#38BDF8" />
                 </View>
                 <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>Appearance</Text>
@@ -626,7 +621,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── 4. PREFERENCES & ACCOUNT SETTINGS (Sleek Glass Card) ── */}
+        {/* ── 4. PREFERENCES & ACCOUNT SETTINGS (CLEAN GROUPED CARD) ── */}
         <View style={styles.sectionWrap}>
           <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>PREFERENCES & ACCOUNT</Text>
           <View style={[styles.glassListCard, isDark && styles.glassListCardDark]}>
@@ -660,6 +655,14 @@ export default function ProfileScreen({ navigation }) {
                   Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
                 }
               }}
+            />
+            <MenuItem
+              ionIcon="alarm-outline"
+              iconColor="#6366F1"
+              label="Daily Budget & Reminder Times"
+              sub="Morning/night pushes, roast tone, rollover"
+              onPress={() => navigation.navigate('Notifications')}
+              showArrow
             />
             <MenuItem
               ionIcon="sparkles-outline"
@@ -718,7 +721,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── 5. LEGAL & SECURITY ── */}
+        {/* ── 5. LEGAL & POLICIES ── */}
         <View style={styles.sectionWrap}>
           <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>LEGAL & POLICIES</Text>
           <View style={[styles.glassListCard, isDark && styles.glassListCardDark]}>
@@ -744,12 +747,9 @@ export default function ProfileScreen({ navigation }) {
 
         {/* ── ADMIN PANEL ── */}
         {isAdmin && (
-          <>
-            <View style={styles.sectionHeaderWrap}>
-              <Ionicons name="key-outline" size={13} color="#EAB308" style={{ marginRight: 6 }} />
-              <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>ADMIN CONSOLE</Text>
-            </View>
-            <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.sectionWrap}>
+            <Text style={[styles.sectionHeading, { color: '#EAB308' }]}>ADMIN CONSOLE</Text>
+            <View style={[styles.glassListCard, isDark && styles.glassListCardDark]}>
               <MenuItem
                 ionIcon="shield-checkmark-outline"
                 iconColor="#EAB308"
@@ -760,68 +760,27 @@ export default function ProfileScreen({ navigation }) {
                 isLast
               />
             </View>
-          </>
+          </View>
         )}
 
-
-        {/* ── SECTION 5: LEGAL & RESOURCES (Items 16, 17, 19) ── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Ionicons name="document-text-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>LEGAL & POLICIES</Text>
-        </View>
-        <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <MenuItem
-            ionIcon="shield-checkmark-outline"
-            iconColor="#10B981"
-            label="Privacy Policy"
-            sub="Encryption, data protection & GDPR rights"
-            onPress={() => navigation.navigate('PrivacyPolicy')}
-            showArrow
-          />
-          <MenuItem
-            ionIcon="newspaper-outline"
-            iconColor="#38BDF8"
-            label="Terms of Service"
-            sub="Terms of use & financial disclaimer"
-            onPress={() => navigation.navigate('Terms')}
-            showArrow
-          />
-          <MenuItem
-            ionIcon="sparkles-outline"
-            iconColor="#F59E0B"
-            label="Interactive Feature Tour"
-            sub="Step-by-step walkthrough of all app features"
-            onPress={() => {
-              try {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              } catch (e) {}
-              DeviceEventEmitter.emit('SHOW_APP_TOUR');
-              navigation.navigate('Home', { screen: 'DashboardMain', params: { showTour: true } });
-            }}
-            showArrow
-            isLast
-          />
+        {/* ── 6. DANGER ZONE ── */}
+        <View style={styles.sectionWrap}>
+          <Text style={[styles.sectionHeading, { color: '#EF4444' }]}>DANGER ZONE</Text>
+          <View style={[styles.glassListCard, { borderColor: isDark ? 'rgba(239, 68, 68, 0.28)' : '#FECACA', backgroundColor: isDark ? 'rgba(239, 68, 68, 0.06)' : '#FFFFFF' }]}>
+            <MenuItem
+              ionIcon="trash-outline"
+              iconColor="#EF4444"
+              label="Delete Account"
+              sub="Permanently delete all expenses, goals & personal data"
+              onPress={handleDeleteAccount}
+              showArrow
+              danger
+              isLast
+            />
+          </View>
         </View>
 
-        {/* ── SECTION 6: DANGER ZONE (Item 18) ── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Ionicons name="warning-outline" size={13} color="#EF4444" style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionHeaderTitle, { color: '#EF4444' }]}>DANGER ZONE</Text>
-        </View>
-        <View style={[styles.menuGroupCard, { borderColor: isDark ? 'rgba(239, 68, 68, 0.28)' : '#FECACA', backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FFFFFF', elevation: 0 }]}>
-          <MenuItem
-            ionIcon="trash-outline"
-            iconColor="#EF4444"
-            label="Delete Account"
-            sub="Permanently delete all expenses, goals & personal data"
-            onPress={handleDeleteAccount}
-            showArrow
-            danger
-            isLast
-          />
-        </View>
-
-        {/* ── Logout Button (Item 1) ── */}
+        {/* ── Logout Button ── */}
         <TouchableOpacity style={[styles.logoutBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)', elevation: 0, shadowOpacity: 0 }]} onPress={handleLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
           <Text style={styles.logoutText}>Sign Out</Text>
@@ -837,7 +796,7 @@ export default function ProfileScreen({ navigation }) {
             }}
             activeOpacity={0.75}
           >
-            <Ionicons name="code-slash" size={13} color="#6366F1" style={{ marginRight: 6 }} />
+            <Ionicons name="code-slash" size={13} color="#2563EB" style={{ marginRight: 6 }} />
             <Text style={[styles.devFooterText, isDark && { color: colors.textSecondary }]}>
               Crafted with ❤️ by <Text style={styles.devFooterLink}>Ajay Vishwakarma</Text>
             </Text>
@@ -970,7 +929,7 @@ export default function ProfileScreen({ navigation }) {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ── Email Verification OTP Modal (Item 3) ── */}
+      {/* ── Email Verification OTP Modal ── */}
       <Modal visible={verifyModalVisible} transparent animationType="slide" onRequestClose={() => setVerifyModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.modalContent, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -1024,7 +983,7 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast, danger = false, rightComponent }) {
+function MenuItem({ ionIcon, icon, iconColor = '#2563EB', label, sub, badge, badgeColor = '#94A3B8', onPress, showArrow, isLast, danger = false, rightComponent }) {
   const { isDark, colors } = useTheme();
 
   const handlePress = () => {
@@ -1042,7 +1001,7 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
         onPress={handlePress}
         activeOpacity={onPress ? 0.72 : 1}
       >
-        <View style={[styles.menuIconBox, { backgroundColor: iconColor + '18', borderColor: iconColor + '32' }]}>
+        <View style={[styles.menuIconBox, { backgroundColor: iconColor + '15', borderColor: iconColor + '2E' }]}>
           {ionIcon ? (
             <Ionicons name={ionIcon} size={20} color={iconColor} />
           ) : (
@@ -1077,11 +1036,11 @@ function MenuItem({ ionIcon, icon, iconColor = '#818CF8', label, sub, badge, bad
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7FB',
+    backgroundColor: '#F8FAFC',
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight + 8 : 42) : 0,
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContent: { flexGrow: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: 24 },
 
   // ── Top Bar ──
   topBar: {
@@ -1090,9 +1049,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F7F7FB',
+    backgroundColor: '#F8FAFC',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#E2E8F0',
   },
   topBarLeft: {
     flexDirection: 'row',
@@ -1107,12 +1066,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E2E8F0',
   },
   topBarTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1F2937',
+    color: '#0F172A',
     letterSpacing: -0.3,
   },
   topEditBtn: {
@@ -1121,144 +1080,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 107, 53, 0.12)',
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 53, 0.25)',
+    borderColor: 'rgba(37, 99, 235, 0.22)',
   },
   topEditText: {
-    color: '#FF6B35',
+    color: '#2563EB',
     fontSize: 12.5,
     fontWeight: '700',
   },
 
-  // ── Profile Header Hero ──
-  profileHeader: {
-    alignItems: 'center',
-    paddingTop: 18,
-    paddingBottom: 28,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  headerGlowCircle: {
-    position: 'absolute',
-    top: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(124, 58, 237, 0.08)',
-    opacity: 0.8,
-  },
-  avatarGlowWrapper: {
-    position: 'relative',
-    marginBottom: 12,
-  },
-  avatarOuterRing: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    padding: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOW.md,
-  },
-  avatarInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarLetterText: {
-    color: '#7C3AED',
-    fontSize: 34,
-    fontWeight: '900',
-    letterSpacing: -1,
-  },
-  avatarBadge: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#22C55E',
-  },
-  profileName: {
-    color: '#1F2937',
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: -0.4,
-  },
-  usernameChip: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  usernameChipText: {
-    color: '#6B7280',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  profileMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 8,
-  },
-  metaBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  metaBadgeText: {
-    color: '#6B7280',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 107, 53, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 107, 53, 0.25)',
-  },
-  streakBadgeText: {
-    color: '#FF6B35',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  // ── Titanium Black Card (CRED / Apple Wallet Style) ──
+  // ── Royal Member Card ──
   cardContainer: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 6,
+    paddingTop: 14,
+    paddingBottom: 4,
   },
-  titaniumCard: {
+  royalMemberCard: {
     borderRadius: 24,
     padding: 18,
     borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    shadowColor: '#000',
+    borderColor: 'rgba(255, 255, 255, 0.28)',
+    shadowColor: '#1D4ED8',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
     elevation: 8,
     position: 'relative',
     overflow: 'hidden',
@@ -1293,32 +1139,32 @@ const styles = StyleSheet.create({
   cardTierBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 9,
-    paddingVertical: 3.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 0.8,
-    borderColor: 'rgba(52, 211, 153, 0.35)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   cardTierText: {
-    color: '#E2E8F0',
-    fontSize: 9.5,
+    color: '#FFFFFF',
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.1,
   },
   cardEditAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
     borderRadius: 10,
     borderWidth: 0.8,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   cardEditActionText: {
     color: '#FFFFFF',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
   },
   cardUserRow: {
@@ -1327,35 +1173,48 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   cardAvatarOuter: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    padding: 2,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    position: 'relative',
   },
   cardAvatarGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 25,
-    padding: 2,
+    borderRadius: 26,
+    padding: 2.5,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cardAvatarInner: {
     width: '100%',
     height: '100%',
-    borderRadius: 23,
-    backgroundColor: '#0F172A',
+    borderRadius: 24,
+    backgroundColor: '#1E40AF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cardAvatarLetter: {
-    color: '#F8FAFC',
-    fontSize: 20,
+    color: '#FFFFFF',
+    fontSize: 22,
     fontWeight: '900',
+  },
+  avatarVerifiedBadge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 17,
+    height: 17,
+    borderRadius: 8.5,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#1D4ED8',
   },
   cardUserName: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
@@ -1364,21 +1223,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 3,
   },
+  usernamePill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 7,
+    paddingVertical: 1.5,
+    borderRadius: 8,
+  },
   cardHandleText: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
   cardDot: {
     width: 3.5,
     height: 3.5,
     borderRadius: 2,
-    backgroundColor: '#64748B',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     marginHorizontal: 7,
   },
   cardJoinYear: {
-    color: '#64748B',
-    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 10.5,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -1386,12 +1251,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(0, 0, 0, 0.18)',
     borderRadius: 16,
-    paddingVertical: 10,
+    paddingVertical: 11,
     paddingHorizontal: 12,
     borderWidth: 0.8,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
   },
   cardStatColumn: {
     flex: 1,
@@ -1400,18 +1265,18 @@ const styles = StyleSheet.create({
   cardStatDivider: {
     width: 1,
     height: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
   cardStatLabel: {
-    color: '#94A3B8',
-    fontSize: 8,
+    color: 'rgba(255, 255, 255, 0.78)',
+    fontSize: 8.5,
     fontWeight: '800',
     letterSpacing: 0.6,
     marginBottom: 2,
   },
   cardStatVal: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '800',
     letterSpacing: -0.2,
   },
@@ -1425,7 +1290,7 @@ const styles = StyleSheet.create({
     borderColor: '#D1FAE5',
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 3,
   },
@@ -1434,9 +1299,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   waHeroIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: 'rgba(37, 211, 102, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(37, 211, 102, 0.3)',
@@ -1444,7 +1309,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   waHeroTitle: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '800',
     color: '#0F172A',
     letterSpacing: -0.2,
@@ -1483,7 +1348,7 @@ const styles = StyleSheet.create({
   // ── 2-Column Bento Grid ──
   sectionWrap: {
     paddingHorizontal: 16,
-    marginTop: 16,
+    marginTop: 18,
   },
   sectionHeading: {
     fontSize: 11,
@@ -1506,7 +1371,7 @@ const styles = StyleSheet.create({
     padding: 13,
     marginBottom: 11,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
@@ -1518,13 +1383,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   bentoIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    marginBottom: 8,
+    marginBottom: 9,
   },
   bentoTitle: {
     fontSize: 13.5,
@@ -1542,7 +1407,7 @@ const styles = StyleSheet.create({
   bentoPill: {
     alignSelf: 'flex-start',
     paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingVertical: 2.5,
     borderRadius: 7,
   },
   bentoPillText: {
@@ -1558,7 +1423,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
@@ -1568,35 +1433,6 @@ const styles = StyleSheet.create({
   glassListCardDark: {
     backgroundColor: '#1E293B',
     borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-
-  // ── Menu Section ──
-  sectionHeaderWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 22,
-    marginBottom: 8,
-    paddingHorizontal: 20,
-  },
-  sectionHeaderTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#64748B',
-    letterSpacing: 0.9,
-  },
-  menuGroupCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    marginHorizontal: 16,
-    paddingVertical: 4,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 18,
-    elevation: 2,
   },
   menuItem: {
     flexDirection: 'row',
@@ -1641,8 +1477,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     marginLeft: 53,
   },
-
-
 
   // ── Logout ──
   logoutBtn: {
@@ -1725,7 +1559,7 @@ const styles = StyleSheet.create({
   devFooterWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 22,
     marginBottom: 6,
   },
   devFooterRow: {
@@ -1735,7 +1569,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   devFooterText: {
-    color: '#6B7280',
+    color: '#64748B',
     fontSize: 12.5,
     fontWeight: '500',
   },
@@ -1753,15 +1587,15 @@ const styles = StyleSheet.create({
   miniChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E2E8F0',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 14,
   },
   miniChipText: {
-    color: '#4B5563',
+    color: '#475569',
     fontSize: 11.5,
     fontWeight: '600',
   },

@@ -997,9 +997,9 @@ export default function DashboardScreen({ navigation, route }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── SLEEK TITANIUM BLACK FINTECH HEADER (CRED STYLE) ── */}
+        {/* ── SLEEK OCEAN BLUE LOGO HEADER ── */}
         <LinearGradient
-          colors={isDark ? ['#0B0F19', '#030712', '#000000'] : ['#0F172A', '#1E293B', '#0F172A']}
+          colors={['#2563EB', '#1D4ED8', '#1E40AF']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
@@ -2867,12 +2867,12 @@ const styles = StyleSheet.create({
   heroMonthPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   heroMonthPillText: {
     color: '#FFFFFF',
@@ -2883,11 +2883,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
     position: 'relative',
   },
   heroNotificationDot: {
@@ -2899,7 +2899,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#EF4444',
     borderWidth: 1.5,
-    borderColor: '#0F172A',
+    borderColor: '#2563EB',
   },
 
   // ── Hero Centered Balance Block ──
@@ -2909,12 +2909,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   heroBalanceLabel: {
-    color: '#94A3B8',
-    fontSize: 11.5,
-    fontWeight: '800',
+    color: 'rgba(255, 255, 255, 0.88)',
+    fontSize: 13,
+    fontWeight: '600',
     marginBottom: 4,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   heroBalanceRow: {
     flexDirection: 'row',
@@ -2922,7 +2921,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heroCurrencySymbol: {
-    color: '#34D399',
+    color: '#FFFFFF',
     fontSize: 28,
     fontWeight: '700',
     marginRight: 4,
@@ -2946,15 +2945,15 @@ const styles = StyleSheet.create({
   heroSpentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(0, 0, 0, 0.16)',
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 4.5,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: 'rgba(255, 255, 255, 0.22)',
   },
   heroSpentBadgeText: {
-    color: '#E2E8F0',
+    color: '#FEE2E2',
     fontSize: 12,
     fontWeight: '600',
   },
