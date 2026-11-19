@@ -238,44 +238,50 @@ export default function ProfileScreen({ navigation }) {
       }
     }
 
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e) {}
+    setSubmittingProfile(true);
 
     const newUName = editUsername.trim();
     const newFName = editFirstName.trim();
     const newLName = editLastName.trim();
     const newEMail = editEmail.trim();
 
-    // 1-Tap Instant UI Close & State Update
-    setProfile((prev) => prev ? ({
-      ...prev,
-      username: newUName,
-      first_name: newFName,
-      last_name: newLName,
-      email: newEMail,
-    }) : prev);
-
-    setEditProfileVisible(false);
-
-    AsyncStorage.setItem('username', newUName).catch(() => {});
-    const fullName = `${newFName} ${newLName}`.trim();
-    if (fullName) {
-      AsyncStorage.setItem('full_name', fullName).catch(() => {});
-    }
-
-    // Background server sync
     try {
-      await api.post('/api/profile/', {
+      const res = await api.post('/api/profile/', {
         username: newUName,
         first_name: newFName,
         last_name: newLName,
         email: newEMail,
       });
+
+      // Update state and storage on verified server success
+      setProfile((prev) => prev ? ({
+        ...prev,
+        username: newUName,
+        first_name: newFName,
+        last_name: newLName,
+        email: newEMail,
+      }) : prev);
+
+      await AsyncStorage.setItem('username', newUName);
+      const fullName = `${newFName} ${newLName}`.trim();
+      if (fullName) {
+        await AsyncStorage.setItem('full_name', fullName);
+      }
+      
+      DeviceEventEmitter.emit('USERNAME_CHANGED', newUName);
+
+      setEditProfileVisible(false);
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (e) {}
+
+      Alert.alert('Success 🎉', res.data?.message || 'Profile updated successfully!');
       fetchProfile();
     } catch (e) {
-      console.warn('Profile background sync notice:', e);
-      fetchProfile();
+      console.error('Profile update error:', e);
+      Alert.alert('Update Failed', formatApiError(e));
+    } finally {
+      setSubmittingProfile(false);
     }
   };
 
@@ -722,84 +728,6 @@ export default function ProfileScreen({ navigation }) {
             sub="Morning/night pushes, roast tone, rollover"
             onPress={() => navigation.navigate('Notifications')}
           />
-          {Platform.OS === 'android' ? (
-            <MenuItem
-              ionIcon="flash-outline"
-              iconColor="#F59E0B"
-              label="Auto UPI & Bank Tracking"
-              sub={autoCaptureEnabled ? "Active • Listening to payment apps" : "Auto-detect expenses from UPI & bank alerts"}
-              badge={autoCaptureEnabled ? "ON" : "OFF"}
-              badgeColor={autoCaptureEnabled ? "#10B981" : "#94A3B8"}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                const { AutoCaptureModule } = NativeModules;
-                if (autoCaptureEnabled) {
-                  Alert.alert(
-                    "Auto-Capture Settings ⚡",
-                    "Choose an option to manage detection or turn off:",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Screen Reader Settings",
-                        onPress: () => AutoCaptureModule?.openAccessibilitySettings?.()
-                      },
-                      {
-                        text: "Notification Settings",
-                        onPress: () => AutoCaptureModule?.openNotificationListenerSettings?.()
-                      },
-                      {
-                        text: "Turn Off",
-                        style: "destructive",
-                        onPress: () => {
-                          setAutoCaptureEnabled(false);
-                          AsyncStorage.setItem('auto_capture_enabled', 'false');
-                          api.post('/api/daily-budget/', { auto_capture_enabled: false }).catch(() => {});
-                        }
-                      }
-                    ]
-                  );
-                } else {
-                  Alert.alert(
-                    "Smart Auto-Capture ⚡",
-                    "• Notification Listener: Reads incoming payment push alerts.\n• Screen Reader: Reads payment success screens directly (works even if notification is muted/missing).\n• Zero Battery Drain: Wakes up ONLY when GPay/PhonePe/Bank apps show payment success.\n• 100% Private: Only amount & merchant read; no personal chats or OTPs.",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Enable Screen Reader",
-                        onPress: () => {
-                          setAutoCaptureEnabled(true);
-                          AsyncStorage.setItem('auto_capture_enabled', 'true');
-                          api.post('/api/daily-budget/', { auto_capture_enabled: true }).catch(() => {});
-                          AutoCaptureModule?.openAccessibilitySettings?.();
-                        }
-                      },
-                      {
-                        text: "Enable Notifications",
-                        onPress: () => {
-                          setAutoCaptureEnabled(true);
-                          AsyncStorage.setItem('auto_capture_enabled', 'true');
-                          api.post('/api/daily-budget/', { auto_capture_enabled: true }).catch(() => {});
-                          AutoCaptureModule?.openNotificationListenerSettings?.();
-                        }
-                      }
-                    ]
-                  );
-                }
-              }}
-            />
-          ) : (
-            <MenuItem
-              ionIcon="flash-outline"
-              iconColor="#94A3B8"
-              label="Auto UPI & Bank Tracking"
-              sub="Available on Android devices only"
-              badge="Android Only"
-              badgeColor="#94A3B8"
-              onPress={() => {
-                Alert.alert("Notice", "iOS does not permit reading notifications from other apps. Auto-capture is supported on Android only.");
-              }}
-            />
-          )}
           {Platform.OS === 'android' && (
             <MenuItem
               ionIcon="grid-outline"

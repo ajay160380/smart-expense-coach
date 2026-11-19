@@ -203,9 +203,10 @@ export async function scheduleRandomNotifications(userContext = {}) {
             channelId: 'expense_tracker_alerts_v2',
           },
           trigger: {
+            type: 'daily',
             hour,
             minute,
-            repeats: true,
+            channelId: 'expense_tracker_alerts_v2',
           },
         });
       } else if (slot === 'afternoon') {
@@ -224,9 +225,10 @@ export async function scheduleRandomNotifications(userContext = {}) {
             channelId: 'expense_tracker_alerts_v2',
           },
           trigger: {
+            type: 'daily',
             hour,
             minute,
-            repeats: true,
+            channelId: 'expense_tracker_alerts_v2',
           },
         });
       } else if (slot === 'night') {
@@ -244,9 +246,10 @@ export async function scheduleRandomNotifications(userContext = {}) {
             channelId: 'expense_tracker_alerts_v2',
           },
           trigger: {
+            type: 'daily',
             hour,
             minute,
-            repeats: true,
+            channelId: 'expense_tracker_alerts_v2',
           },
         });
       }
@@ -256,11 +259,11 @@ export async function scheduleRandomNotifications(userContext = {}) {
     await AsyncStorage.setItem(LAST_SCHEDULE_KEY, todayStr);
     console.log(`[AutoNotif] Scheduled 2 dynamic English reminders for slots: ${selectedSlots.join(', ')}`);
 
-    // Schedule a one-time instant confirmation alert (8 seconds after open)
+    // Instant confirmation alert on app open with zero delay (trigger: null)
     // so user gets visible & audible proof on their phone's notification bar immediately!
-    const welcomed = await AsyncStorage.getItem('@auto_notif_welcomed_v2');
+    const welcomed = await AsyncStorage.getItem('@auto_notif_welcomed_v3');
     if (!welcomed) {
-      await AsyncStorage.setItem('@auto_notif_welcomed_v2', 'true');
+      await AsyncStorage.setItem('@auto_notif_welcomed_v3', 'true');
       await Notifications.scheduleNotificationAsync({
         content: {
           title: '💡 Smart Expense Coach Active',
@@ -269,9 +272,7 @@ export async function scheduleRandomNotifications(userContext = {}) {
           sound: 'default',
           channelId: 'expense_tracker_alerts_v2',
         },
-        trigger: {
-          seconds: 8,
-        },
+        trigger: null,
       });
     }
   } catch (error) {

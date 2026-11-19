@@ -233,9 +233,15 @@ export default function DashboardScreen({ navigation, route }) {
       fetchDashboardData(false);
     });
 
+    const userSub = DeviceEventEmitter.addListener('USERNAME_CHANGED', (newName) => {
+      if (newName) setUsername(newName);
+      fetchDashboardData(false);
+    });
+
     return () => {
       sub.remove();
       expSub.remove();
+      userSub.remove();
       clearTimeout(fallbackTimer);
     };
   }, [runEntranceAnimation, triggerLightUpAnimation]);

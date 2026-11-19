@@ -14,6 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 
 import { COLORS, RADIUS } from '../utils/theme';
 import { getNotifications, clearNotifications } from '../utils/notifications';
+import { triggerInstantTestNotification } from '../utils/localNotifications';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/ThemeContext';
 import api from '../api/config';
 
@@ -90,7 +92,20 @@ export default function NotificationsScreen({ navigation }) {
           <Ionicons name="arrow-back" size={22} color={isDark ? colors.textPrimary : COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, isDark && { color: colors.textPrimary }]}>Notifications</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <TouchableOpacity
+            onPress={async () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              await triggerInstantTestNotification();
+              Alert.alert('Test Notification Sent 🚀', 'Look at your phone top notification tray or lockscreen! A test smart reminder has been fired.');
+              setTimeout(loadNotifications, 500);
+            }}
+            style={[styles.clearBtn, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5', borderColor: isDark ? 'rgba(16, 185, 129, 0.5)' : '#A7F3D0', paddingHorizontal: 10 }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="notifications" size={13} color="#10B981" style={{ marginRight: 4 }} />
+            <Text style={{ color: '#10B981', fontSize: 12, fontWeight: '700' }}>Test</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => setSettingsModalVisible(true)} style={[styles.clearBtn, { backgroundColor: isDark ? 'rgba(124, 111, 247, 0.2)' : 'rgba(124, 111, 247, 0.12)', borderColor: isDark ? 'rgba(124, 111, 247, 0.4)' : 'rgba(124, 111, 247, 0.3)' }]} activeOpacity={0.7}>
             <Ionicons name="options-outline" size={16} color="#7C6FF7" />
           </TouchableOpacity>
