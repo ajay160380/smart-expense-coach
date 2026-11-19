@@ -381,240 +381,92 @@ export default function ProfileScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Profile Header Hero ── */}
-        <LinearGradient
-          colors={isDark ? ['#172554', '#0F172A', '#0F172A'] : ['#EFF6FF', '#DBEAFE', '#F8FAFC']}
-          style={styles.profileHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <View style={styles.headerGlowCircle} />
-
-          {/* ── Avatar Initial DP with Verified Shield ── */}
-          <View style={styles.avatarGlowWrapper}>
-            <LinearGradient
-              colors={['#2563EB', '#38BDF8']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.avatarOuterRing}
-            >
-              <View style={[styles.avatarInner, { backgroundColor: isDark ? colors.surface : '#FFFFFF' }]}>
-                <Text style={[styles.avatarLetterText, { color: isDark ? '#60A5FA' : '#2563EB' }]}>{initialLetter}</Text>
+        {/* ── 1. TITANIUM BLACK MEMBER CARD (CRED / APPLE WALLET STYLE) ── */}
+        <View style={styles.cardContainer}>
+          <LinearGradient
+            colors={isDark ? ['#1E293B', '#0F172A', '#020617'] : ['#0F172A', '#1E293B', '#020617']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.titaniumCard}
+          >
+            {/* Top Row: EMV Gold Chip & Brand Tier */}
+            <View style={styles.cardTopRow}>
+              <View style={styles.cardChipSection}>
+                <LinearGradient
+                  colors={['#FDE68A', '#D97706', '#92400E']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.goldEmvChip}
+                >
+                  <View style={styles.goldChipGrid} />
+                </LinearGradient>
+                <Ionicons name="wifi" size={17} color="rgba(255,255,255,0.7)" style={{ marginLeft: 8, transform: [{ rotate: '90deg' }] }} />
               </View>
-            </LinearGradient>
-            <View style={[styles.avatarBadge, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="shield-checkmark" size={13} color="#22C55E" />
-            </View>
-          </View>
 
-          <Text style={[styles.profileName, isDark && { color: colors.textPrimary }]}>{fullName}</Text>
-          <View style={[styles.usernameChip, isDark && { backgroundColor: colors.elevated, borderColor: colors.border }]}>
-            <Text style={[styles.usernameChipText, isDark && { color: colors.textSecondary }]}>@{username}</Text>
-          </View>
-
-          <View style={styles.profileMetaRow}>
-            <View style={[styles.metaBadge, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="calendar-outline" size={12} color={isDark ? colors.textSecondary : "#94A3B8"} style={{ marginRight: 5 }} />
-              <Text style={[styles.metaBadgeText, isDark && { color: colors.textSecondary }]}>Since {joined || '2026'}</Text>
-            </View>
-            <View style={styles.streakBadge}>
-              <Ionicons name="flame" size={13} color="#F59E0B" style={{ marginRight: 4 }} />
-              <Text style={styles.streakBadgeText}>{memberDays} {memberDays === 1 ? 'Day' : 'Days'} Active</Text>
-            </View>
-          </View>
-        </LinearGradient>
-
-        {/* ── SECTION 1: PERSONAL DETAILS CARD ── */}
-        <View style={{ marginTop: -16, paddingHorizontal: 16 }}>
-          <View style={[styles.detailsCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.cardHeaderRow, isDark && { borderBottomColor: colors.border }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="person-circle-outline" size={16} color="#7C3AED" style={{ marginRight: 6 }} />
-                <Text style={[styles.cardHeaderTitle, isDark && { color: colors.textPrimary }]}>PERSONAL DETAILS</Text>
+              <View style={styles.cardTierBadge}>
+                <Ionicons name="shield-checkmark" size={11} color="#34D399" style={{ marginRight: 4 }} />
+                <Text style={styles.cardTierText}>PAISAMITRA BLACK</Text>
               </View>
-              <TouchableOpacity onPress={openEditProfile} activeOpacity={0.7}>
-                <Text style={styles.cardHeaderAction}>Update →</Text>
+
+              <TouchableOpacity
+                onPress={openEditProfile}
+                style={styles.cardEditAction}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="pencil" size={11} color="#FFFFFF" style={{ marginRight: 4 }} />
+                <Text style={styles.cardEditActionText}>Edit</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Full Name</Text>
-              <Text style={[styles.detailValue, isDark && { color: colors.textPrimary }]}>{fullName}</Text>
-            </View>
-            <View style={[styles.detailDivider, isDark && { backgroundColor: colors.border }]} />
-
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Username</Text>
-              <Text style={[styles.detailValue, isDark && { color: colors.textPrimary }]}>@{username}</Text>
-            </View>
-            <View style={[styles.detailDivider, isDark && { backgroundColor: colors.border }]} />
-
-            {Boolean(profile?.phone_number) && !String(profile.phone_number).startsWith('g_') && (
-              <>
-                <View style={styles.detailRow}>
-                  <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Registered Mobile</Text>
-                  <View style={styles.detailValueContainer}>
-                    <Text style={[styles.detailValue, isDark && { color: colors.textPrimary }]} numberOfLines={1}>
-                      {profile.phone_number.startsWith('91') && profile.phone_number.length === 12
-                        ? `+91 ${profile.phone_number.slice(2)}`
-                        : profile.phone_number}
-                    </Text>
-                    <View
-                      style={[
-                        styles.emailChip,
-                        {
-                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="shield-checkmark"
-                        size={11}
-                        color="#10B981"
-                        style={{ marginRight: 3 }}
-                      />
-                      <Text
-                        style={[
-                          styles.emailChipText,
-                          { color: '#10B981' },
-                        ]}
-                      >
-                        Verified
-                      </Text>
-                    </View>
+            {/* Middle Row: User Identity with Metallic Typography */}
+            <View style={styles.cardUserRow}>
+              <View style={styles.cardAvatarOuter}>
+                <LinearGradient
+                  colors={['#38BDF8', '#818CF8', '#C084FC']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.cardAvatarGradient}
+                >
+                  <View style={styles.cardAvatarInner}>
+                    <Text style={styles.cardAvatarLetter}>{initialLetter}</Text>
                   </View>
-                </View>
-                <View style={[styles.detailDivider, isDark && { backgroundColor: colors.border }]} />
-              </>
-            )}
-
-            {/* Email Address Row with status badge & tap to verify */}
-            <TouchableOpacity
-              style={styles.detailRow}
-              onPress={() => {
-                if (!profile?.email) {
-                  openEditProfile();
-                } else if (!profile?.email_verified) {
-                  handleSendEmailVerification();
-                } else {
-                  Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
-                }
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Email</Text>
-              <View style={styles.detailValueContainer}>
-                <Text
-                  style={[
-                    styles.detailValue,
-                    isDark && { color: colors.textPrimary },
-                    !profile?.email && { color: isDark ? colors.textMuted : '#94A3B8', fontWeight: '500' }
-                  ]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {profile?.email || 'Add Email'}
-                </Text>
-                <View
-                  style={[
-                    styles.emailChip,
-                    {
-                      backgroundColor: profile?.email_verified
-                        ? 'rgba(16, 185, 129, 0.15)'
-                        : (profile?.email ? 'rgba(245, 158, 11, 0.15)' : 'rgba(6, 182, 212, 0.15)'),
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={profile?.email_verified ? 'shield-checkmark' : (profile?.email ? 'alert-circle' : 'add')}
-                    size={11}
-                    color={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#06B6D4')}
-                    style={{ marginRight: 3 }}
-                  />
-                  <Text
-                    style={[
-                      styles.emailChipText,
-                      {
-                        color: profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#06B6D4'),
-                      },
-                    ]}
-                  >
-                    {profile?.email_verified ? 'Verified' : (profile?.email ? 'Verify' : 'Add')}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-            <View style={[styles.detailDivider, isDark && { backgroundColor: colors.border }]} />
-
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, isDark && { color: colors.textSecondary }]}>Monthly Budget</Text>
-              <Text style={[styles.detailValue, { color: '#10B981', fontWeight: '800' }]}>
-                ₹{Math.round(budget).toLocaleString('en-IN')}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── SECTION 2: LIFETIME STATS BENTO GRID ── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Ionicons name="stats-chart-outline" size={13} color="#818CF8" style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>LIFETIME SNAPSHOT</Text>
-        </View>
-        <View style={{ paddingHorizontal: 16 }}>
-          <View style={[styles.lifetimeCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.statsGrid}>
-              <View style={styles.statItem}>
-                <View style={[styles.statIconBox, { backgroundColor: 'rgba(244, 63, 94, 0.12)', borderColor: 'rgba(244, 63, 94, 0.25)' }]}>
-                  <Ionicons name="wallet-outline" size={17} color="#F43F5E" />
-                </View>
-                <Text style={[styles.statValue, isDark && { color: colors.textPrimary }]}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
-                <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>LIFETIME SPENT</Text>
+                </LinearGradient>
               </View>
 
-              <View style={styles.statItem}>
-                <View style={[styles.statIconBox, { backgroundColor: 'rgba(129, 140, 248, 0.12)', borderColor: 'rgba(129, 140, 248, 0.25)' }]}>
-                  <Ionicons name="receipt-outline" size={17} color="#818CF8" />
+              <View style={{ flex: 1, marginLeft: 13 }}>
+                <Text style={styles.cardUserName} numberOfLines={1}>{fullName}</Text>
+                <View style={styles.cardHandleRow}>
+                  <Text style={styles.cardHandleText}>@{username}</Text>
+                  <View style={styles.cardDot} />
+                  <Text style={styles.cardJoinYear}>SINCE {joined ? joined.slice(-4) : '2026'}</Text>
                 </View>
-                <Text style={[styles.statValue, isDark && { color: colors.textPrimary }]}>{totalTxns}</Text>
-                <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>TRANSACTIONS</Text>
-              </View>
-
-              <View style={styles.statItem}>
-                <View style={[styles.statIconBox, { backgroundColor: 'rgba(6, 182, 212, 0.12)', borderColor: 'rgba(6, 182, 212, 0.25)' }]}>
-                  <Ionicons name="pie-chart-outline" size={17} color="#06B6D4" />
-                </View>
-                <Text style={[styles.statValue, isDark && { color: colors.textPrimary }]}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
-                <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>MONTHLY BUDGET</Text>
-              </View>
-
-              <View style={styles.statItem}>
-                <View style={[styles.statIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.12)', borderColor: 'rgba(245, 158, 11, 0.25)' }]}>
-                  <Ionicons name="flame-outline" size={17} color="#F59E0B" />
-                </View>
-                <Text style={[styles.statValue, isDark && { color: colors.textPrimary }]}>{memberDays}</Text>
-                <Text style={[styles.statLabel, isDark && { color: colors.textSecondary }]}>DAYS ACTIVE</Text>
               </View>
             </View>
-          </View>
+
+            {/* Bottom Row: Bento Stats Inside the Card */}
+            <View style={styles.cardStatsRow}>
+              <View style={styles.cardStatColumn}>
+                <Text style={styles.cardStatLabel}>LIFETIME SPENT</Text>
+                <Text style={styles.cardStatVal}>₹{Math.round(lifetimeSpent).toLocaleString('en-IN')}</Text>
+              </View>
+              <View style={styles.cardStatDivider} />
+              <View style={styles.cardStatColumn}>
+                <Text style={styles.cardStatLabel}>MONTHLY BUDGET</Text>
+                <Text style={styles.cardStatVal}>₹{Math.round(budget).toLocaleString('en-IN')}</Text>
+              </View>
+              <View style={styles.cardStatDivider} />
+              <View style={styles.cardStatColumn}>
+                <Text style={styles.cardStatLabel}>ACTIVITY</Text>
+                <Text style={styles.cardStatVal}>{memberDays} {memberDays === 1 ? 'Day' : 'Days'} 🔥</Text>
+              </View>
+            </View>
+          </LinearGradient>
         </View>
 
-        {/* ── SECTION 3: SMART TOOLS & AUTOMATIONS ── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Ionicons name="flash" size={13} color="#F59E0B" style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>SMART TOOLS & AUTOMATIONS</Text>
-        </View>
-        <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <MenuItem
-            ionIcon="logo-whatsapp"
-            iconColor="#25D366"
-            label="WhatsApp Smart Logger"
-            sub={
-              profile?.whatsapp_linked
-                ? 'Active • Log spends by texting ₹150 Chai or voice note'
-                : '1-tap link to log expenses automatically via WhatsApp'
-            }
-            badge={profile?.whatsapp_linked ? 'Active' : 'Setup'}
-            badgeColor={profile?.whatsapp_linked ? '#10B981' : '#25D366'}
+        {/* ── 2. HERO FEATURE BENTO: WHATSAPP SMART LOGGER ── */}
+        <View style={styles.sectionWrap}>
+          <TouchableOpacity
+            style={[styles.waHeroBento, isDark && { backgroundColor: '#0B132B', borderColor: 'rgba(37, 211, 102, 0.35)' }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               const rawPhone = profile?.phone_number || profile?.user_phone || '';
@@ -630,12 +482,9 @@ export default function ProfileScreen({ navigation }) {
                   'WhatsApp Expense Bot 🟢',
                   `Your WhatsApp is successfully linked!\n\nText "500 petrol" or "today summary" anytime to +91 7379053923.`,
                   [
+                    { text: '💬 Open WhatsApp', onPress: () => Linking.openURL('https://wa.me/917379053923?text=Hi') },
                     {
-                      text: '💬 Chat on WhatsApp',
-                      onPress: () => Linking.openURL('https://wa.me/917379053923?text=Hi'),
-                    },
-                    {
-                      text: '🔄 Re-link Phone Number',
+                      text: '🔄 Re-link Number',
                       onPress: () => {
                         const cleanPhone = (rawPhone || '').replace(/[^0-9]/g, '');
                         Linking.openURL(`https://wa.me/917379053923?text=${encodeURIComponent(`Link ${cleanPhone || '91'}`)}`);
@@ -646,180 +495,251 @@ export default function ProfileScreen({ navigation }) {
                 );
               }
             }}
-          />
-          <MenuItem
-            ionIcon="notifications-outline"
-            iconColor="#6366F1"
-            label="Daily Budget & Smart Alerts"
-            sub="Automatic morning & night nudges, rollover target"
-            badge="Active"
-            badgeColor="#6366F1"
-            onPress={() => navigation.navigate('Notifications')}
-          />
-          {Platform.OS === 'android' && (
-            <MenuItem
-              ionIcon="grid-outline"
-              iconColor="#A855F7"
-              label="Home Screen Widget"
-              sub="Instant glanceable balance & burn rate on home screen"
-              badge="Widget"
-              badgeColor="#A855F7"
+            activeOpacity={0.88}
+          >
+            <View style={styles.waHeroTopRow}>
+              <View style={styles.waHeroIconWrap}>
+                <Ionicons name="logo-whatsapp" size={26} color="#25D366" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[styles.waHeroTitle, isDark && { color: '#FFFFFF' }]}>WhatsApp Smart Logger</Text>
+                  <View style={styles.waHeroSpeedBadge}>
+                    <Ionicons name="flash" size={10} color="#10B981" />
+                    <Text style={styles.waHeroSpeedText}>10X FASTER</Text>
+                  </View>
+                </View>
+                <Text style={[styles.waHeroSubtitle, isDark && { color: '#94A3B8' }]}>
+                  {profile?.whatsapp_linked
+                    ? 'Active • Log spends by texting "₹150 Chai" or voice notes to bot'
+                    : '1-tap connect • Log expenses automatically on WhatsApp'}
+                </Text>
+              </View>
+              <View style={[styles.waHeroStatusPill, { backgroundColor: profile?.whatsapp_linked ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)' }]}>
+                <Text style={[styles.waHeroStatusText, { color: profile?.whatsapp_linked ? '#10B981' : '#F59E0B' }]}>
+                  {profile?.whatsapp_linked ? 'ACTIVE' : 'SETUP'}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── 3. FINTECH 2-COLUMN FEATURE BENTO TILES ── */}
+        <View style={styles.sectionWrap}>
+          <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>SMART TOOLS & CONTROLS</Text>
+          <View style={styles.bentoGrid}>
+            {/* Tile 1: Daily Budget & Smart Notifications */}
+            <TouchableOpacity
+              style={[styles.bentoTile, isDark && styles.bentoTileDark]}
               onPress={() => {
-                AsyncStorage.getItem('dashboard_cache').then(c => {
-                  if (c) {
-                    try { setCachedStats(JSON.parse(c)?.stats || null); } catch (e) {}
-                  }
-                });
-                setWidgetModalVisible(true);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('Notifications');
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(99, 102, 241, 0.15)', borderColor: 'rgba(99, 102, 241, 0.3)' }]}>
+                <Ionicons name="notifications" size={20} color="#6366F1" />
+              </View>
+              <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>Smart Alerts</Text>
+              <Text style={[styles.bentoSub, isDark && { color: colors.textSecondary }]}>Morning & night nudges</Text>
+              <View style={[styles.bentoPill, { backgroundColor: 'rgba(99, 102, 241, 0.12)' }]}>
+                <Text style={[styles.bentoPillText, { color: '#6366F1' }]}>1-2 / Day</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Tile 2: App Lock & Biometrics */}
+            <TouchableOpacity
+              style={[styles.bentoTile, isDark && styles.bentoTileDark]}
+              onPress={toggleBiometric}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.3)' }]}>
+                <Ionicons name={biometricEnabled ? 'shield-checkmark' : 'finger-print'} size={20} color="#10B981" />
+              </View>
+              <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>App Lock</Text>
+              <Text style={[styles.bentoSub, isDark && { color: colors.textSecondary }]}>Biometric & PIN</Text>
+              <View style={[styles.bentoPill, { backgroundColor: biometricEnabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.15)' }]}>
+                <Text style={[styles.bentoPillText, { color: biometricEnabled ? '#10B981' : '#64748B' }]}>
+                  {biometricEnabled ? 'ENABLED' : 'OFF'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Tile 3: Magic Shake to Add */}
+            <TouchableOpacity
+              style={[styles.bentoTile, isDark && styles.bentoTileDark]}
+              onPress={toggleShake}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.3)' }]}>
+                <Ionicons name="phone-portrait" size={20} color="#F59E0B" />
+              </View>
+              <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>Magic Shake</Text>
+              <Text style={[styles.bentoSub, isDark && { color: colors.textSecondary }]}>Shake phone to add</Text>
+              <View style={[styles.bentoPill, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+                <Text style={[styles.bentoPillText, { color: '#F59E0B' }]}>
+                  {shakeLevel === 'disabled' || shakeLevel === 'off' ? 'OFF' : getShakeText(shakeLevel).split(' ')[0].toUpperCase()}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Tile 4: Home Screen Widget (or Dark Theme) */}
+            {Platform.OS === 'android' ? (
+              <TouchableOpacity
+                style={[styles.bentoTile, isDark && styles.bentoTileDark]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  AsyncStorage.getItem('dashboard_cache').then(c => {
+                    if (c) {
+                      try { setCachedStats(JSON.parse(c)?.stats || null); } catch (e) {}
+                    }
+                  });
+                  setWidgetModalVisible(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.3)' }]}>
+                  <Ionicons name="grid" size={20} color="#A855F7" />
+                </View>
+                <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>Home Widget</Text>
+                <Text style={[styles.bentoSub, isDark && { color: colors.textSecondary }]}>Live balance glance</Text>
+                <View style={[styles.bentoPill, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
+                  <Text style={[styles.bentoPillText, { color: '#A855F7' }]}>WIDGET</Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.bentoTile, isDark && styles.bentoTileDark]}
+                onPress={toggleTheme}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.bentoIconBox, { backgroundColor: 'rgba(56, 189, 248, 0.15)', borderColor: 'rgba(56, 189, 248, 0.3)' }]}>
+                  <Ionicons name={isDark ? "moon" : "sunny"} size={20} color="#38BDF8" />
+                </View>
+                <Text style={[styles.bentoTitle, isDark && { color: colors.textPrimary }]}>Appearance</Text>
+                <Text style={[styles.bentoSub, isDark && { color: colors.textSecondary }]}>{isDark ? 'Dark Theme' : 'Light Theme'}</Text>
+                <View style={[styles.bentoPill, { backgroundColor: 'rgba(56, 189, 248, 0.12)' }]}>
+                  <Text style={[styles.bentoPillText, { color: '#38BDF8' }]}>{isDark ? 'DARK' : 'LIGHT'}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* ── 4. PREFERENCES & ACCOUNT SETTINGS (Sleek Glass Card) ── */}
+        <View style={styles.sectionWrap}>
+          <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>PREFERENCES & ACCOUNT</Text>
+          <View style={[styles.glassListCard, isDark && styles.glassListCardDark]}>
+            <MenuItem
+              ionIcon={isDark ? "moon" : "sunny-outline"}
+              iconColor="#38BDF8"
+              label="Theme & Appearance"
+              sub={isDark ? "Dark theme active • Tap to switch" : "Clean light theme active • Tap to switch"}
+              badge={isDark ? "Dark" : "Light"}
+              badgeColor={isDark ? "#38BDF8" : "#94A3B8"}
+              rightComponent={<ThemeToggle size="small" />}
+              onPress={toggleTheme}
+            />
+            <MenuItem
+              ionIcon={profile?.email_verified ? 'shield-checkmark' : 'mail-outline'}
+              iconColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#94A3B8')}
+              label="Email Recovery & Verification"
+              sub={
+                profile?.email
+                  ? (profile?.email_verified ? `${profile.email} • Verified` : `${profile.email} • Tap to verify`)
+                  : 'Add an email to protect your account'
+              }
+              badge={profile?.email_verified ? 'Verified' : (profile?.email ? 'Verify' : 'Add')}
+              badgeColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#64748B')}
+              onPress={() => {
+                if (!profile?.email) {
+                  openEditProfile();
+                } else if (!profile?.email_verified) {
+                  handleSendEmailVerification();
+                } else {
+                  Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
+                }
               }}
             />
-          )}
-          <MenuItem
-            ionIcon="phone-portrait-outline"
-            iconColor="#F59E0B"
-            label="Magic Shake to Add"
-            sub={`Quick gesture: ${getShakeText(shakeLevel)}`}
-            badge={shakeLevel === 'disabled' || shakeLevel === 'off' ? 'Off' : getShakeText(shakeLevel).split(' ')[0]}
-            badgeColor={shakeLevel === 'disabled' || shakeLevel === 'off' ? '#64748B' : '#F59E0B'}
-            onPress={toggleShake}
-            isLast
-          />
+            <MenuItem
+              ionIcon="sparkles-outline"
+              iconColor="#8B5CF6"
+              label="Interactive Feature Tour"
+              sub="Guided tour of WhatsApp, Widgets, Center '+' & Tools"
+              badge="Explore"
+              badgeColor="#8B5CF6"
+              onPress={() => {
+                navigation.navigate('Home');
+                setTimeout(() => {
+                  DeviceEventEmitter.emit('SHOW_APP_TOUR');
+                }, 250);
+              }}
+            />
+            <MenuItem
+              ionIcon="chatbubble-ellipses-outline"
+              iconColor="#EC4899"
+              label="Submit Feedback & Ideas"
+              sub="Help us improve PaisaMitra"
+              onPress={() => setFeedbackVisible(true)}
+            />
+            <MenuItem
+              ionIcon="globe-outline"
+              iconColor="#3B82F6"
+              label="Open Web Dashboard"
+              sub="expense-coach-prxm.onrender.com"
+              onPress={() => openLink('https://expense-coach-prxm.onrender.com')}
+              showArrow
+            />
+            <MenuItem
+              ionIcon="cloud-download-outline"
+              iconColor="#10B981"
+              label="Check for Updates"
+              sub="EAS Live OTA sync"
+              badge={`v${CURRENT_APP_VERSION}`}
+              badgeColor="#10B981"
+              onPress={async () => {
+                try {
+                  const update = await Updates.checkForUpdateAsync();
+                  if (update.isAvailable) {
+                    Alert.alert('Update Available', 'Downloading new features...');
+                    await Updates.fetchUpdateAsync();
+                    Alert.alert('Success', 'Update applied! Restarting...', [
+                      { text: 'OK', onPress: () => Updates.reloadAsync() },
+                    ]);
+                  } else {
+                    Alert.alert('No Update Available', 'Your app is up to date! 🎉');
+                  }
+                } catch (error) {
+                  Alert.alert('No Update Available', 'Your app is up to date.');
+                }
+              }}
+              isLast
+            />
+          </View>
         </View>
 
-        {/* ── SECTION 4: SECURITY & PREFERENCES ── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Ionicons name="shield-checkmark-outline" size={13} color="#10B981" style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>SECURITY & PREFERENCES</Text>
-        </View>
-        <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <MenuItem
-            ionIcon={biometricEnabled ? 'shield-checkmark' : 'finger-print-outline'}
-            iconColor="#10B981"
-            label="App Lock & Biometric"
-            sub={biometricEnabled ? 'Biometric security is active' : 'Protect app with fingerprint/PIN'}
-            badge={biometricEnabled ? 'Enabled' : 'Off'}
-            badgeColor={biometricEnabled ? '#10B981' : '#64748B'}
-            onPress={toggleBiometric}
-          />
-          <MenuItem
-            ionIcon={profile?.email_verified ? 'shield-checkmark' : 'mail-outline'}
-            iconColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#94A3B8')}
-            label="Email Verification & Recovery"
-            sub={
-              profile?.email
-                ? (profile?.email_verified ? `${profile.email} • Verified` : `${profile.email} • Tap to verify`)
-                : 'Add an email to protect your account'
-            }
-            badge={profile?.email_verified ? 'Verified' : (profile?.email ? 'Verify' : 'Add')}
-            badgeColor={profile?.email_verified ? '#10B981' : (profile?.email ? '#F59E0B' : '#64748B')}
-            onPress={() => {
-              if (!profile?.email) {
-                openEditProfile();
-              } else if (!profile?.email_verified) {
-                handleSendEmailVerification();
-              } else {
-                Alert.alert('Email Verified 🛡️', `Your account is safely linked with ${profile.email}`);
-              }
-            }}
-          />
-          <MenuItem
-            ionIcon={isDark ? "moon" : "sunny-outline"}
-            iconColor="#38BDF8"
-            label="Theme & Appearance"
-            sub={isDark ? "Dark theme active • Tap to switch" : "Clean light theme active • Tap to switch"}
-            badge={isDark ? "Dark" : "Light"}
-            badgeColor={isDark ? "#38BDF8" : "#94A3B8"}
-            rightComponent={<ThemeToggle size="small" />}
-            onPress={toggleTheme}
-          />
-          <MenuItem
-            ionIcon="paper-plane-outline"
-            iconColor="#EC4899"
-            label="Push Notification Channel"
-            sub="Cloud sync for instant split & spending alerts"
-            onPress={async () => {
-              try {
-                if (Platform.OS === 'android' && Platform.Version >= 33) {
-                  await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-                }
-                const authStatus = await messaging().requestPermission();
-                if (
-                  authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-                  authStatus === messaging.AuthorizationStatus.PROVISIONAL
-                ) {
-                  await messaging().subscribeToTopic('all_users');
-                  Alert.alert('Success', 'Push notifications enabled! 🔔');
-                } else {
-                  Alert.alert('Notice', 'Notification permission was denied.');
-                }
-              } catch (e) {
-                Alert.alert('Error', 'Could not enable notifications.');
-              }
-            }}
-            isLast
-          />
-        </View>
-
-        {/* ── SECTION 5: HELP & EXPERIENCE ── */}
-        <View style={styles.sectionHeaderWrap}>
-          <Ionicons name="sparkles-outline" size={13} color="#8B5CF6" style={{ marginRight: 6 }} />
-          <Text style={[styles.sectionHeaderTitle, isDark && { color: colors.textSecondary }]}>HELP & EXPERIENCE</Text>
-        </View>
-        <View style={[styles.menuGroupCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <MenuItem
-            ionIcon="sparkles"
-            iconColor="#8B5CF6"
-            label="Interactive Feature Tour"
-            sub="Walkthrough of WhatsApp Bot, Center '+', Widgets & Tools"
-            badge="Tour"
-            badgeColor="#8B5CF6"
-            onPress={() => {
-              navigation.navigate('Home');
-              setTimeout(() => {
-                DeviceEventEmitter.emit('SHOW_APP_TOUR');
-              }, 250);
-            }}
-          />
-          <MenuItem
-            ionIcon="chatbubble-ellipses-outline"
-            iconColor="#06B6D4"
-            label="Submit Feedback & Ideas"
-            sub="Share your ideas & feature suggestions"
-            onPress={() => setFeedbackVisible(true)}
-          />
-          <MenuItem
-            ionIcon="globe-outline"
-            iconColor="#3B82F6"
-            label="Web Dashboard"
-            sub="Access desktop analytics & detailed export"
-            onPress={() => openLink('https://expense-coach-prxm.onrender.com')}
-            showArrow
-          />
-          <MenuItem
-            ionIcon="cloud-download-outline"
-            iconColor="#10B981"
-            label="Check for Updates"
-            sub="Check for latest live features & bug fixes"
-            badge={`v${CURRENT_APP_VERSION}`}
-            badgeColor="#10B981"
-            onPress={async () => {
-              try {
-                const update = await Updates.checkForUpdateAsync();
-                if (update.isAvailable) {
-                  Alert.alert('Update Available', 'Downloading new features...');
-                  await Updates.fetchUpdateAsync();
-                  Alert.alert('Success', 'Update applied! Restarting...', [
-                    { text: 'OK', onPress: () => Updates.reloadAsync() },
-                  ]);
-                } else {
-                  Alert.alert('No Update Available', 'Your app is up to date! 🎉');
-                }
-              } catch (error) {
-                Alert.alert('No Update Available', 'Your app is up to date.');
-              }
-            }}
-            isLast
-          />
+        {/* ── 5. LEGAL & SECURITY ── */}
+        <View style={styles.sectionWrap}>
+          <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>LEGAL & POLICIES</Text>
+          <View style={[styles.glassListCard, isDark && styles.glassListCardDark]}>
+            <MenuItem
+              ionIcon="shield-checkmark-outline"
+              iconColor="#10B981"
+              label="Privacy Policy"
+              sub="Encryption, data protection & GDPR rights"
+              onPress={() => navigation.navigate('PrivacyPolicy')}
+              showArrow
+            />
+            <MenuItem
+              ionIcon="newspaper-outline"
+              iconColor="#38BDF8"
+              label="Terms of Service"
+              sub="Terms of use & financial disclaimer"
+              onPress={() => navigation.navigate('Terms')}
+              showArrow
+              isLast
+            />
+          </View>
         </View>
 
         {/* ── ADMIN PANEL ── */}
@@ -1324,125 +1244,330 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ── Personal Details Card ──
-  detailsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F1F3F9',
+  // ── Titanium Black Card (CRED / Apple Wallet Style) ──
+  cardContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  titaniumCard: {
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 24,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 8,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  cardHeaderRow: {
+  cardTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  cardHeaderTitle: {
-    fontSize: 11,
+  cardChipSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  goldEmvChip: {
+    width: 32,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 0.8,
+    borderColor: '#FDE68A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 3,
+  },
+  goldChipGrid: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 0.6,
+    borderColor: 'rgba(0,0,0,0.25)',
+    borderRadius: 2,
+  },
+  cardTierBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+    borderWidth: 0.8,
+    borderColor: 'rgba(52, 211, 153, 0.35)',
+  },
+  cardTierText: {
+    color: '#E2E8F0',
+    fontSize: 9.5,
     fontWeight: '800',
-    color: '#1F2937',
-    letterSpacing: 0.7,
+    letterSpacing: 1.1,
   },
-  cardHeaderAction: {
-    fontSize: 11.5,
-    color: '#FF6B35',
-    fontWeight: '700',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 9,
-  },
-  detailLabel: {
-    color: '#6B7280',
-    fontSize: 13,
-    fontWeight: '500',
-    flexShrink: 0,
-    marginRight: 10,
-  },
-  detailValueContainer: {
-    flex: 1,
+  cardEditAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 0.8,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  detailValue: {
-    color: '#1F2937',
-    fontSize: 13,
-    fontWeight: '700',
-    flexShrink: 1,
-    textAlign: 'right',
-  },
-  detailDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-  },
-  emailChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginLeft: 8,
-    flexShrink: 0,
-  },
-  emailChipText: {
+  cardEditActionText: {
+    color: '#FFFFFF',
     fontSize: 10.5,
     fontWeight: '700',
   },
-
-  // ── Lifetime Stats Bento ──
-  lifetimeCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#F1F3F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 24,
-    elevation: 3,
-  },
-  statsGrid: {
+  cardUserRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginBottom: 18,
   },
-  statItem: {
-    width: '50%',
-    padding: 10,
+  cardAvatarOuter: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    padding: 2,
   },
-  statIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+  cardAvatarGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+    padding: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    marginBottom: 6,
   },
-  statValue: {
-    color: '#1F2937',
-    fontSize: 16,
+  cardAvatarInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 23,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardAvatarLetter: {
+    color: '#F8FAFC',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  cardUserName: {
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
-  statLabel: {
-    color: '#6B7280',
-    fontSize: 9.5,
+  cardHandleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+  },
+  cardHandleText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cardDot: {
+    width: 3.5,
+    height: 3.5,
+    borderRadius: 2,
+    backgroundColor: '#64748B',
+    marginHorizontal: 7,
+  },
+  cardJoinYear: {
+    color: '#64748B',
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  cardStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 0.8,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  cardStatColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  cardStatDivider: {
+    width: 1,
+    height: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  cardStatLabel: {
+    color: '#94A3B8',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  cardStatVal: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+
+  // ── Hero WhatsApp Bento ──
+  waHeroBento: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1.2,
+    borderColor: '#D1FAE5',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  waHeroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  waHeroIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: 'rgba(37, 211, 102, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 211, 102, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  waHeroTitle: {
+    fontSize: 14.5,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  waHeroSubtitle: {
+    fontSize: 11.5,
+    color: '#64748B',
+    marginTop: 2.5,
+    lineHeight: 15,
+  },
+  waHeroSpeedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+    gap: 3,
+  },
+  waHeroSpeedText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  waHeroStatusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginLeft: 6,
+  },
+  waHeroStatusText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+  },
+
+  // ── 2-Column Bento Grid ──
+  sectionWrap: {
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+  sectionHeading: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 0.9,
+    marginBottom: 9,
+    marginLeft: 2,
+    textTransform: 'uppercase',
+  },
+  bentoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  bentoTile: {
+    width: '48.5%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 13,
+    marginBottom: 11,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  bentoTileDark: {
+    backgroundColor: '#1E293B',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  bentoIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  bentoTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  bentoSub: {
+    fontSize: 11,
+    color: '#64748B',
     marginTop: 2,
+    marginBottom: 8,
+    lineHeight: 14,
+  },
+  bentoPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 7,
+  },
+  bentoPillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+
+  // ── Glass List Card ──
+  glassListCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  glassListCardDark: {
+    backgroundColor: '#1E293B',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
 
   // ── Menu Section ──
