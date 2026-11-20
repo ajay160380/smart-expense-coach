@@ -298,6 +298,102 @@ function MainTabNavigator() {
   );
 }
 
+const linking = {
+  prefixes: [
+    'expensetracker://',
+    'paisamitra://',
+    'com.ajay160380.paisamitra://',
+    'com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et://',
+  ],
+  config: {
+    screens: {
+      MainTabs: {
+        screens: {
+          Home: {
+            screens: {
+              AddExpense: 'add',
+              VoiceExpense: 'voice',
+              History: 'history',
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
+function AppNavigatorContent({ isAuthenticated }) {
+  const { isDark, colors } = useTheme();
+
+  const baseTheme = isDark ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...baseTheme,
+    dark: isDark,
+    colors: {
+      ...baseTheme.colors,
+      primary: colors.primary,
+      background: colors.bg,
+      card: colors.surface,
+      text: colors.textPrimary,
+      border: colors.border,
+      notification: colors.accent,
+    },
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <NavigationContainer
+        ref={navigationRef}
+        linking={linking}
+        theme={navTheme}
+        onStateChange={() => {
+          const currentRouteName = navigationRef.getCurrentRoute()?.name;
+          if (currentRouteName) {
+            analytics.trackScreen(currentRouteName);
+          }
+        }}
+      >
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <Stack.Navigator
+          initialRouteName={isAuthenticated ? 'MainTabs' : 'Login'}
+          screenOptions={{
+            headerShown: false,
+            cardStyle: { backgroundColor: colors.bg },
+            animationEnabled: false,
+          }}
+        >
+          {isAuthenticated ? (
+            // ── Logged in: Directly to Dashboard (Welcome Screen CANNOT show) ──
+            <>
+              <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+              <Stack.Screen name="Dashboard" component={DashboardScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            </>
+          ) : (
+            // ── Logged out: Auth onboarding ──
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+              <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            </>
+          )}
+
+          {/* Legal & System Screens */}
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+          <Stack.Screen name="Terms" component={TermsScreen} />
+          <Stack.Screen name="NotFound" component={NotFoundScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <CustomAlertModal />
+    </View>
+  );
+}
+
 // ═══════════════════════════════════════════════
 // ROOT APP
 // ═══════════════════════════════════════════════
@@ -454,8 +550,10 @@ export default function App() {
       } catch (e) {}
     };
 
-    // 1. Check immediately on launch
-    performAutoOTAUpdate();
+    // 1. Check in background after 4 seconds (doesn't block critical app launch)
+    const initialTimer = setTimeout(() => {
+      performAutoOTAUpdate();
+    }, 4000);
 
     // 2. Check periodically every 30 seconds while the app is running
     const timer = setInterval(() => {
@@ -472,6 +570,7 @@ export default function App() {
     });
 
     return () => {
+      clearTimeout(initialTimer);
       clearInterval(timer);
       sub.remove();
     };
@@ -632,19 +731,23 @@ export default function App() {
         const token = await getToken();
         if (token) {
           setIsAuthenticated(true);
-          setupFCM(token);
-          scheduleRandomNotifications();
-          if (Platform.OS === 'android' && NativeModules.AutoCaptureModule) {
-            NativeModules.AutoCaptureModule.saveAuthToken?.(String(token));
-            NativeModules.AutoCaptureModule.saveBackendUrl?.(BASE_URL);
-          }
+          setIsLoading(false); // Unblock UI and render Dashboard instantly!
+          // Perform non-critical background initialization asynchronously
+          setTimeout(() => {
+            setupFCM(token);
+            scheduleRandomNotifications();
+            if (Platform.OS === 'android' && NativeModules.AutoCaptureModule) {
+              NativeModules.AutoCaptureModule.saveAuthToken?.(String(token));
+              NativeModules.AutoCaptureModule.saveBackendUrl?.(BASE_URL);
+            }
+          }, 150);
         } else {
           setIsAuthenticated(false);
-          setupFCM(null);
+          setIsLoading(false);
+          setTimeout(() => setupFCM(null), 150);
         }
       } catch (e) {
         console.error(e);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -716,92 +819,6 @@ export default function App() {
     );
   }
 
-  const linking = {
-    prefixes: [
-      'expensetracker://',
-      'paisamitra://',
-      'com.ajay160380.paisamitra://',
-      'com.googleusercontent.apps.600331588079-97q2pl2l6impkean30df3qig5t6rl7et://',
-    ],
-    config: {
-      screens: {
-        MainTabs: {
-          screens: {
-            Home: {
-              screens: {
-                AddExpense: 'add',
-                VoiceExpense: 'voice',
-                History: 'history',
-              },
-            },
-          },
-        },
-      },
-    },
-  };
-
-function AppNavigatorContent({ isAuthenticated, linking }) {
-  const { isDark, colors } = useTheme();
-
-  const baseTheme = isDark ? DarkTheme : DefaultTheme;
-  const navTheme = {
-    ...baseTheme,
-    dark: isDark,
-    colors: {
-      ...baseTheme.colors,
-      primary: colors.primary,
-      background: colors.bg,
-      card: colors.surface,
-      text: colors.textPrimary,
-      border: colors.border,
-      notification: colors.accent,
-    },
-  };
-
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <NavigationContainer
-        ref={navigationRef}
-        linking={linking}
-        theme={navTheme}
-        onStateChange={() => {
-          const currentRouteName = navigationRef.getCurrentRoute()?.name;
-          if (currentRouteName) {
-            analytics.trackScreen(currentRouteName);
-          }
-        }}
-      >
-        <StatusBar style={isDark ? "light" : "dark"} />
-        <Stack.Navigator
-          initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
-          screenOptions={{
-            headerShown: false,
-            cardStyle: { backgroundColor: colors.bg },
-          }}
-        >
-          {/* Auth Flow */}
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-
-          {/* Main App */}
-          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-
-          {/* Legal & System Screens */}
-          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-          <Stack.Screen name="Terms" component={TermsScreen} />
-          <Stack.Screen name="NotFound" component={NotFoundScreen} />
-
-          {/* Global Modals (accessible from anywhere) */}
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-      <CustomAlertModal />
-    </View>
-  );
-}
-
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
@@ -810,10 +827,9 @@ function AppNavigatorContent({ isAuthenticated, linking }) {
             {!isLoading && (
               <AppNavigatorContent
                 isAuthenticated={isAuthenticated}
-                linking={linking}
               />
             )}
-            {/* 💸 Luxury Smooth Splash Overlay (Always smooth on cold start, 1s display + blur-zoom dissolve) */}
+            {/* 💸 Luxury Snappy Splash Overlay (Fast smooth cross-dissolve into Dashboard) */}
             {showSplash && (
               <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
                 <MoneySplashScreen

@@ -77,20 +77,20 @@ const MoneySplashScreen = memo(({ onFinish }) => {
     // 2. Notify dashboard to start the "deem -> light-up" sequence
     const revealTimer = setTimeout(() => {
       DeviceEventEmitter.emit('splash_reveal');
-    }, 950);
+    }, 200);
 
-    // 3. Luxurious 1-second display followed by cinematic blur-zoom cross-dissolve
+    // 3. Ultra-fast snappy display followed by smooth cross-dissolve into Dashboard
     const dissolveTimer = setTimeout(() => {
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: 500,
+          duration: 250,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(exitScale, {
-          toValue: 1.06,
-          duration: 500,
+          toValue: 1.04,
+          duration: 250,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -98,12 +98,12 @@ const MoneySplashScreen = memo(({ onFinish }) => {
         DeviceEventEmitter.emit('splash_reveal');
         if (onFinish) onFinish();
       });
-    }, 1000);
+    }, 300);
 
     const fallback = setTimeout(() => {
       DeviceEventEmitter.emit('splash_reveal');
       if (onFinish) onFinish();
-    }, 1800);
+    }, 650);
 
     return () => {
       clearTimeout(revealTimer);
