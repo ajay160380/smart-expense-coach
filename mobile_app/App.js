@@ -46,8 +46,11 @@ import * as LocalAuthentication from 'expo-local-authentication';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    priority: Notifications.AndroidNotificationPriority.MAX,
   }),
 });
 // ── Auth Screens ──
@@ -583,6 +586,22 @@ export default function App() {
           if (Platform.Version >= 33) {
             await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
           }
+          await Notifications.setNotificationChannelAsync('expense_tracker_alerts_v3', {
+            name: 'Expense Alerts & Reminders',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            sound: 'default',
+            enableVibrate: true,
+            enableLights: true,
+            showBadge: true,
+            lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+            bypassDnd: true,
+            audioAttributes: {
+              usage: Notifications.AndroidAudioUsage.NOTIFICATION,
+              contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+              flags: { enforceAudibility: true },
+            },
+          });
           await Notifications.setNotificationChannelAsync('expense_tracker_alerts_v2', {
             name: 'Expense Alerts & Reminders',
             importance: Notifications.AndroidImportance.MAX,
@@ -660,8 +679,10 @@ export default function App() {
               title: remoteMessage.notification?.title || 'Expense Tracker 💡',
               body: remoteMessage.notification?.body || '',
               data: remoteMessage.data || {},
-              sound: 'default',
-              channelId: 'expense_tracker_alerts_v2',
+              sound: true,
+              vibrate: [0, 250, 250, 250],
+              channelId: 'expense_tracker_alerts_v3',
+              priority: Notifications.AndroidNotificationPriority.MAX,
             },
             trigger: null, // immediate heads-up popup banner and sound!
           });

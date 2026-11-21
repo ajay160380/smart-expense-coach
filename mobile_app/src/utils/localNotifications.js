@@ -15,8 +15,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
-    shouldSetBadge: false,
+    shouldSetBadge: true,
+    priority: Notifications.AndroidNotificationPriority.MAX,
   }),
 });
 
@@ -145,15 +148,21 @@ const LAST_SCHEDULE_KEY = '@last_local_notif_schedule_date';
  */
 async function setupChannel() {
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('expense_tracker_alerts_v2', {
+    await Notifications.setNotificationChannelAsync('expense_tracker_alerts_v3', {
       name: 'Expense Alerts & Reminders',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       sound: 'default',
       enableVibrate: true,
+      enableLights: true,
       showBadge: true,
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       bypassDnd: true,
+      audioAttributes: {
+        usage: Notifications.AndroidAudioUsage.NOTIFICATION,
+        contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+        flags: { enforceAudibility: true },
+      },
     });
   }
 }
@@ -199,14 +208,16 @@ export async function scheduleRandomNotifications(userContext = {}) {
             title: template.title,
             body: template.getBody(userContext),
             data: { screen: 'Dashboard', type: 'morning_reminder' },
-            sound: 'default',
-            channelId: 'expense_tracker_alerts_v2',
+            sound: true,
+            vibrate: [0, 250, 250, 250],
+            channelId: 'expense_tracker_alerts_v3',
+            priority: Notifications.AndroidNotificationPriority.MAX,
           },
           trigger: {
             type: 'daily',
             hour,
             minute,
-            channelId: 'expense_tracker_alerts_v2',
+            channelId: 'expense_tracker_alerts_v3',
           },
         });
       } else if (slot === 'afternoon') {
@@ -221,14 +232,16 @@ export async function scheduleRandomNotifications(userContext = {}) {
             title: template.title,
             body: template.getBody(userContext),
             data: { screen: 'Dashboard', type: 'afternoon_reminder' },
-            sound: 'default',
-            channelId: 'expense_tracker_alerts_v2',
+            sound: true,
+            vibrate: [0, 250, 250, 250],
+            channelId: 'expense_tracker_alerts_v3',
+            priority: Notifications.AndroidNotificationPriority.MAX,
           },
           trigger: {
             type: 'daily',
             hour,
             minute,
-            channelId: 'expense_tracker_alerts_v2',
+            channelId: 'expense_tracker_alerts_v3',
           },
         });
       } else if (slot === 'night') {
@@ -242,14 +255,16 @@ export async function scheduleRandomNotifications(userContext = {}) {
             title: template.title,
             body: template.getBody(userContext),
             data: { screen: 'Dashboard', type: 'night_reminder' },
-            sound: 'default',
-            channelId: 'expense_tracker_alerts_v2',
+            sound: true,
+            vibrate: [0, 250, 250, 250],
+            channelId: 'expense_tracker_alerts_v3',
+            priority: Notifications.AndroidNotificationPriority.MAX,
           },
           trigger: {
             type: 'daily',
             hour,
             minute,
-            channelId: 'expense_tracker_alerts_v2',
+            channelId: 'expense_tracker_alerts_v3',
           },
         });
       }
@@ -261,16 +276,18 @@ export async function scheduleRandomNotifications(userContext = {}) {
 
     // Instant confirmation alert on app open with zero delay (trigger: null)
     // so user gets visible & audible proof on their phone's notification bar immediately!
-    const welcomed = await AsyncStorage.getItem('@auto_notif_welcomed_v3');
+    const welcomed = await AsyncStorage.getItem('@auto_notif_welcomed_v4');
     if (!welcomed) {
-      await AsyncStorage.setItem('@auto_notif_welcomed_v3', 'true');
+      await AsyncStorage.setItem('@auto_notif_welcomed_v4', 'true');
       await Notifications.scheduleNotificationAsync({
         content: {
           title: '💡 Smart Expense Coach Active',
           body: 'Daily budget & expense reminders are now enabled! You will receive 1-2 smart updates throughout the day. 🚀',
           data: { screen: 'Dashboard' },
-          sound: 'default',
-          channelId: 'expense_tracker_alerts_v2',
+          sound: true,
+          vibrate: [0, 250, 250, 250],
+          channelId: 'expense_tracker_alerts_v3',
+          priority: Notifications.AndroidNotificationPriority.MAX,
         },
         trigger: null,
       });
@@ -291,8 +308,10 @@ export async function triggerInstantTestNotification() {
         title: '💡 Smart Expense Coach Active',
         body: 'Automatic daily expense reminders are active! You will receive 1-2 timely updates throughout the day. 🚀',
         data: { screen: 'Dashboard' },
-        sound: 'default',
-        channelId: 'expense_tracker_alerts_v2',
+        sound: true,
+        vibrate: [0, 250, 250, 250],
+        channelId: 'expense_tracker_alerts_v3',
+        priority: Notifications.AndroidNotificationPriority.MAX,
       },
       trigger: null, // immediate
     });

@@ -56,6 +56,7 @@ class MainApplication : Application(), ReactApplication {
         .build()
 
       val channelConfigs = listOf(
+        Pair("expense_tracker_alerts_v3", "Expense Alerts & Reminders"),
         Pair("expense_tracker_alerts_v2", "Expense Alerts & Reminders"),
         Pair("expense_tracker_alerts", "Expense Tracker Alerts"),
         Pair("default", "General Notifications")

@@ -25,7 +25,7 @@ def initialize_firebase():
         except Exception as e:
             print("Warning: Could not initialize Firebase Admin.", e)
 
-def get_android_config(title, body, channel_id='expense_tracker_alerts_v2'):
+def get_android_config(title, body, channel_id='expense_tracker_alerts_v3'):
     return messaging.AndroidConfig(
         priority='high',
         notification=messaging.AndroidNotification(
