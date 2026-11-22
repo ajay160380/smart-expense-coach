@@ -24,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import api from '../api/config';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../theme/ThemeContext';
 import { addExpenseOfflineFirst } from '../utils/offlineSync';
 
 const QUICK_CHIPS = [
@@ -835,3 +835,4 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 });
+
