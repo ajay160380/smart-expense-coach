@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * FINBOT AI — FUTURISTIC CHAT & VOICE WEALTH COACH
+ * PERSONAL BOT — FUTURISTIC CHAT & VOICE WEALTH COACH
  * Fully Matched to Reference UI Design:
  * Screen 1: Welcome Hero & Interactive Glassmorphic Prompt Cards
  * Screen 2: Holographic 3D Prism Voice Mode with Real Whisper AI
@@ -73,12 +73,26 @@ const PROMPT_CARDS = [
   },
 ];
 
-// ── Suggestion Chips inside FinBot Bubble (Screen 3) ──
+// ── Suggestion Chips inside Personal Bot Bubble (Screen 3) ──
 const SUGGESTION_ACTIONS = [
   { icon: 'pie-chart', label: 'Top categories this month', text: 'Where did I spend the most money this month?' },
   { icon: 'calendar', label: 'Remaining daily budget', text: 'What is my remaining daily budget for today?' },
   { icon: 'bulb', label: 'Smart savings tips', text: 'Give me 3 quick tips to save money this month.' },
 ];
+
+const cleanFormattedText = (raw) => {
+  if (!raw) return '';
+  let text = String(raw);
+  // Remove markdown bold **text** -> text
+  text = text.replace(/\*\*(.*?)\*\*/g, '$1');
+  // Remove markdown italic *text* -> text
+  text = text.replace(/\*(.*?)\*/g, '$1');
+  // Convert bullet list lines like "* " or "- " to clean "• "
+  text = text.replace(/^\s*[\*\-]\s+/gm, '• ');
+  // Remove any remaining raw asterisks
+  text = text.replace(/\*{1,3}/g, '');
+  return text.trim();
+};
 
 export default function AIChatScreen({ navigation }) {
   const { isDark } = useTheme();
@@ -250,10 +264,11 @@ export default function AIChatScreen({ navigation }) {
         history,
       });
 
+      const rawReply = response.data?.reply || 'Personal Bot is here to guide your money decisions! Ask any question.';
       const botMsg = {
         id: `bot_${Date.now() + 1}`,
         role: 'bot',
-        text: response.data?.reply || 'FinBot is here to guide your money decisions! Ask any question.',
+        text: cleanFormattedText(rawReply),
         time: new Date(),
         showSuggestions: true,
       };
@@ -264,7 +279,7 @@ export default function AIChatScreen({ navigation }) {
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (error) {
-      console.log('FinBot AI Chat Error:', error?.response?.status, error?.message);
+      console.log('Personal Bot AI Chat Error:', error?.response?.status, error?.message);
       const serverMsg = error.response?.data?.reply || error.response?.data?.error || error.response?.data?.message;
       const errMsg = {
         id: `bot_err_${Date.now()}`,
@@ -272,7 +287,7 @@ export default function AIChatScreen({ navigation }) {
         text:
           error.response?.status === 429
             ? '⏰ Hourly AI rate limit reached. Please wait a bit before asking again!'
-            : serverMsg || 'FinBot is syncing with your live finances. Please tap send again!',
+            : cleanFormattedText(serverMsg) || 'Personal Bot is syncing with your live finances. Please tap send again!',
         time: new Date(),
         showSuggestions: false,
       };
@@ -290,7 +305,7 @@ export default function AIChatScreen({ navigation }) {
       if (!granted) {
         Alert.alert(
           'Microphone Access Needed',
-          'Please allow microphone permission to speak with FinBot AI.'
+          'Please allow microphone permission to speak with Personal Bot.'
         );
         return;
       }
@@ -348,7 +363,7 @@ export default function AIChatScreen({ navigation }) {
     }
 
     setIsTranscribing(true);
-    setVoiceStatusText('FinBot is transcribing your voice...');
+    setVoiceStatusText('Personal Bot is transcribing your voice...');
 
     try {
       if (recorder) {
@@ -472,30 +487,30 @@ export default function AIChatScreen({ navigation }) {
       );
     }
 
-    // FinBot Response
+    // Personal Bot Response
     const isExpanded = suggestionsExpanded[item.id] !== false; // default open
 
     return (
       <View style={styles.botMsgWrapper}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-          <Text style={styles.senderLabel}>FinBot AI</Text>
+          <Text style={styles.senderLabel}>Personal Bot</Text>
           <View style={styles.onlineStatusDot} />
         </View>
 
         <View style={styles.botMsgRow}>
-          {/* Glowing FinBot Avatar Orb */}
+          {/* Glowing Personal Bot Avatar Orb */}
           <LinearGradient
             colors={['#38BDF8', '#2563EB']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.aiAvatarOrb}
           >
-            <Ionicons name="hardware-chip-outline" size={15} color="#FFFFFF" />
+            <Ionicons name="sparkles" size={15} color="#FFFFFF" />
           </LinearGradient>
 
           <View style={[styles.botCard, isDark ? styles.botCardDark : styles.botCardLight]}>
             <Text style={[styles.botMsgText, isDark ? { color: '#F8FAFC' } : { color: '#0F172A' }]}>
-              {item.text}
+              {cleanFormattedText(item.text)}
             </Text>
 
             {/* Interactive Suggestions Card (like reference image) */}
@@ -587,7 +602,7 @@ export default function AIChatScreen({ navigation }) {
 
           <View style={{ alignItems: 'center' }}>
             <Text style={[styles.headerTitle, isDark && { color: '#F8FAFC' }]}>
-              {messages.length === 0 ? 'FINBOT AI' : 'NEW CHAT'}
+              PERSONAL BOT
             </Text>
             <View style={styles.headerStatusRow}>
               <View style={styles.headerStatusDot} />
@@ -674,7 +689,7 @@ export default function AIChatScreen({ navigation }) {
               <ActivityIndicator size="small" color="#FFFFFF" />
             </LinearGradient>
             <Text style={[styles.thinkingText, isDark && { color: '#94A3B8' }]}>
-              FinBot is analyzing your finances...
+              Personal Bot is analyzing your finances...
             </Text>
           </View>
         )}
@@ -767,7 +782,7 @@ export default function AIChatScreen({ navigation }) {
 
             <View style={styles.voiceActiveModePill}>
               <Ionicons name="sparkles" size={13} color="#38BDF8" style={{ marginRight: 4 }} />
-              <Text style={styles.voiceActiveModeText}>FinBot Voice</Text>
+              <Text style={styles.voiceActiveModeText}>Personal Bot Voice</Text>
             </View>
           </View>
 
@@ -808,7 +823,7 @@ export default function AIChatScreen({ navigation }) {
                 try {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 } catch (e) {}
-                Alert.alert('Scan & Chat', 'You can scan your bill or receipt to ask FinBot instant questions.');
+                Alert.alert('Scan & Chat', 'You can scan your bill or receipt to ask Personal Bot instant questions.');
               }}
               style={styles.voiceActionIconBtn}
               activeOpacity={0.7}
@@ -1059,7 +1074,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
 
-  // FinBot Message
+  // Personal Bot Message
   botMsgWrapper: {
     width: '100%',
     alignItems: 'flex-start',

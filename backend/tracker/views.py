@@ -3599,8 +3599,22 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         for e in recent_expenses
     )
 
-    system = f"""You are Expense Tracker AI (PaisaMitra AI), an intelligent, friendly, and respectful personal financial advisor. 
-Always use respectful words ('Aap' / 'Bhai') and natural Hinglish.
+    def clean_bot_reply(raw_text: str) -> str:
+        if not raw_text:
+            return ""
+        # Remove thinking blocks if any
+        cleaned = re.sub(r"<think>(?:.*?</think>|.*$)", "", raw_text, flags=re.DOTALL)
+        # Strip markdown bold **word** -> word
+        cleaned = re.sub(r"\*\*(.*?)\*\*", r"\1", cleaned)
+        # Strip markdown italic *word* -> word
+        cleaned = re.sub(r"\*(.*?)\*", r"\1", cleaned)
+        # Convert asterisk/dash bullet points to clean bullet •
+        cleaned = re.sub(r"^\s*[\*\-]\s+", "• ", cleaned, flags=re.MULTILINE)
+        # Strip any remaining stray asterisks
+        cleaned = cleaned.replace("***", "").replace("**", "").replace("*", "")
+        return cleaned.strip()
+
+    system = f"""You are Personal Bot, an intelligent, empathetic, and expert personal financial coach.
 
 ══ USER'S {today.strftime('%d %B %Y')} REAL-TIME FINANCIAL CONTEXT ══
 Monthly Budget Limit:   ₹{budget:,.0f}
@@ -3619,15 +3633,23 @@ TOP SPENDING CATEGORIES:
 RECENT TRANSACTIONS:
 {recent_lines or '  (No expenses logged yet)'}
 
-══ CRITICAL INSTRUCTIONS ══
-1. Answer the user's specific question directly, warmly, and accurately using the numbers above.
-2. If the user asks about remaining daily budget or today's budget, explicitly state:
-   - Safe daily budget: ₹{daily_safe_budget:,.0f}/day
-   - Spent today: ₹{today_spent:,.0f}
-   - Remaining for today: ₹{daily_remaining_today:,.0f}
-3. If the user asks where they spent the most or top categories, quote their exact top categories and amounts.
-4. If the user asks whether they can afford an item, evaluate it against their daily allowance (₹{daily_safe_budget:,.0f}) and remaining budget (₹{stats['remaining_budget']:,.0f}).
-5. Keep answers concise (under 80 words), structured with clean emojis/bullet points, and avoid robotic or repeated templates."""
+══ STRICT LANGUAGE & COMMUNICATION RULES ══
+1. LANGUAGE MATCHING (ABSOLUTE REQUIREMENT):
+   - If user asks in ENGLISH: You MUST reply 100% in fluent, polished, natural, and encouraging ENGLISH. Do not use Hindi words (like 'Aap', 'Bhai', 'karein') when the user writes in English.
+   - If user asks in HINDI or HINGLISH: Reply warmly and respectfully in natural conversational Hinglish ('Aap' / 'Bhai').
+   - Always match the exact language the user used.
+
+2. ZERO MARKDOWN ASTERISKS (ABSOLUTE REQUIREMENT):
+   - NEVER use markdown asterisks (`**` or `*` or `***`) anywhere in your output. Do NOT write `**Bold Text**` or `* Item`.
+   - On mobile app screens, asterisks show up as literal ugly `***` symbols. Write words normally as plain text.
+   - For bullet lists, use the clean bullet symbol (•) or clean numbers (1., 2., 3.) or relevant emojis (💡, 📊, 🎯, ⚡).
+
+3. PRACTICAL & ACTIONABLE ADVICE:
+   - When asked to optimize monthly budget or save more:
+     Provide 3 clear, highly practical, and motivating tips based on their days remaining ({days_left} days), safe daily limit (₹{daily_safe_budget:,.0f}/day), and their top spending area ({cats[0]['title'] if cats else 'Shopping/Food'}).
+   - When asked about daily budget / today's spend:
+     Give the exact figures: Safe daily target: ₹{daily_safe_budget:,.0f}/day, Spent today: ₹{today_spent:,.0f}, Remaining today: ₹{daily_remaining_today:,.0f}.
+   - Keep responses concise (under 120 words), well spaced, and easy to read on a mobile phone screen."""
 
     messages_payload = [{"role": "system", "content": system}]
 
@@ -3647,9 +3669,13 @@ RECENT TRANSACTIONS:
             temperature=0.7,
             max_tokens=1000,
         )
-        reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
+        reply = clean_bot_reply(resp.choices[0].message.content)
         if not reply:
-            reply = f"Bhai, is mahine aapka total spend ₹{stats['total_spent']:,.0f} hai aur budget me ₹{stats['remaining_budget']:,.0f} bache hain. Aaj ke liye safe allowance ₹{daily_remaining_today:,.0f} hai. 📊"
+            u_is_en = any(w in user_msg.lower() for w in ("how", "what", "can", "optimize", "save", "budget", "spend", "my"))
+            if u_is_en:
+                reply = f"You have ₹{stats['remaining_budget']:,.0f} left in your monthly budget. Your safe daily allowance is ₹{daily_remaining_today:,.0f} for today. 📊"
+            else:
+                reply = f"Aapka is mahine ka remaining budget ₹{stats['remaining_budget']:,.0f} hai, aur aaj ke liye safe allowance ₹{daily_remaining_today:,.0f} bacha hai. 📊"
         logger.info("AI chat uid=%s msg_len=%d", request.user.id, len(user_msg))
         return JsonResponse({"reply": reply, "status": "success"})
 
@@ -3662,29 +3688,48 @@ RECENT TRANSACTIONS:
                 temperature=0.7,
                 max_tokens=800,
             )
-            reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
+            reply = clean_bot_reply(resp.choices[0].message.content)
             if not reply:
-                reply = f"Bhai, is mahine aapka total spend ₹{stats['total_spent']:,.0f} hai aur ₹{stats['remaining_budget']:,.0f} bache hain! 📊"
+                reply = f"You have ₹{stats['remaining_budget']:,.0f} left in your monthly budget with a ₹{daily_safe_budget:,.0f}/day safe target. 📊"
             return JsonResponse({"reply": reply, "status": "success"})
         except Exception as e2:
             logger.error("AI chat fallback uid=%s error=%s", request.user.id, e2)
             u_lower = user_msg.lower()
+            u_is_en = any(w in u_lower for w in ("how", "what", "can", "optimize", "save", "budget", "spend", "my", "daily", "today"))
             if any(k in u_lower for k in ("daily", "today", "aaj", "din", "per day")):
-                fallback_text = (
-                    f"Bhai, aaj ke liye aapka safe daily budget ₹{daily_safe_budget:,.0f} hai. "
-                    f"Aaj ka spend ₹{today_spent:,.0f} hai, toh aaj ke liye lagbhag ₹{daily_remaining_today:,.0f} bache hain! 🎯"
-                )
+                if u_is_en:
+                    fallback_text = (
+                        f"Your safe daily target is ₹{daily_safe_budget:,.0f}/day. "
+                        f"You've spent ₹{today_spent:,.0f} today, leaving ₹{daily_remaining_today:,.0f} for the rest of today! 🎯"
+                    )
+                else:
+                    fallback_text = (
+                        f"Aaj ke liye aapka safe daily budget ₹{daily_safe_budget:,.0f} hai. "
+                        f"Aaj ka spend ₹{today_spent:,.0f} hai, toh lagbhag ₹{daily_remaining_today:,.0f} bache hain! 🎯"
+                    )
             elif any(k in u_lower for k in ("category", "categories", "kaha", "most", "top", "zyada", "spend")):
                 top_cat = cats[0]['title'] if cats else "Daily Expenses"
                 top_amt = cats[0]['total'] if cats else stats['total_spent']
-                fallback_text = (
-                    f"Bhai, is mahine aapka sabse bada kharcha {top_cat} par hua hai (₹{top_amt:,.0f}). "
-                    f"Mahine ka total spend ₹{stats['total_spent']:,.0f} hai aur remaining budget ₹{stats['remaining_budget']:,.0f} hai. 📊"
-                )
+                if u_is_en:
+                    fallback_text = (
+                        f"Your highest spending category this month is {top_cat} (₹{top_amt:,.0f}). "
+                        f"Your total spent is ₹{stats['total_spent']:,.0f} with ₹{stats['remaining_budget']:,.0f} remaining. 📊"
+                    )
+                else:
+                    fallback_text = (
+                        f"Is mahine aapka sabse bada kharcha {top_cat} par hua hai (₹{top_amt:,.0f}). "
+                        f"Mahine ka remaining budget ₹{stats['remaining_budget']:,.0f} hai. 📊"
+                    )
             else:
-                fallback_text = f"Bhai, is mahine aapka total spend ₹{stats['total_spent']:,.0f} hai (Budget: ₹{budget:,.0f}). Abhi aapke paas ₹{stats['remaining_budget']:,.0f} bache hain. 📊"
+                if u_is_en:
+                    fallback_text = (
+                        f"Your monthly budget is ₹{budget:,.0f}. You've spent ₹{stats['total_spent']:,.0f} "
+                        f"and have ₹{stats['remaining_budget']:,.0f} remaining for the remaining {days_left} days. 📊"
+                    )
+                else:
+                    fallback_text = f"Is mahine aapka total spend ₹{stats['total_spent']:,.0f} hai (Budget: ₹{budget:,.0f}). Abhi aapke paas ₹{stats['remaining_budget']:,.0f} bache hain. 📊"
             return JsonResponse({
-                "reply":  fallback_text,
+                "reply":  clean_bot_reply(fallback_text),
                 "status": "success",
             })
 
