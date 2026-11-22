@@ -77,14 +77,21 @@ export default function ProfileScreen({ navigation }) {
   const fetchProfile = async () => {
     try {
       const cached = await AsyncStorage.getItem('user_profile');
-      if (cached) {
+      if (cached && !profile) {
         setProfile(JSON.parse(cached));
         setLoading(false);
       }
       const res = await api.get('/api/profile/');
       if (res.data) {
-        setProfile(res.data);
-        AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
+        const fullProfile = {
+          ...res.data,
+          full_name: res.data.full_name || `${res.data.first_name || ''} ${res.data.last_name || ''}`.trim() || res.data.username,
+        };
+        setProfile(fullProfile);
+        AsyncStorage.setItem('user_profile', JSON.stringify(fullProfile));
+        if (res.data.username) {
+          AsyncStorage.setItem('username', res.data.username);
+        }
       }
     } catch (error) {
       console.error('Profile fetch error:', error);
@@ -242,19 +249,23 @@ export default function ProfileScreen({ navigation }) {
         email: newEMail,
       });
 
-      setProfile((prev) => prev ? ({
-        ...prev,
+      const updatedFullName = `${newFName} ${newLName}`.trim() || newUName;
+      const updatedProfile = {
+        ...(profile || {}),
         username: newUName,
         first_name: newFName,
         last_name: newLName,
+        full_name: updatedFullName,
         email: newEMail,
-      }) : prev);
+      };
 
-      await AsyncStorage.setItem('username', newUName);
-      const fullName = `${newFName} ${newLName}`.trim();
-      if (fullName) {
-        await AsyncStorage.setItem('full_name', fullName);
-      }
+      setProfile(updatedProfile);
+
+      await AsyncStorage.multiSet([
+        ['username', newUName],
+        ['full_name', updatedFullName],
+        ['user_profile', JSON.stringify(updatedProfile)],
+      ]);
       
       DeviceEventEmitter.emit('USERNAME_CHANGED', newUName);
 

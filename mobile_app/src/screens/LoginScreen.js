@@ -95,6 +95,7 @@ export default function LoginScreen({ navigation }) {
       const { token, user_id, username: apiUsername } = response.data;
       await recordLoginAttempt(true);
       await saveAuthData(token, user_id, apiUsername || cleanUsername);
+      DeviceEventEmitter.emit('AUTH_STATE_CHANGED', true);
       analytics.track('login_success', { user_id });
 
       const userTourKey = `@has_seen_tour_user_${user_id}`;
@@ -203,6 +204,7 @@ export default function LoginScreen({ navigation }) {
       const { token, user_id, username: apiUsername } = response.data;
       await recordLoginAttempt(true);
       await saveAuthData(token, user_id, apiUsername || cleanUsername);
+      DeviceEventEmitter.emit('AUTH_STATE_CHANGED', true);
       analytics.track('login_otp_success', { user_id });
 
       const userTourKey = `@has_seen_tour_user_${user_id}`;

@@ -538,8 +538,10 @@ export default function App() {
         if (update && update.isAvailable) {
           isUpdating = true;
           await Updates.fetchUpdateAsync();
-          // Automatically reload the application immediately so user doesn't have to restart manually!
-          await Updates.reloadAsync();
+          // Silently reload only when app is backgrounded/inactive so active user session is never disrupted!
+          if (AppState.currentState !== 'active') {
+            await Updates.reloadAsync();
+          }
         }
       } catch (e) {
         // Silently ignore network or offline errors during background checks

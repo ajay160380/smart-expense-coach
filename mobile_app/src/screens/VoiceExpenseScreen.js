@@ -190,12 +190,15 @@ export default function VoiceExpenseScreen({ navigation }) {
     };
   }, [isRecording]);
 
-  // Clean up timer on unmount
+  // Clean up timer and active recorder on unmount
   useEffect(() => {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (isRecordingRef.current && recorder) {
+        try { recorder.stop(); } catch (e) {}
+      }
     };
-  }, []);
+  }, [recorder]);
 
   const startRecording = async () => {
     if (loading || isRecordingRef.current) return;
@@ -335,7 +338,7 @@ export default function VoiceExpenseScreen({ navigation }) {
             category: finalCat,
             category_icon: finalIcon,
             description: finalDesc,
-            date: srvExp.date || new Date().toISOString().split('T')[0],
+            date: srvExp.date || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
             remaining_budget: srvExp.remaining_budget,
             message: data.message,
           });
@@ -408,7 +411,7 @@ export default function VoiceExpenseScreen({ navigation }) {
             category: finalCat,
             category_icon: finalIcon,
             description: finalDesc,
-            date: srvExp.date || new Date().toISOString().split('T')[0],
+            date: srvExp.date || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
             remaining_budget: srvExp.remaining_budget,
             message: data.message,
           });

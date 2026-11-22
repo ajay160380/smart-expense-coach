@@ -4593,9 +4593,13 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
         if any(k in body for k in ["username", "first_name", "last_name", "email"]):
             from django.contrib.auth.models import User
             if "username" in body:
-                new_username = str(body["username"]).strip()
+                new_username = str(body["username"]).strip().lower()
                 if new_username and new_username != user.username:
-                    if User.objects.filter(username=new_username).exists():
+                    if not re.match(r'^[a-zA-Z0-9_.-]+$', new_username):
+                        return JsonResponse({"error": "Username can only contain letters, numbers, underscores, and hyphens."}, status=400)
+                    if len(new_username) < 3 or len(new_username) > 30:
+                        return JsonResponse({"error": "Username must be between 3 and 30 characters."}, status=400)
+                    if User.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
                         return JsonResponse({"error": "Username is already taken"}, status=400)
                     user.username = new_username
             if "first_name" in body:
@@ -4610,7 +4614,19 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
                     profile.email_verified = False
                     profile.save()
             user.save()
-            return JsonResponse({"status": "success", "message": "Profile updated successfully"})
+            invalidate_user_caches(user)
+            full_name = f"{user.first_name} {user.last_name}".strip() or user.username
+            return JsonResponse({
+                "status": "success",
+                "message": "Profile updated successfully",
+                "profile": {
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "full_name": full_name,
+                    "email": user.email or "",
+                }
+            })
 
         if "budget" in body or "monthly_income" in body:
             try:
@@ -4668,10 +4684,12 @@ def api_user_profile(request: HttpRequest) -> JsonResponse:
                 url = url.replace("http://", "https://")
             profile_pic_url = url
 
+    full_name = f"{user.first_name} {user.last_name}".strip() or user.username
     return JsonResponse({
         "username":       user.username,
         "first_name":     user.first_name,
         "last_name":      user.last_name,
+        "full_name":      full_name,
         "email":          user.email or "",
         "email_verified": getattr(profile, 'email_verified', False) if profile else False,
         "joined":         user.date_joined.strftime("%d %B %Y"),
@@ -4745,12 +4763,45 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
     if err:
         return JsonResponse({"error": err}, status=400)
 
+    # 1. Check client_txn_id for idempotency
+    client_txn_id = data.get("client_txn_id")
+    if client_txn_id:
+        existing = Expense.objects.filter(user=request.user, client_txn_id=client_txn_id).first()
+        if existing:
+            return JsonResponse({
+                "status": "duplicate",
+                "expense_id": existing.pk,
+                "message": "Transaction already recorded",
+                "amount": float(existing.amount),
+                "category": existing.category,
+                "date": existing.date.isoformat(),
+            }, status=200)
+
+    # 2. Compute dedupe hash to prevent duplicate submission within same day
+    desc = validated.get("description", "") or ""
+    dedupe_str = f"{request.user.id}:{float(validated['amount']):.2f}:{desc.lower().strip()}:{validated['date'].isoformat()}"
+    dedupe_hash = hashlib.sha256(dedupe_str.encode('utf-8')).hexdigest()
+    
+    existing_hash = Expense.objects.filter(user=request.user, dedupe_hash=dedupe_hash).first()
+    if existing_hash:
+        return JsonResponse({
+            "status": "duplicate",
+            "expense_id": existing_hash.pk,
+            "message": "Duplicate expense already recorded for today",
+            "amount": float(existing_hash.amount),
+            "category": existing_hash.category,
+            "date": existing_hash.date.isoformat(),
+        }, status=200)
+
     expense = Expense.objects.create(
         user=request.user,
         amount=validated["amount"],
         category=validated["category"],
         date=validated["date"],
-        description=validated.get("description", "") or "",
+        description=desc,
+        client_txn_id=client_txn_id,
+        dedupe_hash=dedupe_hash,
+        source=data.get("source", "manual"),
     )
     update_user_gamification(request.user, validated["date"])
     invalidate_user_caches(request.user)
@@ -5751,13 +5802,13 @@ def check_and_generate_alert(user, expense) -> str:
 
 @api_login_required
 def api_split_groups(request: HttpRequest) -> JsonResponse:
-    groups = SplitGroup.objects.filter(creator=request.user)
+    groups = SplitGroup.objects.filter(creator=request.user).prefetch_related('members', 'expenses')
     data = []
     for g in groups:
-        members = list(g.members.values_list('name', flat=True))
-        expenses_qs = g.expenses.all()
-        total = _safe_float(expenses_qs.aggregate(t=Sum("amount"))["t"])
-        expense_count = expenses_qs.count()
+        members = [m.name for m in g.members.all()]
+        exp_list_objs = sorted(g.expenses.all(), key=lambda e: (e.date, e.id), reverse=True)
+        total = sum(float(e.amount) for e in exp_list_objs)
+        expense_count = len(exp_list_objs)
         per_person = total / max(len(members), 1)
 
         # Include expense list for display & delete
@@ -5769,7 +5820,7 @@ def api_split_groups(request: HttpRequest) -> JsonResponse:
                 "amount": float(exp.amount),
                 "date": exp.date.isoformat(),
             }
-            for exp in expenses_qs.order_by('-date', '-id')
+            for exp in exp_list_objs
         ]
 
         data.append({

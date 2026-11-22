@@ -545,14 +545,15 @@ export default function DashboardScreen({ navigation, route }) {
             try {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch (e) {}
-            DeviceEventEmitter.emit('EXPENSE_UPDATED');
+            // Optimistically remove from local state immediately
+            setRecentExpenses(prev => prev.filter(e => e.id !== expenseId));
             try {
               await api.post(`/api/delete-expense/${expenseId}/`);
-              fetchDashboardData(false);
             } catch (err) {
-              console.error(err);
-              fetchDashboardData(false);
+              console.error('Delete expense error:', err);
             }
+            DeviceEventEmitter.emit('EXPENSE_UPDATED');
+            fetchDashboardData(true); // Force fetch without debounce drop
           }
         }
       ]
@@ -562,15 +563,15 @@ export default function DashboardScreen({ navigation, route }) {
   const isFetchingDashboardRef = useRef(false);
   const lastFetchDashboardTimeRef = useRef(0);
 
-  const fetchDashboardData = async (isInitial = false) => {
+  const fetchDashboardData = async (isInitialOrForce = false) => {
     const now = Date.now();
     if (isFetchingDashboardRef.current) return;
-    if (!isInitial && now - lastFetchDashboardTimeRef.current < 2500) return;
+    if (!isInitialOrForce && now - lastFetchDashboardTimeRef.current < 2500) return;
     isFetchingDashboardRef.current = true;
     lastFetchDashboardTimeRef.current = now;
     try {
       // ── 1. LOAD CACHED DATA IMMEDIATELY (Only on cold start initial render) ──
-      if (isInitial) {
+      if (isInitialOrForce) {
         try {
           const cachedDashboard = await AsyncStorage.getItem('dashboard_cache');
           if (cachedDashboard) {
@@ -595,6 +596,7 @@ export default function DashboardScreen({ navigation, route }) {
       AsyncStorage.getItem('user_profile').then(cachedProfile => {
         if (cachedProfile) {
           const parsed = JSON.parse(cachedProfile);
+          if (parsed.username) setUsername(parsed.username);
           if (parsed.full_name) setFullName(parsed.full_name);
           setUserProfile(parsed);
         }
@@ -602,9 +604,19 @@ export default function DashboardScreen({ navigation, route }) {
 
       api.get('/api/profile/').then(res => {
         if (res.data) {
-          if (res.data.full_name) setFullName(res.data.full_name);
-          setUserProfile(res.data);
-          AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
+          const uName = res.data.username;
+          const fName = res.data.full_name || `${res.data.first_name || ''} ${res.data.last_name || ''}`.trim() || uName;
+          if (uName) {
+            setUsername(uName);
+            AsyncStorage.setItem('username', uName);
+          }
+          if (fName) {
+            setFullName(fName);
+            AsyncStorage.setItem('full_name', fName);
+          }
+          const fullData = { ...res.data, full_name: fName };
+          setUserProfile(fullData);
+          AsyncStorage.setItem('user_profile', JSON.stringify(fullData));
         }
       }).catch(() => {});
       
@@ -854,7 +866,7 @@ export default function DashboardScreen({ navigation, route }) {
   const compMore = comparison?.is_more || false;
 
   // ── Calculated Real-Time Smart Metrics ──
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
   const todayExpenses = recentExpenses.filter(e => e.date && e.date.startsWith(todayStr));
   const spentToday = todayExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
   const safeDailySpend = daysLeft > 0 ? Math.max(0, Math.round(remaining / daysLeft)) : 0;
@@ -2117,30 +2129,7 @@ export default function DashboardScreen({ navigation, route }) {
                               text: '🗑️ Delete',
                               style: 'destructive',
                               onPress: () => {
-                                Alert.alert(
-                                  'Confirm Delete',
-                                  `Delete ₹${Number(exp.amount).toLocaleString('en-IN')} expense?`,
-                                  [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    {
-                                      text: 'Delete',
-                                      style: 'destructive',
-                                      onPress: async () => {
-                                        try {
-                                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                        } catch (e) {}
-                                        DeviceEventEmitter.emit('EXPENSE_UPDATED');
-                                        try {
-                                          await api.post(`/api/delete-expense/${exp.id}/`);
-                                          fetchDashboardData(false);
-                                        } catch (e) {
-                                          console.error(e);
-                                          fetchDashboardData(false);
-                                        }
-                                      }
-                                    }
-                                  ]
-                                );
+                                handleDeleteExpense(exp.id);
                               }
                             },
                             { text: 'Cancel', style: 'cancel' }

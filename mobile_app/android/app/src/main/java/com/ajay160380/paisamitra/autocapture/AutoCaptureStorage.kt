@@ -108,6 +108,8 @@ object AutoCaptureStorage {
                     put("category", "other")
                     put("description", "⚡ $merchant")
                     put("date", today)
+                    put("client_txn_id", itemId)
+                    put("source", "auto")
                 }
 
                 OutputStreamWriter(conn.outputStream, Charsets.UTF_8).use { writer ->
@@ -163,7 +165,7 @@ object AutoCaptureStorage {
 
     private fun showSystemNotification(context: Context, amount: Double, merchant: String) {
         try {
-            val channelId = "expense_tracker_alerts_v2"
+            val channelId = "expense_tracker_alerts_v3"
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

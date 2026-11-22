@@ -32,11 +32,14 @@ export function useAutoCapture(onCaptureSuccess) {
       let res = null;
       if (!data.synced) {
         try {
+          const localDateStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
           res = await api.post('/api/quick-add/', {
             amount: data.amount,
             category: 'other',
             description: `⚡ ${data.merchant || 'UPI Payment'}`,
-            date: new Date().toISOString().split('T')[0],
+            date: localDateStr,
+            client_txn_id: data.id || `auto_${data.amount}_${localDateStr}_${data.merchant || ''}`,
+            source: 'auto',
           });
         } catch (quickErr) {
           console.log('Quick add error:', quickErr.message);

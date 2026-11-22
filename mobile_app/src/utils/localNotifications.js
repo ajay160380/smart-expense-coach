@@ -173,7 +173,7 @@ async function setupChannel() {
  *
  * @param {Object} userContext { name?: string, safeDailySpend?: number }
  */
-export async function scheduleRandomNotifications(userContext = {}) {
+export async function scheduleRandomNotifications(userContext = {}, force = false) {
   try {
     await setupChannel();
 
@@ -183,6 +183,16 @@ export async function scheduleRandomNotifications(userContext = {}) {
       const requested = await Notifications.requestPermissionsAsync();
       if (!requested.granted) return;
     } else if (!permissions.granted) {
+      return;
+    }
+
+    // Check if already scheduled today: DO NOT cancel existing pending reminders on repeat app opens!
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const lastScheduledDate = await AsyncStorage.getItem(LAST_SCHEDULE_KEY);
+    const existingScheduled = await Notifications.getAllScheduledNotificationsAsync();
+
+    if (!force && lastScheduledDate === todayStr && existingScheduled && existingScheduled.length > 0) {
+      console.log(`[AutoNotif] Today's reminders already scheduled (${existingScheduled.length} active), preserving.`);
       return;
     }
 
@@ -270,7 +280,6 @@ export async function scheduleRandomNotifications(userContext = {}) {
       }
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
     await AsyncStorage.setItem(LAST_SCHEDULE_KEY, todayStr);
     console.log(`[AutoNotif] Scheduled 2 dynamic English reminders for slots: ${selectedSlots.join(', ')}`);
 

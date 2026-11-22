@@ -115,8 +115,15 @@ export default function MoreFeaturesScreen({ navigation }) {
       }
       const res = await api.get('/api/profile/');
       if (res.data) {
-        setProfile(res.data);
-        AsyncStorage.setItem('user_profile', JSON.stringify(res.data));
+        const fullProfile = {
+          ...res.data,
+          full_name: res.data.full_name || `${res.data.first_name || ''} ${res.data.last_name || ''}`.trim() || res.data.username,
+        };
+        setProfile(fullProfile);
+        AsyncStorage.setItem('user_profile', JSON.stringify(fullProfile));
+        if (res.data.username) {
+          AsyncStorage.setItem('username', res.data.username);
+        }
       }
     } catch (e) {
       console.log('Error fetching profile in More screen:', e);

@@ -184,16 +184,16 @@ export default function AddExpenseScreen({ route, navigation }) {
             try {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch (e) {}
+            try {
+              await api.post(`/api/delete-expense/${expense.id}/`);
+            } catch (err) {
+              console.error('Delete expense error:', err);
+            }
             DeviceEventEmitter.emit('EXPENSE_UPDATED');
             if (navigation.canGoBack()) {
               navigation.goBack();
             } else {
               navigation.navigate('Home', { screen: 'DashboardMain' });
-            }
-            try {
-              await api.post(`/api/delete-expense/${expense.id}/`);
-            } catch (err) {
-              console.error('Delete expense error:', err);
             }
           }
         }

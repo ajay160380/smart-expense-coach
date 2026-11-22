@@ -145,6 +145,7 @@ export default function RegisterScreen({ navigation, route }) {
 
       const { token, user_id } = loginRes.data;
       await saveAuthData(token, user_id, userCheck.value);
+      DeviceEventEmitter.emit('AUTH_STATE_CHANGED', true);
       analytics.track('register_success', { user_id, has_email: !!cleanEmail });
       await AsyncStorage.setItem('pending_onboarding_tour', 'true');
       navigation.replace('MainTabs', { isNewUser: true, showTour: true });
