@@ -3583,33 +3583,49 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
     )
 
     today     = date.today()
-    days_left = (
+    days_left = max(1, (
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
-    ).days
+    ).days)
+    today_qs = month_qs.filter(date=today)
+    today_spent = sum(getattr(e, 'amount', 0) for e in today_qs)
+    daily_safe_budget = max(0, stats['remaining_budget'] / days_left)
+    daily_remaining_today = max(0, daily_safe_budget - today_spent)
 
-    system = f"""You are Expense Tracker AI, a smart, friendly, and respectful personal financial coach. 
-NEVER use disrespectful words like 'Tu/Tera'. ALWAYS use 'Aap/Bhai'. Speak in natural, polite Hinglish.
+    recent_expenses = list(month_qs.order_by("-date", "-id")[:5])
+    recent_lines = "\n".join(
+        f"  - {getattr(e, 'title', None) or getattr(e, 'category', 'Expense')}: ₹{e.amount:,.0f} ({e.date.strftime('%d %b') if getattr(e, 'date', None) else 'Recent'})"
+        for e in recent_expenses
+    )
 
-══ USER's {today.strftime('%B %Y')} LIVE FINANCIAL SNAPSHOT ══
-Budget:         ₹{budget:,.0f}
-Spent:          ₹{stats['total_spent']:,.0f}
-Remaining:      ₹{stats['remaining_budget']:,.0f}
-Budget Used:    {stats['budget_percent']:.0f}%
-Transactions:   {stats['transaction_count']}
-Daily Average:  ₹{stats['avg_per_day']:,.0f}
-Days Left:      {days_left}
-Projected End:  ₹{stats['projected_month_end']:,.0f}
-Savings Rate:   {stats['savings_rate']:.0f}%
+    system = f"""You are Expense Tracker AI (PaisaMitra AI), an intelligent, friendly, and respectful personal financial advisor. 
+Always use respectful words ('Aap' / 'Bhai') and natural Hinglish.
+
+══ USER'S {today.strftime('%d %B %Y')} REAL-TIME FINANCIAL CONTEXT ══
+Monthly Budget Limit:   ₹{budget:,.0f}
+Total Spent This Month: ₹{stats['total_spent']:,.0f}
+Remaining Month Budget: ₹{stats['remaining_budget']:,.0f}
+Budget Utilized:        {stats['budget_percent']:.1f}%
+Total Transactions:     {stats['transaction_count']}
+Days Left In Month:     {days_left} days
+Safe Daily Budget:      ₹{daily_safe_budget:,.0f}/day
+Spent Today ({today.strftime('%d %b')}): ₹{today_spent:,.0f}
+Remaining Today Budget: ₹{daily_remaining_today:,.0f}
 
 TOP SPENDING CATEGORIES:
-{cat_lines or '  (No data available yet)'}
+{cat_lines or '  (No category breakdown yet)'}
 
-══ CRITICAL RULES ══
-1. You HAVE full direct access to the user's live financial data shown above. NEVER say "mere paas aapka data nahi hai", "I don't have access to your bank", or "share your statements".
-2. Always answer their questions directly, warmly, and accurately using the numbers above.
-3. Keep responses concise, conversational, and helpful — under 80 words.
-4. If budget is exceeded or getting high, gently advise them like a caring brother/friend.
-5. If user says hi/hello or general greeting, respond warmly and give a quick 1-sentence budget status."""
+RECENT TRANSACTIONS:
+{recent_lines or '  (No expenses logged yet)'}
+
+══ CRITICAL INSTRUCTIONS ══
+1. Answer the user's specific question directly, warmly, and accurately using the numbers above.
+2. If the user asks about remaining daily budget or today's budget, explicitly state:
+   - Safe daily budget: ₹{daily_safe_budget:,.0f}/day
+   - Spent today: ₹{today_spent:,.0f}
+   - Remaining for today: ₹{daily_remaining_today:,.0f}
+3. If the user asks where they spent the most or top categories, quote their exact top categories and amounts.
+4. If the user asks whether they can afford an item, evaluate it against their daily allowance (₹{daily_safe_budget:,.0f}) and remaining budget (₹{stats['remaining_budget']:,.0f}).
+5. Keep answers concise (under 80 words), structured with clean emojis/bullet points, and avoid robotic or repeated templates."""
 
     messages_payload = [{"role": "system", "content": system}]
 
@@ -3631,7 +3647,7 @@ TOP SPENDING CATEGORIES:
         )
         reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
         if not reply:
-            reply = f"This month your total spend is ₹{stats['total_spent']:,.0f} with ₹{stats['remaining_budget']:,.0f} remaining from your budget. Let me know if you need specific insights! 📊"
+            reply = f"Bhai, is mahine aapka total spend ₹{stats['total_spent']:,.0f} hai aur budget me ₹{stats['remaining_budget']:,.0f} bache hain. Aaj ke liye safe allowance ₹{daily_remaining_today:,.0f} hai. 📊"
         logger.info("AI chat uid=%s msg_len=%d", request.user.id, len(user_msg))
         return JsonResponse({"reply": reply, "status": "success"})
 
@@ -3646,11 +3662,25 @@ TOP SPENDING CATEGORIES:
             )
             reply = re.sub(r"<think>(?:.*?</think>|.*$)", "", resp.choices[0].message.content, flags=re.DOTALL).strip()
             if not reply:
-                reply = f"This month your total spend is ₹{stats['total_spent']:,.0f} with ₹{stats['remaining_budget']:,.0f} remaining in your budget! 📊"
+                reply = f"Bhai, is mahine aapka total spend ₹{stats['total_spent']:,.0f} hai aur ₹{stats['remaining_budget']:,.0f} bache hain! 📊"
             return JsonResponse({"reply": reply, "status": "success"})
         except Exception as e2:
             logger.error("AI chat fallback uid=%s error=%s", request.user.id, e2)
-            fallback_text = f"This month your total spend is ₹{stats['total_spent']:,.0f} (Budget: ₹{budget:,.0f}). You have ₹{stats['remaining_budget']:,.0f} remaining. 📊"
+            u_lower = user_msg.lower()
+            if any(k in u_lower for k in ("daily", "today", "aaj", "din", "per day")):
+                fallback_text = (
+                    f"Bhai, aaj ke liye aapka safe daily budget ₹{daily_safe_budget:,.0f} hai. "
+                    f"Aaj ka spend ₹{today_spent:,.0f} hai, toh aaj ke liye lagbhag ₹{daily_remaining_today:,.0f} bache hain! 🎯"
+                )
+            elif any(k in u_lower for k in ("category", "categories", "kaha", "most", "top", "zyada", "spend")):
+                top_cat = cats[0]['title'] if cats else "Daily Expenses"
+                top_amt = cats[0]['total'] if cats else stats['total_spent']
+                fallback_text = (
+                    f"Bhai, is mahine aapka sabse bada kharcha {top_cat} par hua hai (₹{top_amt:,.0f}). "
+                    f"Mahine ka total spend ₹{stats['total_spent']:,.0f} hai aur remaining budget ₹{stats['remaining_budget']:,.0f} hai. 📊"
+                )
+            else:
+                fallback_text = f"Bhai, is mahine aapka total spend ₹{stats['total_spent']:,.0f} hai (Budget: ₹{budget:,.0f}). Abhi aapke paas ₹{stats['remaining_budget']:,.0f} bache hain. 📊"
             return JsonResponse({
                 "reply":  fallback_text,
                 "status": "success",

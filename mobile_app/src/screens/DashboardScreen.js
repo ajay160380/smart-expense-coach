@@ -1417,68 +1417,7 @@ export default function DashboardScreen({ navigation, route }) {
             </View>
           </View>
 
-          {/* ── 🔮 MONTH-END RUNWAY & CASHFLOW FORECAST CARD ── */}
-          {monthEndForecast && (
-            <View style={[styles.forecastCard, isDark && styles.forecastCardDark]}>
-              <View style={styles.forecastHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={[styles.forecastIconCircle, { backgroundColor: isDark ? 'rgba(124, 58, 237, 0.2)' : '#EDE9FE' }]}>
-                    <Ionicons name="trending-up" size={15} color="#7C3AED" />
-                  </View>
-                  <Text style={[styles.forecastTitle, isDark && { color: colors.textPrimary }]}>
-                    Month-End Runway Forecast
-                  </Text>
-                </View>
-                <View style={[
-                  styles.forecastPill, 
-                  { 
-                    backgroundColor: monthEndForecast.status === 'surplus' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                    borderColor: monthEndForecast.status === 'surplus' ? '#10B981' : '#EF4444' 
-                  }
-                ]}>
-                  <View style={[
-                    styles.forecastDot, 
-                    { backgroundColor: monthEndForecast.status === 'surplus' ? '#10B981' : '#EF4444' }
-                  ]} />
-                  <Text style={[
-                    styles.forecastPillText, 
-                    { color: monthEndForecast.status === 'surplus' ? '#10B981' : '#EF4444' }
-                  ]}>
-                    {monthEndForecast.status_label}
-                  </Text>
-                </View>
-              </View>
 
-              <Text style={[styles.forecastHeadline, isDark && { color: '#CBD5E1' }]}>
-                {monthEndForecast.headline}
-              </Text>
-
-              <View style={[styles.forecastMetricsGrid, isDark && styles.forecastMetricsGridDark]}>
-                <View style={styles.forecastMetricCol}>
-                  <Text style={[styles.forecastMetricLabel, isDark && { color: colors.textSecondary }]}>Projected End</Text>
-                  <Text style={[styles.forecastMetricVal, { color: monthEndForecast.status === 'surplus' ? '#10B981' : '#EF4444' }]}>
-                    {monthEndForecast.projected_balance >= 0 
-                      ? `+₹${Math.round(monthEndForecast.projected_balance).toLocaleString('en-IN')}` 
-                      : `-₹${Math.round(Math.abs(monthEndForecast.projected_balance)).toLocaleString('en-IN')}`}
-                  </Text>
-                </View>
-                <View style={[styles.forecastDivider, isDark && { backgroundColor: colors.border }]} />
-                <View style={styles.forecastMetricCol}>
-                  <Text style={[styles.forecastMetricLabel, isDark && { color: colors.textSecondary }]}>Daily Velocity</Text>
-                  <Text style={[styles.forecastMetricVal, isDark && { color: colors.textPrimary }]}>
-                    ₹{Math.round(monthEndForecast.daily_burn_rate).toLocaleString('en-IN')}/day
-                  </Text>
-                </View>
-                <View style={[styles.forecastDivider, isDark && { backgroundColor: colors.border }]} />
-                <View style={styles.forecastMetricCol}>
-                  <Text style={[styles.forecastMetricLabel, isDark && { color: colors.textSecondary }]}>Safe Target</Text>
-                  <Text style={[styles.forecastMetricVal, { color: '#38BDF8' }]}>
-                    ₹{Math.round(monthEndForecast.safe_daily_target).toLocaleString('en-IN')}/day
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
 
           {/* ── SECTION 2: DARK INSIGHT PILL ("Ask AI / AI Coach") ── */}
           <TouchableOpacity

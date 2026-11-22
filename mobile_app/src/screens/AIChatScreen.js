@@ -1,9 +1,10 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISAMITRA — AI FINANCIAL COMPANION & INTELLIGENCE CHAT
- * Ultra-Luxury Futuristic Glassmorphic Design
- * Inspired by modern AI interfaces with blue ambient glow,
- * category cards, interactive suggestions, and voice overlay.
+ * PAISAMITRA AI — FUTURISTIC CHAT & VOICE COMPANION
+ * Fully Matched to Reference UI Design:
+ * Screen 1: Welcome Hero & Floating Glassmorphic Prompt Cards
+ * Screen 2: Dedicated Holographic Voice Overlay with Real Whisper AI
+ * Screen 3: High-Res Modern Chat Stream with Interactive Suggestions
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -13,124 +14,168 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  ActivityIndicator,
-  StyleSheet,
-  Dimensions,
-  Platform,
-  Animated,
   FlatList,
-  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Dimensions,
   Modal,
+  Keyboard,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
-
-import api from '../api/config';
-import { getUsername, sanitizeInput } from '../utils/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
+import * as FileSystem from 'expo-file-system/legacy';
+import api, { BASE_URL } from '../api/config';
+import { getToken } from '../utils/auth';
 import { useTheme } from '../theme/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
+// ── Floating Category Prompt Cards (Screen 1) ──
 const PROMPT_CARDS = [
   {
-    id: 'budget',
+    id: 'budget_opt',
     icon: 'wallet-outline',
-    title: 'Daily Budget & Safe Spend',
-    subtitle: 'How much can I safely spend for the rest of today?',
-    prompt: 'How much budget do I have left, and what is my daily safe spending limit today?',
+    title: 'Budget & Savings',
+    subtitle: 'How to optimize my monthly budget?',
+    prompt: 'How to optimize my monthly budget and save more this month?',
   },
   {
-    id: 'afford',
-    icon: 'flash-outline',
-    title: 'Can I Afford This?',
-    subtitle: 'Simulate impulse buys before spending money',
-    prompt: 'I am planning an impulse buy. How will a ₹2,500 purchase impact my month-end runway?',
-  },
-  {
-    id: 'breakdown',
+    id: 'expense_breakdown',
     icon: 'pie-chart-outline',
-    title: 'Where Did My Money Go?',
-    subtitle: 'Break down my highest expense categories this month',
+    title: 'Expense Analysis',
+    subtitle: 'Analyze my top spending categories',
     prompt: 'Where did I spend the most money this month? Give me my top spending categories.',
   },
   {
-    id: 'savings',
-    icon: 'trending-up-outline',
-    title: 'Smart Savings Tips',
-    subtitle: 'Actionable micro-tips to save an extra ₹3,000',
-    prompt: 'Give me 3 realistic, witty, and practical tips to save more money this month.',
+    id: 'impulse_check',
+    icon: 'help-circle-outline',
+    title: 'Can I Afford This?',
+    subtitle: 'Check if an impulse purchase fits my budget',
+    prompt: 'What is my remaining daily budget for today? Can I afford to spend ₹1,000 on dining out?',
+  },
+  {
+    id: 'savings_boost',
+    icon: 'sparkles-outline',
+    title: 'Smart Money Hacks',
+    subtitle: 'Actionable tips to cut down expenses',
+    prompt: 'Give me 3 realistic tips to cut down unnecessary expenses this week based on my spending.',
   },
 ];
 
+// ── Suggestion Chips inside AI Bubble (Screen 3) ──
 const SUGGESTION_ACTIONS = [
-  { icon: 'receipt-outline', text: 'Break down my top food expenses', label: 'Food Spends Breakdown' },
-  { icon: 'speedometer-outline', text: 'Check my month-end runway date', label: 'Runway Forecast Check' },
-  { icon: 'sparkles-outline', text: 'Give me 3 practical saving tips', label: 'Savings Micro-Coach' },
+  { icon: 'pie-chart', label: 'Top categories this month', text: 'Where did I spend the most money this month?' },
+  { icon: 'calendar', label: 'Remaining daily budget', text: 'What is my remaining daily budget for today?' },
+  { icon: 'bulb', label: 'Smart savings tips', text: 'Give me 3 quick tips to save money this month.' },
 ];
 
 export default function AIChatScreen({ navigation }) {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
 
+  // Chat State
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [username, setUserName] = useState('User');
-  const [isVoiceOverlayVisible, setIsVoiceOverlayVisible] = useState(false);
-  const [voiceText, setVoiceText] = useState('Listening to your financial question...');
-  const [isListening, setIsListening] = useState(false);
+  const [username, setUsername] = useState('Friend');
   const [suggestionsExpanded, setSuggestionsExpanded] = useState({});
 
+  // Voice Overlay & Audio Recording State
+  const [isVoiceOverlayVisible, setIsVoiceOverlayVisible] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [voiceStatusText, setVoiceStatusText] = useState('Listening...');
+  const [voiceRecordSeconds, setVoiceRecordSeconds] = useState(0);
+
   const flatListRef = useRef(null);
+  const isRecordingRef = useRef(false);
+  const recordingTimerRef = useRef(null);
+  const recordingStartTimeRef = useRef(0);
+
+  // Holographic 3D Prism Animations
   const prismPulseAnim = useRef(new Animated.Value(1)).current;
   const prismRotateAnim = useRef(new Animated.Value(0)).current;
 
+  // Initialize Real Audio Recorder
+  let recorder = null;
+  try {
+    recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  } catch (e) {
+    console.log('AudioRecorder init notice:', e);
+  }
+
+  // Load User Profile
   useEffect(() => {
-    getUsername().then((name) => {
-      if (name) setUserName(name);
-    });
+    (async () => {
+      try {
+        const cachedUser = await AsyncStorage.getItem('userData');
+        if (cachedUser) {
+          const parsed = JSON.parse(cachedUser);
+          const name = parsed.first_name || parsed.username || 'Friend';
+          setUsername(name);
+        }
+      } catch (e) {}
+    })();
   }, []);
 
-  // Pulsing animation for the 3D prism in voice overlay
+  // Holographic Prism Rotation Loop
   useEffect(() => {
-    if (isVoiceOverlayVisible) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(prismPulseAnim, {
-            toValue: 1.15,
-            duration: 1200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(prismPulseAnim, {
-            toValue: 1,
-            duration: 1200,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-
-      Animated.loop(
-        Animated.timing(prismRotateAnim, {
-          toValue: 1,
-          duration: 8000,
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(prismPulseAnim, {
+          toValue: 1.15,
+          duration: 1600,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
-        })
-      ).start();
-    }
-  }, [isVoiceOverlayVisible]);
+        }),
+        Animated.timing(prismPulseAnim, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    const spinLoop = Animated.loop(
+      Animated.timing(prismRotateAnim, {
+        toValue: 1,
+        duration: 9000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    pulseLoop.start();
+    spinLoop.start();
+
+    return () => {
+      pulseLoop.stop();
+      spinLoop.stop();
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    };
+  }, []);
 
   const spin = prismRotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
 
-  const sendMessage = async (textToSend) => {
-    const raw = textToSend !== undefined ? textToSend : inputText;
-    const cleanText = sanitizeInput(raw || '').trim();
-    if (!cleanText || loading) return;
+  // ── Send Message to Backend AI ──
+  const sendMessage = async (customText = null) => {
+    const textToSend = customText || inputText;
+    if (!textToSend || !textToSend.trim() || loading) return;
+
+    const cleanText = textToSend.trim();
 
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -162,7 +207,7 @@ export default function AIChatScreen({ navigation }) {
       const botMsg = {
         id: `bot_${Date.now() + 1}`,
         role: 'bot',
-        text: response.data?.reply || 'I am having a brief network hitch. Please try asking again!',
+        text: response.data?.reply || 'PaisaMitra is here to help! Please ask any budget question.',
         time: new Date(),
         showSuggestions: true,
       };
@@ -190,25 +235,139 @@ export default function AIChatScreen({ navigation }) {
     }
   };
 
-  const handleOpenVoice = () => {
+  // ── Real Audio Voice Recording Functions ──
+  const handleOpenVoice = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch (e) {}
-    setVoiceText('Listening... "Can I afford dinner tonight?"');
-    setIsListening(true);
-    setIsVoiceOverlayVisible(true);
+      const { granted } = await requestRecordingPermissionsAsync();
+      if (!granted) {
+        Alert.alert(
+          'Microphone Access Needed',
+          'Please allow microphone permission to talk directly with PaisaMitra AI.'
+        );
+        return;
+      }
 
-    // Simulate smart voice recognition after 2.5s for demonstration/ease
-    setTimeout(() => {
-      setVoiceText('What is my remaining daily budget for today?');
-    }, 2000);
+      setIsVoiceOverlayVisible(true);
+      setVoiceRecordSeconds(0);
+      setVoiceStatusText('Listening... Speak now in Hindi or English');
+      setIsTranscribing(false);
+
+      if (recorder) {
+        await recorder.prepareToRecordAsync();
+        recorder.record();
+        isRecordingRef.current = true;
+        recordingStartTimeRef.current = Date.now();
+        setIsRecording(true);
+
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = setInterval(() => {
+          setVoiceRecordSeconds((prev) => prev + 1);
+        }, 1000);
+      }
+    } catch (err) {
+      console.log('Voice start error:', err);
+      Alert.alert('Microphone Notice', 'Could not access microphone: ' + err.message);
+      setIsVoiceOverlayVisible(false);
+    }
   };
 
-  const handleVoiceSend = () => {
-    setIsVoiceOverlayVisible(false);
-    if (voiceText && !voiceText.includes('Listening')) {
-      sendMessage(voiceText);
+  const handleStopAndTranscribe = async () => {
+    if (!isRecordingRef.current) {
+      setIsVoiceOverlayVisible(false);
+      return;
     }
+
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+
+    isRecordingRef.current = false;
+    setIsRecording(false);
+
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+
+    const duration = Date.now() - recordingStartTimeRef.current;
+    if (duration < 600) {
+      try {
+        if (recorder) await recorder.stop();
+      } catch (e) {}
+      setVoiceStatusText('Too short. Please speak clearly.');
+      setTimeout(() => setIsVoiceOverlayVisible(false), 900);
+      return;
+    }
+
+    setIsTranscribing(true);
+    setVoiceStatusText('AI is processing your voice...');
+
+    try {
+      if (recorder) {
+        await recorder.stop();
+        await new Promise((r) => setTimeout(r, 300));
+        const uri = recorder.uri;
+
+        if (uri) {
+          let token = await getToken();
+          if (!token) {
+            token = await AsyncStorage.getItem('userToken');
+          }
+
+          const response = await FileSystem.uploadAsync(
+            `${BASE_URL}/api/voice-expense/`,
+            uri,
+            {
+              httpMethod: 'POST',
+              uploadType: 1, // MULTIPART
+              fieldName: 'audio',
+              mimeType: 'audio/m4a',
+              headers: {
+                Authorization: `Token ${token}`,
+                Accept: 'application/json',
+              },
+            }
+          );
+
+          let data = {};
+          try {
+            data = JSON.parse(response.body);
+          } catch (e) {}
+
+          const spoken = (data.transcription || data.spoken_text || '').trim();
+
+          if (spoken) {
+            setVoiceStatusText(`"${spoken}"`);
+            setIsVoiceOverlayVisible(false);
+            // Send the transcribed speech directly into AI chat
+            sendMessage(spoken);
+          } else {
+            setVoiceStatusText('Could not transcribe audio. Please try again.');
+            setTimeout(() => setIsVoiceOverlayVisible(false), 1200);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Voice upload error:', error);
+      setVoiceStatusText('Speech transcription failed.');
+      setTimeout(() => setIsVoiceOverlayVisible(false), 1000);
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleCancelVoice = async () => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    isRecordingRef.current = false;
+    setIsRecording(false);
+    try {
+      if (recorder) await recorder.stop();
+    } catch (e) {}
+    setIsVoiceOverlayVisible(false);
   };
 
   const clearChat = () => {
@@ -218,10 +377,16 @@ export default function AIChatScreen({ navigation }) {
     setMessages([]);
   };
 
-  const initialLetter = (username || 'User').trim().charAt(0).toUpperCase();
+  const initialLetter = (username || 'U').trim().charAt(0).toUpperCase();
+
+  const formatTimer = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
   // ── Render Message Bubble ──
-  const renderMessage = ({ item, index }) => {
+  const renderMessage = ({ item }) => {
     const isUser = item.role === 'user';
 
     if (isUser) {
@@ -275,7 +440,9 @@ export default function AIChatScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.suggestionsHeaderRow}
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch (e) {}
                     setSuggestionsExpanded((prev) => ({
                       ...prev,
                       [item.id]: !isExpanded,
@@ -327,7 +494,7 @@ export default function AIChatScreen({ navigation }) {
     <SafeAreaView style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* Ambient Blue Background Glow (Replaces Green) */}
+      {/* Ambient Blue Background Glow */}
       <LinearGradient
         colors={
           isDark
@@ -428,7 +595,7 @@ export default function AIChatScreen({ navigation }) {
           />
         )}
 
-        {/* ── Typing / Thinking Indicator ── */}
+        {/* ── Thinking Indicator ── */}
         {loading && (
           <View style={styles.thinkingContainer}>
             <LinearGradient
@@ -438,7 +605,7 @@ export default function AIChatScreen({ navigation }) {
               <ActivityIndicator size="small" color="#FFFFFF" />
             </LinearGradient>
             <Text style={[styles.thinkingText, isDark && { color: '#94A3B8' }]}>
-              PaisaMitra is analyzing your financials...
+              PaisaMitra is analyzing your live budget...
             </Text>
           </View>
         )}
@@ -487,31 +654,50 @@ export default function AIChatScreen({ navigation }) {
         </View>
       </KeyboardAvoidingView>
 
-      {/* ── Screen 2: Holographic Voice / Listening Overlay ── */}
+      {/* ── Screen 2: Holographic Voice Overlay with Real Audio ── */}
       <Modal
         visible={isVoiceOverlayVisible}
-        transparent
+        transparent={false}
         animationType="fade"
-        onRequestClose={() => setIsVoiceOverlayVisible(false)}
+        onRequestClose={handleCancelVoice}
       >
         <View style={styles.voiceOverlay}>
+          {/* Solid deep space background with neon blue gradient */}
           <LinearGradient
-            colors={['rgba(37, 99, 235, 0.45)', 'rgba(15, 23, 42, 0.98)', '#090D16']}
-            start={{ x: 0.8, y: 0 }}
-            end={{ x: 0.2, y: 1 }}
+            colors={['#0F172A', '#090D16', '#020617']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
 
-          {/* Top Left Close */}
-          <TouchableOpacity
-            onPress={() => setIsVoiceOverlayVisible(false)}
-            style={styles.voiceTopClose}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="close" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          {/* Glowing blue aura at top center */}
+          <LinearGradient
+            colors={['rgba(56, 189, 248, 0.25)', 'transparent']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 0.6 }}
+            style={[StyleSheet.absoluteFillObject, { height: height * 0.5 }]}
+            pointerEvents="none"
+          />
 
-          {/* Center Holographic Prism / Aura */}
+          {/* Top Bar with Dismiss */}
+          <View style={styles.voiceTopBar}>
+            <TouchableOpacity
+              onPress={handleCancelVoice}
+              style={styles.voiceTopClose}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            {isRecording && (
+              <View style={styles.recordingTimerBadge}>
+                <View style={styles.recordingLiveDot} />
+                <Text style={styles.recordingTimerText}>{formatTimer(voiceRecordSeconds)}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Center Holographic Prism / Visualizer */}
           <View style={styles.voiceCenterBox}>
             <Animated.View
               style={[
@@ -532,24 +718,29 @@ export default function AIChatScreen({ navigation }) {
               />
             </Animated.View>
 
-            <Text style={styles.listeningStatusText}>Listening</Text>
+            <Text style={styles.listeningStatusText}>
+              {isTranscribing ? 'Processing Voice...' : 'Listening...'}
+            </Text>
 
-            <Text style={styles.voiceTranscriptText}>{voiceText}</Text>
+            <Text style={styles.voiceTranscriptText}>
+              {voiceStatusText}
+            </Text>
           </View>
 
-          {/* Bottom Controls Bar */}
+          {/* Bottom Floating Controls Bar */}
           <View style={styles.voiceControlsBar}>
             <TouchableOpacity
-              onPress={() => setIsVoiceOverlayVisible(false)}
+              onPress={handleCancelVoice}
               style={styles.voiceActionIconBtn}
               activeOpacity={0.7}
             >
-              <Ionicons name="keypad-outline" size={20} color="#CBD5E1" />
+              <Ionicons name="close" size={20} color="#CBD5E1" />
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={handleVoiceSend}
-              style={styles.voiceSendPill}
+              onPress={handleStopAndTranscribe}
+              disabled={isTranscribing}
+              style={[styles.voiceSendPill, isTranscribing && { opacity: 0.6 }]}
               activeOpacity={0.85}
             >
               <LinearGradient
@@ -558,17 +749,25 @@ export default function AIChatScreen({ navigation }) {
                 end={{ x: 1, y: 0 }}
                 style={styles.voiceSendPillGrad}
               >
-                <Text style={styles.voiceSendPillText}>Send</Text>
-                <Ionicons name="volume-medium-outline" size={17} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                {isTranscribing ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.voiceSendPillText}>Send</Text>
+                    <Ionicons name="volume-medium-outline" size={17} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setIsVoiceOverlayVisible(false)}
+              onPress={() => {
+                handleCancelVoice();
+              }}
               style={styles.voiceActionIconBtn}
               activeOpacity={0.7}
             >
-              <Ionicons name="close" size={20} color="#CBD5E1" />
+              <Ionicons name="keypad-outline" size={20} color="#CBD5E1" />
             </TouchableOpacity>
           </View>
         </View>
@@ -711,16 +910,19 @@ const styles = StyleSheet.create({
 
   // User Message
   userMsgWrapper: {
-    alignSelf: 'flex-end',
-    maxWidth: '82%',
+    width: '100%',
+    alignItems: 'flex-end',
     marginBottom: 16,
   },
   userMsgRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    maxWidth: '85%',
     gap: 8,
   },
   userBubbleContainer: {
+    flexShrink: 1,
     borderRadius: 22,
     borderTopRightRadius: 4,
     overflow: 'hidden',
@@ -753,14 +955,16 @@ const styles = StyleSheet.create({
 
   // Bot Message
   botMsgWrapper: {
-    alignSelf: 'flex-start',
-    maxWidth: '92%',
+    width: '100%',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
   botMsgRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
+    width: '92%',
+    maxWidth: '92%',
+    gap: 10,
   },
   aiAvatarOrb: {
     width: 28,
@@ -773,6 +977,7 @@ const styles = StyleSheet.create({
   botCard: {
     flex: 1,
     borderRadius: 22,
+    borderTopLeftRadius: 4,
     padding: 16,
     borderWidth: 1,
   },
@@ -918,15 +1123,45 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingVertical: 48,
+    paddingTop: Platform.OS === 'ios' ? 56 : 40,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    backgroundColor: '#090D16',
+  },
+  voiceTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   voiceTopClose: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  recordingTimerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.18)',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  recordingLiveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+  },
+  recordingTimerText: {
+    color: '#F87171',
+    fontSize: 13,
+    fontWeight: '700',
   },
   voiceCenterBox: {
     alignItems: 'center',
@@ -948,53 +1183,56 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 20,
-    opacity: 0.9,
   },
   listeningStatusText: {
-    fontSize: 13,
-    fontWeight: '600',
     color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '500',
     marginBottom: 16,
-    letterSpacing: 0.5,
   },
   voiceTranscriptText: {
+    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '700',
-    color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 32,
+    maxWidth: '90%',
   },
   voiceControlsBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
+    width: '100%',
   },
   voiceActionIconBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   voiceSendPill: {
-    borderRadius: 26,
+    borderRadius: 28,
     overflow: 'hidden',
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    elevation: 6,
   },
   voiceSendPillGrad: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 28,
+    justifyContent: 'center',
+    paddingHorizontal: 36,
     paddingVertical: 14,
   },
   voiceSendPillText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });
