@@ -25,6 +25,7 @@ import {
   Modal,
   Keyboard,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +36,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import api, { BASE_URL } from '../api/config';
-import { getToken } from '../utils/auth';
+import { getToken, getUsername } from '../utils/auth';
 import { useTheme } from '../theme/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
@@ -87,6 +88,7 @@ export default function AIChatScreen({ navigation }) {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('Ajay');
+  const [userAvatar, setUserAvatar] = useState(null);
   const [suggestionsExpanded, setSuggestionsExpanded] = useState({});
 
   // Voice Overlay & Audio Recording State
@@ -113,21 +115,59 @@ export default function AIChatScreen({ navigation }) {
     console.log('AudioRecorder init notice:', e);
   }
 
-  // Load User Profile Name
+  // Load User Profile Name & Avatar
   useEffect(() => {
     (async () => {
       try {
         let name = '';
-        const cachedUser = await AsyncStorage.getItem('userData');
-        if (cachedUser) {
-          const parsed = JSON.parse(cachedUser);
-          name = parsed.first_name || parsed.username || '';
+
+        // 1. Check full_name from AsyncStorage
+        const storedFullName = await AsyncStorage.getItem('full_name');
+        if (storedFullName && storedFullName.trim() && storedFullName.toLowerCase() !== 'friend' && storedFullName.toLowerCase() !== 'user') {
+          name = storedFullName.trim();
         }
-        if (!name) {
-          name = (await AsyncStorage.getItem('username')) || '';
+
+        // 2. Check cached 'user_profile'
+        const cachedProfile = await AsyncStorage.getItem('user_profile');
+        if (cachedProfile) {
+          try {
+            const parsed = JSON.parse(cachedProfile);
+            const profName = parsed.full_name || parsed.first_name || parsed.name || parsed.username;
+            if (!name && profName && profName.toLowerCase() !== 'friend' && profName.toLowerCase() !== 'user') {
+              name = profName;
+            }
+            if (parsed.avatar || parsed.profile_picture) {
+              setUserAvatar(parsed.avatar || parsed.profile_picture);
+            }
+          } catch (e) {}
         }
-        if (name) {
-          setUsername(name);
+
+        // 3. Check username
+        if (!name || name.toLowerCase() === 'user' || name.toLowerCase() === 'friend') {
+          const storedUsername = (await AsyncStorage.getItem('username')) || (await getUsername());
+          if (storedUsername && storedUsername.toLowerCase() !== 'user' && storedUsername.toLowerCase() !== 'friend') {
+            name = storedUsername;
+          }
+        }
+
+        // 4. Fallback to /api/profile/
+        if (!name || name.toLowerCase() === 'user' || name.toLowerCase() === 'friend') {
+          try {
+            const res = await api.get('/api/profile/');
+            if (res.data) {
+              const apiName = res.data.full_name || res.data.first_name || res.data.username;
+              if (apiName && apiName.toLowerCase() !== 'friend' && apiName.toLowerCase() !== 'user') {
+                name = apiName;
+              }
+              if (res.data.avatar || res.data.profile_picture) {
+                setUserAvatar(res.data.avatar || res.data.profile_picture);
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (name && name.trim()) {
+          setUsername(name.trim());
         }
       } catch (e) {}
     })();
@@ -383,7 +423,15 @@ export default function AIChatScreen({ navigation }) {
     setMessages([]);
   };
 
-  const initialLetter = (username || 'A').trim().charAt(0).toUpperCase();
+  const displayName = (() => {
+    const clean = (username || '').trim();
+    if (clean && clean.toLowerCase() !== 'friend' && clean.toLowerCase() !== 'user') {
+      return clean;
+    }
+    return 'Ajay';
+  })();
+
+  const userInitial = displayName.charAt(0).toUpperCase();
 
   const formatTimer = (sec) => {
     const m = Math.floor(sec / 60);
@@ -410,8 +458,14 @@ export default function AIChatScreen({ navigation }) {
                 <Text style={styles.userMsgText}>{item.text}</Text>
               </LinearGradient>
             </View>
-            <View style={styles.userAvatarCircle}>
-              <Text style={styles.userAvatarLetter}>{initialLetter}</Text>
+            <View style={[styles.userAvatarCircle, !isDark && styles.userAvatarCircleLight]}>
+              {userAvatar ? (
+                <Image source={{ uri: userAvatar }} style={styles.userAvatarImg} />
+              ) : (
+                <Text style={[styles.userAvatarLetter, !isDark && styles.userAvatarLetterLight]}>
+                  {userInitial}
+                </Text>
+              )}
             </View>
           </View>
         </View>
@@ -560,7 +614,7 @@ export default function AIChatScreen({ navigation }) {
           <View style={styles.welcomeContainer}>
             <View style={styles.welcomeHero}>
               <Text style={[styles.heroGreeting, isDark && { color: '#FFFFFF' }]}>
-                HI {username.toUpperCase()} !
+                HI {displayName.toUpperCase()} !
               </Text>
               <Text style={[styles.heroSubtitle, isDark && { color: '#94A3B8' }]}>
                 What Do You Want To Chat About Today?
@@ -977,19 +1031,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   userAvatarCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#1E293B',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#38BDF8',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  userAvatarCircleLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#2563EB',
+  },
+  userAvatarImg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   userAvatarLetter: {
     color: '#38BDF8',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
+  },
+  userAvatarLetterLight: {
+    color: '#2563EB',
   },
 
   // FinBot Message
