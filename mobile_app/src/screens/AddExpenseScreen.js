@@ -32,6 +32,7 @@ import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { validateAmount } from '../utils/validation';
 import { formatApiError } from '../utils/errors';
 import analytics from '../utils/analytics';
+import { addExpenseOfflineFirst, deleteExpenseOfflineFirst } from '../utils/offlineSync';
 import { COLORS, RADIUS, SHADOW } from '../utils/theme';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -139,8 +140,9 @@ export default function AddExpenseScreen({ route, navigation }) {
 
       if (isEdit) {
         await api.post(`/api/edit-expense/${expense.id}/`, payload);
+        DeviceEventEmitter.emit('EXPENSE_UPDATED');
       } else {
-        await api.post('/api/quick-add/', payload);
+        await addExpenseOfflineFirst(payload);
       }
 
       try {
@@ -154,8 +156,6 @@ export default function AddExpenseScreen({ route, navigation }) {
           has_description: !!description,
         });
       } catch (e) {}
-
-      DeviceEventEmitter.emit('EXPENSE_UPDATED');
 
       if (navigation.canGoBack()) {
         navigation.goBack();
@@ -184,12 +184,7 @@ export default function AddExpenseScreen({ route, navigation }) {
             try {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch (e) {}
-            try {
-              await api.post(`/api/delete-expense/${expense.id}/`);
-            } catch (err) {
-              console.error('Delete expense error:', err);
-            }
-            DeviceEventEmitter.emit('EXPENSE_UPDATED');
+            await deleteExpenseOfflineFirst(expense.id);
             if (navigation.canGoBack()) {
               navigation.goBack();
             } else {

@@ -42,6 +42,7 @@ import { scheduleRandomNotifications } from './src/utils/localNotifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { processMutationQueue } from './src/utils/offlineSync';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -558,12 +559,14 @@ export default function App() {
     // 1. Check in background after 4 seconds (doesn't block critical app launch)
     const initialTimer = setTimeout(() => {
       performAutoOTAUpdate();
+      processMutationQueue().catch(() => {});
     }, 4000);
 
     // 2. Check periodically every 30 seconds while the app is running
     const timer = setInterval(() => {
       if (AppState.currentState === 'active') {
         performAutoOTAUpdate();
+        processMutationQueue().catch(() => {});
       }
     }, 30000);
 
@@ -571,6 +574,7 @@ export default function App() {
     const sub = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
         performAutoOTAUpdate();
+        processMutationQueue().catch(() => {});
       }
     });
 

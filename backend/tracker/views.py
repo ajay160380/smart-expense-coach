@@ -3582,6 +3582,144 @@ TOP SPENDING CATEGORIES:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# CAN I AFFORD THIS? (AI IMPULSE BUY SIMULATOR)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@api_login_required
+def api_affordability_simulator(request: HttpRequest) -> JsonResponse:
+    """
+    Simulates the financial impact of a potential purchase against the user's
+    live budget cycle, daily safe-to-spend allowance, and upcoming subscriptions.
+    Returns visual traffic-light verdict, affordability score, and AI coach advice.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST method required"}, status=405)
+
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except Exception:
+        body = {}
+
+    try:
+        amount = float(body.get("amount", 0))
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid amount provided"}, status=400)
+
+    if amount <= 0:
+        return JsonResponse({"error": "Amount must be greater than zero"}, status=400)
+
+    item_name = str(body.get("item_name") or "This item").strip()[:80]
+    category = str(body.get("category") or "shopping").strip().lower()[:40]
+
+    user = request.user
+    today = timezone.localdate()
+    monthly_budget = get_user_budget(request)
+    start_date, end_date = get_budget_cycle_dates(user, today)
+    days_remaining = max((end_date - today).days + 1, 1)
+
+    # 1. Total spent in current cycle before this purchase
+    cycle_agg = Expense.objects.filter(user=user, date__range=(start_date, end_date)).aggregate(s=Sum("amount"))
+    total_spent_before = float(cycle_agg["s"] or 0.0)
+
+    remaining_before = max(0.0, monthly_budget - total_spent_before)
+    current_daily_allowance = round(remaining_before / days_remaining, 1) if remaining_before > 0 else 0.0
+
+    # 2. Post-purchase metrics
+    remaining_after = round(monthly_budget - (total_spent_before + amount), 1)
+    new_daily_allowance = round(max(0.0, remaining_after) / days_remaining, 1) if remaining_after > 0 else 0.0
+    daily_drop = round(max(0.0, current_daily_allowance - new_daily_allowance), 1)
+
+    # 3. Upcoming recurring bills / subscriptions in next 7 days
+    upcoming_subs = Subscription.objects.filter(
+        user=user,
+        next_billing_date__gte=today,
+        next_billing_date__lte=today + timedelta(days=7),
+    )
+    upcoming_subs_total = float(sum(float(s.amount) for s in upcoming_subs))
+
+    # 4. Traffic light verdict & affordability score (0 - 100)
+    if remaining_after < 0:
+        verdict = "danger"
+        badge = "Budget Danger 🚨"
+        color = "#EF4444"
+        score = max(5, int(20 - (abs(remaining_after) / (monthly_budget or 1)) * 30))
+    elif remaining_after < upcoming_subs_total:
+        verdict = "danger"
+        badge = "Upcoming Bills at Risk 🚨"
+        color = "#EF4444"
+        score = 25
+    elif new_daily_allowance < (0.45 * current_daily_allowance) or remaining_after < (0.15 * monthly_budget):
+        verdict = "caution"
+        badge = "Think Twice ⚠️"
+        color = "#F59E0B"
+        score = min(68, max(35, int((remaining_after / (monthly_budget or 1)) * 100)))
+    else:
+        verdict = "safe"
+        badge = "Safe to Buy ✅"
+        color = "#10B981"
+        score = min(98, max(72, int((remaining_after / (monthly_budget or 1)) * 100)))
+
+    # 5. Deterministic fallback advice
+    if verdict == "danger":
+        advice = f"This purchase will push you ₹{abs(remaining_after):,.0f} over your monthly budget and wipe out your daily allowance. We recommend postponing or saving up first!"
+    elif verdict == "caution":
+        advice = f"You can afford this, but it drops your daily safe spend by ₹{daily_drop:,.0f} (to ₹{new_daily_allowance:,.0f}/day) for {days_remaining} days. Sleep on it for 24 hours!"
+    else:
+        advice = f"Guilt-free purchase! You will still have a healthy ₹{new_daily_allowance:,.0f}/day to spend for the remaining {days_remaining} days."
+
+    # 6. Groq AI advice enhancement (witty, concise, high quality)
+    try:
+        ai_prompt = (
+            f"You are a witty, smart personal wealth & impulse-buy coach for PaisaMitra. "
+            f"User wants to buy '{item_name}' for ₹{amount:,.0f}.\n"
+            f"Context:\n"
+            f"- Monthly Budget: ₹{monthly_budget:,.0f}\n"
+            f"- Current cycle days left: {days_remaining}\n"
+            f"- Remaining budget before: ₹{remaining_before:,.0f}\n"
+            f"- Remaining budget after: ₹{remaining_after:,.0f}\n"
+            f"- Daily allowance drops from ₹{current_daily_allowance:,.0f} to ₹{new_daily_allowance:,.0f} (-₹{daily_drop:,.0f}/day)\n"
+            f"- Subscriptions due in 7 days: ₹{upcoming_subs_total:,.0f}\n"
+            f"- Verdict: {verdict.upper()}\n\n"
+            f"Write a 1-2 sentence response directly to the user in pure English. "
+            f"Be punchy, realistic, caring, and under 35 words. "
+            f"Return ONLY the sentence, nothing else."
+        )
+        r = _groq_client().chat.completions.create(
+            messages=[{"role": "user", "content": ai_prompt}],
+            model=_get_groq_model(),
+            temperature=0.7,
+            max_tokens=250,
+        )
+        cleaned = re.sub(r"<think>(?:.*?</think>|.*$)", "", r.choices[0].message.content, flags=re.DOTALL).strip()
+        cleaned = cleaned.replace('"', '').strip()
+        if cleaned:
+            advice = cleaned
+    except Exception as e:
+        logger.warning("Affordability AI generation fallback: %s", e)
+
+    return JsonResponse({
+        "status": "success",
+        "verdict": verdict,
+        "badge": badge,
+        "color": color,
+        "score": score,
+        "amount": amount,
+        "item_name": item_name,
+        "category": category,
+        "monthly_budget": monthly_budget,
+        "total_spent_before": total_spent_before,
+        "remaining_before": remaining_before,
+        "remaining_after": remaining_after,
+        "days_remaining": days_remaining,
+        "current_daily_allowance": current_daily_allowance,
+        "new_daily_allowance": new_daily_allowance,
+        "daily_drop": daily_drop,
+        "upcoming_subs_total": upcoming_subs_total,
+        "advice": advice,
+    })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # CATEGORY INSIGHT API
 # ══════════════════════════════════════════════════════════════════════════════
 

@@ -27,6 +27,7 @@ import { WideExpenseWidget } from '../widgets/WideExpenseWidget';
 import WidgetSelectionModal from '../components/WidgetSelectionModal';
 import FeatureTourModal, { TOUR_STORAGE_KEY, getTourKeyForUser } from '../components/FeatureTourModal';
 import WhatsAppLinkModal from '../components/WhatsAppLinkModal';
+import AffordabilitySimulatorModal from '../components/AffordabilitySimulatorModal';
 import { useFocusEffect } from '@react-navigation/native';
 import api, { BASE_URL } from '../api/config';
 import { getUsername, clearAuthData, getToken } from '../utils/auth';
@@ -34,6 +35,7 @@ import { COLORS, CAT_COLORS, CAT_ICONS, RADIUS, SHADOW, getFallbackIcon } from '
 import { formatApiError } from '../utils/errors';
 import { useAutoCapture } from '../utils/useAutoCapture';
 import { scheduleRandomNotifications } from '../utils/localNotifications';
+import { deleteExpenseOfflineFirst, processMutationQueue } from '../utils/offlineSync';
 
 const { width } = Dimensions.get('window');
 
@@ -65,6 +67,7 @@ const DEFAULT_ACTION_DOCK_KEYS = ['add', 'voice', 'split', 'history'];
 const ALL_ACTION_SHORTCUTS = [
   { id: 'add', label: 'Add', icon: 'add', colors: ['#2563EB', '#1D4ED8'], screen: 'AddExpense', iconSize: 24, desc: 'Quickly log new expense' },
   { id: 'voice', label: 'Voice', icon: 'mic', colors: ['#4F46E5', '#3730A3'], screen: 'VoiceExpense', iconSize: 20, desc: 'Speak to record spend' },
+  { id: 'afford', label: 'Can I Buy?', icon: 'help-circle', colors: ['#8B5CF6', '#6D28D9'], isAffordModal: true, iconSize: 20, desc: 'AI impulse purchase simulator' },
   { id: 'split', label: 'Split', icon: 'people', colors: ['#059669', '#047857'], screen: 'ExpenseSplit', iconSize: 20, desc: 'Split bills with friends' },
   { id: 'history', label: 'History', icon: 'receipt', colors: ['#0284C7', '#0369A1'], screen: 'History', iconSize: 19, desc: 'All transactions log' },
   { id: 'ai', label: 'AI Coach', icon: 'sparkles', colors: ['#2563EB', '#0284C7'], screen: 'AIChat', iconSize: 20, desc: 'Financial intelligence AI' },
@@ -109,6 +112,7 @@ export default function DashboardScreen({ navigation, route }) {
   const [widgetModalVisible, setWidgetModalVisible] = useState(false);
   const [tourModalVisible, setTourModalVisible] = useState(false);
   const [waLinkModalVisible, setWaLinkModalVisible] = useState(false);
+  const [affordModalVisible, setAffordModalVisible] = useState(false);
 
   // ── AUTO-POPUP FOR UNLINKED WHATSAPP BOT USERS ──
   useEffect(() => {
@@ -300,7 +304,9 @@ export default function DashboardScreen({ navigation, route }) {
 
   const handleActionPress = (action) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (action.isWhatsApp) {
+    if (action.isAffordModal) {
+      setAffordModalVisible(true);
+    } else if (action.isWhatsApp) {
       openWhatsApp();
     } else if (action.isBudget) {
       setNewBudget(budget.toString());
@@ -545,15 +551,9 @@ export default function DashboardScreen({ navigation, route }) {
             try {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch (e) {}
-            // Optimistically remove from local state immediately
+            // Instant 0ms deletion from local state and cache, background sync with server
             setRecentExpenses(prev => prev.filter(e => e.id !== expenseId));
-            try {
-              await api.post(`/api/delete-expense/${expenseId}/`);
-            } catch (err) {
-              console.error('Delete expense error:', err);
-            }
-            DeviceEventEmitter.emit('EXPENSE_UPDATED');
-            fetchDashboardData(true); // Force fetch without debounce drop
+            await deleteExpenseOfflineFirst(expenseId);
           }
         }
       ]
@@ -2026,6 +2026,41 @@ export default function DashboardScreen({ navigation, route }) {
           )}
         </Animated.View>
 
+          {/* ── AI IMPULSE BUY SIMULATOR BANNER ── */}
+          <TouchableOpacity
+            style={[styles.impulseBanner, isDark && styles.impulseBannerDark]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setAffordModalVisible(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={isDark ? ['#1E1B4B', '#0F172A'] : ['#F5F3FF', '#EDE9FE']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.impulseGradient}
+            >
+              <View style={styles.impulseIconBox}>
+                <Ionicons name="sparkles" size={20} color="#8B5CF6" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12, marginRight: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[styles.impulseTitle, isDark && { color: '#F8FAFC' }]}>
+                    Can I Afford This?
+                  </Text>
+                  <View style={styles.impulsePill}>
+                    <Text style={styles.impulsePillText}>AI SIMULATOR</Text>
+                  </View>
+                </View>
+                <Text style={[styles.impulseSubtitle, isDark && { color: '#94A3B8' }]}>
+                  Test impulse buys before spending. Live daily allowance & budget impact.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={isDark ? '#818CF8' : '#6D28D9'} />
+            </LinearGradient>
+          </TouchableOpacity>
+
           {/* ── SECTION 6: BENTO QUICK TOOLS ── */}
           <View style={styles.toolsBentoRow}>
             <TouchableOpacity 
@@ -2718,6 +2753,13 @@ export default function DashboardScreen({ navigation, route }) {
           if (stats) setStats({ ...stats, whatsapp_linked: true });
           if (userProfile) setUserProfile({ ...userProfile, whatsapp_linked: true });
         }}
+      />
+
+      {/* 🤔 Can I Afford This? (AI Impulse Buy Simulator) */}
+      <AffordabilitySimulatorModal
+        visible={affordModalVisible}
+        onClose={() => setAffordModalVisible(false)}
+        navigation={navigation}
       />
     </View>
   );
@@ -3514,6 +3556,56 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 11,
     marginTop: 1,
+  },
+
+  // ── AI Impulse Buy Simulator Banner ──
+  impulseBanner: {
+    borderRadius: 20,
+    marginTop: 14,
+    marginBottom: 4,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  impulseBannerDark: {
+    borderColor: 'rgba(139, 92, 246, 0.25)',
+  },
+  impulseGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  impulseIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  impulseTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  impulsePill: {
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  impulsePillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  impulseSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 3,
+    lineHeight: 15,
   },
 
   // ── Expense Rows in Recent Expenses ──

@@ -75,6 +75,10 @@ urlpatterns = [
     # Category Insight — GET ?category=food&period=month
     path('api/category-insight/',      views.api_category_insight, name='api_category_insight'),
 
+    # AI Impulse Buy Simulator — "Can I Afford This?"
+    # POST { "amount": 1500, "item_name": "Headphones", "category": "shopping" }
+    path('api/affordability-simulator/', views.api_affordability_simulator, name='api_affordability_simulator'),
+
     # ══════════════════════════════════════════════════════════════════════
     # ANALYTICS APIs
     # ══════════════════════════════════════════════════════════════════════
