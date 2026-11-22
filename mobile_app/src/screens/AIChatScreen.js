@@ -1,9 +1,9 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * PAISAMITRA AI — FUTURISTIC CHAT & VOICE COMPANION
+ * FINBOT AI — FUTURISTIC CHAT & VOICE WEALTH COACH
  * Fully Matched to Reference UI Design:
- * Screen 1: Welcome Hero & Floating Glassmorphic Prompt Cards
- * Screen 2: Dedicated Holographic Voice Overlay with Real Whisper AI
+ * Screen 1: Welcome Hero & Interactive Glassmorphic Prompt Cards
+ * Screen 2: Holographic 3D Prism Voice Mode with Real Whisper AI
  * Screen 3: High-Res Modern Chat Stream with Interactive Suggestions
  * ═══════════════════════════════════════════════════════════════
  */
@@ -53,14 +53,14 @@ const PROMPT_CARDS = [
     id: 'expense_breakdown',
     icon: 'pie-chart-outline',
     title: 'Expense Analysis',
-    subtitle: 'Analyze my top spending categories',
+    subtitle: 'Where did I spend the most money this month?',
     prompt: 'Where did I spend the most money this month? Give me my top spending categories.',
   },
   {
     id: 'impulse_check',
     icon: 'help-circle-outline',
     title: 'Can I Afford This?',
-    subtitle: 'Check if an impulse purchase fits my budget',
+    subtitle: 'What is my remaining daily budget for today?',
     prompt: 'What is my remaining daily budget for today? Can I afford to spend ₹1,000 on dining out?',
   },
   {
@@ -72,7 +72,7 @@ const PROMPT_CARDS = [
   },
 ];
 
-// ── Suggestion Chips inside AI Bubble (Screen 3) ──
+// ── Suggestion Chips inside FinBot Bubble (Screen 3) ──
 const SUGGESTION_ACTIONS = [
   { icon: 'pie-chart', label: 'Top categories this month', text: 'Where did I spend the most money this month?' },
   { icon: 'calendar', label: 'Remaining daily budget', text: 'What is my remaining daily budget for today?' },
@@ -86,14 +86,14 @@ export default function AIChatScreen({ navigation }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState('Friend');
+  const [username, setUsername] = useState('Ajay');
   const [suggestionsExpanded, setSuggestionsExpanded] = useState({});
 
   // Voice Overlay & Audio Recording State
   const [isVoiceOverlayVisible, setIsVoiceOverlayVisible] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [voiceStatusText, setVoiceStatusText] = useState('Listening...');
+  const [voiceStatusText, setVoiceStatusText] = useState('Listening... Speak in Hindi or English');
   const [voiceRecordSeconds, setVoiceRecordSeconds] = useState(0);
 
   const flatListRef = useRef(null);
@@ -113,14 +113,20 @@ export default function AIChatScreen({ navigation }) {
     console.log('AudioRecorder init notice:', e);
   }
 
-  // Load User Profile
+  // Load User Profile Name
   useEffect(() => {
     (async () => {
       try {
+        let name = '';
         const cachedUser = await AsyncStorage.getItem('userData');
         if (cachedUser) {
           const parsed = JSON.parse(cachedUser);
-          const name = parsed.first_name || parsed.username || 'Friend';
+          name = parsed.first_name || parsed.username || '';
+        }
+        if (!name) {
+          name = (await AsyncStorage.getItem('username')) || '';
+        }
+        if (name) {
           setUsername(name);
         }
       } catch (e) {}
@@ -132,14 +138,14 @@ export default function AIChatScreen({ navigation }) {
     const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(prismPulseAnim, {
-          toValue: 1.15,
-          duration: 1600,
+          toValue: 1.18,
+          duration: 1800,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(prismPulseAnim, {
           toValue: 1,
-          duration: 1600,
+          duration: 1800,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
@@ -149,7 +155,7 @@ export default function AIChatScreen({ navigation }) {
     const spinLoop = Animated.loop(
       Animated.timing(prismRotateAnim, {
         toValue: 1,
-        duration: 9000,
+        duration: 8000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -207,7 +213,7 @@ export default function AIChatScreen({ navigation }) {
       const botMsg = {
         id: `bot_${Date.now() + 1}`,
         role: 'bot',
-        text: response.data?.reply || 'PaisaMitra is here to help! Please ask any budget question.',
+        text: response.data?.reply || 'FinBot is here to guide your money decisions! Ask any question.',
         time: new Date(),
         showSuggestions: true,
       };
@@ -218,14 +224,15 @@ export default function AIChatScreen({ navigation }) {
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (error) {
-      console.log('AI Chat Error:', error?.response?.status, error?.message);
+      console.log('FinBot AI Chat Error:', error?.response?.status, error?.message);
+      const serverMsg = error.response?.data?.reply || error.response?.data?.error || error.response?.data?.message;
       const errMsg = {
         id: `bot_err_${Date.now()}`,
         role: 'bot',
         text:
           error.response?.status === 429
             ? '⏰ Hourly AI rate limit reached. Please wait a bit before asking again!'
-            : error.response?.data?.reply || 'Connection interrupted. Please verify your internet and retry.',
+            : serverMsg || 'FinBot is syncing with your live finances. Please tap send again!',
         time: new Date(),
         showSuggestions: false,
       };
@@ -243,7 +250,7 @@ export default function AIChatScreen({ navigation }) {
       if (!granted) {
         Alert.alert(
           'Microphone Access Needed',
-          'Please allow microphone permission to talk directly with PaisaMitra AI.'
+          'Please allow microphone permission to speak with FinBot AI.'
         );
         return;
       }
@@ -295,13 +302,13 @@ export default function AIChatScreen({ navigation }) {
       try {
         if (recorder) await recorder.stop();
       } catch (e) {}
-      setVoiceStatusText('Too short. Please speak clearly.');
-      setTimeout(() => setIsVoiceOverlayVisible(false), 900);
+      setVoiceStatusText('Voice too short. Please speak clearly.');
+      setTimeout(() => setIsVoiceOverlayVisible(false), 800);
       return;
     }
 
     setIsTranscribing(true);
-    setVoiceStatusText('AI is processing your voice...');
+    setVoiceStatusText('FinBot is transcribing your voice...');
 
     try {
       if (recorder) {
@@ -340,10 +347,9 @@ export default function AIChatScreen({ navigation }) {
           if (spoken) {
             setVoiceStatusText(`"${spoken}"`);
             setIsVoiceOverlayVisible(false);
-            // Send the transcribed speech directly into AI chat
             sendMessage(spoken);
           } else {
-            setVoiceStatusText('Could not transcribe audio. Please try again.');
+            setVoiceStatusText('Could not hear clearly. Please try again.');
             setTimeout(() => setIsVoiceOverlayVisible(false), 1200);
           }
         }
@@ -377,7 +383,7 @@ export default function AIChatScreen({ navigation }) {
     setMessages([]);
   };
 
-  const initialLetter = (username || 'U').trim().charAt(0).toUpperCase();
+  const initialLetter = (username || 'A').trim().charAt(0).toUpperCase();
 
   const formatTimer = (sec) => {
     const m = Math.floor(sec / 60);
@@ -412,25 +418,29 @@ export default function AIChatScreen({ navigation }) {
       );
     }
 
-    // AI Bot Response
+    // FinBot Response
     const isExpanded = suggestionsExpanded[item.id] !== false; // default open
 
     return (
       <View style={styles.botMsgWrapper}>
-        <Text style={styles.senderLabel}>PaisaMitra AI</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+          <Text style={styles.senderLabel}>FinBot AI</Text>
+          <View style={styles.onlineStatusDot} />
+        </View>
+
         <View style={styles.botMsgRow}>
-          {/* Glowing AI Orb Avatar */}
+          {/* Glowing FinBot Avatar Orb */}
           <LinearGradient
-            colors={['#38BDF8', '#7C3AED']}
+            colors={['#38BDF8', '#2563EB']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.aiAvatarOrb}
           >
-            <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+            <Ionicons name="hardware-chip-outline" size={15} color="#FFFFFF" />
           </LinearGradient>
 
           <View style={[styles.botCard, isDark ? styles.botCardDark : styles.botCardLight]}>
-            <Text style={[styles.botMsgText, isDark ? { color: '#F1F5F9' } : { color: '#0F172A' }]}>
+            <Text style={[styles.botMsgText, isDark ? { color: '#F8FAFC' } : { color: '#0F172A' }]}>
               {item.text}
             </Text>
 
@@ -450,7 +460,7 @@ export default function AIChatScreen({ navigation }) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.suggestionsHeaderText, isDark && { color: '#CBD5E1' }]}>
+                  <Text style={[styles.suggestionsHeaderText, isDark && { color: '#94A3B8' }]}>
                     Here are ways I can assist :
                   </Text>
                   <Ionicons
@@ -498,8 +508,8 @@ export default function AIChatScreen({ navigation }) {
       <LinearGradient
         colors={
           isDark
-            ? ['rgba(37, 99, 235, 0.22)', 'rgba(56, 189, 248, 0.08)', 'transparent']
-            : ['rgba(219, 234, 254, 0.65)', 'transparent']
+            ? ['rgba(37, 99, 235, 0.25)', 'rgba(56, 189, 248, 0.08)', 'transparent']
+            : ['rgba(219, 234, 254, 0.7)', 'transparent']
         }
         start={{ x: 0.8, y: 0 }}
         end={{ x: 0.2, y: 0.55 }}
@@ -521,9 +531,15 @@ export default function AIChatScreen({ navigation }) {
             <Ionicons name="chevron-back" size={20} color={isDark ? '#F1F5F9' : '#0F172A'} />
           </TouchableOpacity>
 
-          <Text style={[styles.headerTitle, isDark && { color: '#F8FAFC' }]}>
-            {messages.length === 0 ? 'PAISAMITRA AI' : 'NEW CHAT'}
-          </Text>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={[styles.headerTitle, isDark && { color: '#F8FAFC' }]}>
+              {messages.length === 0 ? 'FINBOT AI' : 'NEW CHAT'}
+            </Text>
+            <View style={styles.headerStatusRow}>
+              <View style={styles.headerStatusDot} />
+              <Text style={styles.headerStatusText}>Online Assistant</Text>
+            </View>
+          </View>
 
           {messages.length > 0 ? (
             <TouchableOpacity
@@ -559,14 +575,12 @@ export default function AIChatScreen({ navigation }) {
                   onPress={() => sendMessage(card.prompt)}
                   activeOpacity={0.8}
                 >
-                  <View
-                    style={[
-                      styles.promptCardIconBox,
-                      isDark ? styles.promptCardIconBoxDark : styles.promptCardIconBoxLight,
-                    ]}
+                  <LinearGradient
+                    colors={['rgba(56, 189, 248, 0.2)', 'rgba(37, 99, 235, 0.1)']}
+                    style={styles.promptCardIconBox}
                   >
-                    <Ionicons name={card.icon} size={18} color="#38BDF8" />
-                  </View>
+                    <Ionicons name={card.icon} size={20} color="#38BDF8" />
+                  </LinearGradient>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.promptCardTitle, isDark && { color: '#FFFFFF' }]}>
                       {card.title}
@@ -578,6 +592,7 @@ export default function AIChatScreen({ navigation }) {
                       {card.subtitle}
                     </Text>
                   </View>
+                  <Ionicons name="chevron-forward" size={16} color={isDark ? '#64748B' : '#94A3B8'} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -605,7 +620,7 @@ export default function AIChatScreen({ navigation }) {
               <ActivityIndicator size="small" color="#FFFFFF" />
             </LinearGradient>
             <Text style={[styles.thinkingText, isDark && { color: '#94A3B8' }]}>
-              PaisaMitra is analyzing your live budget...
+              FinBot is analyzing your finances...
             </Text>
           </View>
         )}
@@ -654,39 +669,39 @@ export default function AIChatScreen({ navigation }) {
         </View>
       </KeyboardAvoidingView>
 
-      {/* ── Screen 2: Holographic Voice Overlay with Real Audio ── */}
+      {/* ── Screen 2: Holographic Voice Overlay with Real Whisper AI ── */}
       <Modal
         visible={isVoiceOverlayVisible}
         transparent={false}
         animationType="fade"
         onRequestClose={handleCancelVoice}
       >
-        <View style={styles.voiceOverlay}>
-          {/* Solid deep space background with neon blue gradient */}
+        <SafeAreaView style={styles.voiceOverlaySafe}>
+          {/* Deep futuristic dark atmosphere with smooth continuous gradient */}
           <LinearGradient
-            colors={['#0F172A', '#090D16', '#020617']}
+            colors={['#0A1124', '#080D1A', '#030712']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
 
-          {/* Glowing blue aura at top center */}
+          {/* Smooth cyan radial glow behind prism */}
           <LinearGradient
-            colors={['rgba(56, 189, 248, 0.25)', 'transparent']}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 0.6 }}
-            style={[StyleSheet.absoluteFillObject, { height: height * 0.5 }]}
+            colors={['rgba(56, 189, 248, 0.28)', 'rgba(37, 99, 235, 0.1)', 'transparent']}
+            start={{ x: 0.5, y: 0.25 }}
+            end={{ x: 0.5, y: 0.75 }}
+            style={StyleSheet.absoluteFillObject}
             pointerEvents="none"
           />
 
-          {/* Top Bar with Dismiss */}
+          {/* Top Bar with Pinned Controls */}
           <View style={styles.voiceTopBar}>
             <TouchableOpacity
               onPress={handleCancelVoice}
               style={styles.voiceTopClose}
               activeOpacity={0.7}
             >
-              <Ionicons name="close" size={22} color="#FFFFFF" />
+              <Ionicons name="close" size={20} color="#FFFFFF" />
             </TouchableOpacity>
 
             {isRecording && (
@@ -695,6 +710,11 @@ export default function AIChatScreen({ navigation }) {
                 <Text style={styles.recordingTimerText}>{formatTimer(voiceRecordSeconds)}</Text>
               </View>
             )}
+
+            <View style={styles.voiceActiveModePill}>
+              <Ionicons name="sparkles" size={13} color="#38BDF8" style={{ marginRight: 4 }} />
+              <Text style={styles.voiceActiveModeText}>FinBot Voice</Text>
+            </View>
           </View>
 
           {/* Center Holographic Prism / Visualizer */}
@@ -719,7 +739,7 @@ export default function AIChatScreen({ navigation }) {
             </Animated.View>
 
             <Text style={styles.listeningStatusText}>
-              {isTranscribing ? 'Processing Voice...' : 'Listening...'}
+              {isTranscribing ? 'Transcribing with AI...' : 'Listening...'}
             </Text>
 
             <Text style={styles.voiceTranscriptText}>
@@ -727,14 +747,19 @@ export default function AIChatScreen({ navigation }) {
             </Text>
           </View>
 
-          {/* Bottom Floating Controls Bar */}
+          {/* Bottom Floating Controls Bar (Matched to reference image) */}
           <View style={styles.voiceControlsBar}>
             <TouchableOpacity
-              onPress={handleCancelVoice}
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch (e) {}
+                Alert.alert('Scan & Chat', 'You can scan your bill or receipt to ask FinBot instant questions.');
+              }}
               style={styles.voiceActionIconBtn}
               activeOpacity={0.7}
             >
-              <Ionicons name="close" size={20} color="#CBD5E1" />
+              <Ionicons name="camera-outline" size={22} color="#CBD5E1" />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -754,23 +779,21 @@ export default function AIChatScreen({ navigation }) {
                 ) : (
                   <>
                     <Text style={styles.voiceSendPillText}>Send</Text>
-                    <Ionicons name="volume-medium-outline" size={17} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                    <Ionicons name="volume-medium-outline" size={18} color="#FFFFFF" style={{ marginLeft: 6 }} />
                   </>
                 )}
               </LinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => {
-                handleCancelVoice();
-              }}
+              onPress={handleCancelVoice}
               style={styles.voiceActionIconBtn}
               activeOpacity={0.7}
             >
-              <Ionicons name="keypad-outline" size={20} color="#CBD5E1" />
+              <Ionicons name="close" size={22} color="#CBD5E1" />
             </TouchableOpacity>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -818,11 +841,28 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0F172A',
     letterSpacing: 2,
     textTransform: 'uppercase',
+  },
+  headerStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 2,
+  },
+  headerStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  headerStatusText: {
+    fontSize: 11,
+    color: '#10B981',
+    fontWeight: '600',
   },
 
   // ── Welcome Screen ──
@@ -841,7 +881,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   heroSubtitle: {
-    fontSize: 14,
+    fontSize: 14.5,
     color: '#64748B',
     marginTop: 6,
     fontWeight: '500',
@@ -854,11 +894,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 1.2,
   },
   promptCardDark: {
     backgroundColor: 'rgba(19, 27, 46, 0.75)',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(56, 189, 248, 0.16)',
   },
   promptCardLight: {
     backgroundColor: '#FFFFFF',
@@ -870,18 +910,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   promptCardIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
-  },
-  promptCardIconBoxDark: {
-    backgroundColor: 'rgba(56, 189, 248, 0.12)',
-  },
-  promptCardIconBoxLight: {
-    backgroundColor: '#EFF6FF',
   },
   promptCardTitle: {
     fontSize: 14.5,
@@ -903,9 +937,14 @@ const styles = StyleSheet.create({
   senderLabel: {
     fontSize: 11,
     color: '#94A3B8',
-    marginBottom: 4,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
     fontWeight: '600',
+  },
+  onlineStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
   },
 
   // User Message
@@ -953,7 +992,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  // Bot Message
+  // FinBot Message
   botMsgWrapper: {
     width: '100%',
     alignItems: 'flex-start',
@@ -967,12 +1006,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   aiAvatarOrb: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   botCard: {
     flex: 1,
@@ -982,8 +1021,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   botCardDark: {
-    backgroundColor: 'rgba(19, 27, 46, 0.85)',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(19, 27, 46, 0.88)',
+    borderColor: 'rgba(56, 189, 248, 0.15)',
   },
   botCardLight: {
     backgroundColor: '#FFFFFF',
@@ -996,7 +1035,7 @@ const styles = StyleSheet.create({
   },
   botMsgText: {
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 22,
     fontWeight: '400',
   },
 
@@ -1119,24 +1158,23 @@ const styles = StyleSheet.create({
   },
 
   // ── Voice Overlay Screen (Screen 2) ──
-  voiceOverlay: {
+  voiceOverlaySafe: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 56 : 40,
-    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
-    backgroundColor: '#090D16',
+    backgroundColor: '#080D1A',
   },
   voiceTopBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
     width: '100%',
   },
   voiceTopClose: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1163,32 +1201,49 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  voiceActiveModePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
+  },
+  voiceActiveModeText: {
+    color: '#38BDF8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   voiceCenterBox: {
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    marginVertical: 'auto',
   },
   prismContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 24,
+    width: 110,
+    height: 110,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 36,
     shadowColor: '#38BDF8',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 28,
+    shadowOpacity: 0.9,
+    shadowRadius: 32,
   },
   prismGradient: {
-    width: 76,
-    height: 76,
-    borderRadius: 20,
+    width: 82,
+    height: 82,
+    borderRadius: 22,
   },
   listeningStatusText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#38BDF8',
+    fontSize: 14.5,
+    fontWeight: '600',
     marginBottom: 16,
+    letterSpacing: 0.5,
   },
   voiceTranscriptText: {
     color: '#FFFFFF',
@@ -1196,13 +1251,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 32,
-    maxWidth: '90%',
+    maxWidth: '92%',
   },
   voiceControlsBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 32,
     width: '100%',
   },
   voiceActionIconBtn: {
@@ -1226,7 +1282,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 36,
+    paddingHorizontal: 38,
     paddingVertical: 14,
   },
   voiceSendPillText: {

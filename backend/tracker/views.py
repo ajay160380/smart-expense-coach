@@ -3587,9 +3587,11 @@ def ai_chat(request: HttpRequest) -> JsonResponse:
         (today.replace(day=1) + timedelta(days=32)).replace(day=1) - today
     ).days)
     today_qs = month_qs.filter(date=today)
-    today_spent = sum(getattr(e, 'amount', 0) for e in today_qs)
-    daily_safe_budget = max(0, stats['remaining_budget'] / days_left)
-    daily_remaining_today = max(0, daily_safe_budget - today_spent)
+    today_spent = float(sum(float(getattr(e, 'amount', 0) or 0) for e in today_qs))
+    budget_float = float(budget or 0)
+    rem_budget_float = float(stats.get('remaining_budget', 0) or 0)
+    daily_safe_budget = max(0.0, rem_budget_float / float(days_left))
+    daily_remaining_today = max(0.0, daily_safe_budget - today_spent)
 
     recent_expenses = list(month_qs.order_by("-date", "-id")[:5])
     recent_lines = "\n".join(
