@@ -941,6 +941,82 @@ def calculate_safe_to_spend(user, target_date=None):
     }
 
 
+def calculate_month_end_forecast(user, target_date=None):
+    """
+    PREDICT-001: Predictive Month-End Cashflow & Runway Burn-Rate Engine.
+    Projects month-end cash position (surplus vs deficit), runaway exhaustion date,
+    and calculates daily target spend required to finish the cycle solvent.
+    """
+    if target_date is None:
+        target_date = date.today()
+
+    profile = getattr(user, 'profile', None)
+    monthly_budget = float(getattr(profile, 'monthly_budget', 20000)) if profile else 20000.0
+    if monthly_budget <= 0:
+        monthly_budget = 20000.0
+
+    start_date, end_date = get_budget_cycle_dates(user, target_date)
+    days_elapsed = max((target_date - start_date).days + 1, 1)
+    days_remaining = max((end_date - target_date).days, 0)
+
+    cycle_expenses = Expense.objects.filter(user=user, date__range=(start_date, end_date))
+    total_spent = float(cycle_expenses.aggregate(s=Sum("amount"))["s"] or 0.0)
+
+    # Actual daily velocity so far in this cycle
+    daily_burn_rate = round(total_spent / days_elapsed, 1)
+    remaining_budget = round(monthly_budget - total_spent, 1)
+
+    # Projected total spend at month end if user continues at current velocity
+    projected_spend = round(total_spent + (daily_burn_rate * days_remaining), 1)
+    projected_balance = round(monthly_budget - projected_spend, 1)
+
+    # Target daily spend to reach month-end with ₹0 deficit
+    safe_daily_target = max(0.0, round(remaining_budget / max(days_remaining, 1), 1)) if remaining_budget > 0 else 0.0
+
+    # Runway exhaustion date calculation
+    exhaustion_date = None
+    if remaining_budget <= 0:
+        exhaustion_date = target_date
+    elif daily_burn_rate > 0:
+        days_runway_left = int(remaining_budget / daily_burn_rate)
+        est_exhaustion = target_date + timedelta(days=days_runway_left)
+        if est_exhaustion <= end_date:
+            exhaustion_date = est_exhaustion
+
+    if projected_balance >= 0:
+        status = "surplus"
+        status_label = "Surplus Projected"
+        status_color = "#10B981"
+        headline = f"On track for ₹{projected_balance:,.0f} surplus by month end! 🚀"
+    else:
+        status = "deficit"
+        status_label = "Deficit Projected"
+        status_color = "#EF4444"
+        if exhaustion_date and exhaustion_date <= end_date:
+            headline = f"Budget runs out on {exhaustion_date.strftime('%d %b')}! Pace to ₹{safe_daily_target:,.0f}/day."
+        else:
+            headline = f"Projected ₹{abs(projected_balance):,.0f} over budget. Keep daily spend under ₹{safe_daily_target:,.0f}."
+
+    return {
+        "monthly_budget": monthly_budget,
+        "total_spent": total_spent,
+        "remaining_budget": remaining_budget,
+        "days_elapsed": days_elapsed,
+        "days_remaining": days_remaining,
+        "daily_burn_rate": daily_burn_rate,
+        "safe_daily_target": safe_daily_target,
+        "projected_spend": projected_spend,
+        "projected_balance": projected_balance,
+        "status": status,
+        "status_label": status_label,
+        "status_color": status_color,
+        "exhaustion_date": exhaustion_date.isoformat() if exhaustion_date else None,
+        "exhaustion_date_display": exhaustion_date.strftime('%d %b') if exhaustion_date else None,
+        "cycle_end": end_date.isoformat(),
+        "headline": headline,
+    }
+
+
 def calculate_daily_budget(user, target_date=None):
     """
     PHASE 9: Calculates the Daily Budget ('Aaj ka budget').
@@ -3956,6 +4032,7 @@ def api_dashboard_all(request: HttpRequest) -> JsonResponse:
         "whatsapp_linked": user.profile.whatsapp_linked if hasattr(user, 'profile') else False,
         "safe_to_spend": calculate_safe_to_spend(user, today),
         "daily_budget": calculate_daily_budget(user, today),
+        "month_end_forecast": calculate_month_end_forecast(user, today),
         "days_left": ((today.replace(day=1) + timedelta(days=32)).replace(day=1) - today).days,
     }
 
@@ -4034,6 +4111,13 @@ def api_safe_to_spend(request: HttpRequest) -> JsonResponse:
     """REST endpoint returning current daily safe-to-spend allowance and metrics."""
     safe_data = calculate_safe_to_spend(request.user)
     return JsonResponse(safe_data)
+
+
+@api_login_required
+def api_month_end_forecast(request: HttpRequest) -> JsonResponse:
+    """REST endpoint returning real-time Month-End Cashflow & Runway Burn-Rate Forecast."""
+    forecast = calculate_month_end_forecast(request.user)
+    return JsonResponse({"status": "success", "forecast": forecast})
 
 
 @api_view(['GET', 'POST'])

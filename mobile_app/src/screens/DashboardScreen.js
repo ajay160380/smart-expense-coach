@@ -854,6 +854,7 @@ export default function DashboardScreen({ navigation, route }) {
   const daysLeft = stats?.days_left || 0;
   const overspent = stats?.overspent || false;
   const recentExpenses = stats?.recent_expenses || [];
+  const monthEndForecast = stats?.month_end_forecast || null;
 
   const activeActions = actionDockKeys
     .map(key => ALL_ACTION_SHORTCUTS.find(a => a.id === key))
@@ -1415,6 +1416,69 @@ export default function DashboardScreen({ navigation, route }) {
               </View>
             </View>
           </View>
+
+          {/* ── 🔮 MONTH-END RUNWAY & CASHFLOW FORECAST CARD ── */}
+          {monthEndForecast && (
+            <View style={[styles.forecastCard, isDark && styles.forecastCardDark]}>
+              <View style={styles.forecastHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={[styles.forecastIconCircle, { backgroundColor: isDark ? 'rgba(124, 58, 237, 0.2)' : '#EDE9FE' }]}>
+                    <Ionicons name="trending-up" size={15} color="#7C3AED" />
+                  </View>
+                  <Text style={[styles.forecastTitle, isDark && { color: colors.textPrimary }]}>
+                    Month-End Runway Forecast
+                  </Text>
+                </View>
+                <View style={[
+                  styles.forecastPill, 
+                  { 
+                    backgroundColor: monthEndForecast.status === 'surplus' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    borderColor: monthEndForecast.status === 'surplus' ? '#10B981' : '#EF4444' 
+                  }
+                ]}>
+                  <View style={[
+                    styles.forecastDot, 
+                    { backgroundColor: monthEndForecast.status === 'surplus' ? '#10B981' : '#EF4444' }
+                  ]} />
+                  <Text style={[
+                    styles.forecastPillText, 
+                    { color: monthEndForecast.status === 'surplus' ? '#10B981' : '#EF4444' }
+                  ]}>
+                    {monthEndForecast.status_label}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={[styles.forecastHeadline, isDark && { color: '#CBD5E1' }]}>
+                {monthEndForecast.headline}
+              </Text>
+
+              <View style={[styles.forecastMetricsGrid, isDark && styles.forecastMetricsGridDark]}>
+                <View style={styles.forecastMetricCol}>
+                  <Text style={[styles.forecastMetricLabel, isDark && { color: colors.textSecondary }]}>Projected End</Text>
+                  <Text style={[styles.forecastMetricVal, { color: monthEndForecast.status === 'surplus' ? '#10B981' : '#EF4444' }]}>
+                    {monthEndForecast.projected_balance >= 0 
+                      ? `+₹${Math.round(monthEndForecast.projected_balance).toLocaleString('en-IN')}` 
+                      : `-₹${Math.round(Math.abs(monthEndForecast.projected_balance)).toLocaleString('en-IN')}`}
+                  </Text>
+                </View>
+                <View style={[styles.forecastDivider, isDark && { backgroundColor: colors.border }]} />
+                <View style={styles.forecastMetricCol}>
+                  <Text style={[styles.forecastMetricLabel, isDark && { color: colors.textSecondary }]}>Daily Velocity</Text>
+                  <Text style={[styles.forecastMetricVal, isDark && { color: colors.textPrimary }]}>
+                    ₹{Math.round(monthEndForecast.daily_burn_rate).toLocaleString('en-IN')}/day
+                  </Text>
+                </View>
+                <View style={[styles.forecastDivider, isDark && { backgroundColor: colors.border }]} />
+                <View style={styles.forecastMetricCol}>
+                  <Text style={[styles.forecastMetricLabel, isDark && { color: colors.textSecondary }]}>Safe Target</Text>
+                  <Text style={[styles.forecastMetricVal, { color: '#38BDF8' }]}>
+                    ₹{Math.round(monthEndForecast.safe_daily_target).toLocaleString('en-IN')}/day
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* ── SECTION 2: DARK INSIGHT PILL ("Ask AI / AI Coach") ── */}
           <TouchableOpacity
@@ -3556,6 +3620,97 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 11,
     marginTop: 1,
+  },
+
+  // ── Month-End Runway Forecast Card ──
+  forecastCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...SHADOW.card,
+  },
+  forecastCardDark: {
+    backgroundColor: '#161F30',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  forecastHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  forecastIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  forecastTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  forecastPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  forecastDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+  forecastPillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  forecastHeadline: {
+    fontSize: 12.5,
+    color: '#475569',
+    marginTop: 8,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  forecastMetricsGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    marginTop: 12,
+  },
+  forecastMetricsGridDark: {
+    backgroundColor: '#0F172A',
+  },
+  forecastMetricCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  forecastMetricLabel: {
+    fontSize: 9.5,
+    color: '#64748B',
+    marginBottom: 2,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  forecastMetricVal: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  forecastDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E2E8F0',
   },
 
   // ── AI Impulse Buy Simulator Banner ──

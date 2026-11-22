@@ -46,6 +46,12 @@ class PaymentAccessibilityService : AccessibilityService() {
             "com.fivehundredrishabh.slice",          // Slice
             "money.jupiter",                         // Jupiter
             "money.fi",                              // Fi Money
+            "in.supermoney",                         // Super.money
+            "com.tatadigital.tcp",                   // Tata Neu
+            "in.swiggy.android",                     // Swiggy UPI
+            "com.application.zomato",                // Zomato UPI
+            "com.nextbillion.groww",                 // Groww UPI
+            "com.popclub.app",                       // POPclub UPI
             "com.myairtelapp",                       // Airtel Thanks
             "com.jio.myjio"                          // MyJio UPI
         )

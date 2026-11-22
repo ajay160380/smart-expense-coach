@@ -37,6 +37,12 @@ class PaymentNotificationListener : NotificationListenerService() {
             "money.fi",                              // Fi Money
             "com.bharatpe.postpe",                   // PostPe
             "com.bajajfinserv.direct",               // Bajaj Finserv
+            "in.supermoney",                         // Super.money (Flipkart UPI)
+            "com.tatadigital.tcp",                   // Tata Neu UPI
+            "in.swiggy.android",                     // Swiggy UPI
+            "com.application.zomato",                // Zomato UPI
+            "com.nextbillion.groww",                 // Groww UPI
+            "com.popclub.app",                       // POPclub UPI
 
             // Major Public Sector Banks
             "com.sbi.upi",                           // SBI YONO / Pay
@@ -125,6 +131,22 @@ class PaymentNotificationListener : NotificationListenerService() {
             Pattern.compile("""\b(?:requested|request from|request to pay|mandate request)\b""", Pattern.CASE_INSENSITIVE),
             Pattern.compile("""\b(?:save up to|upto|flat\s+(?:rs\.?|inr|₹)|discount|cashback offer|coupon|voucher|win|won|jackpot|bonus|rewards)\b""", Pattern.CASE_INSENSITIVE)
         )
+    }
+
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        Log.i(TAG, "🚀 PaymentNotificationListener CONNECTED and actively listening for bank/UPI debits")
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        Log.w(TAG, "⚠️ PaymentNotificationListener DISCONNECTED! Requesting immediate auto-rebind...")
+        try {
+            requestRebind(android.content.ComponentName(this, PaymentNotificationListener::class.java))
+            Log.i(TAG, "🔄 Auto-capture NotificationListener auto-rebound successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in requestRebind", e)
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
@@ -219,12 +241,8 @@ class PaymentNotificationListener : NotificationListenerService() {
                               !hasExplicitDebit
             if (isPurePromo) return
 
-            // 6. Extract amount
-            val amountMatcher = AMOUNT_PATTERN.matcher(fullContent)
-            if (!amountMatcher.find()) return
-
-            val rawAmountStr = amountMatcher.group(1)?.replace(",", "") ?: return
-            val amount = rawAmountStr.toDoubleOrNull() ?: return
+            // 6. Intelligent amount extraction (prioritizes genuine debits, rejects available balance)
+            val amount = extractAmount(fullContent) ?: return
             if (amount <= 0.0) return
 
             // 7. Extract merchant
@@ -250,6 +268,55 @@ class PaymentNotificationListener : NotificationListenerService() {
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing notification", e)
         }
+    }
+
+    private fun extractAmount(text: String): Double? {
+        // Priority 1: Direct debit context immediately preceding the amount
+        // e.g. "debited for Rs 500", "paid INR 120.50", "spent ₹350", "txn of Rs 99"
+        val p1 = Pattern.compile(
+            """(?:debited|spent|paid|transferred|withdrawn|deducted|txn\s+of|payment\s+of)\s+(?:by|for|with|of)?\s*(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{1,2})?)""",
+            Pattern.CASE_INSENSITIVE
+        )
+        val m1 = p1.matcher(text)
+        if (m1.find()) {
+            val amt = m1.group(1)?.replace(",", "")?.toDoubleOrNull()
+            if (amt != null && amt > 0.0) return amt
+        }
+
+        // Priority 2: Amount followed by debit context
+        // e.g. "Rs. 450 debited", "INR 1,200.00 spent"
+        val p2 = Pattern.compile(
+            """(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{1,2})?)\s+(?:has\s+been\s+)?(?:debited|spent|paid|deducted|withdrawn)""",
+            Pattern.CASE_INSENSITIVE
+        )
+        val m2 = p2.matcher(text)
+        if (m2.find()) {
+            val amt = m2.group(1)?.replace(",", "")?.toDoubleOrNull()
+            if (amt != null && amt > 0.0) return amt
+        }
+
+        // Priority 3: General currency pattern, BUT explicitly skipping if preceded by balance/limit keywords
+        val p3 = Pattern.compile(
+            """(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{1,2})?)""",
+            Pattern.CASE_INSENSITIVE
+        )
+        val m3 = p3.matcher(text)
+        while (m3.find()) {
+            val startIdx = m3.start()
+            val precedingText = text.substring(maxOf(0, startIdx - 24), startIdx).lowercase(java.util.Locale.US)
+            val isBalance = precedingText.contains("bal") ||
+                            precedingText.contains("balance") ||
+                            precedingText.contains("limit") ||
+                            precedingText.contains("lmt") ||
+                            precedingText.contains("avl") ||
+                            precedingText.contains("cl bal")
+            if (!isBalance) {
+                val amt = m3.group(1)?.replace(",", "")?.toDoubleOrNull()
+                if (amt != null && amt > 0.0) return amt
+            }
+        }
+
+        return null
     }
 
     private fun extractMerchant(text: String): String {
@@ -300,6 +367,12 @@ class PaymentNotificationListener : NotificationListenerService() {
             lower.contains("fi") -> "Fi Money"
             lower.contains("slice") -> "Slice"
             lower.contains("navi") -> "Navi"
+            lower.contains("supermoney") -> "Super.money"
+            lower.contains("tatadigital") -> "Tata Neu"
+            lower.contains("swiggy") -> "Swiggy UPI"
+            lower.contains("zomato") -> "Zomato UPI"
+            lower.contains("groww") -> "Groww UPI"
+            lower.contains("popclub") -> "POPclub"
             lower.contains("messaging") || lower.contains("mms") || lower.contains("sms") -> "Bank SMS"
             else -> "Bank / UPI"
         }
