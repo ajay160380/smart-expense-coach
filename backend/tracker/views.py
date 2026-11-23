@@ -8566,7 +8566,7 @@ def api_send_email_verification(request):
                 })
             user_msg = (
                 "Brevo IP authorization pending: Please open Brevo Settings ➔ Security ➔ Authorized IPs "
-                "and click 'Deactivate blocking' (or check ajaykumar160380@gmail.com to authorize)."
+                "and click 'Deactivate blocking' (or check your Brevo account email to authorize)."
             )
         elif 'testing emails to your own email' in resend_err or 'You can only send testing emails' in resend_err:
             if is_owner_or_admin:
@@ -8579,7 +8579,7 @@ def api_send_email_verification(request):
                     'message': f"Dev OTP code: {otp_code}. Enter this code below! (To send real emails to all users, add BREVO_API_KEY on Render)"
                 })
             user_msg = (
-                "Free Resend sandbox only delivers to registered developer email (ajaykumar160380@gmail.com). "
+                "Free Resend sandbox only delivers to registered developer email. "
                 "To deliver to external email addresses without a domain, please configure a free BREVO_API_KEY on Render."
             )
         else:

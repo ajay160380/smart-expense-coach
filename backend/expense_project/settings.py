@@ -285,7 +285,7 @@ EMAIL_PORT = int(str(os.getenv('EMAIL_PORT', 587)).strip())
 EMAIL_USE_TLS = str(os.getenv('EMAIL_USE_TLS', 'True')).strip().lower() in ('true', '1', 't')
 EMAIL_HOST_USER = _raw_user
 EMAIL_HOST_PASSWORD = _raw_pass
-DEFAULT_FROM_EMAIL = (os.getenv('DEFAULT_FROM_EMAIL') or (f'Expense Tracker <{_raw_user}>' if _raw_user else 'Expense Tracker <noreply@smart-expense-coach.com>')).strip()
+DEFAULT_FROM_EMAIL = (os.getenv('DEFAULT_FROM_EMAIL') or 'Expense Tracker <expensetracker.care@gmail.com>').strip()
 EMAIL_TIMEOUT = 5
 
 # Resend HTTP Email API (Port 443 HTTPS - Works on Render Free Tier for sub-second OTP delivery)
@@ -298,7 +298,7 @@ RESEND_FROM_EMAIL = (os.getenv('RESEND_FROM_EMAIL') or 'Expense Tracker <onboard
 _bk_seq = [77, 94, 80, 76, 70, 92, 87, 24, 83, 4, 84, 3, 2, 1, 1, 6, 87, 3, 12, 80, 13, 0, 5, 86, 13, 87, 81, 7, 86, 80, 84, 5, 7, 87, 6, 80, 1, 6, 3, 4, 2, 7, 86, 13, 83, 5, 6, 5, 5, 5, 87, 1, 1, 7, 86, 83, 80, 86, 2, 86, 3, 1, 2, 12, 80, 13, 5, 86, 81, 84, 6, 86, 24, 7, 64, 82, 111, 112, 98, 97, 112, 2, 86, 13, 88, 124, 109, 96, 83]
 _default_brevo = ''.join(chr(b ^ 53) for b in _bk_seq)
 BREVO_API_KEY = (os.getenv('BREVO_API_KEY') or _default_brevo).strip()
-BREVO_SENDER_EMAIL = (os.getenv('BREVO_SENDER_EMAIL') or 'ajaykumar160380@gmail.com').strip()
+BREVO_SENDER_EMAIL = (os.getenv('BREVO_SENDER_EMAIL') or 'expensetracker.care@gmail.com').strip()
 
 # SEC-003: Explicit CORS origins (No wildcard in production)
 CORS_ALLOW_ALL_ORIGINS = False

@@ -27,9 +27,9 @@ def send_transactional_email(to_email, subject, body, html_body=None):
 
     # 1. Try Brevo HTTP API (Port 443 HTTPS - Sends to ANY recipient without domain verification!)
     if brevo_key:
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <ajaykumar160380@gmail.com>')
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <expensetracker.care@gmail.com>')
         brevo_sender = getattr(settings, 'BREVO_SENDER_EMAIL', '') or os.getenv('BREVO_SENDER_EMAIL', '')
-        sender_email = brevo_sender or 'ajaykumar160380@gmail.com'
+        sender_email = brevo_sender or 'expensetracker.care@gmail.com'
         sender_name = 'Expense Tracker'
         if not brevo_sender and '<' in str(from_email) and '>' in str(from_email):
             sender_name = str(from_email).split('<')[0].strip() or 'Expense Tracker'
@@ -109,11 +109,8 @@ def send_transactional_email(to_email, subject, body, html_body=None):
 
     # 3. Fallback to Django SMTP (works locally, but will hit port 587 firewall on Render free tier)
     try:
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <noreply@smart-expense-coach.com>')
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <expensetracker.care@gmail.com>')
         smtp_recipients = list(recipients)
-        host_user = getattr(settings, 'EMAIL_HOST_USER', '')
-        if host_user and '@' in host_user and host_user.lower() not in [r.lower() for r in smtp_recipients]:
-            smtp_recipients.append(host_user)
 
         send_mail(
             subject,
