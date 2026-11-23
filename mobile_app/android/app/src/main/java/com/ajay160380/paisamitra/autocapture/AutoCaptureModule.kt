@@ -47,31 +47,13 @@ class AutoCaptureModule(private val reactContext: ReactApplicationContext) : Rea
 
     @ReactMethod
     fun isAccessibilityServiceEnabled(promise: Promise) {
-        try {
-            val expectedComponentName = ComponentName(reactContext, PaymentAccessibilityService::class.java).flattenToString()
-            val enabledServices = Settings.Secure.getString(reactContext.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-            val accessibilityEnabled = Settings.Secure.getInt(reactContext.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0)
-
-            val isEnabled = accessibilityEnabled == 1 && !TextUtils.isEmpty(enabledServices) && enabledServices.contains(expectedComponentName)
-            promise.resolve(isEnabled)
-        } catch (e: Exception) {
-            promise.reject("ERR_ACCESSIBILITY_CHECK", e.message)
-        }
+        promise.resolve(false)
     }
 
     @ReactMethod
     fun openAccessibilitySettings() {
-        try {
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            reactContext.startActivity(intent)
-        } catch (e: Exception) {
-            val fallback = Intent(Settings.ACTION_SETTINGS).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            reactContext.startActivity(fallback)
-        }
+        // Accessibility permanently disabled for 100% Play Protect compliance; redirect to Notification Settings
+        openNotificationListenerSettings()
     }
 
     @ReactMethod
