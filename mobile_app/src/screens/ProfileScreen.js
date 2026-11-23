@@ -24,6 +24,8 @@ import {
   StatusBar as RNStatusBar,
   RefreshControl,
   DeviceEventEmitter,
+  NativeModules,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -34,7 +36,7 @@ import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CURRENT_APP_VERSION } from '../utils/versionCheck';
 
-import api from '../api/config';
+import api, { BASE_URL } from '../api/config';
 import { clearAuthData } from '../utils/auth';
 import { COLORS } from '../utils/theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -63,6 +65,7 @@ export default function ProfileScreen({ navigation }) {
   const [cachedStats, setCachedStats] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [autoCaptureActive, setAutoCaptureActive] = useState(false);
 
   const userPhone = profile?.phone_number || profile?.whatsapp_number || '';
   const cleanPhone = String(userPhone).replace(/\D/g, '');
@@ -101,9 +104,26 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const checkAutoCaptureStatus = useCallback(async () => {
+    if (Platform.OS !== 'android') return;
+    try {
+      const { AutoCaptureModule } = NativeModules;
+      if (AutoCaptureModule?.isNotificationListenerEnabled) {
+        const enabled = await AutoCaptureModule.isNotificationListenerEnabled();
+        setAutoCaptureActive(!!enabled);
+      }
+      if (BASE_URL && AutoCaptureModule?.saveBackendUrl) {
+        AutoCaptureModule.saveBackendUrl(BASE_URL);
+      }
+    } catch (e) {
+      console.log('checkAutoCaptureStatus error:', e);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       fetchProfile();
+      checkAutoCaptureStatus();
       AsyncStorage.getItem('shake_sensitivity').then((val) => {
         if (val) setShakeLevel(val);
         else setShakeLevel('disabled');
@@ -111,8 +131,57 @@ export default function ProfileScreen({ navigation }) {
       AsyncStorage.getItem('biometric_enabled').then((val) => {
         setBiometricEnabled(val === 'true');
       });
-    }, [])
+
+      const appStateSub = AppState.addEventListener('change', (state) => {
+        if (state === 'active') {
+          checkAutoCaptureStatus();
+        }
+      });
+      return () => {
+        appStateSub?.remove?.();
+      };
+    }, [checkAutoCaptureStatus])
   );
+
+  const handleAutoCapturePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== 'android') {
+      Alert.alert('Android Feature', 'Auto UPI & Bank SMS tracking is supported on Android devices.');
+      return;
+    }
+    const { AutoCaptureModule } = NativeModules;
+    if (!AutoCaptureModule) {
+      Alert.alert('Service Unavailable', 'Auto-capture native module not detected.');
+      return;
+    }
+
+    if (autoCaptureActive) {
+      Alert.alert(
+        '⚡ Auto UPI & Bank Tracking Active',
+        'PaisaMitra is actively listening to payment notifications (Google Pay, PhonePe, Paytm, CRED, Bank SMS). Real-time transactions are auto-categorized and logged automatically.\n\nDo you want to open Notification Settings to reconfigure?',
+        [
+          { text: 'Keep Active', style: 'cancel' },
+          {
+            text: 'Open Settings',
+            onPress: () => AutoCaptureModule.openNotificationListenerSettings?.(),
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        '⚡ Enable Auto UPI & Bank Tracking',
+        'Allow PaisaMitra "Notification Access" so your UPI payments and bank debit alerts (Google Pay, PhonePe, Paytm, Banks) are instantly auto-captured and categorized with 100% accuracy in real-time.\n\n1. In the next screen, find "PaisaMitra"\n2. Turn ON the toggle\n3. Tap Allow',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Enable Now',
+            style: 'default',
+            onPress: () => AutoCaptureModule.openNotificationListenerSettings?.(),
+          },
+        ]
+      );
+    }
+  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -505,6 +574,17 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.sectionWrap}>
           <Text style={[styles.sectionHeading, isDark && { color: '#64748B' }]}>SMART AUTOMATION</Text>
           <View style={[styles.groupedCard, isDark && styles.groupedCardDark]}>
+            {Platform.OS === 'android' && (
+              <SettingsRow
+                icon="flash"
+                iconColor="#F59E0B"
+                title="Auto UPI & Bank Tracking"
+                subtitle={autoCaptureActive ? "Active • Capturing & categorizing payments" : "Tap to enable Notification Listener"}
+                badge={autoCaptureActive ? "ON" : "SETUP"}
+                badgeColor={autoCaptureActive ? "#10B981" : "#F59E0B"}
+                onPress={handleAutoCapturePress}
+              />
+            )}
             <SettingsRow
               icon="notifications"
               iconColor="#6366F1"

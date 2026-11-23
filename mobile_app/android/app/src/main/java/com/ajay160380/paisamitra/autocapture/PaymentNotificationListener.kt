@@ -246,7 +246,7 @@ class PaymentNotificationListener : NotificationListenerService() {
             if (amount <= 0.0) return
 
             // 7. Extract merchant
-            var merchant = extractMerchant(fullContent)
+            var merchant = extractMerchant(title, fullContent)
             if (merchant.isEmpty()) {
                 merchant = getAppName(pkgName)
             }
@@ -319,9 +319,58 @@ class PaymentNotificationListener : NotificationListenerService() {
         return null
     }
 
-    private fun extractMerchant(text: String): String {
+    private fun extractMerchant(title: String, text: String): String {
+        // Priority 0: Known top Indian merchants directly present in text
+        val knownBrands = listOf(
+            "Swiggy", "Zomato", "Blinkit", "Zepto", "Instamart", "BigBasket", "DMart", "D-Mart",
+            "Uber", "Ola", "Rapido", "IRCTC", "Redbus", "MakeMyTrip", "DMRC", "Metro",
+            "Amazon", "Flipkart", "Myntra", "Meesho", "Ajio", "Nykaa", "Tata Neu",
+            "McDonald", "Dominos", "Pizza Hut", "KFC", "Burger King", "Starbucks", "Chaayos",
+            "Chai Point", "Haldiram", "Subway", "Behrouz", "Faasos",
+            "Airtel", "Jio", "Vodafone", "Vi", "BSNL", "Tata Power", "BESCOM", "IGL",
+            "Apollo", "1mg", "Netmeds", "PharmEasy",
+            "Indian Oil", "IOCL", "BPCL", "HPCL", "Shell", "Petrol",
+            "Netflix", "Spotify", "Hotstar", "BookMyShow", "PVR", "INOX"
+        )
+        val lowerText = text.lowercase(java.util.Locale.US)
+        for (brand in knownBrands) {
+            if (lowerText.contains(brand.lowercase(java.util.Locale.US))) {
+                return brand
+            }
+        }
+
+        // Priority 1: Check if the notification title itself is a clean merchant name
+        val trimmedTitle = title.trim()
+        val lowerTitle = trimmedTitle.lowercase(java.util.Locale.US)
+        val isGenericTitle = lowerTitle.contains("google pay") ||
+                             lowerTitle.contains("phonepe") ||
+                             lowerTitle.contains("paytm") ||
+                             lowerTitle.contains("bhim") ||
+                             lowerTitle.contains("bank") ||
+                             lowerTitle.contains("debit") ||
+                             lowerTitle.contains("alert") ||
+                             lowerTitle.contains("transaction") ||
+                             lowerTitle.contains("payment") ||
+                             lowerTitle.contains("sent") ||
+                             lowerTitle.contains("money") ||
+                             lowerTitle.contains("transfer")
+        if (!isGenericTitle && trimmedTitle.length in 2..35 && !trimmedTitle.matches(Regex("""^[\d\s₹,.]+$"""))) {
+            return trimmedTitle
+        }
+
+        // Priority 2: VPA handle extraction (e.g. "VPA swiggy@icici", "to user@okhdfcbank")
+        val vpaPattern = Pattern.compile("""(?:vpa|to|at)\s+([A-Za-z0-9_.-]+)@[A-Za-z0-9]+""", Pattern.CASE_INSENSITIVE)
+        val vpaMatcher = vpaPattern.matcher(text)
+        if (vpaMatcher.find()) {
+            val vpaHandle = vpaMatcher.group(1)?.trim() ?: ""
+            if (vpaHandle.length in 2..30 && !vpaHandle.equals("upi", ignoreCase = true)) {
+                return vpaHandle
+            }
+        }
+
+        // Priority 3: Regex patterns
         val patterns = listOf(
-            Pattern.compile("""(?:paid to|to|at)\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$|\s+using)""", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("""(?:paid to|to|at)\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$|\s+using|\s+upi)""", Pattern.CASE_INSENSITIVE),
             Pattern.compile("""sent to\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$)""", Pattern.CASE_INSENSITIVE),
             Pattern.compile("""transferred to\s+([A-Za-z0-9\s&'.-]+?)(?=\s+Amount|\s+from|\s+on|\s+via|\.|\s*$)""", Pattern.CASE_INSENSITIVE),
             Pattern.compile("""Info:\s*UPI/[^/]+/([^/]+)""", Pattern.CASE_INSENSITIVE)
@@ -330,7 +379,7 @@ class PaymentNotificationListener : NotificationListenerService() {
             val m = p.matcher(text)
             if (m.find()) {
                 val candidate = m.group(1)?.trim() ?: ""
-                if (candidate.length in 2..40) {
+                if (candidate.length in 2..40 && !candidate.equals("upi", ignoreCase = true)) {
                     return candidate
                 }
             }

@@ -25,6 +25,8 @@ import {
   ActivityIndicator,
   Animated,
   DeviceEventEmitter,
+  NativeModules,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -56,6 +58,72 @@ export default function MoreFeaturesScreen({ navigation }) {
   const [widgetModalVisible, setWidgetModalVisible] = useState(false);
   const [cachedStats, setCachedStats] = useState(null);
   const [updateInfo, setUpdateInfo] = useState(null);
+  const [autoCaptureActive, setAutoCaptureActive] = useState(false);
+
+  const checkAutoCaptureStatus = useCallback(async () => {
+    if (Platform.OS !== 'android') return;
+    try {
+      const { AutoCaptureModule } = NativeModules;
+      if (AutoCaptureModule?.isNotificationListenerEnabled) {
+        const enabled = await AutoCaptureModule.isNotificationListenerEnabled();
+        setAutoCaptureActive(!!enabled);
+      }
+    } catch (e) {}
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkAutoCaptureStatus();
+      const appStateSub = AppState.addEventListener('change', (state) => {
+        if (state === 'active') {
+          checkAutoCaptureStatus();
+        }
+      });
+      return () => {
+        appStateSub?.remove?.();
+      };
+    }, [checkAutoCaptureStatus])
+  );
+
+  const handleAutoCapturePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== 'android') {
+      Alert.alert('Android Feature', 'Auto UPI & Bank SMS tracking is supported on Android devices.');
+      return;
+    }
+    const { AutoCaptureModule } = NativeModules;
+    if (!AutoCaptureModule) {
+      Alert.alert('Service Unavailable', 'Auto-capture native module not detected.');
+      return;
+    }
+
+    if (autoCaptureActive) {
+      Alert.alert(
+        '⚡ Auto UPI & Bank Tracking Active',
+        'PaisaMitra is actively listening to payment notifications (Google Pay, PhonePe, Paytm, Bank SMS). Real-time transactions are auto-categorized and logged automatically.\n\nDo you want to open Notification Settings to reconfigure?',
+        [
+          { text: 'Keep Active', style: 'cancel' },
+          {
+            text: 'Open Settings',
+            onPress: () => AutoCaptureModule.openNotificationListenerSettings?.(),
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        '⚡ Enable Auto UPI & Bank Tracking',
+        'Allow PaisaMitra "Notification Access" so your UPI payments and bank debit alerts (Google Pay, PhonePe, Paytm, Banks) are instantly auto-captured and categorized with 100% accuracy in real-time.\n\n1. In the next screen, find "PaisaMitra"\n2. Turn ON the toggle\n3. Tap Allow',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Enable Now',
+            style: 'default',
+            onPress: () => AutoCaptureModule.openNotificationListenerSettings?.(),
+          },
+        ]
+      );
+    }
+  };
 
   useEffect(() => {
     const unsub = subscribeToUpdateStatus((status) => {
@@ -505,6 +573,17 @@ export default function MoreFeaturesScreen({ navigation }) {
 
         {/* ── Secondary Productivity Utilities ── */}
         <View style={[styles.listCard, isDark && { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {Platform.OS === 'android' && (
+            <ListItem
+              icon="flash-outline"
+              iconColor="#F59E0B"
+              title="Auto UPI & Bank Tracking"
+              desc={autoCaptureActive ? "Active • Capturing & categorizing payments" : "Tap to enable Notification Listener"}
+              badge={autoCaptureActive ? "ON" : "SETUP"}
+              badgeColor={autoCaptureActive ? "#10B981" : "#F59E0B"}
+              onPress={handleAutoCapturePress}
+            />
+          )}
           <ListItem
             icon="document-text-outline"
             iconColor="#F472B6"
