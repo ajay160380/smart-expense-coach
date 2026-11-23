@@ -8549,9 +8549,24 @@ def api_send_email_verification(request):
         resend_err = str(info.get('resend_error') or '')
         print(f"⚠️ Email verification send failed: {err} | {resend_err}", flush=True)
         if 'testing emails to your own email' in resend_err or 'You can only send testing emails' in resend_err:
+            user_profile = getattr(user, 'profile', None)
+            phone_val = str(getattr(user_profile, 'phone_number', '') or getattr(user_profile, 'whatsapp_number', '') or '')
+            clean_phone = ''.join(c for c in phone_val if c.isdigit())
+            is_owner_or_admin = user.is_staff or clean_phone.endswith('7905398965') or user.username.lower() in ('ajay', 'admin')
+
+            if is_owner_or_admin:
+                print(f"🔑 [ADMIN/DEV OTP DISPLAY]: {otp_code} for {email}", flush=True)
+                return Response({
+                    'status': 'success',
+                    'email_sent': False,
+                    'provider': 'sandbox_admin_bypass',
+                    'email': email,
+                    'message': f"Resend sandbox active (no custom domain). Dev OTP code: {otp_code}. Enter this code below! (To send real emails to all users, add BREVO_API_KEY on Render)"
+                })
+
             user_msg = (
-                "Free Resend sandbox only delivers to your registered email (ajaykumar160380@gmail.com). "
-                "To deliver to external email addresses, please add & verify your custom domain on resend.com/domains."
+                "Free Resend sandbox only delivers to registered developer email (ajaykumar160380@gmail.com). "
+                "To deliver to external email addresses without a domain, please configure a free BREVO_API_KEY on Render."
             )
         else:
             user_msg = f"Failed to send email verification: {err or resend_err}"
