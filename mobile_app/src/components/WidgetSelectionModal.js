@@ -123,15 +123,15 @@ export default function WidgetSelectionModal({
 
       if (pinned) {
         Alert.alert(
-          'Widget Pin Request Sent! 🎉',
-          `A prompt to add "${widgetTitle}" has been sent to your home screen. Please tap "Add" or "Confirm" on the popup.`,
-          [{ text: 'OK', onPress: onClose }]
+          'Widget Successfully Added! 🎉',
+          `"${widgetTitle}" has been prepared for your Home Screen.\n\nPlease tap "Add" or "Confirm" on the phone prompt to place it! ✨`,
+          [{ text: 'Awesome! 🚀', onPress: onClose }]
         );
       } else {
         Alert.alert(
-          'How to Add Widget',
-          `1. Long press (Touch & Hold) on an empty area of your Home Screen.\n2. Tap "Widgets" at the bottom.\n3. Scroll down to "Expense Tracker" and drag "${widgetTitle}" to your screen!\n\n📌 Xiaomi / Redmi / POCO users:\nPlease ensure "Home screen shortcuts" permission is allowed in Settings ➔ Apps ➔ Manage Apps ➔ Expense Tracker ➔ Other Permissions.`,
-          [{ text: 'Got it', onPress: onClose }]
+          'Place Widget on Home Screen 📌',
+          `1. Long press on any empty space on your phone's Home Screen.\n2. Tap "Widgets".\n3. Scroll down to "Expense Tracker" and drag "${widgetTitle}" to your screen!\n\n💡 Xiaomi / POCO / Vivo users:\nPlease ensure "Home screen shortcuts" permission is allowed in phone Settings.`,
+          [{ text: 'Got It 👍', onPress: onClose }]
         );
       }
     } catch (err) {
@@ -203,12 +203,12 @@ export default function WidgetSelectionModal({
                 activeOpacity={0.85}
                 onPress={() => handleSelectTab('AddExpenseWidget')}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, marginRight: 4 }}>
                   <Ionicons
                     name="grid"
-                    size={15}
+                    size={14}
                     color={is2x2 ? '#2563EB' : isDark ? '#94A3B8' : '#64748B'}
-                    style={{ marginRight: 6 }}
+                    style={{ marginRight: 5 }}
                   />
                   <Text
                     style={[
@@ -216,13 +216,14 @@ export default function WidgetSelectionModal({
                       is2x2 && styles.segmentTabTextActive,
                       isDark && !is2x2 && { color: '#94A3B8' },
                     ]}
+                    numberOfLines={1}
                   >
                     2×2 Square
                   </Text>
                 </View>
                 <View style={[styles.segmentTag, is2x2 && styles.segmentTagActive]}>
                   <Text style={[styles.segmentTagText, is2x2 && styles.segmentTagTextActive]}>
-                    BEST FIT
+                    BEST
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -237,12 +238,12 @@ export default function WidgetSelectionModal({
                 activeOpacity={0.85}
                 onPress={() => handleSelectTab('WideExpenseWidget')}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, marginRight: 4 }}>
                   <Ionicons
                     name="albums"
-                    size={15}
+                    size={14}
                     color={!is2x2 ? '#2563EB' : isDark ? '#94A3B8' : '#64748B'}
-                    style={{ marginRight: 6 }}
+                    style={{ marginRight: 5 }}
                   />
                   <Text
                     style={[
@@ -250,8 +251,9 @@ export default function WidgetSelectionModal({
                       !is2x2 && styles.segmentTabTextActive,
                       isDark && !is2x2 && { color: '#94A3B8' },
                     ]}
+                    numberOfLines={1}
                   >
-                    4×2 Wide Banner
+                    4×2 Wide
                   </Text>
                 </View>
                 <View style={[styles.segmentTag, !is2x2 && styles.segmentTagActivePurple]}>
@@ -405,42 +407,42 @@ export default function WidgetSelectionModal({
               {is2x2 ? (
                 <>
                   <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                    <Ionicons name="flash" size={14} color="#2563EB" style={{ marginRight: 6 }} />
+                    <Ionicons name="flash" size={13} color="#2563EB" style={{ marginRight: 4 }} />
                     <Text style={[styles.featurePillText, isDark && { color: '#E2E8F0' }]}>
-                      1-Tap Quick Entry
+                      1-Tap Log
                     </Text>
                   </View>
                   <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                    <Ionicons name="speedometer" size={14} color="#10B981" style={{ marginRight: 6 }} />
+                    <Ionicons name="speedometer" size={13} color="#10B981" style={{ marginRight: 4 }} />
                     <Text style={[styles.featurePillText, isDark && { color: '#E2E8F0' }]}>
-                      Live Budget Pace
+                      Budget Meter
                     </Text>
                   </View>
                   <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                    <Ionicons name="mic" size={14} color="#8B5CF6" style={{ marginRight: 6 }} />
+                    <Ionicons name="mic" size={13} color="#8B5CF6" style={{ marginRight: 4 }} />
                     <Text style={[styles.featurePillText, isDark && { color: '#E2E8F0' }]}>
-                      Voice Logging
+                      Voice AI
                     </Text>
                   </View>
                 </>
               ) : (
                 <>
                   <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                    <Ionicons name="receipt" size={14} color="#2563EB" style={{ marginRight: 6 }} />
+                    <Ionicons name="receipt" size={13} color="#2563EB" style={{ marginRight: 4 }} />
                     <Text style={[styles.featurePillText, isDark && { color: '#E2E8F0' }]}>
-                      Recent Expenses
+                      Recent Spends
                     </Text>
                   </View>
                   <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                    <Ionicons name="bar-chart" size={14} color="#10B981" style={{ marginRight: 6 }} />
+                    <Ionicons name="bar-chart" size={13} color="#10B981" style={{ marginRight: 4 }} />
                     <Text style={[styles.featurePillText, isDark && { color: '#E2E8F0' }]}>
-                      Full Budget Bar
+                      Budget Track
                     </Text>
                   </View>
                   <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                    <Ionicons name="mic" size={14} color="#8B5CF6" style={{ marginRight: 6 }} />
+                    <Ionicons name="flash" size={13} color="#8B5CF6" style={{ marginRight: 4 }} />
                     <Text style={[styles.featurePillText, isDark && { color: '#E2E8F0' }]}>
-                      Voice & Add
+                      Quick Add
                     </Text>
                   </View>
                 </>
@@ -640,8 +642,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 9,
     borderRadius: 12,
   },
   segmentTabActive: {
@@ -656,8 +658,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F172A',
   },
   segmentTabText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
     color: '#64748B',
   },
   segmentTabTextActive: {
@@ -669,6 +671,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 6,
+    flexShrink: 0,
   },
   segmentTagActive: {
     backgroundColor: '#DBEAFE',
