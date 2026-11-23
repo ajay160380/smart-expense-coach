@@ -28,6 +28,7 @@ import WidgetSelectionModal from '../components/WidgetSelectionModal';
 import FeatureTourModal, { TOUR_STORAGE_KEY, getTourKeyForUser } from '../components/FeatureTourModal';
 import WhatsAppLinkModal from '../components/WhatsAppLinkModal';
 import AffordabilitySimulatorModal from '../components/AffordabilitySimulatorModal';
+import AnimatedBotAvatar from '../components/AnimatedBotAvatar';
 import { useFocusEffect } from '@react-navigation/native';
 import api, { BASE_URL } from '../api/config';
 import { getUsername, clearAuthData, getToken } from '../utils/auth';
@@ -1419,24 +1420,30 @@ export default function DashboardScreen({ navigation, route }) {
 
 
 
-          {/* ── SECTION 2: DARK INSIGHT PILL ("Ask AI / AI Coach") ── */}
+          {/* ── SECTION 2: INSIGHT PILL ("Ask AI / AI Coach" with animated Bot Face) ── */}
           <TouchableOpacity
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               navigation.navigate('AIChat');
             }}
             activeOpacity={0.88}
-            style={styles.darkInsightPill}
+            style={[
+              styles.darkInsightPill,
+              !isDark && styles.lightInsightPill,
+            ]}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 }}>
-              <Ionicons name="sparkles" size={15} color="#A78BFA" style={{ marginRight: 8 }} />
-              <Text style={styles.darkInsightText} numberOfLines={1}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+              <Ionicons name="sparkles" size={15} color={isDark ? "#A78BFA" : "#6366F1"} style={{ marginRight: 8 }} />
+              <Text style={[styles.darkInsightText, !isDark && styles.lightInsightText]} numberOfLines={1}>
                 {cleanTipText(dailyTip) || 'Your daily financial insight is ready'}
               </Text>
             </View>
-            <View style={styles.darkInsightBadge}>
-              <Text style={styles.darkInsightActionText}>Ask AI</Text>
-              <Ionicons name="chevron-forward" size={11} color="#C084FC" style={{ marginLeft: 3 }} />
+            <View style={[styles.darkInsightBadge, !isDark && styles.lightInsightBadge]}>
+              <AnimatedBotAvatar size={20} isDark={isDark} />
+              <Text style={[styles.darkInsightActionText, !isDark && styles.lightInsightActionText]}>
+                Ask AI
+              </Text>
+              <Ionicons name="chevron-forward" size={11} color={isDark ? "#C084FC" : "#FFFFFF"} style={{ marginLeft: 1 }} />
             </View>
           </TouchableOpacity>
 
@@ -1458,7 +1465,7 @@ export default function DashboardScreen({ navigation, route }) {
                   >
                     <Ionicons name={item.icon} size={22} color="#FFFFFF" />
                   </LinearGradient>
-                  <Text style={styles.actionDockLabel} numberOfLines={1}>
+                  <Text style={[styles.actionDockLabel, { color: isDark ? '#E2E8F0' : '#0F172A' }]} numberOfLines={1}>
                     {item.label}
                   </Text>
                 </TouchableOpacity>
@@ -1472,10 +1479,10 @@ export default function DashboardScreen({ navigation, route }) {
                 }}
                 activeOpacity={0.8}
               >
-                <View style={[styles.actionDockCustomizeBox, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
-                  <Ionicons name="options-outline" size={20} color={isDark ? colors.textPrimary : '#E2E8F0'} />
+                <View style={[styles.actionDockCustomizeBox, isDark ? { backgroundColor: colors.bgElevated, borderColor: colors.border } : { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }]}>
+                  <Ionicons name="options-outline" size={20} color={isDark ? colors.textPrimary : '#334155'} />
                 </View>
-                <Text style={styles.actionDockCustomizeLabel}>More</Text>
+                <Text style={[styles.actionDockCustomizeLabel, { color: isDark ? '#E2E8F0' : '#0F172A' }]}>More</Text>
               </TouchableOpacity>
             </ScrollView>
           </Animated.View>
@@ -3192,12 +3199,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
   },
 
-  // ── Dark Insight Banner ──
+  // ── Insight Banner ──
   darkInsightPill: {
     backgroundColor: '#0F172A',
     borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -3207,24 +3214,57 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
+  },
+  lightInsightPill: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   darkInsightText: {
-    color: '#FFFFFF',
+    color: '#F1F5F9',
     fontSize: 12.5,
     fontWeight: '600',
+  },
+  lightInsightText: {
+    color: '#0F172A',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
   darkInsightBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(167, 139, 250, 0.18)',
+    backgroundColor: 'rgba(99, 102, 241, 0.25)',
     borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.35)',
+    borderColor: 'rgba(168, 85, 247, 0.4)',
     paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 4.5,
+    borderRadius: 14,
+    gap: 4,
+  },
+  lightInsightBadge: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4338CA',
+    borderWidth: 1,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   darkInsightActionText: {
-    color: '#C084FC',
+    color: '#E0E7FF',
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  lightInsightActionText: {
+    color: '#FFFFFF',
     fontSize: 11.5,
     fontWeight: '700',
   },
@@ -4214,8 +4254,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   actionDockLabel: {
-    color: '#CBD5E1',
-    fontSize: 11.5,
+    color: '#0F172A',
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
