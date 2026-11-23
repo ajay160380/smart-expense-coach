@@ -896,11 +896,8 @@ export default function DashboardScreen({ navigation, route }) {
 
 
 
-  const cleanTipText = (text) => {
-    if (!text) return '';
-    let cleaned = text.replace(/\*([^*]+)\*/g, '$1').replace(/\*/g, '').trim();
-
-    // Dynamically align greeting with device's current local hour (handles cached tips)
+  const parseTipContent = (text) => {
+    const userFirstName = fullName?.split(' ')[0] || (username !== 'User' ? username : 'Ajay');
     const hour = new Date().getHours();
     const isNight = hour >= 21 || hour < 5;
     const isEvening = hour >= 17 && hour < 21;
@@ -909,16 +906,43 @@ export default function DashboardScreen({ navigation, route }) {
 
     const currentGreeting = isMorning ? 'Good Morning' : isAfternoon ? 'Good Afternoon' : isEvening ? 'Good Evening' : 'Good Night';
     const greetingEmoji = isNight ? '🌙' : isEvening ? '🌆' : isAfternoon ? '☀️' : '🌅';
+    const defaultGreeting = `${currentGreeting}${userFirstName ? `, ${userFirstName}` : ''}! ${greetingEmoji}`;
 
-    cleaned = cleaned.replace(
-      /Good\s+(Morning|Afternoon|Evening|Night)(?:[,\s]+([^!.]+))?!?(?:\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{FE0F}]+)?/iu,
-      (match, p1, p2) => {
-        const namePart = p2 ? `, ${p2.trim()}` : '';
-        return `${currentGreeting}${namePart}! ${greetingEmoji}`;
+    if (!text) {
+      return {
+        greeting: defaultGreeting,
+        body: isNight ? "Take a quiet moment to log today's expenses before you sleep." : "Stay mindful of your daily spending goals.",
+      };
+    }
+
+    let cleaned = text.replace(/\*([^*]+)\*/g, '$1').replace(/\*/g, '').trim();
+    const greetingRegex = /^(?:[🌅☀️🌆🌙✨🌌☕]*\s*)?(Good\s+(?:Morning|Afternoon|Evening|Night)(?:[,\s]+[^!.]+)?!?(?:\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{FE0F}]+)?)(.*)$/iu;
+    const match = cleaned.match(greetingRegex);
+
+    if (match) {
+      let matchedGreeting = match[1].trim();
+      matchedGreeting = matchedGreeting.replace(
+        /Good\s+(Morning|Afternoon|Evening|Night)(?:[,\s]+([^!.]+))?!?/iu,
+        (m, p1, p2) => {
+          const name = p2 ? `, ${p2.trim()}` : (userFirstName ? `, ${userFirstName}` : '');
+          return `${currentGreeting}${name}!`;
+        }
+      );
+      if (!matchedGreeting.includes(greetingEmoji)) {
+        matchedGreeting = `${matchedGreeting} ${greetingEmoji}`.trim();
       }
-    );
+      let body = (match[2] || '').trim().replace(/^[!.\-–—\s]+/, '').trim();
+      if (!body) {
+        body = isNight ? "Take a moment to log your expenses before you sleep." : "Stay mindful of your daily spending goals.";
+      }
+      return { greeting: matchedGreeting, body };
+    }
 
-    return cleaned.trim();
+    return { greeting: defaultGreeting, body: cleaned };
+  };
+
+  const cleanTipText = (text) => {
+    return parseTipContent(text).body;
   };
 
   // ── Smart Financial Widgets Calculations ──
@@ -1420,32 +1444,47 @@ export default function DashboardScreen({ navigation, route }) {
 
 
 
-          {/* ── SECTION 2: INSIGHT PILL ("Ask AI / AI Coach" with animated Bot Face) ── */}
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('AIChat');
-            }}
-            activeOpacity={0.88}
-            style={[
-              styles.darkInsightPill,
-              !isDark && styles.lightInsightPill,
-            ]}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-              <Ionicons name="sparkles" size={15} color={isDark ? "#A78BFA" : "#6366F1"} style={{ marginRight: 8 }} />
-              <Text style={[styles.darkInsightText, !isDark && styles.lightInsightText]} numberOfLines={1}>
-                {cleanTipText(dailyTip) || 'Your daily financial insight is ready'}
-              </Text>
-            </View>
-            <View style={[styles.darkInsightBadge, !isDark && styles.lightInsightBadge]}>
-              <AnimatedBotAvatar size={20} isDark={isDark} />
-              <Text style={[styles.darkInsightActionText, !isDark && styles.lightInsightActionText]}>
-                Ask AI
-              </Text>
-              <Ionicons name="chevron-forward" size={11} color={isDark ? "#C084FC" : "#FFFFFF"} style={{ marginLeft: 1 }} />
-            </View>
-          </TouchableOpacity>
+          {/* ── SECTION 2: INSIGHT PILL ("Good Night, Ajay! 🌙" + Full tip + "Ask AI") ── */}
+          {(() => {
+            const parsedTip = parseTipContent(dailyTip);
+            return (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  navigation.navigate('AIChat');
+                }}
+                activeOpacity={0.88}
+                style={[
+                  styles.darkInsightPill,
+                  !isDark && styles.lightInsightPill,
+                ]}
+              >
+                {/* Header Row: Greeting on Left, Animated Bot + Ask AI on Right */}
+                <View style={styles.insightHeaderRow}>
+                  <View style={styles.insightGreetingLeft}>
+                    <Ionicons name="sparkles" size={14} color={isDark ? "#A78BFA" : "#6366F1"} style={{ marginRight: 6 }} />
+                    <Text style={[styles.darkInsightGreetingText, !isDark && styles.lightInsightGreetingText]} numberOfLines={1}>
+                      {parsedTip.greeting}
+                    </Text>
+                  </View>
+                  <View style={[styles.darkInsightBadge, !isDark && styles.lightInsightBadge]}>
+                    <AnimatedBotAvatar size={20} isDark={isDark} />
+                    <Text style={[styles.darkInsightActionText, !isDark && styles.lightInsightActionText]}>
+                      Ask AI
+                    </Text>
+                    <Ionicons name="chevron-forward" size={11} color={isDark ? "#C084FC" : "#FFFFFF"} style={{ marginLeft: 1 }} />
+                  </View>
+                </View>
+
+                {/* Body Row: Full Message — cleanly legible, NEVER cut off! */}
+                {parsedTip.body ? (
+                  <Text style={[styles.darkInsightBodyText, !isDark && styles.lightInsightBodyText]} numberOfLines={2}>
+                    {parsedTip.body}
+                  </Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })()}
 
           {/* ── SECTION 3: QUICK ACTION DOCK (Add, Voice, Split, History, More) ── */}
           <Animated.View style={[styles.actionDockSection, { opacity: animDockOpacity, transform: [{ translateX: animDockX }] }]}>
@@ -3199,15 +3238,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
   },
 
-  // ── Insight Banner ──
+  // ── Insight Card ──
   darkInsightPill: {
     backgroundColor: '#0F172A',
-    borderRadius: 24,
-    paddingVertical: 10,
+    borderRadius: 20,
+    paddingVertical: 12,
     paddingHorizontal: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 14,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
@@ -3221,21 +3257,50 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderColor: '#E2E8F0',
     borderWidth: 1,
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
     shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
   },
-  darkInsightText: {
-    color: '#F1F5F9',
-    fontSize: 12.5,
-    fontWeight: '600',
+  insightHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
-  lightInsightText: {
-    color: '#0F172A',
-    fontSize: 12.5,
+  insightGreetingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  darkInsightGreetingText: {
+    color: '#F8FAFC',
+    fontSize: 13,
     fontWeight: '700',
+  },
+  lightInsightGreetingText: {
+    color: '#0F172A',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  darkInsightBodyText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 6,
+    lineHeight: 17,
+  },
+  lightInsightBodyText: {
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 6,
+    lineHeight: 17,
   },
   darkInsightBadge: {
     flexDirection: 'row',
