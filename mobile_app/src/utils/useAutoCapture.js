@@ -21,13 +21,6 @@ export function useAutoCapture(onCaptureSuccess) {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // Visual confirmation alert
-      Alert.alert(
-        "⚡ Payment Auto-Captured!",
-        `₹${data.amount} at ${data.merchant || 'UPI'}\nAuto-deducted from today's budget.`,
-        [{ text: "Awesome!" }]
-      );
-
       // If already synced by native background thread, no need to post duplicate
       let res = null;
       if (!data.synced) {
@@ -35,6 +28,7 @@ export function useAutoCapture(onCaptureSuccess) {
           const localDateStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
           res = await api.post('/api/quick-add/', {
             amount: data.amount,
+            merchant: data.merchant || '',
             category: 'other',
             description: `⚡ ${data.merchant || 'UPI Payment'}`,
             date: localDateStr,
@@ -45,6 +39,16 @@ export function useAutoCapture(onCaptureSuccess) {
           console.log('Quick add error:', quickErr.message);
         }
       }
+
+      const assignedCat = res?.data?.category || 'Expense';
+      const assignedIcon = res?.data?.icon || '⚡';
+
+      // Visual confirmation alert showing intelligent category
+      Alert.alert(
+        "⚡ Payment Auto-Captured!",
+        `₹${data.amount} at ${data.merchant || 'UPI'}\nCategory: ${assignedCat.toUpperCase()} ${assignedIcon}\nAuto-deducted from today's budget.`,
+        [{ text: "Awesome!" }]
+      );
 
       // Immediately refresh dashboard spent, budget, and transaction list
       DeviceEventEmitter.emit('EXPENSE_UPDATED');

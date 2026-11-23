@@ -105,6 +105,7 @@ object AutoCaptureStorage {
                 val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
                 val body = JSONObject().apply {
                     put("amount", amount)
+                    put("merchant", merchant)
                     put("category", "other")
                     put("description", "⚡ $merchant")
                     put("date", today)

@@ -260,6 +260,7 @@ urlpatterns = [
     path('api/feedback/', views.api_submit_feedback, name='api_feedback'),
     path('api/export/csv/', views.export_csv, name='export_csv'),
     path('api/export/pdf/', views.export_pdf, name='export_pdf'),
+    path('api/import-statement/', views.api_import_statement, name='api_import_statement'),
     path('api/trigger-test-push/', views.api_trigger_test_push, name='api_trigger_test_push'),
     path('api/send-admin-push/', views.api_send_admin_push, name='api_send_admin_push'),
 ]

@@ -142,6 +142,7 @@ class Expense(models.Model):
     client_txn_id = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     is_reviewed = models.BooleanField(default=True)
     dedupe_hash = models.CharField(max_length=64, blank=True, null=True, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now, null=True, blank=True, db_index=True)
 
     def __str__(self):
         return f"{self.category} - ₹{self.amount} ({self.user.username})"
@@ -152,6 +153,25 @@ class Expense(models.Model):
             models.Index(fields=['user', 'date']),
             models.Index(fields=['user', '-date', '-id']),
         ]
+
+
+# ─── NAYA FEATURE: Self-Learning Merchant Categorization Rules ───
+class MerchantRule(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='merchant_rules')
+    merchant_key = models.CharField(max_length=150, db_index=True)
+    category = models.CharField(max_length=100)
+    icon = models.CharField(max_length=10, default="📦")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'merchant_key')
+        indexes = [
+            models.Index(fields=['user', 'merchant_key']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username}: {self.merchant_key} -> {self.category}"
 
 class Subscription(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

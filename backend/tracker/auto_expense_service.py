@@ -12,32 +12,65 @@ from django.db.models import Q
 from .models import Expense, UserProfile, UserMerchantCategory
 
 MERCHANT_CATEGORY_MAP = {
-    # Groceries & Quick-Commerce
+    # Groceries & Quick-Commerce (food)
     "blinkit": "food",
     "zepto": "food",
     "bigbasket": "food",
     "instamart": "food",
     "bb daily": "food",
     "dmart": "food",
+    "d-mart": "food",
     "nature's basket": "food",
+    "more retail": "food",
+    "spencers": "food",
+    "supermarket": "food",
+    "kirana": "food",
+    "provision": "food",
+    "grocery": "food",
+    "dairy": "food",
+    "milk": "food",
+    "amul": "food",
+    "mother dairy": "food",
+    "country delight": "food",
+    "licious": "food",
+    "freshtohome": "food",
+    "sabzi": "food",
+    "vegetable": "food",
+    "fruit": "food",
     
-    # Food & Dining
+    # Food & Dining (food)
     "swiggy": "food",
     "zomato": "food",
     "starbucks": "food",
-    "mcdonalds": "food",
+    "mcdonald": "food",
     "kfc": "food",
     "dominos": "food",
-    "pizza hut": "food",
+    "pizza": "food",
     "burger king": "food",
     "chaayos": "food",
     "chai point": "food",
     "haldiram": "food",
+    "bikanervala": "food",
     "subway": "food",
     "behrouz": "food",
     "faasos": "food",
+    "eatfit": "food",
+    "biryani": "food",
+    "restaurant": "food",
+    "dhaba": "food",
+    "cafe": "food",
+    "kitchen": "food",
+    "sweet": "food",
+    "mithai": "food",
+    "bakery": "food",
+    "wow momo": "food",
+    "dineout": "food",
+    "tapri": "food",
+    "chai": "food",
+    "coffee": "food",
+    "bhojanalaya": "food",
     
-    # Shopping
+    # Shopping (shopping)
     "amazon": "shopping",
     "flipkart": "shopping",
     "myntra": "shopping",
@@ -49,19 +82,54 @@ MERCHANT_CATEGORY_MAP = {
     "h&m": "shopping",
     "reliance digital": "shopping",
     "croma": "shopping",
+    "vijay sales": "shopping",
+    "decathlon": "shopping",
+    "lenskart": "shopping",
+    "snitch": "shopping",
+    "uniqlo": "shopping",
+    "pantaloons": "shopping",
+    "max fashion": "shopping",
+    "westside": "shopping",
+    "shoppers stop": "shopping",
+    "lifestyle": "shopping",
+    "trends": "shopping",
+    "bata": "shopping",
     
-    # Transport
+    # Transport & Fuel (transport)
     "uber": "transport",
     "ola": "transport",
     "rapido": "transport",
     "irctc": "transport",
     "redbus": "transport",
+    "abhibus": "transport",
     "makemytrip": "transport",
+    "goibibo": "transport",
     "indigo": "transport",
     "air india": "transport",
     "fastag": "transport",
+    "metro": "transport",
+    "dmrc": "transport",
+    "bmrc": "transport",
+    "mmrcl": "transport",
+    "yatri": "transport",
+    "petrol": "transport",
+    "fuel": "transport",
+    "diesel": "transport",
+    "cng": "transport",
+    "iocl": "transport",
+    "indianoil": "transport",
+    "indian oil": "transport",
+    "bpcl": "transport",
+    "bharat petroleum": "transport",
+    "hpcl": "transport",
+    "hindustan petroleum": "transport",
+    "shell": "transport",
+    "toll": "transport",
+    "parking": "transport",
+    "auto": "transport",
+    "cab": "transport",
     
-    # Entertainment
+    # Entertainment (entertainment)
     "netflix": "entertainment",
     "spotify": "entertainment",
     "hotstar": "entertainment",
@@ -69,25 +137,83 @@ MERCHANT_CATEGORY_MAP = {
     "bookmyshow": "entertainment",
     "pvr": "entertainment",
     "inox": "entertainment",
+    "cinepolis": "entertainment",
     "youtube": "entertainment",
+    "sonyliv": "entertainment",
+    "zee5": "entertainment",
+    "steam": "entertainment",
+    "playstation": "entertainment",
+    "apple.com": "entertainment",
+    "google play": "entertainment",
+    "cinema": "entertainment",
+    "movie": "entertainment",
     
-    # Health
+    # Health & Medical (health)
     "apollo": "health",
     "1mg": "health",
+    "tata 1mg": "health",
     "pharmeasy": "health",
     "netmeds": "health",
     "practo": "health",
+    "medplus": "health",
+    "pharmacy": "health",
+    "chemist": "health",
+    "hospital": "health",
+    "clinic": "health",
+    "doctor": "health",
+    "pathlab": "health",
+    "cult.fit": "health",
+    "cultfit": "health",
+    "gym": "health",
     
-    # Utilities
+    # Utilities & Bills (utilities)
     "bescom": "utilities",
     "tneb": "utilities",
     "mahadiscom": "utilities",
+    "uppcl": "utilities",
+    "msedcl": "utilities",
+    "bses": "utilities",
+    "adani electricity": "utilities",
+    "tatapower": "utilities",
+    "tata power": "utilities",
     "airtel": "utilities",
     "jio": "utilities",
     "vi": "utilities",
-    "tatapower": "utilities",
-    "adani electricity": "utilities",
+    "vodafone": "utilities",
+    "bsnl": "utilities",
+    "act fibernet": "utilities",
+    "hathway": "utilities",
+    "tata play": "utilities",
+    "dth": "utilities",
+    "broadband": "utilities",
+    "wifi": "utilities",
+    "gas": "utilities",
+    "igl": "utilities",
+    "mgl": "utilities",
+    "rent": "utilities",
+    "maintenance": "utilities",
+    
+    # Education (education)
+    "udemy": "education",
+    "coursera": "education",
+    "unacademy": "education",
+    "physicswallah": "education",
+    "byjus": "education",
+    "school": "education",
+    "college": "education",
+    "tuition": "education",
+    "coaching": "education",
+    "books": "education",
+    "stationery": "education",
 }
+
+def clean_merchant_name(text: str) -> str:
+    if not text:
+        return ""
+    import re
+    cleaned = re.sub(r"[^\w\s&'.-]", " ", text)
+    cleaned = re.sub(r"(?i)\b(?:payment to|paid to|sent to|transferred to|upi|txn|info)\b", " ", cleaned)
+    return " ".join(cleaned.lower().split()).strip()
 
 CAT_ICONS = {
     "food": "🍜",
@@ -107,21 +233,26 @@ def determine_merchant_category(user, merchant: str, description: str = "") -> s
     3. Check keyword heuristics
     4. Fallback to 'other'
     """
-    cleaned_merchant = merchant.strip().lower()
+    cleaned_merchant = clean_merchant_name(merchant)
 
-    # 1. Per-user category memory
+    # 1. Per-user category memory (100% priority for user's trained rules)
     if user and user.is_authenticated:
         saved_pref = UserMerchantCategory.objects.filter(user=user, merchant__iexact=cleaned_merchant).first()
         if saved_pref:
             return saved_pref.category
+        # Also check without exact match (e.g. "ramesh store" in "ramesh store bangalore")
+        rules = UserMerchantCategory.objects.filter(user=user)
+        for r in rules:
+            if r.merchant.lower() in cleaned_merchant:
+                return r.category
 
     # 2. Curated merchant map
-    for key, cat in MERCHANT_CATEGORY_MAP.items():
+    for key, cat in sorted(MERCHANT_CATEGORY_MAP.items(), key=lambda x: len(x[0]), reverse=True):
         if key in cleaned_merchant:
             return cat
 
     # 3. Keyword check on combined merchant and description
-    combined = f"{cleaned_merchant} {description.lower()}".strip()
+    combined = f"{cleaned_merchant} {clean_merchant_name(description)}".strip()
     from .views import CAT_KEYWORDS
     for cat, keywords in CAT_KEYWORDS.items():
         if any(kw in combined for kw in keywords):
@@ -179,22 +310,34 @@ def process_auto_expense(user, amount, merchant: str, source: str = "auto", time
                 "source": existing_txn.source,
             }, 200
 
-    # 2. Hash-based Deduplication Key
-    dedupe_str = f"{user.id}:{float(amt):.2f}:{merchant_name.lower()}:{parsed_date.isoformat()}"
-    dedupe_hash = hashlib.sha256(dedupe_str.encode('utf-8')).hexdigest()
+    # 2. Debounce window deduplication (120 seconds): Prevents App Notification + Bank SMS double counting
+    # while NEVER dropping genuine repeated purchases (like 2nd coffee or metro ticket later in the day)
+    recent_cutoff = timezone.now() - timedelta(seconds=120)
+    existing_recent = Expense.objects.filter(
+        user=user,
+        amount=amt,
+        date=parsed_date,
+        created_at__gte=recent_cutoff
+    ).first()
+    if existing_recent:
+        clean_curr = clean_merchant_name(merchant_name)
+        clean_prev = clean_merchant_name(existing_recent.description or "")
+        if (clean_curr and clean_prev and (clean_curr in clean_prev or clean_prev in clean_curr)) or (not clean_curr and not clean_prev):
+            return True, {
+                "status": "duplicate",
+                "message": "Debounce: duplicate capture ignored within 2 minutes.",
+                "expense_id": existing_recent.id,
+                "amount": float(existing_recent.amount),
+                "merchant": merchant_name,
+                "category": existing_recent.category,
+                "date": existing_recent.date.isoformat(),
+                "source": existing_recent.source,
+            }, 200
 
-    existing_hash = Expense.objects.filter(user=user, dedupe_hash=dedupe_hash).first()
-    if existing_hash:
-        return True, {
-            "status": "duplicate",
-            "message": "Duplicate payment already captured for today.",
-            "expense_id": existing_hash.id,
-            "amount": float(existing_hash.amount),
-            "merchant": merchant_name,
-            "category": existing_hash.category,
-            "date": existing_hash.date.isoformat(),
-            "source": existing_hash.source,
-        }, 200
+    # Bucket dedupe hash with 2-minute time window for database uniqueness
+    time_bucket = int(timezone.now().timestamp() // 120)
+    dedupe_str = f"{user.id}:{float(amt):.2f}:{merchant_name.lower()}:{parsed_date.isoformat()}:{time_bucket}"
+    dedupe_hash = hashlib.sha256(dedupe_str.encode('utf-8')).hexdigest()
 
     # 3. Flag possible manual duplicate (same amount & merchant on same day)
     recent_possible_dup = Expense.objects.filter(

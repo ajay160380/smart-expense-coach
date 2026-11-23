@@ -5076,26 +5076,50 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
                 "date": existing.date.isoformat(),
             }, status=200)
 
-    # 2. Compute dedupe hash to prevent duplicate submission within same day
+    from .auto_expense_service import determine_merchant_category, clean_merchant_name
+
     desc = validated.get("description", "") or ""
-    dedupe_str = f"{request.user.id}:{float(validated['amount']):.2f}:{desc.lower().strip()}:{validated['date'].isoformat()}"
+    merchant_raw = data.get("merchant") or desc
+
+    # 2. Smart Auto-Categorization: If category is 'other' or default, intelligently resolve
+    # from User's trained memory first, then curated merchant directory, then keywords
+    if validated.get("category") in ("other", "", None) or data.get("category") in ("other", "", None):
+        smart_cat = determine_merchant_category(request.user, merchant_raw, desc)
+        if smart_cat and smart_cat != "other":
+            validated["category"] = smart_cat
+
+    # 3. 120-Second Debounce Window: Prevents duplicate SMS + App Notification captures
+    # while NEVER dropping genuine repeated purchases (like 2nd/3rd tea or metro rides later in the day)
+    recent_cutoff = timezone.now() - timedelta(seconds=120)
+    recent_dup = Expense.objects.filter(
+        user=request.user,
+        amount=validated["amount"],
+        date=validated["date"],
+        created_at__gte=recent_cutoff
+    ).first()
+
+    if recent_dup:
+        curr_m = clean_merchant_name(merchant_raw)
+        prev_m = clean_merchant_name(recent_dup.description or "")
+        if (curr_m and prev_m and (curr_m in prev_m or prev_m in curr_m)) or (not curr_m and not prev_m):
+            return JsonResponse({
+                "status": "duplicate",
+                "expense_id": recent_dup.pk,
+                "message": "Debounce: duplicate capture ignored within 2 minutes",
+                "amount": float(recent_dup.amount),
+                "category": recent_dup.category,
+                "date": recent_dup.date.isoformat(),
+            }, status=200)
+
+    time_bucket = int(timezone.now().timestamp() // 120)
+    dedupe_str = f"{request.user.id}:{float(validated['amount']):.2f}:{clean_merchant_name(desc)}:{validated['date'].isoformat()}:{time_bucket}"
     dedupe_hash = hashlib.sha256(dedupe_str.encode('utf-8')).hexdigest()
-    
-    existing_hash = Expense.objects.filter(user=request.user, dedupe_hash=dedupe_hash).first()
-    if existing_hash:
-        return JsonResponse({
-            "status": "duplicate",
-            "expense_id": existing_hash.pk,
-            "message": "Duplicate expense already recorded for today",
-            "amount": float(existing_hash.amount),
-            "category": existing_hash.category,
-            "date": existing_hash.date.isoformat(),
-        }, status=200)
 
     expense = Expense.objects.create(
         user=request.user,
         amount=validated["amount"],
         category=validated["category"],
+        icon=CAT_ICONS.get(validated["category"], "📦"),
         date=validated["date"],
         description=desc,
         client_txn_id=client_txn_id,
@@ -5111,13 +5135,14 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
         "message":    f"{CAT_ICONS.get(validated['category'],'📦')} ₹{validated['amount']:,} saved!",
         "amount":     float(validated["amount"]),
         "category":   validated["category"],
+        "icon":       expense.icon,
         "date":       validated["date"].isoformat(),
     }, status=201)
 
 
 @api_login_required
 def api_edit_expense(request: HttpRequest, pk: int) -> JsonResponse:
-    """JSON API for editing an expense from Mobile/PWA."""
+    """JSON API for editing an expense from Mobile/PWA with Self-Learning Merchant Memory."""
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=405)
 
@@ -5138,7 +5163,21 @@ def api_edit_expense(request: HttpRequest, pk: int) -> JsonResponse:
 
     if "category" in data:
         category = str(data["category"]).strip().lower()
-        expense.category = category
+        if category in VALID_CATEGORIES:
+            old_cat = expense.category
+            expense.category = category
+            expense.icon = CAT_ICONS.get(category, "📦")
+
+            # Self-Learning Engine: Learn user's preferred category for this merchant
+            from .auto_expense_service import clean_merchant_name
+            merchant_key = clean_merchant_name(expense.description or "")
+            if merchant_key and len(merchant_key) >= 2 and old_cat != category:
+                UserMerchantCategory.objects.update_or_create(
+                    user=request.user,
+                    merchant=merchant_key,
+                    defaults={'category': category}
+                )
+                logger.info("🧠 Learned merchant rule for uid=%s: '%s' -> '%s'", request.user.id, merchant_key, category)
 
     if "description" in data:
         expense.description = str(data["description"]).strip()[:255]
@@ -5160,6 +5199,7 @@ def api_edit_expense(request: HttpRequest, pk: int) -> JsonResponse:
         "expense_id": expense.pk,
         "amount": float(expense.amount),
         "category": expense.category,
+        "icon": expense.icon,
         "date": expense.date.isoformat(),
     })
 
@@ -5181,6 +5221,123 @@ def check_updates(request):
     latest_expense = Expense.objects.filter(user=request.user).order_by('-id').first()
     latest_id = latest_expense.id if latest_expense else 0
     return JsonResponse({'latest_id': latest_id})
+
+
+@csrf_exempt
+@api_login_required
+def api_import_statement(request: HttpRequest) -> JsonResponse:
+    """
+    Ingests Bank / UPI Statement (Raw Text, SMS dump, or CSV)
+    Parses transactions, applies Smart Auto-Categorization & Merchant Memory,
+    deduplicates against existing expenses, and backfills user's budget.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    raw_text = ""
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            body = json.loads(request.body)
+            raw_text = body.get("text", "") or body.get("csv", "")
+        except Exception:
+            pass
+    elif request.FILES.get("file"):
+        uploaded = request.FILES["file"]
+        raw_text = uploaded.read().decode("utf-8", errors="ignore")
+    else:
+        raw_text = request.POST.get("text", "") or request.POST.get("csv", "")
+
+    if not raw_text or not raw_text.strip():
+        return JsonResponse({"error": "No statement text or file provided."}, status=400)
+
+    from .auto_expense_service import determine_merchant_category, clean_merchant_name
+
+    imported_expenses = []
+    skipped_duplicates = 0
+    total_imported_amount = Decimal("0")
+
+    date_regex = re.compile(r"(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})", re.IGNORECASE)
+
+    lines = raw_text.splitlines()
+    for line in lines:
+        line_str = line.strip()
+        if not line_str or len(line_str) < 5:
+            continue
+
+        lower = line_str.lower()
+        if "credited" in lower or "credit alert" in lower or "otp" in lower:
+            continue
+
+        amt_match = re.search(r"(?:debited|spent|paid|withdrawn|txn|dr|deducted)?\s*(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{1,2})?)", line_str, re.IGNORECASE)
+        if not amt_match:
+            amt_match = re.search(r"(?:^|,|\s)([\d,]+\.\d{2})(?:,|$|\s)", line_str)
+
+        if not amt_match:
+            continue
+
+        amt_str = amt_match.group(1).replace(",", "")
+        try:
+            parsed_amt = Decimal(amt_str)
+            if parsed_amt <= 0:
+                continue
+        except Exception:
+            continue
+
+        parsed_date = date.today()
+        d_match = date_regex.search(line_str)
+        if d_match:
+            raw_d = d_match.group(1).strip()
+            for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y", "%d-%m-%y", "%Y-%m-%d", "%d %b %Y", "%d %B %Y"):
+                try:
+                    parsed_date = datetime.strptime(raw_d, fmt).date()
+                    break
+                except ValueError:
+                    pass
+
+        merchant_name = "Bank / UPI Debit"
+        m_match = re.search(r"(?:to|at|info:)\s+([A-Za-z0-9\s&'.-]+?)(?=\s+on|\s+ref|\s+upi|\s+via|\.|\s*$)", line_str, re.IGNORECASE)
+        if m_match:
+            candidate = m_match.group(1).strip()
+            if len(candidate) >= 2:
+                merchant_name = candidate
+
+        existing = Expense.objects.filter(
+            user=request.user,
+            amount=parsed_amt,
+            date=parsed_date,
+            description__icontains=clean_merchant_name(merchant_name) if len(clean_merchant_name(merchant_name)) >= 3 else merchant_name
+        ).exists()
+        if existing:
+            skipped_duplicates += 1
+            continue
+
+        cat = determine_merchant_category(request.user, merchant_name, line_str)
+        icon = CAT_ICONS.get(cat, "📦")
+
+        exp = Expense(
+            user=request.user,
+            amount=parsed_amt,
+            category=cat,
+            icon=icon,
+            date=parsed_date,
+            description=f"⚡ {merchant_name[:100]}",
+            source="import"
+        )
+        imported_expenses.append(exp)
+        total_imported_amount += parsed_amt
+
+    if imported_expenses:
+        Expense.objects.bulk_create(imported_expenses)
+        update_user_gamification(request.user, date.today())
+        invalidate_user_caches(request.user)
+
+    return JsonResponse({
+        "status": "success",
+        "imported_count": len(imported_expenses),
+        "total_amount": float(total_imported_amount),
+        "duplicates_skipped": skipped_duplicates,
+        "message": f"Successfully imported {len(imported_expenses)} transactions (₹{total_imported_amount:,.0f})! 🎉"
+    })
 
 
 # ══════════════════════════════════════════════════════════════════════════════
