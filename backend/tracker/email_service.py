@@ -27,12 +27,12 @@ def send_transactional_email(to_email, subject, body, html_body=None):
 
     # 1. Try Brevo HTTP API (Port 443 HTTPS - Sends to ANY recipient without domain verification!)
     if brevo_key:
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <noreply@smart-expense-coach.com>')
-        sender_email = getattr(settings, 'EMAIL_HOST_USER', '') or 'ajaykumar160380@gmail.com'
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Expense Tracker <ajaykumar160380@gmail.com>')
+        brevo_sender = getattr(settings, 'BREVO_SENDER_EMAIL', '') or os.getenv('BREVO_SENDER_EMAIL', '')
+        sender_email = brevo_sender or 'ajaykumar160380@gmail.com'
         sender_name = 'Expense Tracker'
-        if '<' in str(from_email) and '>' in str(from_email):
-            sender_name = str(from_email).split('<')[0].strip()
-            sender_email = str(from_email).split('<')[1].replace('>', '').strip()
+        if not brevo_sender and '<' in str(from_email) and '>' in str(from_email):
+            sender_name = str(from_email).split('<')[0].strip() or 'Expense Tracker'
 
         try:
             payload = {
