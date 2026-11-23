@@ -73,6 +73,7 @@ export default function ProfileScreen({ navigation }) {
   // Email verification modal states
   const [verifyModalVisible, setVerifyModalVisible] = useState(false);
   const [verifyOtp, setVerifyOtp] = useState('');
+  const [pendingVerifyEmail, setPendingVerifyEmail] = useState('');
   const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
 
@@ -153,8 +154,8 @@ export default function ProfileScreen({ navigation }) {
     setDeleteModalVisible(true);
   };
 
-  const handleSendEmailVerification = async () => {
-    const emailToVerify = profile?.email;
+  const handleSendEmailVerification = async (targetEmail = null) => {
+    const emailToVerify = (targetEmail || pendingVerifyEmail || profile?.email || '').trim();
     if (!emailToVerify) {
       Alert.alert('Missing Email', 'Please edit your profile and add an email address first.');
       return;
@@ -162,9 +163,13 @@ export default function ProfileScreen({ navigation }) {
     setSendingEmailOtp(true);
     try {
       const res = await api.post('/api/auth/send-email-verification/', { email: emailToVerify });
-      Alert.alert('Code Sent! 📬', res.data?.message || 'A 6-digit verification code was sent to your email. Please enter the OTP.');
+      setPendingVerifyEmail(emailToVerify);
       setVerifyOtp('');
       setVerifyModalVisible(true);
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (e) {}
+      Alert.alert('Code Sent! 📬', res.data?.message || `A 6-digit verification code was sent to ${emailToVerify}. Please enter the OTP.`);
     } catch (error) {
       Alert.alert('Error', formatApiError(error));
     } finally {
@@ -173,6 +178,11 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleConfirmEmailOtp = async () => {
+    const targetEmail = (pendingVerifyEmail || profile?.email || '').trim();
+    if (!targetEmail) {
+      Alert.alert('Error', 'No email address found to verify.');
+      return;
+    }
     if (!verifyOtp || verifyOtp.trim().length !== 6) {
       Alert.alert('Error', 'Please enter the 6-digit code received in your email.');
       return;
@@ -180,12 +190,24 @@ export default function ProfileScreen({ navigation }) {
     setVerifyingEmail(true);
     try {
       const res = await api.post('/api/auth/verify-email/', {
-        email: profile?.email,
+        email: targetEmail,
         otp: verifyOtp.trim(),
       });
-      Alert.alert('Verified! 🎉', res.data?.message || 'Your email has been verified.');
+      const updatedProfile = {
+        ...(profile || {}),
+        email: targetEmail,
+        email_verified: true,
+      };
+      setProfile(updatedProfile);
+      await AsyncStorage.setItem('user_profile', JSON.stringify(updatedProfile));
+
       setVerifyModalVisible(false);
       setVerifyOtp('');
+      setPendingVerifyEmail('');
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (e) {}
+      Alert.alert('Verified! 🎉', res.data?.message || 'Your email has been verified and linked successfully.');
       fetchProfile();
     } catch (error) {
       Alert.alert('Verification Failed', formatApiError(error));
@@ -242,13 +264,16 @@ export default function ProfileScreen({ navigation }) {
     const newFName = editFirstName.trim();
     const newLName = editLastName.trim();
     const newEMail = editEmail.trim();
+    const currentEMail = (profile?.email || '').trim();
+    const isEmailChanging = Boolean(newEMail && newEMail.toLowerCase() !== currentEMail.toLowerCase());
 
     try {
+      // 1. Save profile details (if email is changing, keep current email until verified by OTP)
       const res = await api.post('/api/profile/', {
         username: newUName,
         first_name: newFName,
         last_name: newLName,
-        email: newEMail,
+        email: isEmailChanging ? currentEMail : newEMail,
       });
 
       const updatedFullName = `${newFName} ${newLName}`.trim() || newUName;
@@ -258,7 +283,7 @@ export default function ProfileScreen({ navigation }) {
         first_name: newFName,
         last_name: newLName,
         full_name: updatedFullName,
-        email: newEMail,
+        email: isEmailChanging ? currentEMail : newEMail,
       };
 
       setProfile(updatedProfile);
@@ -270,6 +295,32 @@ export default function ProfileScreen({ navigation }) {
       ]);
       
       DeviceEventEmitter.emit('USERNAME_CHANGED', newUName);
+
+      // 2. If user changed their email, immediately prompt for OTP verification on the new email
+      if (isEmailChanging) {
+        setSubmittingProfile(false);
+        setEditProfileVisible(false);
+
+        setSendingEmailOtp(true);
+        try {
+          const otpRes = await api.post('/api/auth/send-email-verification/', { email: newEMail });
+          setPendingVerifyEmail(newEMail);
+          setVerifyOtp('');
+          setVerifyModalVisible(true);
+          try {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch (e) {}
+          Alert.alert(
+            'Verification Code Sent! 📬',
+            `A 6-digit confirmation code was sent to ${newEMail}. Please enter the OTP to verify and update your email.`
+          );
+        } catch (otpErr) {
+          Alert.alert('Email Verification Notice', formatApiError(otpErr));
+        } finally {
+          setSendingEmailOtp(false);
+        }
+        return;
+      }
 
       setEditProfileVisible(false);
       try {
@@ -704,8 +755,8 @@ export default function ProfileScreen({ navigation }) {
             onPress={handleLogout}
             activeOpacity={0.8}
           >
-            <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
-            <Text style={styles.logoutText}>Sign Out</Text>
+            <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8, backgroundColor: 'transparent' }} />
+            <Text style={[styles.logoutText, { backgroundColor: 'transparent' }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
 
@@ -857,13 +908,17 @@ export default function ProfileScreen({ navigation }) {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, isDark && { color: '#F8FAFC' }]}>Verify Email Code</Text>
+              <Text style={[styles.modalTitle, isDark && { color: '#F8FAFC' }]}>Verify Email OTP</Text>
               <TouchableOpacity onPress={() => setVerifyModalVisible(false)}>
                 <Ionicons name="close" size={24} color={isDark ? '#F1F5F9' : '#1F2937'} />
               </TouchableOpacity>
             </View>
             <Text style={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: 13, marginBottom: 16 }}>
-              We sent a 6-digit confirmation code to {profile?.email}. Enter it below:
+              We sent a 6-digit confirmation code to{' '}
+              <Text style={{ fontWeight: '700', color: isDark ? '#38BDF8' : '#2563EB' }}>
+                {pendingVerifyEmail || profile?.email}
+              </Text>
+              . Enter it below to verify:
             </Text>
             <TextInput
               style={[styles.textInput, { minHeight: 54, fontSize: 22, letterSpacing: 6, textAlign: 'center', fontWeight: '800' }, isDark && styles.textInputDark]}
@@ -884,6 +939,16 @@ export default function ProfileScreen({ navigation }) {
               ) : (
                 <Text style={styles.submitFeedbackText}>Verify & Confirm Email</Text>
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ marginTop: 14, alignItems: 'center', padding: 8 }}
+              onPress={() => handleSendEmailVerification(pendingVerifyEmail || profile?.email)}
+              disabled={sendingEmailOtp}
+            >
+              <Text style={{ color: isDark ? '#60A5FA' : '#2563EB', fontSize: 13, fontWeight: '700' }}>
+                {sendingEmailOtp ? 'Sending code...' : 'Didn’t receive code? Resend OTP'}
+              </Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -1290,8 +1355,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   logoutBtnDark: {
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-    borderColor: 'rgba(239, 68, 68, 0.25)',
+    backgroundColor: '#1E1418',
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowColor: 'transparent',
   },
   logoutText: {
     color: '#EF4444',

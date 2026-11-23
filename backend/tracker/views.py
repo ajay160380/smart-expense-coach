@@ -8518,19 +8518,14 @@ def api_delete_account(request):
 def api_send_email_verification(request):
     """Sends a 6-digit email verification OTP to user's registered or updated email."""
     user = request.user
-    email = request.data.get('email') or user.email
+    email = (request.data.get('email') or user.email or '').strip()
     if not email or '@' not in str(email):
         return Response({'error': 'A valid email address is required.'}, status=400)
     
-    # Update email on user if modified
-    if email != user.email:
+    # Check if this email is already registered to another user
+    if email.lower() != (user.email or '').lower():
         if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
             return Response({'error': 'This email is already associated with another account.'}, status=400)
-        user.email = email
-        user.save()
-        profile, _ = UserProfile.objects.get_or_create(user=user)
-        profile.email_verified = False
-        profile.save()
 
     # Rate limiting (10 attempts per 5 mins so user is never blocked while testing)
     recent = OTPVerification.objects.filter(identifier=email, created_at__gte=timezone.now() - timedelta(minutes=5)).count()
@@ -8567,6 +8562,7 @@ def api_send_email_verification(request):
         'status': 'success',
         'email_sent': email_sent,
         'provider': info.get('provider'),
+        'email': email,
         'message': f'Verification code sent to {email}. Check your inbox!'
     }
     return Response(resp)
@@ -8595,9 +8591,9 @@ def api_debug_email(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def api_verify_email_otp(request):
-    """Validates the 6-digit OTP code and marks email as verified."""
+    """Validates the 6-digit OTP code, updates user.email if changed, and marks email as verified."""
     user = request.user
-    email = request.data.get('email') or user.email
+    email = (request.data.get('email') or user.email or '').strip()
     otp_code = request.data.get('otp')
     
     if not email or not otp_code:
@@ -8624,12 +8620,25 @@ def api_verify_email_otp(request):
     if not otp_record:
         return Response({'error': 'Invalid or expired OTP code.'}, status=400)
         
+    # If this was an email update, update user.email
+    if email.lower() != (user.email or '').lower():
+        if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            return Response({'error': 'This email is already associated with another account.'}, status=400)
+        user.email = email
+        user.save(update_fields=['email'])
+
     profile, _ = UserProfile.objects.get_or_create(user=user)
     profile.email_verified = True
-    profile.save()
+    profile.save(update_fields=['email_verified'])
+    invalidate_user_caches(user)
     otp_record.delete()
     
-    return Response({'status': 'success', 'message': 'Email verified successfully! 🎉'})
+    return Response({
+        'status': 'success',
+        'message': 'Email verified & updated successfully! 🎉',
+        'email': user.email,
+        'email_verified': True
+    })
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -721,9 +721,23 @@ export default function MoreFeaturesScreen({ navigation }) {
         </View>
 
         {/* ── Sign Out Button ── */}
-        <TouchableOpacity style={[styles.logoutBtn, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.12)', borderColor: 'rgba(239, 68, 68, 0.3)', elevation: 0, shadowOpacity: 0 }]} onPress={handleLogout} activeOpacity={0.8}>
-          <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8 }} />
-          <Text style={styles.logoutText}>Sign Out</Text>
+        <TouchableOpacity
+          style={[
+            styles.logoutBtn,
+            isDark && {
+              backgroundColor: '#1E1418',
+              borderColor: 'rgba(239, 68, 68, 0.35)',
+              elevation: 0,
+              shadowOpacity: 0,
+              shadowRadius: 0,
+              shadowColor: 'transparent',
+            }
+          ]}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="log-out-outline" size={19} color="#EF4444" style={{ marginRight: 8, backgroundColor: 'transparent' }} />
+          <Text style={[styles.logoutText, { backgroundColor: 'transparent' }]}>Sign Out</Text>
         </TouchableOpacity>
 
         {/* ── Developer Footer ── */}
