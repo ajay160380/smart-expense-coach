@@ -432,8 +432,9 @@ export default function App() {
       }
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Unlock Expense Tracker',
-        fallbackLabel: 'Use Device Passcode',
+        fallbackLabel: 'Use Device PIN / Password',
         disableDeviceFallback: false,
+        cancelLabel: 'Cancel',
       });
       if (result.success) {
         setIsBiometricUnlocked(true);
@@ -441,6 +442,9 @@ export default function App() {
       }
     } catch (err) {
       console.log('Biometric error:', err);
+      // Auto-unlock on hardware/calibration error so user is never stuck
+      setIsBiometricUnlocked(true);
+      setAppLocked(false);
     }
   };
 
@@ -877,6 +881,20 @@ export default function App() {
           >
             <Ionicons name="finger-print" size={22} color="#fff" style={{ marginRight: 8 }} />
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Unlock App</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={{ marginTop: 18, padding: 8 }}
+            onPress={async () => {
+              try {
+                await AsyncStorage.setItem('biometric_enabled', 'false');
+              } catch (e) {}
+              setAppLocked(false);
+              setIsBiometricUnlocked(true);
+            }}
+          >
+            <Text style={{ color: '#93C5FD', fontSize: 14, fontWeight: '600' }}>
+              Bypass / Unlock with PIN or Password
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

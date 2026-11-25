@@ -321,18 +321,19 @@ async function startBot(sessionName = null) {
         if (!msg.message || msg.key.fromMe || msg.key.remoteJid.includes('@g.us') || msg.key.remoteJid === 'status@broadcast') return;
 
         const innerMsg = msg.message?.ephemeralMessage?.message || msg.message?.viewOnceMessage?.message || msg.message?.viewOnceMessageV2?.message || msg.message;
-        const text = (innerMsg?.conversation || innerMsg?.extendedTextMessage?.text || '').trim();
+        const text = (innerMsg?.conversation || innerMsg?.extendedTextMessage?.text || innerMsg?.imageMessage?.caption || '').trim();
         const audioMsg = innerMsg?.audioMessage;
+        const imageMsg = innerMsg?.imageMessage || (innerMsg?.documentMessage?.mimetype?.startsWith('image/') ? innerMsg.documentMessage : null);
 
-        if (!text && !audioMsg) return;
+        if (!text && !audioMsg && !imageMsg) return;
 
         const remoteJid = msg.key.remoteJid;
         const phone = remoteJid.split('@')[0].split(':')[0];
         const pushName = msg.pushName || "User";
         const maskedPhone = phone.length >= 7 ? `${phone.slice(0, 3)}***${phone.slice(-3)}` : '***';
-        console.log(`📩 Received ${audioMsg ? 'voice note' : 'message'} from ${maskedPhone} (${pushName})`);
+        console.log(`📩 Received ${audioMsg ? 'voice note' : (imageMsg ? 'bill/receipt photo' : 'message')} from ${maskedPhone} (${pushName})`);
 
-        // ── Send Blue Tick (Read Receipt) & Presence (recording for voice, composing for text) ──
+        // ── Send Blue Tick (Read Receipt) & Presence ──
         try {
             await sock.readMessages([msg.key]);
             await sock.sendPresenceUpdate(audioMsg ? 'recording' : 'composing', remoteJid);
@@ -354,6 +355,26 @@ async function startBot(sessionName = null) {
             } catch (err) {
                 console.error('❌ Failed to download audio media:', err);
                 await safeReply(remoteJid, '⚠️ Voice note download nahi ho paya. Kripya dobara boliye ya type karke bhejiye! 😊', msg);
+                return;
+            }
+        }
+
+        // ── Download Image Buffer if Bill / Receipt Photo ──
+        let imageBase64 = null;
+        if (imageMsg) {
+            try {
+                await sock.sendPresenceUpdate('composing', remoteJid);
+                const buffer = await downloadMediaMessage(
+                    msg,
+                    'buffer',
+                    {},
+                    { logger: pino({ level: 'silent' }) }
+                );
+                imageBase64 = buffer.toString('base64');
+                console.log(`📸 Downloaded receipt image (${buffer.length} bytes) from ${maskedPhone}`);
+            } catch (err) {
+                console.error('❌ Failed to download image media:', err);
+                await safeReply(remoteJid, '⚠️ Bill photo download nahi ho paya. Kripya dobara bhej kar dekhein! 📸', msg);
                 return;
             }
         }
@@ -544,6 +565,8 @@ async function startBot(sessionName = null) {
                     text: text || '',
                     audio_base64: audioBase64,
                     audio_format: '.ogg',
+                    image_base64: imageBase64,
+                    image_format: '.jpg',
                     name: pushName,
                     message_id: msg.key?.id || '',
                     sender_id: remoteJid || phone

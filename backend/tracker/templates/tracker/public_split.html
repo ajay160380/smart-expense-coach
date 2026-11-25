@@ -1263,8 +1263,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ debtor, creditor, amount })
         });
-        const data = await res.json();
-        if (data.status === 'success') {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.status === 'success') {
           showToast(data.message || 'Payment recorded! ✅');
           setTimeout(() => { window.location.reload(); }, 600);
         } else {
@@ -1288,12 +1288,12 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
-        const data = await res.json();
-        if (data.status === 'success') {
-          showToast(data.message);
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.status === 'success') {
+          showToast(data.message || 'Updated! 🎉');
           setTimeout(() => { window.location.reload(); }, 600);
         } else {
-          showToast('❌ Failed to update group status');
+          showToast('❌ ' + (data.error || 'Failed to update group status'));
         }
       } catch (err) {
         showToast('❌ Network error. Please try again.');

@@ -2216,6 +2216,177 @@ def _set_cached_wa_user(phone: str, user_id: int):
             _WA_AUTH_CACHE = {}
         _WA_AUTH_CACHE[phone] = user_id
 
+def _extract_text_from_receipt_image(image_base64: str) -> str:
+    """Extracts raw text from a receipt/bill image using pytesseract."""
+    import base64
+    import io
+    from PIL import Image
+    import pytesseract
+
+    try:
+        img_bytes = base64.b64decode(image_base64)
+        img = Image.open(io.BytesIO(img_bytes))
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        text = pytesseract.image_to_string(img)
+        return text.strip()
+    except Exception as e:
+        logger.error("Failed to perform OCR on receipt image: %s", e)
+        return ""
+
+
+def _parse_receipt_and_save_expense(ocr_text: str, caption_text: str, user: User) -> dict:
+    """Uses Groq LLM to parse OCR text, extract financial details, and save the Expense to DB."""
+    if not ocr_text and not caption_text:
+        return {
+            "status": "error",
+            "message": "⚠️ Bill photo se text scan nahi ho paya. Kripya thoda saaf photo bhejiye! 📸"
+        }
+
+    prompt = f"""You are an intelligent receipt, invoice, and bill parser for an Indian expense tracker app.
+Analyze this OCR text extracted from a bill/receipt image:
+
+--- RECEIPT OCR TEXT ---
+{ocr_text}
+--- END OCR TEXT ---
+
+User caption/note (if any): "{caption_text}"
+
+Extract:
+1. "amount": The final total payable grand total amount as a float (e.g. 250.0). Look for 'Total', 'Grand Total', 'Net Amount', 'Paid', or highest final charge. If no amount is found, return null.
+2. "merchant": The store, restaurant, vendor, or company name (e.g. "Haldirams", "D-Mart", "HP Petrol").
+3. "category": Must be strictly one of: ["food", "transport", "shopping", "utilities", "entertainment", "health", "education", "other"].
+4. "items": A short comma-separated summary of the top items bought (e.g. "Chole Bhature, Sweet Lassi").
+5. "bill_date": Date on the bill in YYYY-MM-DD format if clearly present, otherwise null.
+
+Respond ONLY with valid, raw JSON (no markdown formatting, no code fences):
+{{"amount": 250.0, "merchant": "Haldirams", "category": "food", "items": "Chole Bhature, Sweet Lassi", "bill_date": null}}"""
+
+    parsed = {}
+    try:
+        resp = _groq_client().chat.completions.create(
+            model=_get_groq_model(),
+            messages=[
+                {"role": "system", "content": "You are a strict JSON data extractor. Output only valid JSON without backticks or markdown."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.1
+        )
+        content = resp.choices[0].message.content.strip()
+        if content.startswith("```"):
+            lines = content.split("\n")
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            content = "\n".join(lines).strip()
+        parsed = json.loads(content)
+    except Exception as e:
+        logger.error("Groq receipt parse error: %s", e)
+
+    amount = parsed.get("amount")
+    try:
+        amount_num = float(amount) if amount is not None else 0.0
+    except (ValueError, TypeError):
+        amount_num = 0.0
+
+    merchant = str(parsed.get("merchant") or "Bill Receipt").strip()
+    items = str(parsed.get("items") or "").strip()
+    category = str(parsed.get("category") or "other").strip().lower()
+    if category not in ["food", "transport", "shopping", "utilities", "entertainment", "health", "education", "other"]:
+        category = "other"
+
+    bill_date = None
+    if parsed.get("bill_date"):
+        try:
+            bill_date = datetime.strptime(str(parsed["bill_date"]).strip(), "%Y-%m-%d").date()
+        except Exception:
+            bill_date = None
+
+    if amount_num <= 0:
+        found_info = []
+        if merchant and merchant != "Bill Receipt":
+            found_info.append(f"Store: *{merchant}*")
+        if items:
+            found_info.append(f"Items: *{items}*")
+        info_str = ("\n• " + "\n• ".join(found_info)) if found_info else ""
+
+        return {
+            "status": "partial",
+            "message": (
+                f"🔍 *Bill scan kiya gaya lekin Total Amount saaf nahi mila!*{info_str}\n\n"
+                f"👉 Kripya amount type karke bhej dijiye (jaise: *'₹450 {merchant}'*), aur hum turant save kar denge! 😊"
+            )
+        }
+
+    desc = merchant
+    if items:
+        desc += f" ({items})"
+    desc = desc[:255]
+
+    expense_date = bill_date or timezone.localdate()
+
+    exp = Expense.objects.create(
+        user=user,
+        amount=Decimal(str(round(amount_num, 2))),
+        category=category,
+        description=desc,
+        date=expense_date,
+        source="whatsapp_receipt"
+    )
+
+    try:
+        profile = user.profile
+        profile.xp = (profile.xp or 0) + 20
+        profile.streak = (profile.streak or 0) + 1
+        profile.last_expense_date = expense_date
+        profile.save(update_fields=["xp", "streak", "last_expense_date"])
+    except Exception as e_xp:
+        logger.warning("XP update error: %s", e_xp)
+
+    try:
+        spent_month = Expense.objects.filter(
+            user=user,
+            date__gte=expense_date.replace(day=1)
+        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+        monthly_budget = float(getattr(user.profile, 'monthly_budget', 20000))
+        remaining = max(0.0, monthly_budget - float(spent_month))
+    except Exception:
+        remaining = 0.0
+
+    CAT_EMOJIS = {
+        "food": "🍔 Food & Dining",
+        "transport": "🚗 Travel & Commute",
+        "shopping": "🛍️ Shopping",
+        "utilities": "💡 Bills & Utilities",
+        "entertainment": "🎬 Entertainment",
+        "health": "💊 Health & Medical",
+        "education": "📚 Education",
+        "other": "💸 Other Expense"
+    }
+    cat_label = CAT_EMOJIS.get(category, "🧾 Expense")
+
+    reply_text = (
+        f"🧾 *Bill Auto-Logged Successfully!* 🎉\n\n"
+        f"💰 *Amount:* ₹{float(exp.amount):,.2f}\n"
+        f"🏷️ *Category:* {cat_label}\n"
+        f"🏪 *Merchant:* {merchant}\n"
+    )
+    if items:
+        reply_text += f"📦 *Items:* {items}\n"
+    reply_text += (
+        f"📅 *Date:* {exp.date.strftime('%d %b %Y')}\n\n"
+        f"💳 *Remaining Month Budget:* ₹{remaining:,.0f}\n"
+        f"✨ *+20 XP earned!* Saved directly to your PaisaMitra account. 🚀"
+    )
+
+    return {
+        "status": "success",
+        "message": reply_text,
+        "expense_id": exp.id
+    }
+
+
 def _purge_cached_wa_user(phone: str):
     if phone:
         cache.delete(f"wa_user_{phone}")
@@ -2242,6 +2413,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
 
     incoming_phone = ""
     spoken_text = ""
+    image_base64 = None
 
     # ── Check Content-Type ─────────────────────────────────────────────────────
     content_type = request.content_type
@@ -2256,6 +2428,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             spoken_text = str(body.get("text", "")).strip()
             provider_message_id = str(body.get("message_id", "")).strip()
             sender_id = str(body.get("sender_id", incoming_phone)).strip()
+            image_base64 = body.get("image_base64")
 
             # ── WhatsApp / API Base64 Voice Note Audio Support ──
             audio_base64 = body.get("audio_base64")
@@ -2354,6 +2527,10 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 logger.error("Audio transcription failed: %s", e)
                 return JsonResponse({"status": "error", "message": "Failed to transcribe audio. Please try speaking again."}, status=500)
         else:
+            image_file = request.FILES.get("image")
+            if image_file:
+                import base64
+                image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
             # If they sent multipart without an audio file, maybe they just sent text
             spoken_text = str(request.POST.get("text", "")).strip()
             
@@ -2387,11 +2564,11 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             logger.warning("Unauthorized access to voice_expense WhatsApp bot mode (phone=%s)", masked_phone)
             return JsonResponse({"status": "error", "message": "Unauthorized internal bot request."}, status=401)
 
-    if not spoken_text:
-        return JsonResponse({"status": "error", "message": "No text received."}, status=400)
+    if not spoken_text and not image_base64:
+        return JsonResponse({"status": "error", "message": "No text or image received."}, status=400)
 
     # ── Check for APK / App Download Requests ─────────────────────────────────
-    if _is_apk_download_request(spoken_text):
+    if spoken_text and _is_apk_download_request(spoken_text):
         apk_msg = (
             "📱 *Expense Tracker (PaisaMitra) Android App* 🚀\n\n"
             "You can download the official latest Android App from the links below:\n\n"
@@ -2412,7 +2589,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"status": "success", "message": apk_msg})
 
     # ── Handle special "link" command ─────────────────────────────────────────
-    spoken_stripped = spoken_text.strip()
+    spoken_stripped = (spoken_text or "").strip()
     if spoken_stripped.lower().startswith("link"):
         parts = spoken_stripped.split(" ", 1)
         link_arg = parts[1].strip() if len(parts) > 1 else ""
@@ -2602,6 +2779,26 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
     
     # ── AI Conversations & Expense Routing ────────────────────────────────────
     try:
+        # ── RECEIPT / BILL IMAGE OCR & PARSING ──
+        if image_base64:
+            logger.info("Processing receipt image for user=%s...", target_user.username)
+            ocr_text = _extract_text_from_receipt_image(image_base64)
+            result = _parse_receipt_and_save_expense(ocr_text, spoken_text, target_user)
+            if provider_message_id and sender_id and result.get("status") == "success":
+                try:
+                    WhatsAppProcessedMessage.objects.create(
+                        provider_message_id=provider_message_id,
+                        sender_id=sender_id,
+                        status='success',
+                        response_text=result["message"]
+                    )
+                except Exception:
+                    pass
+            return JsonResponse({
+                "status": "success",
+                "message": result["message"]
+            })
+
         normalized_text = normalize_hinglish_numbers(spoken_text)
         lower_text = normalized_text.lower().strip()
 
@@ -7034,8 +7231,9 @@ def api_public_settle_payment(request: HttpRequest, share_token: str) -> JsonRes
     })
 
 
+@csrf_exempt
 def api_public_toggle_group_settled(request: HttpRequest, share_token: str) -> JsonResponse:
-    """LOGIC-005: Owner authorization required for settle/reopen operations."""
+    """LOGIC-005: Public or owner toggle settle/reopen operation with share_token capability."""
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=405)
 
@@ -7056,16 +7254,14 @@ def api_public_toggle_group_settled(request: HttpRequest, share_token: str) -> J
     cache.set(cache_key_ip, ip_count + 1, timeout=300)
     cache.set(cache_key_token, token_count + 1, timeout=300)
 
-    # Require owner authorization
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "Authentication required. Only the group owner can settle or reopen this group."}, status=401)
-    if request.user != group.creator and not (request.user.is_staff or request.user.is_superuser):
-        return JsonResponse({"error": "Permission denied: Only the group owner can settle or reopen this group."}, status=403)
+    # If the user is authenticated in this browser session, enforce owner check; if using public share link, share_token grants access
+    if request.user.is_authenticated and request.user != group.creator and not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"error": "Permission denied: Only the group owner or link holders can settle or reopen this group."}, status=403)
 
     group.is_settled = not group.is_settled
     group.save(update_fields=["is_settled"])
 
-    logger.info("Split group settlement toggled by owner uid=%s: group=%s is_settled=%s", request.user.id, group.id, group.is_settled)
+    logger.info("Split group settlement toggled: group=%s is_settled=%s by ip=%s", group.id, group.is_settled, client_ip)
 
     host_domain = request.build_absolute_uri('/')[:-1]
     res = compute_group_settlement(group, host_domain)
