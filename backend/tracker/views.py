@@ -2246,38 +2246,80 @@ def _extract_text_from_receipt_image(image_base64: str) -> str:
 
 
 def _parse_receipt_and_save_expense(ocr_text: str, caption_text: str, user: User) -> dict:
-    """Uses Groq LLM to parse OCR text, extract financial details, and save the Expense to DB."""
+    """Uses Groq LLM to intelligently analyze any image (bills, UPI payment screenshots,
+    product price tags, quotes, or general photos) and either log the expense, ask for
+    missing details, or provide friendly financial advice."""
+
+    today = timezone.localdate()
+    monthly_budget = float(getattr(user.profile, 'monthly_budget', 20000))
+    try:
+        spent_month = Expense.objects.filter(
+            user=user,
+            date__gte=today.replace(day=1)
+        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+        remaining = max(0.0, monthly_budget - float(spent_month))
+    except Exception:
+        remaining = monthly_budget
+
+    # If completely empty OCR and empty caption
     if not ocr_text and not caption_text:
         return {
-            "status": "error",
-            "message": "⚠️ Bill photo se text scan nahi ho paya. Kripya thoda saaf photo bhejiye! 📸"
+            "status": "partial",
+            "message": (
+                "📸 *Photo Receive Ho Gaya!* ✨\n\n"
+                "Is photo me koi readable bill ya text detect nahi ho paya.\n\n"
+                "💬 *Kya aap iske liye koi kharcha log karna chahte hain?*\n"
+                "Aap seedhe amount aur description type karke bhej sakte hain (jaise: *'₹350 coffee'* ya *'₹1,200 shopping'*), aur hum turant aapke expenses me note kar lenge! 😊"
+            )
         }
 
-    prompt = f"""You are an intelligent receipt, invoice, and bill parser for an Indian expense tracker app.
-Analyze this OCR text extracted from a bill/receipt image:
+    prompt = f"""You are an intelligent financial assistant, receipt scanner, and expense coach for PaisaMitra.
+A user sent an image on WhatsApp. The image text was extracted by OCR, and the user may have included a caption/message.
 
---- RECEIPT OCR TEXT ---
+--- DETECTED TEXT FROM IMAGE (OCR) ---
 {ocr_text}
---- END OCR TEXT ---
+--- END DETECTED TEXT ---
 
-User caption/note (if any): "{caption_text}"
+User Caption/Message: "{caption_text}"
+User Name: {user.first_name or user.username}
+User Remaining Monthly Budget: ₹{remaining:,.0f}
+
+TASK:
+Analyze what kind of image/content this is and decide the best action.
+Common types of images:
+1. "receipt" or "bill": A physical or digital receipt/bill (restaurant, supermarket, grocery chit, petrol pump, hotel, invoice, medical).
+2. "upi_payment": A payment app screenshot (Google Pay, PhonePe, Paytm, BHIM, CRED, Amazon Pay, bank transfer) showing a completed transaction.
+3. "product_or_price": A product, clothing, shoe, gadget, price tag, wishlist item, shopping menu, Amazon/Flipkart product or cart page.
+4. "statement_or_bank": Bank statement, account balance, passbook, mutual fund/stock portfolio.
+5. "general_or_question": Casual photo (food, selfie, view, party) with or without user asking a question (e.g. 'ye le lu kya?', 'kitna kharcha hua?').
+
+RULES FOR DECIDING ACTION:
+- action = "log_expense":
+  Choose this when there is a clear amount paid/spent AND merchant or items are known (e.g. from receipt, UPI payment screenshot, or caption like 'dinner ₹500').
+- action = "ask_for_amount":
+  Choose this when a store, brand, or items are clearly seen (e.g., ZARA shirt, Domino's menu, medicines), but the total amount paid is missing or ambiguous.
+- action = "give_advice":
+  Choose this when the user is asking whether to buy something, or if it's a wishlist/price tag item and they want guidance against their remaining budget (₹{remaining:,.0f}).
+- action = "ask_if_expense":
+  Choose this when the image is casual or non-financial. State politely what was observed and ask if they'd like to log any expense for it.
 
 CRITICAL NOTE ON RUPEE SYMBOL (₹):
-In Indian receipts, the rupee symbol '₹' or 'Rs' is very commonly misread by OCR engines as a leading digit '2', 'z', or '?'.
-For example:
-- '₹4,410.00' is misread as '24,410.00' or '24410'
-- '₹500' is misread as '2500'
-Always check the sum of individual line items! If the items sum up to ~4,410.00, the true grand total is 4410.0, NOT 24410.0.
-
-Extract:
-1. "amount": The final total payable grand total amount as a float (e.g. 250.0). Look for 'Total', 'Grand Total', 'Net Amount', 'Paid', or highest final charge. If line items sum contradicts a misread leading '2' from a Rupee sign, use the correct sum. If no amount is found, return null.
-2. "merchant": The store, restaurant, vendor, or company name (e.g. "Haldirams", "D-Mart", "HP Petrol").
-3. "category": Must be strictly one of: ["food", "transport", "shopping", "utilities", "entertainment", "health", "education", "other"].
-4. "items": A short comma-separated summary of the top items bought (e.g. "Chole Bhature, Sweet Lassi").
-5. "bill_date": Date on the bill in YYYY-MM-DD format if clearly present, otherwise null.
+In Indian receipts and UPI screens, OCR engines often misread '₹' as the digit '2', 'z', or '?'.
+Example: '₹4,410.00' is misread as '24,410.00' or '24410'. Always verify against individual line item totals or typical values.
 
 Respond ONLY with valid, raw JSON (no markdown formatting, no code fences):
-{{"amount": 250.0, "merchant": "Haldirams", "category": "food", "items": "Chole Bhature, Sweet Lassi", "bill_date": null}}"""
+{{
+  "image_type": "receipt",
+  "action": "log_expense",
+  "amount": 250.0,
+  "merchant": "Haldirams",
+  "category": "food",
+  "items": "Chole Bhature",
+  "payment_app": null,
+  "bill_date": null,
+  "analysis_text": "Haldirams se ₹250 ka food bill scan hua hai.",
+  "question_to_user": null
+}}"""
 
     parsed = {}
     try:
@@ -2301,13 +2343,19 @@ Respond ONLY with valid, raw JSON (no markdown formatting, no code fences):
     except Exception as e:
         logger.error("Groq receipt parse error: %s", e)
 
+    action = parsed.get("action") or "log_expense"
+    image_type = parsed.get("image_type") or "receipt"
+    analysis_text = str(parsed.get("analysis_text") or "").strip()
+    question_to_user = str(parsed.get("question_to_user") or "").strip()
+    payment_app = str(parsed.get("payment_app") or "").strip()
+
     amount = parsed.get("amount")
     try:
         amount_num = float(amount) if amount is not None else 0.0
     except (ValueError, TypeError):
         amount_num = 0.0
 
-    merchant = str(parsed.get("merchant") or "Bill Receipt").strip()
+    merchant = str(parsed.get("merchant") or "").strip()
     items = str(parsed.get("items") or "").strip()
     category = str(parsed.get("category") or "other").strip().lower()
     if category not in ["food", "transport", "shopping", "utilities", "entertainment", "health", "education", "other"]:
@@ -2319,66 +2367,6 @@ Respond ONLY with valid, raw JSON (no markdown formatting, no code fences):
             bill_date = datetime.strptime(str(parsed["bill_date"]).strip(), "%Y-%m-%d").date()
         except Exception:
             bill_date = None
-
-    if amount_num <= 0:
-        found_info = []
-        if merchant and merchant != "Bill Receipt":
-            found_info.append(f"Store: *{merchant}*")
-        if items:
-            found_info.append(f"Items: *{items}*")
-        info_str = ("\n• " + "\n• ".join(found_info)) if found_info else ""
-
-        return {
-            "status": "partial",
-            "message": (
-                f"🔍 *Bill scan kiya gaya lekin Total Amount saaf nahi mila!*{info_str}\n\n"
-                f"👉 Kripya amount type karke bhej dijiye (jaise: *'₹450 {merchant}'*), aur hum turant save kar denge! 😊"
-            )
-        }
-
-    desc = merchant
-    if items:
-        desc += f" ({items})"
-    desc = desc[:255]
-
-    today = timezone.localdate()
-    if bill_date:
-        # If bill date is from a different year or >30 days old (e.g. sample/demo receipt), default to today so it appears in current tracker
-        delta_days = (today - bill_date).days
-        if delta_days < -1 or delta_days > 30:
-            expense_date = today
-        else:
-            expense_date = bill_date
-    else:
-        expense_date = today
-
-    exp = Expense.objects.create(
-        user=user,
-        amount=Decimal(str(round(amount_num, 2))),
-        category=category,
-        description=desc,
-        date=expense_date,
-        source="whatsapp_receipt"
-    )
-
-    try:
-        profile = user.profile
-        profile.xp = (profile.xp or 0) + 20
-        profile.streak = (profile.streak or 0) + 1
-        profile.last_expense_date = expense_date
-        profile.save(update_fields=["xp", "streak", "last_expense_date"])
-    except Exception as e_xp:
-        logger.warning("XP update error: %s", e_xp)
-
-    try:
-        spent_month = Expense.objects.filter(
-            user=user,
-            date__gte=expense_date.replace(day=1)
-        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
-        monthly_budget = float(getattr(user.profile, 'monthly_budget', 20000))
-        remaining = max(0.0, monthly_budget - float(spent_month))
-    except Exception:
-        remaining = 0.0
 
     CAT_EMOJIS = {
         "food": "🍔 Food & Dining",
@@ -2392,25 +2380,116 @@ Respond ONLY with valid, raw JSON (no markdown formatting, no code fences):
     }
     cat_label = CAT_EMOJIS.get(category, "🧾 Expense")
 
-    reply_text = (
-        f"🧾 *Bill Auto-Logged Successfully!* 🎉\n\n"
-        f"💰 *Amount:* ₹{float(exp.amount):,.2f}\n"
-        f"🏷️ *Category:* {cat_label}\n"
-        f"🏪 *Merchant:* {merchant}\n"
-    )
-    if items:
-        reply_text += f"📦 *Items:* {items}\n"
-    reply_text += (
-        f"📅 *Date:* {exp.date.strftime('%d %b %Y')}\n\n"
-        f"💳 *Remaining Month Budget:* ₹{remaining:,.0f}\n"
-        f"✨ *+20 XP earned!* Saved directly to your PaisaMitra account. 🚀"
-    )
+    # ── CASE 1: LOG EXPENSE (Clear amount & details) ──
+    if (action == "log_expense" or image_type in ["receipt", "upi_payment"]) and amount_num > 0:
+        desc = merchant or (items if items else "Expense")
+        if items and items != desc and not desc.endswith(f"({items})"):
+            desc += f" ({items})"
+        desc = desc[:255]
 
-    return {
-        "status": "success",
-        "message": reply_text,
-        "expense_id": exp.id
-    }
+        if bill_date:
+            delta_days = (today - bill_date).days
+            if delta_days < -1 or delta_days > 30:
+                expense_date = today
+            else:
+                expense_date = bill_date
+        else:
+            expense_date = today
+
+        exp = Expense.objects.create(
+            user=user,
+            amount=Decimal(str(round(amount_num, 2))),
+            category=category,
+            description=desc,
+            date=expense_date,
+            source="whatsapp_receipt"
+        )
+
+        try:
+            profile = user.profile
+            profile.xp = (profile.xp or 0) + 20
+            profile.streak = (profile.streak or 0) + 1
+            profile.last_expense_date = expense_date
+            profile.save(update_fields=["xp", "streak", "last_expense_date"])
+        except Exception as e_xp:
+            logger.warning("XP update error: %s", e_xp)
+
+        new_remaining = max(0.0, remaining - float(exp.amount))
+
+        if image_type == "upi_payment":
+            reply_text = (
+                f"⚡ *UPI Payment Auto-Logged!* 📲\n\n"
+                f"💰 *Amount:* ₹{float(exp.amount):,.2f}\n"
+                f"👤 *Paid To:* {merchant or 'Merchant'}\n"
+            )
+            if payment_app:
+                reply_text += f"📱 *Payment App:* {payment_app}\n"
+            reply_text += (
+                f"🏷️ *Category:* {cat_label}\n"
+                f"📅 *Date:* {exp.date.strftime('%d %b %Y')}\n\n"
+                f"💳 *Remaining Month Budget:* ₹{new_remaining:,.0f}\n"
+                f"✨ *+20 XP earned!* Saved directly to your PaisaMitra account. 🚀"
+            )
+        else:
+            reply_text = (
+                f"🧾 *Bill Auto-Logged Successfully!* 🎉\n\n"
+                f"💰 *Amount:* ₹{float(exp.amount):,.2f}\n"
+                f"🏷️ *Category:* {cat_label}\n"
+                f"🏪 *Merchant:* {merchant or 'Store'}\n"
+            )
+            if items:
+                reply_text += f"📦 *Items:* {items}\n"
+            reply_text += (
+                f"📅 *Date:* {exp.date.strftime('%d %b %Y')}\n\n"
+                f"💳 *Remaining Month Budget:* ₹{new_remaining:,.0f}\n"
+                f"✨ *+20 XP earned!* Saved directly to your PaisaMitra account. 🚀"
+            )
+
+        if analysis_text and not any(w in analysis_text.lower() for w in ["logged", "successfully", "auto-logged"]):
+            reply_text += f"\n\n💡 _{analysis_text}_"
+
+        return {
+            "status": "success",
+            "message": reply_text,
+            "expense_id": exp.id
+        }
+
+    # ── CASE 2: FINANCIAL ADVICE / WISHLIST / SHOPPING QUERY ──
+    if action == "give_advice" or (caption_text and any(q in caption_text.lower() for q in ["le lu", "kharidu", "kaisa hai", "advice", "chahiye"])):
+        reply_text = "🔍 *Financial Coach Analysis:* 🛍️\n\n"
+        if analysis_text:
+            reply_text += f"{analysis_text}\n\n"
+        if amount_num > 0:
+            reply_text += (
+                f"💰 *Estimated Price:* ₹{amount_num:,.2f}\n"
+                f"💳 *Your Remaining Budget:* ₹{remaining:,.0f}\n\n"
+            )
+        if question_to_user:
+            reply_text += f"💬 *{question_to_user}*\n\n"
+        reply_text += "👉 _Agar aap ise expense me add karna chahte hain, toh bas amount ya **'Add kar do'** reply kar dijiye!_ 😊"
+        return {"status": "partial", "message": reply_text}
+
+    # ── CASE 3: STORE/ITEM DETECTED BUT AMOUNT MISSING ──
+    if action == "ask_for_amount" or (merchant and merchant != "Bill Receipt") or items:
+        found_target = merchant or items or "items"
+        reply_text = "🔍 *Image Analysis:* 📸\n\n"
+        if analysis_text:
+            reply_text += f"{analysis_text}\n\n"
+        else:
+            reply_text += f"Maine image me *{found_target}* dekha hai.\n\n"
+        reply_text += f"💬 *{question_to_user or 'Iska total kitna kharcha hua tha?'}\n\n"
+        reply_text += f"👉 Kripya amount type karke bhej dijiye (jaise: *'₹450 {found_target}'*), aur hum turant save kar denge! 😊"
+        return {"status": "partial", "message": reply_text}
+
+    # ── CASE 4: GENERAL CASUAL IMAGE / NON-FINANCIAL ──
+    reply_text = "📸 *Image Analysis:* ✨\n\n"
+    if analysis_text:
+        reply_text += f"{analysis_text}\n\n"
+    else:
+        reply_text += "Aapki photo receive ho gayi hai!\n\n"
+    reply_text += f"💬 *{question_to_user or 'Kya aap iske liye koi kharcha note karna chahte hain?'}\n\n"
+    reply_text += "👉 _Aap kisi bhi waqt amount aur details likhkar bhej sakte hain (jaise: **'₹200 party'**), aur hum record kar lenge!_ 😊"
+    return {"status": "partial", "message": reply_text}
 
 
 def _purge_cached_wa_user(phone: str):

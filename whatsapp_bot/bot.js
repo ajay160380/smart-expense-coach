@@ -367,7 +367,7 @@ async function startBot(sessionName = null) {
         if (imageMsg) {
             try {
                 await sock.sendPresenceUpdate('composing', remoteJid);
-                await safeReply(remoteJid, '⏳ Scanning your bill receipt... Please wait a few seconds! 🧾', msg);
+                await safeReply(remoteJid, '⏳ Analyzing your photo/bill... Please wait a few seconds! 📸', msg);
                 const buffer = await downloadMediaMessage(
                     msg,
                     'buffer',
