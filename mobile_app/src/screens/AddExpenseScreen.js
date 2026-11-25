@@ -190,7 +190,14 @@ export default function AddExpenseScreen({ route, navigation }) {
         category: category,
         description: sanitizeInput(description),
         date: expDate || TODAY,
+        receipt_image: receiptImage || null,
       };
+
+      if (receiptImage) {
+        try {
+          await AsyncStorage.setItem(`@expense_receipt_${isEdit ? expense.id : 'last'}`, receiptImage);
+        } catch (e) {}
+      }
 
       if (isEdit) {
         await api.post(`/api/edit-expense/${expense.id}/`, payload);
@@ -297,7 +304,29 @@ export default function AddExpenseScreen({ route, navigation }) {
                 <Ionicons name="trash-outline" size={20} color="#EF4444" />
               </TouchableOpacity>
             ) : (
-              <View style={{ width: 36 }} />
+              <TouchableOpacity
+                onPress={handlePickReceipt}
+                style={[
+                  styles.headerReceiptBtn,
+                  isDark && { backgroundColor: colors.surface, borderColor: colors.border },
+                  receiptImage && { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981' }
+                ]}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={receiptImage ? "checkmark-circle" : "camera-outline"}
+                  size={16}
+                  color={receiptImage ? "#10B981" : (isDark ? colors.textPrimary : COLORS.textPrimary)}
+                />
+                <Text style={[
+                  styles.headerReceiptText,
+                  isDark && { color: colors.textPrimary },
+                  receiptImage && { color: '#10B981', fontWeight: '700' }
+                ]}>
+                  {receiptImage ? "Receipt ✓" : "+ Bill"}
+                </Text>
+              </TouchableOpacity>
             )}
           </View>
 
@@ -365,15 +394,22 @@ export default function AddExpenseScreen({ route, navigation }) {
 
             {/* ── Description ── */}
             <View style={styles.fieldGroup}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>DESCRIPTION</Text>
-                <TouchableOpacity onPress={handleTagLocation} disabled={locationLoading}>
-                  {locationLoading ? (
-                    <ActivityIndicator size="small" color={colors.primary} style={{ marginBottom: 8 }} />
-                  ) : (
-                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold', marginBottom: 8 }}>📍 Tag Location</Text>
-                  )}
-                </TouchableOpacity>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={[styles.label, isDark && { color: colors.textSecondary }, { marginBottom: 0 }]}>DESCRIPTION</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <TouchableOpacity onPress={handlePickReceipt} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={{ color: receiptImage ? '#10B981' : colors.primary, fontSize: 12, fontWeight: '700' }}>
+                      {receiptImage ? '🧾 Receipt Added' : '📷 Attach Bill'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleTagLocation} disabled={locationLoading} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    {locationLoading ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>📍 Tag Location</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
               <TextInput
                 style={[
@@ -737,5 +773,21 @@ const styles = StyleSheet.create({
   },
   receiptRemoveBtn: {
     padding: 6,
+  },
+  headerReceiptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+  },
+  headerReceiptText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
   },
 });
