@@ -2262,8 +2262,15 @@ Analyze this OCR text extracted from a bill/receipt image:
 
 User caption/note (if any): "{caption_text}"
 
+CRITICAL NOTE ON RUPEE SYMBOL (₹):
+In Indian receipts, the rupee symbol '₹' or 'Rs' is very commonly misread by OCR engines as a leading digit '2', 'z', or '?'.
+For example:
+- '₹4,410.00' is misread as '24,410.00' or '24410'
+- '₹500' is misread as '2500'
+Always check the sum of individual line items! If the items sum up to ~4,410.00, the true grand total is 4410.0, NOT 24410.0.
+
 Extract:
-1. "amount": The final total payable grand total amount as a float (e.g. 250.0). Look for 'Total', 'Grand Total', 'Net Amount', 'Paid', or highest final charge. If no amount is found, return null.
+1. "amount": The final total payable grand total amount as a float (e.g. 250.0). Look for 'Total', 'Grand Total', 'Net Amount', 'Paid', or highest final charge. If line items sum contradicts a misread leading '2' from a Rupee sign, use the correct sum. If no amount is found, return null.
 2. "merchant": The store, restaurant, vendor, or company name (e.g. "Haldirams", "D-Mart", "HP Petrol").
 3. "category": Must be strictly one of: ["food", "transport", "shopping", "utilities", "entertainment", "health", "education", "other"].
 4. "items": A short comma-separated summary of the top items bought (e.g. "Chole Bhature, Sweet Lassi").
