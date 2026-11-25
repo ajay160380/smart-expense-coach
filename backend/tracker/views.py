@@ -2341,7 +2341,16 @@ Respond ONLY with valid, raw JSON (no markdown formatting, no code fences):
         desc += f" ({items})"
     desc = desc[:255]
 
-    expense_date = bill_date or timezone.localdate()
+    today = timezone.localdate()
+    if bill_date:
+        # If bill date is from a different year or >30 days old (e.g. sample/demo receipt), default to today so it appears in current tracker
+        delta_days = (today - bill_date).days
+        if delta_days < -1 or delta_days > 30:
+            expense_date = today
+        else:
+            expense_date = bill_date
+    else:
+        expense_date = today
 
     exp = Expense.objects.create(
         user=user,
