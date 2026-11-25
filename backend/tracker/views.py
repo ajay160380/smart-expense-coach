@@ -2228,6 +2228,16 @@ def _extract_text_from_receipt_image(image_base64: str) -> str:
         img = Image.open(io.BytesIO(img_bytes))
         if img.mode != 'RGB':
             img = img.convert('RGB')
+
+        # Optimization: Downscale high-resolution camera photos (>1600px)
+        # Prevents Tesseract from taking 10-15s on 12MP photos while preserving text clarity
+        max_dim = 1600
+        if max(img.size) > max_dim:
+            scale = max_dim / float(max(img.size))
+            new_size = (int(img.size[0] * scale), int(img.size[1] * scale))
+            resample_filter = getattr(getattr(Image, 'Resampling', Image), 'LANCZOS', 1)
+            img = img.resize(new_size, resample_filter)
+
         text = pytesseract.image_to_string(img)
         return text.strip()
     except Exception as e:

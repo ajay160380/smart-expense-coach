@@ -55,7 +55,10 @@ async function callDjangoApi(endpoint, options = {}) {
             const targetUrl = `${cleanBase}${cleanEndpoint}`;
 
             const controller = new AbortController();
-            const timeoutMs = baseUrl.includes('127.0.0.1') ? 5000 : 15000;
+            const isImage = options.body && (typeof options.body === 'string' && options.body.includes('image_base64'));
+            const isAudio = options.body && (typeof options.body === 'string' && options.body.includes('audio_base64'));
+            // Bill OCR/Groq needs up to 60s; audio needs 30s; normal text 15-25s
+            const timeoutMs = isImage ? 60000 : (isAudio ? 30000 : (baseUrl.includes('127.0.0.1') ? 15000 : 25000));
             const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
             const response = await fetch(targetUrl, {
@@ -364,6 +367,7 @@ async function startBot(sessionName = null) {
         if (imageMsg) {
             try {
                 await sock.sendPresenceUpdate('composing', remoteJid);
+                await safeReply(remoteJid, '⏳ Scanning your bill receipt... Please wait a few seconds! 🧾', msg);
                 const buffer = await downloadMediaMessage(
                     msg,
                     'buffer',
