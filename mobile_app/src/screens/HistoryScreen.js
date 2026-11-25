@@ -122,17 +122,38 @@ export default function HistoryScreen({ navigation }) {
     return timeStr;
   };
 
+  const handleExportPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      'Export Monthly Statement',
+      `Choose statement format for ${data?.month || 'this month'}:`,
+      [
+        {
+          text: '📄 Download PDF Statement',
+          onPress: () => exportData('pdf'),
+        },
+        {
+          text: '📊 Export CSV Spreadsheet',
+          onPress: () => exportData('csv'),
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
   const exportData = async (format) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
-      Alert.alert('Exporting', `Preparing your ${format.toUpperCase()} export for ${data?.month || 'this month'}...`);
       const url = `${api.defaults.baseURL}/api/export/${format}/?month=${month}&year=${year}`;
       const tokenStr = await AsyncStorage.getItem('userToken');
       const token = tokenStr ? `Token ${tokenStr}` : '';
 
-      const fileUri = FileSystem.cacheDirectory + `ExpenseTracker_${data?.month?.replace(' ', '_') || 'History'}.${format}`;
+      const fileUri = FileSystem.cacheDirectory + `ExpenseTracker_${data?.month?.replace(/\s+/g, '_') || 'History'}.${format}`;
 
       const downloadRes = await FileSystem.downloadAsync(url, fileUri, {
         headers: { Authorization: token },
@@ -143,15 +164,15 @@ export default function HistoryScreen({ navigation }) {
         const uti = format === 'pdf' ? 'com.adobe.pdf' : 'public.comma-separated-values-text';
         await Sharing.shareAsync(downloadRes.uri, {
           mimeType: mimeType,
-          dialogTitle: `Download Expense ${format.toUpperCase()}`,
+          dialogTitle: `Expense Tracker ${format.toUpperCase()} Statement`,
           UTI: uti,
         });
       } else {
-        Alert.alert('Error', 'Failed to download file');
+        Alert.alert('Error', 'Failed to generate export file. Please try again.');
       }
     } catch (e) {
       console.log('Export Error', e);
-      Alert.alert('Export Failed', e.message);
+      Alert.alert('Export Failed', e.message || 'Something went wrong while exporting.');
     }
   };
 
@@ -214,7 +235,7 @@ export default function HistoryScreen({ navigation }) {
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={[styles.headerActionBtn, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}
-            onPress={() => exportData('pdf')}
+            onPress={handleExportPress}
             activeOpacity={0.7}
           >
             <Ionicons name="download-outline" size={20} color={isDark ? colors.textPrimary : "#1F2937"} />

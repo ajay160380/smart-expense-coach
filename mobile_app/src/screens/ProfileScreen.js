@@ -382,6 +382,7 @@ export default function ProfileScreen({ navigation }) {
       const nextState = !biometricEnabled;
       setBiometricEnabled(nextState);
       await AsyncStorage.setItem('biometric_enabled', nextState ? 'true' : 'false');
+      DeviceEventEmitter.emit('biometric_setting_changed', nextState);
       Alert.alert('App Lock', nextState ? 'App Lock enabled successfully! 🔒' : 'App Lock disabled.');
     } catch (e) {
       Alert.alert('Error', 'Could not configure biometric lock.');

@@ -27,6 +27,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import api from '../api/config';
 import { sanitizeInput, sanitizeAmount } from '../utils/auth';
 import { validateAmount } from '../utils/validation';
@@ -74,6 +75,59 @@ export default function AddExpenseScreen({ route, navigation }) {
   );
   const [expDate, setExpDate] = useState(expense.date ? expense.date.split('T')[0] : TODAY);
   const [loading, setLoading] = useState(false);
+  const [receiptImage, setReceiptImage] = useState(expense.receipt_image || null);
+
+  const handlePickReceipt = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      'Attach Bill or Receipt',
+      'Select image source:',
+      [
+        {
+          text: '📷 Take Photo',
+          onPress: async () => {
+            try {
+              const perm = await ImagePicker.requestCameraPermissionsAsync();
+              if (!perm.granted) {
+                Alert.alert('Permission Needed', 'Camera permission is required to capture your bill or receipt.');
+                return;
+              }
+              const res = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                quality: 0.7,
+              });
+              if (!res.canceled && res.assets && res.assets.length > 0) {
+                setReceiptImage(res.assets[0].uri);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+            } catch (err) {
+              console.log('Camera error:', err);
+            }
+          },
+        },
+        {
+          text: '🖼️ Choose from Gallery',
+          onPress: async () => {
+            try {
+              const res = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                quality: 0.7,
+              });
+              if (!res.canceled && res.assets && res.assets.length > 0) {
+                setReceiptImage(res.assets[0].uri);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+            } catch (err) {
+              console.log('Gallery error:', err);
+            }
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -372,6 +426,47 @@ export default function AddExpenseScreen({ route, navigation }) {
               />
             </View>
 
+            {/* ── Bill / Receipt Attachment ── */}
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.label, isDark && { color: colors.textSecondary }]}>RECEIPT / BILL (OPTIONAL)</Text>
+              {receiptImage ? (
+                <View style={[styles.receiptPreviewCard, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
+                  <Image source={{ uri: receiptImage }} style={styles.receiptThumb} />
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Ionicons name="checkmark-circle" size={16} color="#10B981" style={{ marginRight: 4 }} />
+                      <Text style={[styles.receiptSuccessText, isDark && { color: '#34D399' }]}>Receipt Attached</Text>
+                    </View>
+                    <Text style={[styles.receiptSubText, isDark && { color: colors.textSecondary }]}>Photo saved with this expense</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setReceiptImage(null);
+                    }}
+                    style={styles.receiptRemoveBtn}
+                  >
+                    <Ionicons name="close-circle" size={22} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={handlePickReceipt}
+                  style={[styles.attachReceiptBtn, isDark && { backgroundColor: colors.bgElevated, borderColor: colors.border }]}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.attachIconWrap, { backgroundColor: selectedCat.color + '20' }]}>
+                    <Ionicons name="camera-outline" size={20} color={selectedCat.color} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.attachBtnTitle, isDark && { color: colors.textPrimary }]}>Attach Bill or Receipt</Text>
+                    <Text style={[styles.attachBtnSubtitle, isDark && { color: colors.textSecondary }]}>Take photo or choose from gallery</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={isDark ? colors.textSecondary : "#94A3B8"} />
+                </TouchableOpacity>
+              )}
+            </View>
+
             <View style={{ height: 100 }} />
           </ScrollView>
 
@@ -587,5 +682,60 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 14,
     fontWeight: '700',
+  },
+  attachReceiptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    borderStyle: 'dashed',
+  },
+  attachIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  attachBtnTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  attachBtnSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  receiptPreviewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+  },
+  receiptThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+  },
+  receiptSuccessText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  receiptSubText: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  receiptRemoveBtn: {
+    padding: 6,
   },
 });

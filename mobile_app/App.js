@@ -409,12 +409,23 @@ export default function App() {
   const [appLocked, setAppLocked] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 
+  const parseShakeThreshold = (val) => {
+    if (!val || val === 'disabled' || val === 'off' || val === '0') return 0;
+    if (val === '1.2' || val === '2.0') return 0.65;
+    if (val === '1.8' || val === '3.5') return 0.95;
+    if (val === '2.6' || val === '5.0') return 1.40;
+    const num = parseFloat(val);
+    if (num > 0) return Math.min(Math.max(num * 0.55, 0.5), 1.6);
+    return 0;
+  };
+
   const triggerBiometricUnlock = async () => {
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       if (!hasHardware || !isEnrolled) {
         setIsBiometricUnlocked(true);
+        setAppLocked(false);
         return;
       }
       const result = await LocalAuthentication.authenticateAsync({
@@ -424,6 +435,7 @@ export default function App() {
       });
       if (result.success) {
         setIsBiometricUnlocked(true);
+        setAppLocked(false);
       }
     } catch (err) {
       console.log('Biometric error:', err);
@@ -434,22 +446,16 @@ export default function App() {
     const loadSettings = async () => {
       try {
         const val = await AsyncStorage.getItem('shake_sensitivity');
-        if (val) {
-          if (val === 'disabled' || val === 'off') setShakeSensitivity(0);
-          else if (val === '2.0' || val === '1.2') setShakeSensitivity(1.2);
-          else if (val === '3.5' || val === '1.8') setShakeSensitivity(1.8);
-          else if (val === '5.0' || val === '2.6') setShakeSensitivity(2.6);
-          else setShakeSensitivity(parseFloat(val) || 0);
-        } else {
-          setShakeSensitivity(0); // Default OFF for newly downloaded APK / fresh install
-        }
+        setShakeSensitivity(parseShakeThreshold(val));
         
         const bioEnabled = await AsyncStorage.getItem('biometric_enabled');
         if (bioEnabled === 'true') {
           setAppLocked(true);
+          setIsBiometricUnlocked(false);
           triggerBiometricUnlock();
         } else {
           setIsBiometricUnlocked(true);
+          setAppLocked(false);
         }
       } catch (e) {
         console.log(e);
@@ -459,15 +465,44 @@ export default function App() {
     loadSettings();
 
     const listener = DeviceEventEmitter.addListener('shake_sensitivity_changed', (val) => {
-      if (val === 'disabled' || val === 'off') {
-        setShakeSensitivity(0);
-      } else {
-        setShakeSensitivity(parseFloat(val) || 0);
-      }
+      setShakeSensitivity(parseShakeThreshold(val));
     });
 
     return () => {
       listener.remove();
+    };
+  }, []);
+
+  // ── Re-lock App when returning from background & listen for setting changes ──
+  useEffect(() => {
+    let lastAppState = AppState.currentState;
+    const appStateSub = AppState.addEventListener('change', async (nextState) => {
+      if (lastAppState.match(/inactive|background/) && nextState === 'active') {
+        try {
+          const bioEnabled = await AsyncStorage.getItem('biometric_enabled');
+          if (bioEnabled === 'true') {
+            setAppLocked(true);
+            setIsBiometricUnlocked(false);
+            triggerBiometricUnlock();
+          }
+        } catch (e) {}
+      }
+      lastAppState = nextState;
+    });
+
+    const bioListener = DeviceEventEmitter.addListener('biometric_setting_changed', (enabled) => {
+      if (enabled) {
+        setAppLocked(false);
+        setIsBiometricUnlocked(true);
+      } else {
+        setAppLocked(false);
+        setIsBiometricUnlocked(true);
+      }
+    });
+
+    return () => {
+      appStateSub.remove();
+      bioListener.remove();
     };
   }, []);
 
@@ -507,13 +542,13 @@ export default function App() {
             if (navigationRef.isReady()) {
               console.log('Shake detected! Navigating to AddExpense');
               try {
-                navigationRef.navigate('MainTabs', {
-                  screen: 'Home',
-                  params: { screen: 'AddExpense' },
-                });
+                navigationRef.navigate('MainTabs', { screen: 'Add' });
               } catch (navErr) {
-                console.log('Nav error:', navErr);
-                navigationRef.navigate('AddExpense');
+                try {
+                  navigationRef.navigate('Home', { screen: 'AddExpense' });
+                } catch (e) {
+                  navigationRef.navigate('AddExpense');
+                }
               }
             }
           }
