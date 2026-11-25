@@ -653,6 +653,15 @@ export default function ProfileScreen({ navigation }) {
               }}
             />
             <SettingsRow
+              icon="compass"
+              iconColor="#3B82F6"
+              title="Welcome Onboarding Intro"
+              subtitle="Replay 3D walkthrough & feature slides"
+              onPress={() => {
+                navigation.navigate('Welcome', { fromProfile: true });
+              }}
+            />
+            <SettingsRow
               icon="chatbubble-ellipses"
               iconColor="#EC4899"
               title="Submit Feedback & Ideas"

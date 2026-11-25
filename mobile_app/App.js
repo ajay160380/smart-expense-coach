@@ -116,6 +116,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
       <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <HomeStack.Screen name="Terms" component={TermsScreen} />
+      <HomeStack.Screen name="Welcome" component={WelcomeScreen} />
       <HomeStack.Screen name="NotFound" component={NotFoundScreen} />
     </HomeStack.Navigator>
   );
@@ -153,6 +154,7 @@ function MoreStackScreen() {
       <MoreStack.Screen name="Notepad" component={NotepadScreen} />
       <MoreStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <MoreStack.Screen name="Terms" component={TermsScreen} />
+      <MoreStack.Screen name="Welcome" component={WelcomeScreen} />
       <MoreStack.Screen name="NotFound" component={NotFoundScreen} />
     </MoreStack.Navigator>
   );
@@ -359,7 +361,7 @@ function AppNavigatorContent({ isAuthenticated }) {
       >
         <StatusBar style={isDark ? "light" : "dark"} />
         <Stack.Navigator
-          initialRouteName={isAuthenticated ? 'MainTabs' : 'Login'}
+          initialRouteName={isAuthenticated ? 'MainTabs' : 'Welcome'}
           screenOptions={{
             headerShown: false,
             cardStyle: { backgroundColor: colors.bg },
@@ -367,20 +369,20 @@ function AppNavigatorContent({ isAuthenticated }) {
           }}
         >
           {isAuthenticated ? (
-            // ── Logged in: Directly to Dashboard (Welcome Screen CANNOT show) ──
+            // ── Logged in: Directly to Dashboard ──
             <>
               <Stack.Screen name="MainTabs" component={MainTabNavigator} />
               <Stack.Screen name="Dashboard" component={DashboardScreen} />
-              <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Register" component={RegisterScreen} />
               <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             </>
           ) : (
-            // ── Logged out: Auth onboarding ──
+            // ── Logged out: Auth onboarding (Welcome with 3D slides & Next buttons) ──
             <>
-              <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Register" component={RegisterScreen} />
               <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
               <Stack.Screen name="MainTabs" component={MainTabNavigator} />
@@ -820,7 +822,7 @@ export default function App() {
       try {
         navigationRef.current?.reset({
           index: 0,
-          routes: [{ name: 'Login' }],
+          routes: [{ name: 'Welcome' }],
         });
       } catch (e) {}
     });
@@ -831,7 +833,7 @@ export default function App() {
         try {
           navigationRef.current?.reset({
             index: 0,
-            routes: [{ name: 'Login' }],
+            routes: [{ name: 'Welcome' }],
           });
         } catch (e) {}
       }
