@@ -25,13 +25,14 @@ const PUBLIC_API_URL = process.env.PUBLIC_APP_URL || process.env.RENDER_EXTERNAL
 const INTERNAL_API_URL = `http://127.0.0.1:${PORT}`;
 
 let cachedWorkingBaseUrl = null;
+const deadCandidates = new Set();
 
 // Prioritize ultra-fast local loopback (2ms) over slow public URLs that may hairpin/timeout
 const DJANGO_URL_CANDIDATES = [...new Set([
+    process.env.DJANGO_URL,
     `http://127.0.0.1:${PORT}`,
     'http://127.0.0.1:10000',
     'http://127.0.0.1:8000',
-    process.env.DJANGO_URL,
     PUBLIC_API_URL
 ].filter(Boolean))];
 
@@ -43,10 +44,14 @@ async function callDjangoApi(endpoint, options = {}) {
         ...(options.headers || {})
     };
 
+    // Filter out permanently unreachable candidates (e.g. inactive localhost ports)
+    const activeCandidates = DJANGO_URL_CANDIDATES.filter(u => !deadCandidates.has(u));
+    const effectiveList = activeCandidates.length > 0 ? activeCandidates : DJANGO_URL_CANDIDATES;
+
     // If we have a verified working base URL, try it first for instant response
-    const candidates = cachedWorkingBaseUrl
-        ? [cachedWorkingBaseUrl, ...DJANGO_URL_CANDIDATES.filter(u => u !== cachedWorkingBaseUrl)]
-        : DJANGO_URL_CANDIDATES;
+    const candidates = cachedWorkingBaseUrl && !deadCandidates.has(cachedWorkingBaseUrl)
+        ? [cachedWorkingBaseUrl, ...effectiveList.filter(u => u !== cachedWorkingBaseUrl)]
+        : effectiveList;
 
     for (const baseUrl of candidates) {
         try {
@@ -79,6 +84,9 @@ async function callDjangoApi(endpoint, options = {}) {
             return data;
         } catch (err) {
             lastError = err;
+            if (err.message && (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND'))) {
+                deadCandidates.add(baseUrl);
+            }
             if (cachedWorkingBaseUrl === baseUrl) {
                 cachedWorkingBaseUrl = null; // Invalidate cache on failure
             }
@@ -366,14 +374,17 @@ async function startBot(sessionName = null) {
         let imageBase64 = null;
         if (imageMsg) {
             try {
-                await sock.sendPresenceUpdate('composing', remoteJid);
-                await safeReply(remoteJid, '⏳ Analyzing your photo/bill... Please wait a few seconds! 📸', msg);
-                const buffer = await downloadMediaMessage(
-                    msg,
-                    'buffer',
-                    {},
-                    { logger: pino({ level: 'silent' }) }
-                );
+                sock.sendPresenceUpdate('composing', remoteJid).catch(() => {});
+                // Fast parallel execution: dispatch typing feedback and download concurrently
+                const [buffer] = await Promise.all([
+                    downloadMediaMessage(
+                        msg,
+                        'buffer',
+                        {},
+                        { logger: pino({ level: 'silent' }) }
+                    ),
+                    safeReply(remoteJid, '⏳ Analyzing your photo/bill... 📸', msg).catch(() => {})
+                ]);
                 imageBase64 = buffer.toString('base64');
                 console.log(`📸 Downloaded receipt image (${buffer.length} bytes) from ${maskedPhone}`);
             } catch (err) {
