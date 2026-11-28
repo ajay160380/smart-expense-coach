@@ -1819,6 +1819,17 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 
     show_wa_banner = request.session.pop('show_wa_banner', False)
 
+    raw_wa = str(profile.phone_number or profile.whatsapp_number or '')
+    wa_digits = ''.join(ch for ch in raw_wa if ch.isdigit())
+    if len(wa_digits) == 12 and wa_digits.startswith('91'):
+        whatsapp_display = f"+91 {wa_digits[2:7]} {wa_digits[7:]}"
+    elif len(wa_digits) == 10:
+        whatsapp_display = f"+91 {wa_digits[:5]} {wa_digits[5:]}"
+    elif profile.whatsapp_linked:
+        whatsapp_display = "Bot Connected"
+    else:
+        whatsapp_display = ""
+
     context = {
         "budget":               budget,
         "insight":              insight,
@@ -1835,6 +1846,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         "current_filter":       filter_type,
         "whatsapp_linked":      profile.whatsapp_linked,
         "whatsapp_number":      profile.whatsapp_number,
+        "whatsapp_display":     whatsapp_display,
+        "member_days":          max((date.today() - user.date_joined.date()).days, 0),
         "user_phone":           profile.phone_number if (profile.phone_number and not str(profile.phone_number).startswith('g_')) else "",
         "budget_cycle_start_day": getattr(profile, 'budget_cycle_start_day', 1),
         "search_query":         search_query,
@@ -1913,12 +1926,22 @@ def add_expense(request: HttpRequest) -> HttpResponse:
         user=request.user,
         amount=validated["amount"],
         category=validated["category"],
+        icon=CAT_ICONS.get(validated["category"], "📦"),
         date=validated["date"],
+        description=validated.get("description", ""),
+        source="manual",
     )
     logger.info("Expense added uid=%s id=%s amount=%s cat=%s",
                 request.user.id, expense.pk, validated["amount"], validated["category"])
 
     update_user_gamification(request.user, validated["date"])
+    try:
+        from .notification_engine import evaluate_expense_alerts
+        fired = evaluate_expense_alerts(request.user, expense)
+        if fired:
+            request.session['pending_web_alerts'] = fired
+    except Exception as e_alert:
+        logger.debug("evaluate_expense_alerts warning: %s", e_alert)
     messages.success(request, f"{CAT_ICONS.get(validated['category'],'📦')} ₹{validated['amount']:,} added! ✅")
     return redirect("dashboard")
 
@@ -3023,6 +3046,13 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             if smart_alert:
                 msg_lines.append("")
                 msg_lines.append(smart_alert)
+
+            web_alerts = []
+            try:
+                from .notification_engine import evaluate_expense_alerts
+                web_alerts = evaluate_expense_alerts(target_user, expense)
+            except Exception:
+                pass
                 
             return JsonResponse({
                 "status": "success",
@@ -3030,6 +3060,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "expense_id": expense.pk,
                 "transcription": spoken_text,
                 "action": "log_expenses",
+                "alerts": web_alerts,
                 "expense": {
                     "id": expense.pk,
                     "amount": float(expense.amount),
@@ -3748,6 +3779,14 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
             if smart_alert:
                 msg_lines.append("")
                 msg_lines.append(smart_alert)
+
+            web_alerts = []
+            try:
+                from .notification_engine import evaluate_expense_alerts
+                for ce in created_expenses:
+                    web_alerts.extend(evaluate_expense_alerts(target_user, ce))
+            except Exception:
+                pass
                 
             final_message = "\n".join(msg_lines)
 
@@ -3767,6 +3806,7 @@ def voice_expense(request: HttpRequest) -> JsonResponse:
                 "expense_id": created_expenses[0].pk,
                 "transcription": spoken_text,
                 "action": "log_expenses",
+                "alerts": web_alerts,
                 "expense": {
                     "id": created_expenses[0].pk,
                     "amount": float(total_logged),
@@ -4754,6 +4794,39 @@ def api_notification_settings(request):
     })
 
 
+@api_login_required
+def api_web_alerts_feed(request: HttpRequest) -> JsonResponse:
+    """Evaluates due morning/night alerts for web user + returns pending expense alerts and recent logs."""
+    pending = request.session.pop('pending_web_alerts', [])
+    if not isinstance(pending, list):
+        pending = []
+    from .notification_engine import check_web_due_notifications
+    data = check_web_due_notifications(request.user)
+    combined = pending + data.get("due_alerts", [])
+    return JsonResponse({
+        "status": "success",
+        "alerts": combined,
+        "recent_logs": data.get("recent_logs", []),
+        "schedule": data.get("schedule", {}),
+    })
+
+
+@api_login_required
+@require_POST
+def api_test_web_alert(request: HttpRequest) -> JsonResponse:
+    """Triggers a live test of Morning / Night / Live / Repeat Nudge alert in user's current tone & timezone."""
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except (json.JSONDecodeError, TypeError):
+        body = {}
+    kind = str(body.get("kind", "live")).strip().lower()
+    if kind not in ("morning", "night", "live", "nudge"):
+        kind = "live"
+    from .notification_engine import send_test_notification
+    res = send_test_notification(request.user, kind)
+    return JsonResponse(res)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @throttle_classes([ScopedRateThrottle])
@@ -5433,6 +5506,12 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
     )
     update_user_gamification(request.user, validated["date"])
     invalidate_user_caches(request.user)
+    alerts = []
+    try:
+        from .notification_engine import evaluate_expense_alerts
+        alerts = evaluate_expense_alerts(request.user, expense)
+    except Exception as e_alert:
+        logger.debug("api_quick_add alert warning: %s", e_alert)
 
     return JsonResponse({
         "status":     "success",
@@ -5442,6 +5521,7 @@ def api_quick_add(request: HttpRequest) -> JsonResponse:
         "category":   validated["category"],
         "icon":       expense.icon,
         "date":       validated["date"].isoformat(),
+        "alerts":     alerts,
     }, status=201)
 
 
@@ -6188,7 +6268,12 @@ def api_delete_goal(request: HttpRequest, pk: int) -> JsonResponse:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def generate_daily_tip(user, tip_type: str = "morning") -> str:
-    """Generate a personalized AI money tip based on user's spending patterns."""
+    """Generate a personalized AI money tip based on user's spending patterns and AI Alert Tone."""
+    profile = getattr(user, 'profile', None)
+    tone = getattr(profile, 'notification_tone', 'normal') if profile else 'normal'
+    if tone not in ('normal', 'roast'):
+        tone = 'normal'
+
     today = date.today()
     week_ago = today - timedelta(days=7)
 
@@ -6199,7 +6284,7 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
                .annotate(total=Sum("amount"))
                .order_by("-total").first())
 
-    budget = float(getattr(user.profile, 'monthly_budget', 20000))
+    budget = float(getattr(profile, 'monthly_budget', 20000)) if profile else 20000.0
     month_qs = Expense.objects.filter(user=user, date__year=today.year, date__month=today.month)
     month_spent = _safe_float(month_qs.aggregate(t=Sum("amount"))["t"])
     budget_pct = (month_spent / budget * 100) if budget > 0 else 0
@@ -6212,46 +6297,47 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
     try:
         user_name = user.first_name.title() if user.first_name else user.username.title()
         time_of_day = "Morning" if tip_type == "morning" else "Night"
+        tone_instruction = (
+            "5. TONE: Witty, playful Desi/Hinglish Roast (gentle sarcasm about food delivery/shopping habits, warm underneath).\n"
+            if tone == "roast" else
+            "5. TONE: Warm, encouraging, and clear.\n"
+        )
 
         if tip_type == "morning":
             safe_info = calculate_safe_to_spend(user)
             safe_allowance = safe_info["safe_limit_today"]
             prompt = (
-                f"You are a friendly personal financial coach.\n"
+                f"You are a personal financial coach.\n"
                 f"User Name: {user_name}\n"
                 f"Time: Morning\n"
                 f"Today's Safe-to-Spend Allowance: ₹{safe_allowance:,.0f}\n"
                 f"Past 7 days total spent: ₹{week_total:,.0f}\n"
                 f"Top spending category: {cat_name} (₹{cat_total:,.0f})\n"
                 f"Monthly budget status: {budget_pct:.0f}% of ₹{budget:,.0f} budget used (₹{month_spent:,.0f} spent)\n\n"
-                f"Write a very short, simple Good Morning message for WhatsApp in pure English.\n"
+                f"Write a short Good Morning tip.\n"
                 f"STRICT RULES:\n"
-                f"1. LANGUAGE: Simple, clear, everyday English ONLY. Absolutely NO Hindi or Hinglish words.\n"
-                f"2. GREETING: Start with '*Good Morning, {user_name}!* ☀️' or '*Good Morning, {user_name}!* 🌅'.\n"
+                f"2. GREETING: Start with '*Good Morning, {user_name}!* ☀️'.\n"
                 f"3. SAFE-TO-SPEND: Clearly mention today's Safe-to-Spend limit of *₹{safe_allowance:,.0f}*.\n"
-                f"4. CONTENT: Keep it very simple and positive — one short sentence to spend mindfully today.\n"
-                f"5. TONE: Warm, encouraging, and clear.\n"
-                f"6. LENGTH: 15-25 words maximum! Very short and simple.\n"
-                f"7. FORMAT: Use WhatsApp *bold* formatting for key limit and 1-2 friendly emojis.\n"
-                f"Return ONLY the final message to be sent."
+                f"4. CONTENT: One punchy sentence referencing {cat_name} spend or mindful budget.\n"
+                f"{tone_instruction}"
+                f"6. LENGTH: 15-25 words maximum!\n"
+                f"Return ONLY the final message."
             )
         else:
             prompt = (
-                f"You are a friendly personal financial coach.\n"
+                f"You are a personal financial coach.\n"
                 f"User Name: {user_name}\n"
                 f"Time: Night\n"
                 f"Past 7 days total spent: ₹{week_total:,.0f}\n"
                 f"Top spending category: {cat_name} (₹{cat_total:,.0f})\n"
                 f"Monthly budget status: {budget_pct:.0f}% of ₹{budget:,.0f} budget used (₹{month_spent:,.0f} spent)\n\n"
-                f"Write a very short, simple Good Night message for WhatsApp in pure English.\n"
+                f"Write a short Good Night summary tip.\n"
                 f"STRICT RULES:\n"
-                f"1. LANGUAGE: Simple, clear, everyday English ONLY. Absolutely NO Hindi or Hinglish words.\n"
-                f"2. GREETING: Start with '*Good Night, {user_name}!* 🌙' or '*Good Night, {user_name}!* ✨'.\n"
-                f"3. CONTENT: A simple, gentle reminder to log today's expenses and get good sleep.\n"
-                f"4. TONE: Peaceful, relaxing, and positive.\n"
-                f"5. LENGTH: 15-25 words maximum! Very short and simple.\n"
-                f"6. FORMAT: Use WhatsApp *bold* formatting and 1-2 friendly emojis.\n"
-                f"Return ONLY the final message to be sent."
+                f"2. GREETING: Start with '*Good Night, {user_name}!* 🌙'.\n"
+                f"3. CONTENT: Mention staying on track or logging today's expenses.\n"
+                f"{tone_instruction}"
+                f"6. LENGTH: 15-25 words maximum!\n"
+                f"Return ONLY the final message."
             )
 
         r = _groq_client().chat.completions.create(
@@ -6277,27 +6363,41 @@ def generate_daily_tip(user, tip_type: str = "morning") -> str:
                 safe_allowance = safe_info["safe_limit_today"]
             except Exception:
                 safe_allowance = 500.0
-            tips_fallback = [
-                f"☀️ *Good Morning, {user_name}!* Today's Safe-to-Spend limit is *₹{safe_allowance:,.0f}*. Spend mindfully today to keep your savings on track! 📈✨",
-                f"🌅 *Good Morning, {user_name}!* Your daily spending target today is *₹{safe_allowance:,.0f}*. Every smart choice today builds financial freedom! 💼💰",
-                f"☕ *Good Morning, {user_name}!* Make today count financially with a Safe-to-Spend allowance of *₹{safe_allowance:,.0f}*. Stay focused on your goals! 🚀💸",
-            ]
+            if tone == "roast":
+                tips_fallback = [
+                    f"☀️ *Good Morning, {user_name}!* Safe-to-Spend limit is *₹{safe_allowance:,.0f}* — Zomato & chai stalls pe control rakhna aaj! 🔥",
+                    f"🌅 *Good Morning, {user_name}!* Aaj sirf *₹{safe_allowance:,.0f}* spend karne hain — UPI PIN ko thoda rest do! 😜🔥",
+                ]
+            else:
+                tips_fallback = [
+                    f"☀️ *Good Morning, {user_name}!* Today's Safe-to-Spend limit is *₹{safe_allowance:,.0f}*. Spend mindfully today to keep your savings on track! 📈✨",
+                    f"🌅 *Good Morning, {user_name}!* Your daily spending target today is *₹{safe_allowance:,.0f}*. Every smart choice today builds financial freedom! 💼💰",
+                    f"☕ *Good Morning, {user_name}!* Make today count financially with a Safe-to-Spend allowance of *₹{safe_allowance:,.0f}*. Stay focused on your goals! 🚀💸",
+                ]
         else:
-            tips_fallback = [
-                f"🌙 *Good Night, {user_name}!* Take a quiet moment to log today's expenses before you sleep. Rest easy knowing your finances are on track! 😴✨",
-                f"✨ *Good Night, {user_name}!* Financial peace of mind comes from daily consistency. Sleep well and recharge for a prosperous tomorrow! 🛌🌠",
-                f"🌌 *Good Night, {user_name}!* Great job staying mindful of your spending today. Relax, unwind, and have sweet dreams! 🌙💫",
-            ]
+            if tone == "roast":
+                tips_fallback = [
+                    f"🌙 *Good Night, {user_name}!* Check karo aaj Swiggy-Blinkit ne kitna nuksaan kiya aur expenses log karke so jao! 🔥",
+                    f"✨ *Good Night, {user_name}!* Wallet ko lock maaro aur aaj ka kharch log karke chain ki neend lo! 😴🔥",
+                ]
+            else:
+                tips_fallback = [
+                    f"🌙 *Good Night, {user_name}!* Take a quiet moment to log today's expenses before you sleep. Rest easy knowing your finances are on track! 😴✨",
+                    f"✨ *Good Night, {user_name}!* Financial peace of mind comes from daily consistency. Sleep well and recharge for a prosperous tomorrow! 🛌🌠",
+                    f"🌌 *Good Night, {user_name}!* Great job staying mindful of your spending today. Relax, unwind, and have sweet dreams! 🌙💫",
+                ]
         import random
         return random.choice(tips_fallback)
 
 
 @api_login_required
 def api_daily_tip(request: HttpRequest) -> JsonResponse:
-    """Get today's personalized money tip (morning or night based on time)."""
+    """Get today's personalized money tip honoring user's timezone & AI alert tone."""
     client_type = request.GET.get('type')
     client_hour = request.GET.get('hour')
-    
+    profile = getattr(request.user, 'profile', None)
+    tone = getattr(profile, 'notification_tone', 'normal') if profile else 'normal'
+
     if client_type in ['morning', 'night']:
         tip_type = client_type
     elif client_hour is not None:
@@ -6305,20 +6405,22 @@ def api_daily_tip(request: HttpRequest) -> JsonResponse:
             h = int(client_hour)
             tip_type = "night" if (h >= 18 or h < 5) else "morning"
         except ValueError:
-            now = timezone.localtime(timezone.now())
-            tip_type = "night" if (now.hour >= 18 or now.hour < 5) else "morning"
+            from .notification_engine import _get_user_local_dt
+            now_local, _ = _get_user_local_dt(profile)
+            tip_type = "night" if (now_local.hour >= 18 or now_local.hour < 5) else "morning"
     else:
-        now = timezone.localtime(timezone.now())
-        tip_type = "night" if (now.hour >= 18 or now.hour < 5) else "morning"
+        from .notification_engine import _get_user_local_dt
+        now_local, _ = _get_user_local_dt(profile)
+        tip_type = "night" if (now_local.hour >= 18 or now_local.hour < 5) else "morning"
 
-    ck = f"daily_tip_{tip_type}_{request.user.id}_{date.today().isoformat()}"
+    ck = f"daily_tip_{tip_type}_{tone}_{request.user.id}_{date.today().isoformat()}"
     cached = cache.get(ck)
     if cached:
-        return JsonResponse({"tip": cached, "cached": True, "type": tip_type})
+        return JsonResponse({"tip": cached, "cached": True, "type": tip_type, "tone": tone})
 
     tip = generate_daily_tip(request.user, tip_type)
     cache.set(ck, tip, 86400)  # Cache for 24 hours
-    return JsonResponse({"tip": tip, "cached": False, "type": tip_type})
+    return JsonResponse({"tip": tip, "cached": False, "type": tip_type, "tone": tone})
 
 
 @csrf_exempt

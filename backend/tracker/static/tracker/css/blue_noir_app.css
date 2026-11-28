@@ -1,0 +1,716 @@
+/* ══════════════════════════════════════════════════
+   EXPENSE TRACKER — INTERNAL BLUE NOIR APP THEME
+   Cohesive #000000 + #3b82f6 / #60a5fa Noir System
+   Applies across Base Shell, Auth, Dashboard, Splits & Admin
+   without altering backend or JS functionality.
+   ══════════════════════════════════════════════════ */
+
+html[data-theme="dark"] {
+    --bg-base: #000000 !important;
+    --bg: #000000 !important;
+    --bg-glass: rgba(5, 8, 16, 0.84) !important;
+    --bg-card: #060912 !important;
+    --surface: rgba(8, 12, 22, 0.90) !important;
+    --bg-elevated: #0c1324 !important;
+    --surface2: #0a101d !important;
+    --surface3: #131d33 !important;
+    --text-main: #ffffff !important;
+    --text: #ffffff !important;
+    --text1: #ffffff !important;
+    --text2: #cbd5e1 !important;
+    --text-muted: #94a3b8 !important;
+    --text3: #94a3b8 !important;
+    --border-glass: rgba(255, 255, 255, 0.11) !important;
+    --border-light: rgba(255, 255, 255, 0.12) !important;
+    --border: rgba(255, 255, 255, 0.10) !important;
+    --border2: rgba(255, 255, 255, 0.18) !important;
+    --border-subtle: rgba(255, 255, 255, 0.08) !important;
+    --primary: #3b82f6 !important;
+    --primary-light: #60a5fa !important;
+    --primary-dark: #1d4ed8 !important;
+    --primary-d: #1d4ed8 !important;
+    --primary-l: rgba(59, 130, 246, 0.14) !important;
+    --primary-glow: rgba(59, 130, 246, 0.36) !important;
+    --secondary: #60a5fa !important;
+    --accent: #60a5fa !important;
+    --green: #34d399 !important;
+    --green-bg: rgba(16, 185, 129, 0.14) !important;
+    --badge-glow: rgba(59, 130, 246, 0.16) !important;
+    --shadow-soft: 0 22px 58px rgba(0, 0, 0, 0.82), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    --shadow: 0 16px 44px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    --shadow-md: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 24px rgba(59, 130, 246, 0.10) !important;
+    --shadow-glow: 0 10px 28px rgba(59, 130, 246, 0.30) !important;
+}
+
+/* Global Blue Noir Canvas Grid + Subtle Overhead Blue Aura */
+html[data-theme="dark"] body {
+    background-color: #000000 !important;
+    background-image:
+        radial-gradient(ellipse 85% 420px at 50% -60px, rgba(59, 130, 246, 0.18), transparent 72%),
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px) !important;
+    background-size: 100% 100%, 40px 40px, 40px 40px !important;
+    background-attachment: fixed !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .bg-mesh,
+html[data-theme="dark"] body::before,
+html[data-theme="dark"] body::after {
+    background: radial-gradient(circle at 50% 10%, rgba(59, 130, 246, 0.14), transparent 58%) !important;
+    opacity: 0.72 !important;
+    animation: none !important;
+}
+
+/* ── FLOATING PILL NAVBAR (BASE SHELL: Auth, Splits, Admin) ── */
+.navbar-wrapper {
+    padding: 18px 20px 0 !important;
+}
+
+.navbar {
+    border-radius: 9999px !important;
+    padding: 8px 14px 8px 18px !important;
+    gap: 16px !important;
+}
+
+html[data-theme="dark"] .navbar,
+html[data-theme="dark"] .nav {
+    background: rgba(4, 7, 15, 0.82) !important;
+    backdrop-filter: blur(22px) !important;
+    -webkit-backdrop-filter: blur(22px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.11) !important;
+    box-shadow: 0 22px 58px rgba(0, 0, 0, 0.82), 0 0 0 1px rgba(59, 130, 246, 0.09) !important;
+}
+
+.nav-center-links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.nav-center-links a {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.18s ease;
+    white-space: nowrap;
+}
+
+.nav-center-links a:hover,
+.nav-center-links a.active {
+    color: var(--text-main);
+}
+
+.navbar-brand-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    object-fit: cover;
+    display: block;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.34);
+    flex-shrink: 0;
+}
+
+.navbar .theme-toggle {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #93c5fd !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease !important;
+}
+
+.navbar .theme-toggle:hover {
+    border-color: rgba(59, 130, 246, 0.55) !important;
+    background: rgba(59, 130, 246, 0.14) !important;
+    color: #ffffff !important;
+}
+
+html:not([data-theme="dark"]) .navbar .theme-toggle {
+    background: rgba(15, 23, 42, 0.05) !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    color: #2563eb !important;
+}
+
+.nav-pill-cta {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 9px 18px !important;
+    border-radius: 9999px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em !important;
+    background: linear-gradient(135deg, #2563eb, #3b82f6) !important;
+    border: 1px solid rgba(96, 165, 250, 0.45) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.34) !important;
+    text-decoration: none !important;
+    transition: transform 0.16s ease, box-shadow 0.2s ease !important;
+    white-space: nowrap !important;
+}
+
+.nav-pill-cta:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.48) !important;
+}
+
+.nav-login-pill {
+    padding: 7px 14px;
+    border-radius: 9999px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #d4d4d8 !important;
+    text-decoration: none;
+    transition: color 0.18s ease, background-color 0.18s ease;
+    white-space: nowrap;
+}
+
+.nav-login-pill:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+html:not([data-theme="dark"]) .nav-login-pill {
+    color: #334155 !important;
+}
+
+@media (max-width: 860px) {
+    .nav-center-links {
+        display: none !important;
+    }
+    .navbar {
+        padding: 8px 12px 8px 14px !important;
+    }
+}
+
+/* ── DASHBOARD SPECIFIC NOIR REFINEMENTS ── */
+
+/* Prevent desktop duplicate floating dock overlapping cards */
+@media (min-width: 769px) {
+    .floating-dock {
+        display: none !important;
+    }
+}
+
+/* Dashboard top nav bar sleekness */
+html[data-theme="dark"] .nav {
+    border-radius: 18px !important;
+    padding: 12px 20px !important;
+    margin-bottom: 22px !important;
+}
+
+.dash-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dash-nav-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border-radius: 9999px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text2);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    text-decoration: none;
+    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+    white-space: nowrap;
+}
+
+.dash-nav-chip:hover {
+    color: #ffffff;
+    border-color: rgba(59, 130, 246, 0.45);
+    background: rgba(59, 130, 246, 0.12);
+}
+
+@media (max-width: 900px) {
+    .dash-nav-links {
+        display: none !important;
+    }
+}
+
+/* Replace clashing orange Record button with sleek obsidian Blue Noir pill (turns red only while recording) */
+html[data-theme="dark"] .voice-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(59, 130, 246, 0.34) !important;
+    color: #e2e8f0 !important;
+    border-radius: 9999px !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] .voice-btn:hover {
+    background: rgba(59, 130, 246, 0.14) !important;
+    border-color: rgba(96, 165, 250, 0.65) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.22) !important;
+}
+
+html[data-theme="dark"] .voice-btn.recording {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    border-color: rgba(248, 113, 113, 0.7) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .add-btn {
+    background: linear-gradient(135deg, #2563eb, #3b82f6) !important;
+    border: 1px solid rgba(96, 165, 250, 0.45) !important;
+    color: #ffffff !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.34) !important;
+}
+
+html[data-theme="dark"] .add-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+    box-shadow: 0 10px 28px rgba(37, 99, 235, 0.48) !important;
+}
+
+html[data-theme="dark"] .profile-btn {
+    background: rgba(59, 130, 246, 0.14) !important;
+    border: 1.5px solid rgba(96, 165, 250, 0.55) !important;
+    color: #93c5fd !important;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 14px !important;
+}
+
+/* Segmented Period Tabs */
+html[data-theme="dark"] .tabs {
+    background: rgba(8, 12, 22, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    padding: 4px !important;
+}
+
+html[data-theme="dark"] .tab {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .tab:hover {
+    color: #ffffff !important;
+}
+
+/* Today's Money Tip — replace screaming neon mint green with sleek Blue Noir obsidian glass bar */
+html[data-theme="dark"] .tip-section {
+    background:
+        radial-gradient(420px circle at 10% 50%, rgba(59, 130, 246, 0.13), transparent 70%),
+        linear-gradient(135deg, rgba(9, 14, 26, 0.96), rgba(5, 8, 16, 0.96)) !important;
+    border: 1px solid rgba(59, 130, 246, 0.28) !important;
+    border-left: 3px solid #3b82f6 !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55) !important;
+    padding: 15px 18px !important;
+}
+
+html[data-theme="dark"] .tip-section:hover {
+    border-color: rgba(96, 165, 250, 0.48) !important;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.65), 0 0 22px rgba(59, 130, 246, 0.14) !important;
+}
+
+html[data-theme="dark"] .tip-section::after {
+    display: none !important;
+}
+
+html[data-theme="dark"] .tip-icon-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.14);
+    border: 1px solid rgba(59, 130, 246, 0.30);
+    color: #60a5fa;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+html[data-theme="dark"] .tip-label {
+    color: #60a5fa !important;
+    font-size: 10px !important;
+    letter-spacing: 0.11em !important;
+}
+
+html[data-theme="dark"] .tip-text {
+    color: #e2e8f0 !important;
+    font-size: 13.5px !important;
+}
+
+html[data-theme="dark"] .tip-refresh {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #93c5fd !important;
+    width: 32px !important;
+    height: 32px !important;
+}
+
+html[data-theme="dark"] .tip-refresh:hover {
+    background: rgba(59, 130, 246, 0.16) !important;
+    border-color: rgba(96, 165, 250, 0.45) !important;
+    color: #ffffff !important;
+}
+
+/* Fix Hero Card Border Glow & Kill Purple ₹12,964 Gradient */
+html[data-theme="dark"] .hero {
+    background: rgba(8, 12, 22, 0.94) !important;
+    border: 1px solid rgba(59, 130, 246, 0.28) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.72), 0 0 30px rgba(59, 130, 246, 0.08) !important;
+}
+
+html[data-theme="dark"] .hero::before {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.48), rgba(96, 165, 250, 0.20), rgba(37, 99, 235, 0.48)) !important;
+    opacity: 0.35 !important;
+    animation: none !important;
+}
+
+html[data-theme="dark"] .hero::after {
+    background: rgba(7, 10, 19, 0.98) !important;
+}
+
+html[data-theme="dark"] .hero:hover {
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 36px rgba(59, 130, 246, 0.16) !important;
+}
+
+html[data-theme="dark"] .hero-amount,
+html[data-theme="dark"] .hero-amount strong,
+html[data-theme="dark"] .sc-val:not(.green):not(.amber):not(.red) {
+    background: linear-gradient(135deg, #ffffff 15%, #bfdbfe 58%, #3b82f6 100%) !important;
+    background-size: 100% 100% !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    animation: none !important;
+}
+
+html[data-theme="dark"] .budget-btn {
+    background: rgba(59, 130, 246, 0.10) !important;
+    border: 1px solid rgba(59, 130, 246, 0.30) !important;
+    color: #93c5fd !important;
+    border-radius: 9999px !important;
+    padding: 7px 14px !important;
+}
+
+html[data-theme="dark"] .budget-btn:hover {
+    background: rgba(59, 130, 246, 0.20) !important;
+    border-color: #60a5fa !important;
+    color: #ffffff !important;
+}
+
+/* Explicit high-contrast View All pill inside Recent Activity */
+html[data-theme="dark"] .view-all-btn {
+    padding: 5px 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    background: rgba(59, 130, 246, 0.12) !important;
+    border: 1px solid rgba(59, 130, 246, 0.34) !important;
+    color: #93c5fd !important;
+    border-radius: 9999px !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+}
+
+html[data-theme="dark"] .view-all-btn:hover {
+    background: rgba(59, 130, 246, 0.24) !important;
+    border-color: #60a5fa !important;
+    color: #ffffff !important;
+}
+
+/* AI Coach Neon Purple/Cyan Banner -> Deep Blue Noir Glass Banner */
+html[data-theme="dark"] .ai-banner {
+    background:
+        radial-gradient(500px circle at 15% 50%, rgba(59, 130, 246, 0.22), transparent 65%),
+        linear-gradient(135deg, rgba(12, 19, 36, 0.96), rgba(37, 99, 235, 0.24)) !important;
+    border: 1px solid rgba(59, 130, 246, 0.40) !important;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.65), 0 0 28px rgba(59, 130, 246, 0.14) !important;
+}
+
+html[data-theme="dark"] .ai-banner:hover {
+    border-color: #60a5fa !important;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.78), 0 0 36px rgba(59, 130, 246, 0.25) !important;
+}
+
+html[data-theme="dark"] .ai-banner-label {
+    color: #60a5fa !important;
+}
+
+/* Sidebar refinement */
+html[data-theme="dark"] .app-sidebar {
+    background: rgba(8, 12, 22, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.11) !important;
+    padding: 14px !important;
+}
+
+html[data-theme="dark"] .app-sidebar-btn {
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .app-sidebar-btn:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .app-sidebar-btn .menu-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .app-sidebar-btn.active {
+    background: rgba(59, 130, 246, 0.14) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(59, 130, 246, 0.42) !important;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.14) !important;
+}
+
+/* Shared Cards, Panels, Modals, Sidebars */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .safe-spend-card,
+html[data-theme="dark"] .bills-section,
+html[data-theme="dark"] .txn-section,
+html[data-theme="dark"] .compare-section,
+html[data-theme="dark"] .goals-section,
+html[data-theme="dark"] .split-section,
+html[data-theme="dark"] .insight-panel,
+html[data-theme="dark"] .glass-panel,
+html[data-theme="dark"] .split-card,
+html[data-theme="dark"] .goal-card,
+html[data-theme="dark"] .note-card,
+html[data-theme="dark"] .daily-budget-card,
+html[data-theme="dark"] .money-breakdown-card,
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .profile-modal-wrap,
+html[data-theme="dark"] .profile-dropdown,
+html[data-theme="dark"] .dropdown-menu {
+    background: rgba(8, 12, 22, 0.92) !important;
+    border-color: rgba(255, 255, 255, 0.11) !important;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.72) !important;
+}
+
+html[data-theme="dark"] .card:hover,
+html[data-theme="dark"] .stat-card:hover,
+html[data-theme="dark"] .safe-spend-card:hover,
+html[data-theme="dark"] .split-card:hover,
+html[data-theme="dark"] .goal-card:hover,
+html[data-theme="dark"] .note-card:hover {
+    border-color: rgba(59, 130, 246, 0.40) !important;
+}
+
+html[data-theme="dark"] .h-stat,
+html[data-theme="dark"] .pd-stat,
+html[data-theme="dark"] .bill-card,
+html[data-theme="dark"] .compare-stat,
+html[data-theme="dark"] .cc-item,
+html[data-theme="dark"] .txn-item,
+html[data-theme="dark"] .ai-popup .ai-input-row,
+html[data-theme="dark"] .ai-popup .ai-chips {
+    background: rgba(13, 18, 32, 0.88) !important;
+    border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+html[data-theme="dark"] .card-title,
+html[data-theme="dark"] .section-title,
+html[data-theme="dark"] .hero-label,
+html[data-theme="dark"] .sc-label {
+    color: #94a3b8 !important;
+}
+
+/* Pure Electric Blue Buttons & Progress Gradients (Replace Purple) */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .btn-submit,
+html[data-theme="dark"] .submit-btn,
+html[data-theme="dark"] .ai-fab-btn,
+html[data-theme="dark"] .tab.active,
+html[data-theme="dark"] .ftag.active,
+html[data-theme="dark"] .ai-pop-head,
+html[data-theme="dark"] .ai-msg.user .ai-bubble,
+html[data-theme="dark"] .ai-send,
+html[data-theme="dark"] .app-sidebar-btn.active .menu-icon {
+    background: linear-gradient(135deg, #2563eb, #3b82f6) !important;
+    border-color: rgba(96, 165, 250, 0.40) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 22px rgba(59, 130, 246, 0.30) !important;
+}
+
+html[data-theme="dark"] .progress-fill,
+html[data-theme="dark"] .xp-fill,
+html[data-theme="dark"] .goal-bar-fill {
+    background: linear-gradient(90deg, #2563eb, #60a5fa) !important;
+}
+
+html[data-theme="dark"] .add-small-btn,
+html[data-theme="dark"] .export-btn {
+    background: rgba(59, 130, 246, 0.14) !important;
+    color: #93c5fd !important;
+    border: 1px solid rgba(59, 130, 246, 0.30) !important;
+}
+
+html[data-theme="dark"] .add-small-btn:hover,
+html[data-theme="dark"] .export-btn:hover {
+    background: #2563eb !important;
+    color: #ffffff !important;
+}
+
+/* Modal overlay fallback for child pages reusing partials/modals.html (e.g. my_splits.html) */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.74);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+    backdrop-filter: blur(8px);
+    padding: 20px;
+}
+
+.overlay.open {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    padding: 26px;
+    width: 100%;
+    max-width: 440px;
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Mobile Dock Blue Noir Styling (<= 768px only) */
+@media (max-width: 768px) {
+    html[data-theme="dark"] .floating-dock {
+        background: rgba(6, 9, 17, 0.95) !important;
+        border-top: 1px solid rgba(59, 130, 246, 0.28) !important;
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.85) !important;
+    }
+}
+
+/* Form Controls across Dark Dashboard / Splits / Auth */
+html[data-theme="dark"] .form-input,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] .search-input,
+html[data-theme="dark"] input[type="date"],
+html[data-theme="dark"] input[type="number"],
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="email"],
+html[data-theme="dark"] input[type="password"],
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+    background: #03050b !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html[data-theme="dark"] .form-input:focus,
+html[data-theme="dark"] .form-select:focus,
+html[data-theme="dark"] .search-input:focus,
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] textarea:focus,
+html[data-theme="dark"] select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22) !important;
+}
+
+/* ── BLUE NOIR AUTH SPLIT CARDS (Login & Register) ── */
+html[data-theme="dark"] .auth-split-card {
+    background: #060911 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.90), 0 0 0 1px rgba(59, 130, 246, 0.14) !important;
+}
+
+html[data-theme="dark"] .auth-left {
+    background:
+        radial-gradient(circle at 22% 18%, rgba(59, 130, 246, 0.24), transparent 58%),
+        radial-gradient(circle at 80% 85%, rgba(37, 99, 235, 0.16), transparent 52%),
+        linear-gradient(160deg, #041029 0%, #020612 58%, #000000 100%) !important;
+    animation: none !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .auth-left::before {
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    top: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px) !important;
+    background-size: 32px 32px !important;
+}
+
+html[data-theme="dark"] .wa-mockup {
+    background: rgba(8, 12, 24, 0.88) !important;
+    border: 1px solid rgba(59, 130, 246, 0.30) !important;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.65) !important;
+}
+
+html[data-theme="dark"] .wa-reply {
+    background: #111827 !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .typing-indicator {
+    background: #111827 !important;
+}
+
+html[data-theme="dark"] .auth-right {
+    background: #06080f !important;
+}
+
+html[data-theme="dark"] .auth-tab-group {
+    background: #020307 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="dark"] .auth-tab.active {
+    background: rgba(59, 130, 246, 0.18) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+html[data-theme="dark"] .real-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .footer-links a:hover {
+    color: #60a5fa !important;
+}

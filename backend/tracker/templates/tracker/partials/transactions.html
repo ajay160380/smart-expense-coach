@@ -1,25 +1,69 @@
-<!-- ✅ TRANSACTIONS — SCROLLABLE VERSION -->
-      <div class="txn-section">
-        <div class="txn-header">
-          <div class="card-title" style="margin:0">💳 Transactions</div>
-          <div class="export-btns">
-            <button class="export-btn" onclick="exportCSV()">CSV ↓</button>
-            <button class="export-btn" onclick="exportPDF()">PDF ↓</button>
-          </div>
-        </div>
-        <div class="search-wrap" style="display:flex; gap: 8px;">
-          <div style="position:relative; flex:1;">
-            <span class="search-icon" style="position:absolute; left:12px; top:12px;">🔍</span>
-            <input class="search-input" id="search-input" placeholder="Search category or note..." oninput="renderTxns()" style="width:100%; padding-left:36px;">
-          </div>
-          <input type="month" id="month-picker" class="search-input" style="width: auto;" onchange="fetchHistory(this.value)">
-        </div>
-        <div class="filter-tags" id="filter-tags"></div>
-        <div class="txn-count-label">
-          <span id="txn-count-text">Loading...</span>
-          <span class="scroll-hint" id="scroll-hint" style="display:none;">↕ Scroll to see all</span>
-        </div>
-        <div class="txn-list-container" id="txn-list-container">
-          <div id="txn-list"></div>
-        </div>
+<!-- ✅ TRANSACTIONS — PREMIUM FULL-SCREEN LEDGER -->
+<div class="txn-section">
+  <div class="txn-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="sec-icon-badge" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      </span>
+      <div>
+        <div class="card-title-lg" style="margin:0">Expense Ledger</div>
+        <div class="card-sub-sm">Filter by category, search notes, inspect past months, or export</div>
       </div>
+    </div>
+    <div class="export-btns">
+      <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+      <button class="export-btn export-btn--solid" onclick="exportPDF()">Export PDF</button>
+    </div>
+  </div>
+
+  <!-- Live Filtered KPI Strip -->
+  <div class="txn-kpi-strip">
+    <div class="txn-kpi-box">
+      <span class="txn-kpi-lbl">Filtered Spend</span>
+      <strong class="txn-kpi-val" id="txn-kpi-total">₹0</strong>
+    </div>
+    <div class="txn-kpi-box">
+      <span class="txn-kpi-lbl">Entries Shown</span>
+      <strong class="txn-kpi-val" id="txn-kpi-count">0</strong>
+    </div>
+    <div class="txn-kpi-box">
+      <span class="txn-kpi-lbl">Average Entry</span>
+      <strong class="txn-kpi-val" id="txn-kpi-avg">₹0</strong>
+    </div>
+  </div>
+
+  <div class="txn-controls-bar">
+    <div class="txn-search-box">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input-clean" id="search-input" placeholder="Search by category, note, or description..." oninput="renderTxns()">
+    </div>
+    <label class="txn-month-box" title="Browse a previous month">
+      <span class="txn-month-lbl">📅 History</span>
+      <input type="month" id="month-picker" class="month-picker-clean" onchange="fetchHistory(this.value)">
+    </label>
+  </div>
+
+  <div class="txn-controls-meta">
+    <div class="filter-tags" id="filter-tags" style="margin-bottom:0;"></div>
+    <div class="tabs" id="txn-period-tabs">
+      <button type="button" class="tab" data-period="week" onclick="setFilter('week',this)">This week</button>
+      <button type="button" class="tab active" data-period="month" onclick="setFilter('month',this)">This month</button>
+      <button type="button" class="tab" data-period="all" onclick="setFilter('all',this)">All time</button>
+    </div>
+  </div>
+
+  <div class="txn-count-label">
+    <span id="txn-count-text">Loading...</span>
+    <span class="scroll-hint" id="scroll-hint" style="display:none;">↕ Scroll ledger to view more</span>
+  </div>
+
+  <div class="txn-ledger-wrap" id="txn-list-container">
+    <div class="txn-table-head">
+      <span>Transaction &amp; Category</span>
+      <span>Date</span>
+      <span class="txn-th-right">Amount</span>
+      <span class="txn-th-right">Actions</span>
+    </div>
+    <div id="txn-list" class="txn-ledger-body"></div>
+  </div>
+</div>

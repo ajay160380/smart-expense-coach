@@ -2,7 +2,12 @@
       {% if comparison.has_prev_data %}
       <div class="compare-section" id="compare-section">
         <div class="compare-header">
-          <div class="section-title">📊 vs {{ comparison.prev_month_name }}</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="sec-icon-badge" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+            <div class="section-title">vs {{ comparison.prev_month_name }}</div>
+          </div>
           <span class="compare-verdict verdict-{{ comparison.verdict }}">{{ comparison.verdict_msg }}</span>
         </div>
         <div class="compare-grid">

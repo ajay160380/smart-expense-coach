@@ -1,52 +1,61 @@
-<!-- PHASE 9: AAJ KA BUDGET (DAILY BUDGET CARD) -->
-<div class="daily-budget-card" style="margin: 16px 0; background: var(--surface, rgba(255, 255, 255, 0.8)); border: 1px solid var(--border, rgba(148, 163, 184, 0.25)); border-radius: var(--radius, 20px); padding: 20px; box-shadow: var(--shadow, 0 8px 30px rgba(0,0,0,0.06)); backdrop-filter: var(--glass-filter, blur(20px)); position: relative; overflow: hidden;">
-  <!-- Header -->
-  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #7C6FF7, #6366F1); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(124, 111, 247, 0.3);">
-        📅
+<!-- DAILY BUDGET PULSE + REAL KEY STATS (Replaces My Cards cleanly without any fake Visa card) -->
+<div class="daily-budget-card fin-card">
+  <div class="card-head-row" style="margin-bottom: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 44px; height: 44px; border-radius: 13px; background: var(--primary-l); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       </div>
       <div>
-        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #7C6FF7;">Aaj Ka Budget • Day {{ daily_budget.day_of_cycle|default:1 }} of {{ daily_budget.total_days_in_cycle|default:30 }}</div>
-        <div style="font-size: 15px; font-weight: 700; color: var(--text, #0F172A);">Daily Spending Target</div>
+        <div class="card-title-lg">Daily Budget Pulse</div>
+        <div style="font-size: 13.5px; color: var(--text3); font-weight: 500; margin-top: 2px;">Day {{ daily_budget.day_of_cycle|default:1 }} of {{ daily_budget.total_days_in_cycle|default:30 }} · {{ daily_budget.days_left|default:0 }}d left</div>
       </div>
     </div>
-    <div style="font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.6px; background: {{ daily_budget.status_color|default:'#10B981' }}18; color: {{ daily_budget.status_color|default:'#10B981' }}; border: 1px solid {{ daily_budget.status_color|default:'#10B981' }}33;">
+    <div id="safe-spend-badge" style="font-size: 12px; font-weight: 700; padding: 6px 13px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; background: {{ daily_budget.status_color|default:'#10B981' }}18; color: {{ daily_budget.status_color|default:'#10B981' }}; border: 1px solid {{ daily_budget.status_color|default:'#10B981' }}33;">
       ● {{ daily_budget.status_label|default:"On Track" }}
     </div>
   </div>
 
   {% if daily_budget.has_budget_set %}
-  <!-- Big Remaining Amount -->
-  <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap;">
     <div>
-      <div style="font-size: 12px; color: var(--text3, #94A3B8); font-weight: 600; text-transform: uppercase;">Aaj Ka Bacha:</div>
-      <div style="font-size: 32px; font-weight: 900; font-family: 'Outfit', var(--font); color: {% if daily_budget.today_remaining >= 0 %}var(--green, #10B981){% else %}var(--red, #EF4444){% endif %}; letter-spacing: -0.5px;">
+      <div style="font-size: 13px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Aaj Ka Bacha</div>
+      <div style="font-size: 44px; font-weight: 800; font-family: var(--display); font-variant-numeric: tabular-nums; color: {% if daily_budget.today_remaining >= 0 %}var(--green, #10B981){% else %}var(--red, #EF4444){% endif %}; letter-spacing: -0.03em; line-height: 1.05;">
         ₹{{ daily_budget.today_remaining|floatformat:0 }}
       </div>
     </div>
-    <div style="text-align: right; font-size: 13px; color: var(--text2, #475569);">
-      <div>Daily Budget: <strong>₹{{ daily_budget.daily_budget|floatformat:0 }}</strong></div>
-      <div>Spent Today: <strong style="color: var(--text, #0F172A);">₹{{ daily_budget.spent_today|floatformat:0 }}</strong> ({{ daily_budget.percent_used }}%)</div>
+    <div style="text-align: right; font-size: 14.5px; color: var(--text2); line-height: 1.65;">
+      <div>Daily limit: <strong id="safe-limit-val" style="color: var(--text);">₹{{ daily_budget.daily_budget|floatformat:0 }}</strong></div>
+      <div>Spent today: <strong id="safe-today-spent" style="color: var(--text);">₹{{ daily_budget.spent_today|floatformat:0 }}</strong></div>
     </div>
   </div>
 
-  <!-- Progress Bar -->
-  <div style="height: 8px; background: var(--surface3, #E2E8F0); border-radius: 100px; overflow: hidden; margin-bottom: 12px;">
-    <div style="height: 100%; width: {{ daily_budget.percent_used }}%; max-width: 100%; background: {{ daily_budget.status_color|default:'#10B981' }}; border-radius: 100px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-  </div>
-
-  <!-- Footer Info -->
-  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text3, #94A3B8); flex-wrap: wrap; gap: 4px;">
-    <span>⏳ {{ daily_budget.days_left }} din cycle me bache hain</span>
-    <span>💡 Monthly {{ daily_budget.basis|title }}: ₹{{ daily_budget.base_amount|floatformat:0 }}</span>
+  <div style="height: 10px; background: var(--surface3); border-radius: 9999px; overflow: hidden; margin-bottom: 12px;">
+    <div id="safe-progress-fill" style="height: 100%; width: {{ daily_budget.percent_used|default:0 }}%; max-width: 100%; background: var(--primary); border-radius: 9999px; transition: width 0.6s ease;"></div>
   </div>
   {% else %}
-  <!-- Prompt to set budget -->
-  <div style="padding: 16px; text-align: center; background: rgba(124, 111, 247, 0.06); border-radius: 12px;">
-    <p style="margin: 0 0 10px 0; font-size: 13px; color: var(--text2, #475569);">Aapne abhi tak apna monthly budget ya income set nahi kiya hai.</p>
-    <button class="budget-btn" onclick="openModal('budgetModal')" style="font-size: 12px; padding: 6px 16px;">Set Monthly Budget / Income</button>
+  <div style="padding: 20px; text-align: center; background: var(--primary-l); border-radius: 14px; margin-bottom: 12px;">
+    <p style="margin: 0 0 12px 0; font-size: 14.5px; color: var(--text2);">Set your monthly budget to track daily limits.</p>
+    <button class="add-small-btn" onclick="openModal('budgetModal')">Set Monthly Budget</button>
   </div>
   {% endif %}
-</div>
 
+  <div style="display: flex; justify-content: space-between; font-size: 13.5px; color: var(--text3); margin-bottom: 4px;">
+    <span>Safe-to-Spend: <strong id="safe-sts-val" style="color: var(--text);">₹{{ safe_to_spend.safe_limit_today|floatformat:0 }}</strong>/day</span>
+    <span>{{ safe_to_spend.pct_used_today|default:0 }}% used today</span>
+  </div>
+
+  <div class="mini-stat-strip">
+    <div class="mini-stat-box">
+      <div class="sc-label">Avg / Day</div>
+      <div class="sc-val" id="stat-avg">₹0</div>
+    </div>
+    <div class="mini-stat-box">
+      <div class="sc-label">Highest</div>
+      <div class="sc-val amber" id="stat-high">₹0</div>
+    </div>
+    <div class="mini-stat-box">
+      <div class="sc-label">Savings</div>
+      <div class="sc-val green" id="stat-save">0%</div>
+    </div>
+  </div>
+</div>

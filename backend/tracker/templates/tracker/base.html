@@ -1,9 +1,21 @@
 <!DOCTYPE html>
 {% load static %}
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function() {
+            try {
+                var saved = localStorage.getItem('theme');
+                if (saved === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch(e) {}
+        })();
+    </script>
     <meta name="google-site-verification" content="2Dbg38KLVpJxGGoyEvEo4ap7whqcG8Ez6GpGHfV4Tys" />
     <meta name="google-site-verification" content="ESoAPliaC4x4kWwcsB7qEApVs046A7qCymxXARDBUk4" />
     <meta name="google-site-verification" content="PFFIAB2rRN7i5UTFW8AfKBPDd68RpQPsnWa21mafAaM" />
@@ -28,28 +40,28 @@
     <style>
         /* 🎨 STUNNING THEME VARIABLES */
         :root {
-            /* Light Theme Palette */
-            --primary: #007AFF;
-            --primary-light: #3395FF;
-            --primary-dark: #0062CC;
-            --primary-glow: rgba(0, 122, 255, 0.4);
-            --secondary: #A855F7;
+            /* Light Theme Palette — Crisp Slate Canvas & Elevated Cards */
+            --primary: #2563EB;
+            --primary-light: #3B82F6;
+            --primary-dark: #1D4ED8;
+            --primary-glow: rgba(37, 99, 235, 0.28);
+            --secondary: #7C3AED;
             
-            --bg-base: #F8FAFC;
-            --bg-glass: rgba(255, 255, 255, 0.7);
-            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-base: #EAF0F9;
+            --bg-glass: rgba(255, 255, 255, 0.88);
+            --bg-card: #FFFFFF;
             
             --text-main: #0F172A;
-            --text-muted: #64748B;
+            --text-muted: #475569;
             
-            --border-glass: rgba(255, 255, 255, 0.6);
-            --border-light: rgba(148, 163, 184, 0.15);
+            --border-glass: rgba(15, 23, 42, 0.10);
+            --border-light: rgba(15, 23, 42, 0.12);
             
             --whatsapp-green: #25D366;
             --whatsapp-dark: #128C7E;
             
-            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08);
-            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
+            --shadow-soft: 0 12px 32px -8px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.04);
+            --shadow-glow: 0 8px 24px rgba(37, 99, 235, 0.24);
             
             --radius-sm: 12px;
             --radius-md: 20px;
@@ -58,31 +70,32 @@
 
         /* 🌙 DARK MODE MASTERPIECE (SLATE PALETTE) */
         [data-theme="dark"] {
-            --primary: #818CF8;
-            --primary-light: #A5B4FC;
-            --primary-dark: #6366F1;
-            --primary-glow: rgba(99, 102, 241, 0.25);
+            --primary: #3B82F6;
+            --primary-light: #60A5FA;
+            --primary-dark: #2563EB;
+            --primary-glow: rgba(59, 130, 246, 0.25);
+            --secondary: #8B5CF6;
             
-            --bg-base: #0F172A;
-            --bg-glass: rgba(30, 41, 59, 0.75);
-            --bg-card: #1E293B;
-            --bg-elevated: #334155;
+            --bg-base: #070B14;
+            --bg-glass: rgba(15, 23, 42, 0.80);
+            --bg-card: #111A2E;
+            --bg-elevated: #1E293B;
             
             --text-main: #F8FAFC;
             --text-muted: #94A3B8;
             
-            --border-glass: #334155;
-            --border-light: #334155;
-            --border-subtle: #334155;
+            --border-glass: rgba(148, 163, 184, 0.16);
+            --border-light: rgba(148, 163, 184, 0.16);
+            --border-subtle: #1E293B;
             
-            --badge-glow: rgba(99, 102, 241, 0.15);
+            --badge-glow: rgba(59, 130, 246, 0.16);
             --pill-pos-bg: rgba(16, 185, 129, 0.15);
             --pill-pos-text: #34D399;
             --pill-neg-bg: rgba(239, 68, 68, 0.15);
             --pill-neg-text: #F87171;
             
-            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.45);
-            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+            --shadow-soft: 0 18px 44px -12px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            --shadow-glow: 0 8px 28px rgba(59, 130, 246, 0.25);
         }
 
         * {
@@ -114,19 +127,20 @@
             top: 0; left: 0; right: 0; bottom: 0;
             z-index: -1;
             background: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(37, 211, 102, 0.1) 0px, transparent 50%);
-            filter: blur(80px);
-            opacity: 0.8;
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.20) 0px, transparent 52%),
+                radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.18) 0px, transparent 52%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.14) 0px, transparent 52%);
+            filter: blur(72px);
+            opacity: 0.95;
             transition: opacity 0.5s ease;
         }
 
         [data-theme="dark"] .bg-mesh {
-            opacity: 0.5;
+            opacity: 0.65;
             background: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.25) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.25) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.22) 0px, transparent 50%),
+                radial-gradient(at 60% 100%, rgba(139, 92, 246, 0.16) 0px, transparent 55%);
         }
 
         /* Premium Floating Navbar */
@@ -193,11 +207,11 @@
 
         /* Glassmorphic Button */
         .btn-glass {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            background: var(--bg-card);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--border-glass);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-light);
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
             color: var(--text-main);
             padding: 10px 20px;
             border-radius: var(--radius-md);
@@ -209,9 +223,10 @@
         }
         
         .btn-glass:hover {
-            background: rgba(255,255,255,0.2);
+            background: var(--bg-glass);
+            border-color: var(--primary);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.14);
         }
 
         /* Solid Gradient Button */
@@ -554,6 +569,11 @@
                 font-size: 12.5px;
                 white-space: nowrap !important;
             }
+            .theme-toggle {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
             .profile-avatar {
                 width: 32px;
                 height: 32px;
@@ -584,6 +604,8 @@
         {% block base_extra_css %}{% endblock %}
     </style>
     {% block extra_css %}{% endblock %}
+    <link rel="icon" type="image/png" href="{% static 'tracker/images/app-icon.png' %}">
+    <link rel="stylesheet" href="{% static 'tracker/css/blue_noir_app.css' %}?v=20261128f">
 </head>
 <body>
     <div class="bg-mesh"></div>
@@ -595,25 +617,41 @@
             {% else %}
                 <a href="{% url 'landing' %}" class="navbar-brand">
             {% endif %}
-                <img src="{% static 'tracker/images/icon.png' %}?v=1784926718" alt="ExpenseTracker Logo" style="height: 44px; width: 44px; border-radius: 12px; object-fit: cover; background-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                <div style="display: flex; flex-direction: column; line-height: 1.1; margin-left: 4px;">
-                    <span style="font-size: 24px; font-weight: 800;">Expense<span style="color: var(--primary);">Tracker</span></span>
+                <img src="{% static 'tracker/images/icon.png' %}?v=1784926718" alt="ExpenseTracker Logo" class="navbar-brand-logo">
+                <div style="display: flex; flex-direction: column; line-height: 1.1; margin-left: 2px;">
+                    <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.03em;">Expense<span style="color: var(--primary);">Tracker</span></span>
                 </div>
             </a>
-            
-            <div class="nav-links">
+
+            <div class="nav-center-links">
                 {% if user.is_authenticated %}
-                    <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
-                        <span id="theme-icon">🌙</span>
+                    <a href="{% url 'dashboard' %}">Dashboard</a>
+                    <a href="{% url 'my_splits_view' %}">Trips &amp; Splits</a>
+                    <a href="{% url 'features' %}">Features</a>
+                    <a href="{% url 'download_apk' %}">Get App</a>
+                {% else %}
+                    <a href="{% url 'landing' %}">Home</a>
+                    <a href="{% url 'features' %}">Features</a>
+                    <a href="{% url 'download_apk' %}">Android APK</a>
+                    <a href="{% url 'about' %}">About</a>
+                {% endif %}
+            </div>
+            
+            <div class="nav-links" style="gap: 12px;">
+                {% if user.is_authenticated %}
+                    <button class="theme-toggle" id="theme-toggle" title="Toggle Theme" aria-label="Toggle Theme">
+                        <span id="theme-icon" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>
+                        </span>
                     </button>
                     
-                    <a href="#" onclick="if(document.getElementById('expenseModal')) { document.getElementById('expenseModal').style.display='flex'; return false; }" class="btn-primary">
+                    <a href="#" onclick="if(document.getElementById('expenseModal')) { document.getElementById('expenseModal').style.display='flex'; return false; }" class="nav-pill-cta">
                         + Add Expense
                     </a>
                     
                     <div class="profile-wrapper">
                         <button class="profile-trigger" id="profile-trigger" onclick="toggleProfileBase(event)">
-                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=6366F1&color=fff&bold=true&rounded=true" class="profile-avatar" alt="Profile">
+                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=2563EB&color=fff&bold=true&rounded=true" class="profile-avatar" alt="Profile">
                             <span class="profile-name">{{ user.username }}</span>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted)"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
@@ -668,8 +706,16 @@
                         </div>
                     </div>
                 {% else %}
-                    <a href="{% url 'login' %}" class="nav-item">Log in</a>
-                    <a href="{% url 'register' %}" class="btn-primary">Get Started</a>
+                    <button class="theme-toggle" id="theme-toggle" title="Toggle Theme" aria-label="Toggle Theme">
+                        <span id="theme-icon" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>
+                        </span>
+                    </button>
+                    <a href="{% url 'login' %}" class="nav-login-pill">Log In</a>
+                    <a href="{% url 'register' %}" class="nav-pill-cta">
+                        <span>Start Free</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
                 {% endif %}
             </div>
         </nav>
@@ -727,17 +773,18 @@
             const themeBtn = document.getElementById('theme-toggle');
             const themeIcon = document.getElementById('theme-icon');
             
+            const sunSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>';
+            const moonSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
             const setTheme = (isDark) => {
                 document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-                if(themeBtn) themeIcon.innerText = isDark ? '☀️' : '🌙';
+                if(themeBtn && themeIcon) themeIcon.innerHTML = isDark ? sunSvg : moonSvg;
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
             };
 
-            // Initialize theme
+            // Initialize theme (defaults to Blue Noir dark unless light explicitly saved)
             const savedTheme = localStorage.getItem('theme');
-            if(savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                setTheme(true);
-            }
+            setTheme(savedTheme !== 'light');
 
             // Profile Dropdown
             const profileTrigger = document.getElementById('profile-trigger');

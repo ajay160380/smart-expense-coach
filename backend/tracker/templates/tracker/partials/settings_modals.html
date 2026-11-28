@@ -1,0 +1,686 @@
+<!-- ✏️ EDIT PROFILE MODAL -->
+<div class="overlay" id="editProfileModal" onclick="if(event.target===this)closeModal('editProfileModal')">
+  <div class="modal">
+    <div class="modal-title">Edit Profile <button class="modal-close" onclick="closeModal('editProfileModal')" type="button">✕</button></div>
+    <form onsubmit="submitEditProfile(event)">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="edit-username">Username</label>
+        <input class="form-input" id="edit-username" type="text" value="{{ request.user.username }}" minlength="3" maxlength="30" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-email">Email Address</label>
+        <input class="form-input" id="edit-email" type="email" value="{{ request.user.email|default:'' }}" placeholder="name@example.com">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="edit-first-name">First Name</label>
+          <input class="form-input" id="edit-first-name" type="text" value="{{ request.user.first_name }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-last-name">Last Name</label>
+          <input class="form-input" id="edit-last-name" type="text" value="{{ request.user.last_name }}">
+        </div>
+      </div>
+      <button type="submit" class="submit-btn" id="edit-profile-btn">Save Profile Changes</button>
+    </form>
+  </div>
+</div>
+
+<!-- ✉️ VERIFY EMAIL OTP MODAL -->
+<div class="overlay" id="emailVerifyModal" onclick="if(event.target===this)closeModal('emailVerifyModal')">
+  <div class="modal" style="max-width: 430px;">
+    <div class="modal-title">Verify Email OTP <button class="modal-close" onclick="closeModal('emailVerifyModal')" type="button">✕</button></div>
+    <p style="font-size: 13.5px; color: var(--text2); margin: 0 0 12px; line-height: 1.5;">
+      Enter the 6-digit verification code sent to <strong id="ev-target-email" style="color: var(--primary);"></strong>.
+    </p>
+    <div id="ev-dev-hint" style="display:none; padding: 10px 12px; border-radius: 10px; background: var(--primary-l); color: var(--primary); font-size: 12.5px; font-weight: 600; margin-bottom: 14px; line-height: 1.45;"></div>
+    <form onsubmit="confirmEmailVerificationOtp(event)">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="ev-otp-input">6-Digit OTP Code</label>
+        <input class="form-input" id="ev-otp-input" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center; font-size: 20px; letter-spacing: 6px; font-weight: 800; font-family: var(--mono);" required>
+      </div>
+      <button type="submit" class="submit-btn" id="ev-verify-btn">Verify &amp; Confirm Email</button>
+    </form>
+    <button type="button" id="ev-resend-btn" onclick="sendEmailVerificationOtp(window._pendingVerifyEmail)" style="width: 100%; margin-top: 10px; background: transparent; border: none; color: var(--primary); font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px;">
+      Didn't receive code? Resend OTP
+    </button>
+  </div>
+</div>
+
+<!-- 📥 IMPORT BANK / UPI STATEMENT MODAL -->
+<div class="overlay" id="statementImportModal" onclick="if(event.target===this)closeModal('statementImportModal')">
+  <div class="modal" style="max-width: 500px;">
+    <div class="modal-title">Import Bank / UPI Statement <button class="modal-close" onclick="closeModal('statementImportModal')" type="button">✕</button></div>
+    <p style="font-size: 13px; color: var(--text2); margin: 0 0 14px; line-height: 1.5;">
+      Upload a <code>.csv</code>/<code>.txt</code> bank statement or paste UPI debit SMS lines below. Expenses are auto-categorized and deduplicated automatically.
+    </p>
+    <form onsubmit="submitStatementImport(event)">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="si-file-input">Upload CSV / TXT File (Optional)</label>
+        <input class="form-input" id="si-file-input" type="file" accept=".csv,.txt">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="si-text-input">Or Paste Debit SMS / Statement Lines</label>
+        <textarea class="form-input" id="si-text-input" rows="5" placeholder="Example:&#10;Rs.240 debited to Zomato on 28/11/2026&#10;Paid INR 180.00 to Uber on 27-11-2026" style="resize: vertical; min-height: 110px;"></textarea>
+      </div>
+      <div id="si-result-box" style="display:none; padding: 10px 12px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 13px; font-weight: 700; margin-bottom: 12px;"></div>
+      <button type="submit" class="submit-btn" id="si-submit-btn">Import &amp; Auto-Categorize</button>
+    </form>
+  </div>
+</div>
+
+<!-- 🗑️ DELETE ACCOUNT CONFIRMATION MODAL -->
+<div class="overlay" id="deleteAccountModal" onclick="if(event.target===this)closeModal('deleteAccountModal')">
+  <div class="modal" style="max-width: 440px;">
+    <div class="modal-title" style="color: var(--red);">Delete Account Permanently <button class="modal-close" onclick="closeModal('deleteAccountModal')" type="button">✕</button></div>
+    <p style="font-size: 13.5px; color: var(--text2); margin: 0 0 14px; line-height: 1.55;">
+      This action is irreversible. Your user account, expense ledger, savings goals, notes, WhatsApp session, and split groups will be permanently deleted.
+    </p>
+    <div id="da-error-box" style="display:none; padding: 10px 12px; border-radius: 10px; background: rgba(239, 68, 68, 0.12); color: var(--red); font-size: 12.5px; font-weight: 700; margin-bottom: 12px;"></div>
+    <form onsubmit="confirmDeleteAccountAction(event)">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="da-confirm-input">Type <strong style="color: var(--red);">DELETE</strong> to confirm</label>
+        <input class="form-input" id="da-confirm-input" type="text" placeholder="DELETE" autocomplete="off" style="font-family: var(--mono); font-weight: 700;" required>
+      </div>
+      <button type="submit" class="submit-btn" id="da-delete-btn" style="background: linear-gradient(135deg, #EF4444, #DC2626);">Permanently Delete My Account</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  window._settingsProfile = null;
+  window._settingsBasis = 'budget';
+  window._settingsTone = 'normal';
+  window._pendingVerifyEmail = '';
+
+  function syncSettingsThemeSwitch() {
+    const isDarkNow = document.documentElement.getAttribute('data-theme') === 'dark';
+    const sw = document.getElementById('set-theme-toggle');
+    if (sw) sw.checked = isDarkNow;
+    const sub = document.getElementById('set-theme-sub');
+    if (sub) sub.textContent = isDarkNow ? 'Dark Obsidian Sapphire theme active' : 'Electric Blue Crisp Light theme active';
+  }
+
+  function applySettingsProfileUI(p) {
+    if (!p) return;
+    window._settingsProfile = p;
+    const uname = p.username || 'User';
+    const fullName = ((p.first_name || '') + ' ' + (p.last_name || '')).trim() || uname;
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    setTxt('set-avatar-letter', (fullName.charAt(0) || uname.charAt(0) || 'U').toUpperCase());
+    setTxt('set-full-name', fullName);
+    setTxt('set-handle', '@' + uname);
+    if (p.joined) setTxt('set-joined', 'Member since ' + p.joined);
+    setTxt('set-stat-spent', fmt(p.lifetime_spent || 0));
+    setTxt('set-stat-budget', fmt(p.budget || 20000));
+    setTxt('set-stat-days', (p.member_days || 0) + ' days');
+
+    const emailVal = (p.email || '').trim();
+    const badge = document.getElementById('set-email-badge');
+    const actionBtn = document.getElementById('set-email-action-btn');
+    setTxt('set-email-value', emailVal || 'No email linked yet — add one to enable OTP security');
+    if (badge) {
+      if (!emailVal) {
+        badge.className = 'set-hero-ver-pill set-badge--warn';
+        badge.textContent = 'Not Linked';
+      } else if (p.email_verified) {
+        badge.className = 'set-hero-ver-pill set-badge--ok';
+        badge.textContent = '✓ Verified';
+      } else {
+        badge.className = 'set-hero-ver-pill set-badge--warn';
+        badge.textContent = '⚠ Unverified';
+      }
+    }
+    if (actionBtn) {
+      if (!emailVal) actionBtn.textContent = 'Add Email';
+      else if (p.email_verified) actionBtn.textContent = 'Change Email';
+      else actionBtn.textContent = 'Verify Email';
+    }
+
+    const bInp = document.getElementById('set-budget-input');
+    const iInp = document.getElementById('set-income-input');
+    const cInp = document.getElementById('set-cycle-start-input');
+    const rSw = document.getElementById('set-rollover-toggle');
+    if (bInp && p.budget) bInp.value = Math.round(p.budget);
+    if (iInp) iInp.value = (p.monthly_income !== null && p.monthly_income !== undefined) ? Math.round(p.monthly_income) : '';
+    if (cInp && p.budget_cycle_start_day) cInp.value = p.budget_cycle_start_day;
+    setBudgetBasis(p.daily_budget_basis === 'income' ? 'income' : 'budget', true);
+    if (rSw) rSw.checked = Boolean(p.daily_budget_rollover);
+    updateDailyTargetPreview();
+
+    const adminRow = document.getElementById('set-admin-row');
+    if (adminRow && p.is_admin) adminRow.style.display = 'flex';
+  }
+
+  function applySettingsNotifUI(n) {
+    if (!n) return;
+    const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = Boolean(v); };
+    setChk('set-notif-morning', n.morning_budget_push);
+    setChk('set-notif-nightly', n.nightly_summary);
+    setChk('set-notif-live', n.live_budget_alerts);
+    setChk('set-notif-nudges', n.repeat_nudges);
+
+    const mTime = document.getElementById('set-notif-morning-time');
+    const nTime = document.getElementById('set-notif-nightly-time');
+    if (mTime && n.morning_push_time) mTime.value = n.morning_push_time;
+    if (nTime && n.nightly_push_time) nTime.value = n.nightly_push_time;
+
+    setNotifTone(n.notification_tone === 'roast' ? 'roast' : 'normal', true);
+
+    const tzEl = document.getElementById('set-timezone-select');
+    if (tzEl && n.timezone_name) {
+      if (![...tzEl.options].some(o => o.value === n.timezone_name)) {
+        const opt = document.createElement('option');
+        opt.value = n.timezone_name;
+        opt.textContent = n.timezone_name;
+        tzEl.appendChild(opt);
+      }
+      tzEl.value = n.timezone_name;
+    }
+  }
+
+  function syncBrowserNotifButton() {
+    const btn = document.getElementById('set-browser-notif-btn');
+    const sub = document.getElementById('set-browser-notif-sub');
+    if (!btn || !sub) return;
+    if (!('Notification' in window)) {
+      btn.textContent = 'Unsupported';
+      btn.disabled = true;
+      sub.textContent = 'Your browser does not support desktop notifications';
+      return;
+    }
+    const perm = Notification.permission;
+    if (perm === 'granted') {
+      btn.textContent = 'Enabled ✓';
+      btn.classList.add('is-active');
+      sub.textContent = 'Desktop alerts active when expenses or scheduled summaries fire';
+    } else if (perm === 'denied') {
+      btn.textContent = 'Blocked';
+      sub.textContent = 'Allow notifications in your browser site settings to enable popups';
+    } else {
+      btn.textContent = 'Enable Alerts';
+      sub.textContent = 'Get native OS popups when dashboard alerts trigger';
+    }
+  }
+
+  async function enableBrowserNotifications() {
+    if (!('Notification' in window)) return showToast('Browser desktop notifications unavailable', 'warning');
+    try {
+      const perm = await Notification.requestPermission();
+      syncBrowserNotifButton();
+      if (perm === 'granted') {
+        showToast('Browser desktop alerts enabled!', 'success');
+        new Notification('ExpenseTracker Alerts Active', { body: 'Live budget & daily summary notifications are ready.' });
+      } else {
+        showToast('Permission not granted (' + perm + ')', 'warning');
+      }
+    } catch (e) {
+      showToast('Could not request notification permission', 'error');
+    }
+  }
+
+  function dispatchWebAlertUI(a) {
+    if (!a || !a.message) return;
+    const label = a.title ? `${a.title}: ${a.message}` : a.message;
+    showToast(label, a.tone === 'roast' ? 'warning' : 'info', 4800);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(a.title || 'ExpenseTracker Alert', { body: a.message });
+      } catch (e) {}
+    }
+  }
+
+  function renderAlertFeedList(logs, schedule) {
+    const list = document.getElementById('set-alert-feed-list');
+    const cntEl = document.getElementById('set-alert-feed-count');
+    const clkEl = document.getElementById('set-local-clock');
+    if (clkEl && schedule && schedule.local_time) {
+      clkEl.textContent = `${schedule.timezone_name} · ${schedule.local_time}`;
+    }
+    if (cntEl) cntEl.textContent = (logs && logs.length) ? `${logs.length} recent` : 'Live log';
+    if (!list) return;
+    if (!logs || !logs.length) {
+      list.innerHTML = '<div class="set-alert-empty">No alerts fired yet — click any "Test" button above or log an expense.</div>';
+      return;
+    }
+    list.innerHTML = logs.map(item => `
+      <div class="set-alert-log-item">
+        <div class="set-alert-log-meta">
+          <span class="set-alert-type-pill">${esc((item.type || '').replace(/_\d+$/, '').replace(/^test_/, 'test · ').replace(/_/g, ' '))}</span>
+          <span class="set-alert-time">${esc(item.sent_at || '')}</span>
+        </div>
+        <div class="set-alert-msg">${esc(item.message || '')}</div>
+      </div>
+    `).join('');
+  }
+
+  async function loadWebAlertsFeed(silentToasts = false) {
+    try {
+      const res = await fetch('/api/alerts/live-feed/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      renderAlertFeedList(data.recent_logs || [], data.schedule || null);
+      if (!silentToasts && Array.isArray(data.alerts)) {
+        data.alerts.forEach(a => dispatchWebAlertUI(a));
+      }
+    } catch (e) {
+      console.warn('Web alert feed load failed:', e);
+    }
+  }
+
+  async function triggerTestAlert(kind) {
+    try {
+      const res = await fetch('/api/alerts/test/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ kind })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        dispatchWebAlertUI(data);
+        await loadWebAlertsFeed(true);
+      } else {
+        showToast(data.error || 'Could not test notification', 'error');
+      }
+    } catch (e) {
+      showToast('Network error testing alert', 'error');
+    }
+  }
+
+  function switchSettingsSubtab(subId, btn) {
+    const valid = ['budget', 'alerts', 'tools', 'security'];
+    const safeId = valid.includes(subId) ? subId : 'budget';
+    document.querySelectorAll('.set-subpane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.set-subnav-btn').forEach(b => b.classList.remove('active'));
+    const pane = document.getElementById('set-pane-' + safeId);
+    if (pane) pane.classList.add('active');
+    const targetBtn = btn || document.querySelector(`.set-subnav-btn[data-subtab="${safeId}"]`);
+    if (targetBtn) targetBtn.classList.add('active');
+    try { localStorage.setItem('settings_subtab', safeId); } catch (e) {}
+  }
+
+  async function loadSettingsTab() {
+    syncSettingsThemeSwitch();
+    syncBrowserNotifButton();
+    try {
+      const savedSub = localStorage.getItem('settings_subtab') || 'budget';
+      switchSettingsSubtab(savedSub);
+    } catch (e) {}
+    try {
+      const [profRes, notifRes] = await Promise.all([
+        fetch('/api/profile/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } }),
+        fetch('/api/notification-settings/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      ]);
+      if (profRes.ok) {
+        const p = await profRes.json();
+        applySettingsProfileUI(p);
+      }
+      if (notifRes.ok) {
+        const n = await notifRes.json();
+        applySettingsNotifUI(n);
+      }
+      await loadWebAlertsFeed(true);
+    } catch (e) {
+      console.warn('Settings load failed:', e);
+    }
+  }
+
+  function updateDailyTargetPreview() {
+    const bVal = parseFloat((document.getElementById('set-budget-input') || {}).value) || 0;
+    const iVal = parseFloat((document.getElementById('set-income-input') || {}).value) || 0;
+    const cDay = parseInt((document.getElementById('set-cycle-start-input') || {}).value, 10) || 1;
+    const rollover = Boolean((document.getElementById('set-rollover-toggle') || {}).checked);
+    const basis = window._settingsBasis || 'budget';
+    const baseAmt = (basis === 'income' && iVal > 0) ? iVal : bVal;
+    const daily = baseAmt > 0 ? Math.round(baseAmt / 30) : 0;
+    const el = document.getElementById('set-daily-preview');
+    if (el) {
+      el.innerHTML = daily > 0
+        ? `Est. daily target (${basis}): <strong>${fmt(daily)} / day</strong>`
+        : 'Enter budget to preview daily target';
+    }
+    const simDaily = document.getElementById('set-sim-daily');
+    if (simDaily) simDaily.textContent = daily > 0 ? `${fmt(daily)} / day` : '₹0 / day';
+    const simBasis = document.getElementById('set-sim-basis');
+    if (simBasis) simBasis.textContent = basis === 'income' ? 'Monthly Income' : 'Monthly Budget';
+    const simReset = document.getElementById('set-sim-reset');
+    if (simReset) {
+      const suf = cDay === 1 ? 'st' : (cDay === 2 ? 'nd' : (cDay === 3 ? 'rd' : 'th'));
+      simReset.textContent = `Every ${cDay}${suf}`;
+    }
+    const simRoll = document.getElementById('set-sim-rollover');
+    if (simRoll) simRoll.textContent = rollover ? 'Carry-Forward On' : 'Standard Fixed';
+  }
+
+  function setBudgetBasis(mode, skipVisualOnly) {
+    window._settingsBasis = mode === 'income' ? 'income' : 'budget';
+    const bBtn = document.getElementById('set-basis-budget-btn');
+    const iBtn = document.getElementById('set-basis-income-btn');
+    if (bBtn) bBtn.classList.toggle('active', window._settingsBasis === 'budget');
+    if (iBtn) iBtn.classList.toggle('active', window._settingsBasis === 'income');
+    updateDailyTargetPreview();
+  }
+
+  async function saveBudgetCycleSettings() {
+    const budgetVal = parseFloat((document.getElementById('set-budget-input') || {}).value);
+    const incomeRaw = ((document.getElementById('set-income-input') || {}).value || '').trim();
+    const cycleDay = parseInt((document.getElementById('set-cycle-start-input') || {}).value, 10);
+    const rollover = Boolean((document.getElementById('set-rollover-toggle') || {}).checked);
+
+    if (!budgetVal || budgetVal <= 0) {
+      return showToast('Please enter a valid monthly budget (> 0)', 'error');
+    }
+    if (!cycleDay || cycleDay < 1 || cycleDay > 28) {
+      return showToast('Cycle start day must be between 1 and 28', 'error');
+    }
+    if (window._settingsBasis === 'income' && (!incomeRaw || parseFloat(incomeRaw) <= 0)) {
+      return showToast('Enter a positive Monthly Income or switch to Budget-Based', 'warning');
+    }
+
+    const btn = document.getElementById('set-budget-save-btn');
+    const origText = btn ? btn.textContent : 'Save Budget & Cycle';
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    try {
+      const payload = {
+        budget: budgetVal,
+        monthly_income: incomeRaw === '' ? null : parseFloat(incomeRaw),
+        daily_budget_basis: window._settingsBasis,
+        daily_budget_rollover: rollover,
+        budget_cycle_start_day: cycleDay
+      };
+      const res = await fetch('/api/profile/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast('Budget & cycle settings saved!', 'success');
+        setTimeout(() => window.location.reload(), 650);
+      } else {
+        showToast(data.error || 'Could not update budget settings', 'error');
+      }
+    } catch (e) {
+      showToast('Network error saving budget settings', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = origText; }
+    }
+  }
+
+  function setNotifTone(tone, skipSave) {
+    window._settingsTone = tone === 'roast' ? 'roast' : 'normal';
+    const nBtn = document.getElementById('set-tone-normal-btn');
+    const rBtn = document.getElementById('set-tone-roast-btn');
+    if (nBtn) nBtn.classList.toggle('active', window._settingsTone === 'normal');
+    if (rBtn) rBtn.classList.toggle('active', window._settingsTone === 'roast');
+    const sample = document.getElementById('set-tone-sample-msg');
+    if (sample) {
+      sample.textContent = window._settingsTone === 'roast'
+        ? '"Uth jao! Aaj sirf ₹667 udane ki permission hai — Zomato ko thoda rest do! 🍕🔥"'
+        : '"Good morning! Aaj ka safe budget ₹667 hai — mindful spend karein! 🎯"';
+    }
+    if (!skipSave) saveNotificationSettings();
+  }
+
+  async function saveNotificationSettings() {
+    const statusPill = document.getElementById('set-notif-status');
+    if (statusPill) statusPill.textContent = 'Saving...';
+
+    const payload = {
+      live_budget_alerts: Boolean((document.getElementById('set-notif-live') || {}).checked),
+      morning_budget_push: Boolean((document.getElementById('set-notif-morning') || {}).checked),
+      morning_push_time: (document.getElementById('set-notif-morning-time') || {}).value || '08:00',
+      nightly_summary: Boolean((document.getElementById('set-notif-nightly') || {}).checked),
+      nightly_push_time: (document.getElementById('set-notif-nightly-time') || {}).value || '22:00',
+      notification_tone: window._settingsTone || 'normal',
+      repeat_nudges: Boolean((document.getElementById('set-notif-nudges') || {}).checked),
+      timezone_name: (document.getElementById('set-timezone-select') || {}).value || 'Asia/Kolkata'
+    };
+
+    try {
+      const res = await fetch('/api/notification-settings/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        if (statusPill) statusPill.textContent = 'Saved ✓';
+        showToast('Alert preferences updated', 'success');
+        await loadWebAlertsFeed(false);
+      } else {
+        if (statusPill) statusPill.textContent = 'Error';
+        showToast('Failed to save alert settings', 'error');
+      }
+    } catch (e) {
+      if (statusPill) statusPill.textContent = 'Offline';
+      showToast('Network error saving alerts', 'error');
+    }
+  }
+
+  function openSettingsEditProfile() {
+    const p = window._settingsProfile || {};
+    if (document.getElementById('edit-username') && p.username) document.getElementById('edit-username').value = p.username;
+    if (document.getElementById('edit-email')) document.getElementById('edit-email').value = p.email || '';
+    if (document.getElementById('edit-first-name')) document.getElementById('edit-first-name').value = p.first_name || '';
+    if (document.getElementById('edit-last-name')) document.getElementById('edit-last-name').value = p.last_name || '';
+    openModal('editProfileModal');
+  }
+
+  async function submitEditProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('edit-profile-btn');
+    const newUsername = (document.getElementById('edit-username').value || '').trim();
+    const newEmail = (document.getElementById('edit-email').value || '').trim();
+    const newFirst = (document.getElementById('edit-first-name').value || '').trim();
+    const newLast = (document.getElementById('edit-last-name').value || '').trim();
+    const currentEmail = ((window._settingsProfile && window._settingsProfile.email) || '').trim();
+    const isEmailChanging = Boolean(newEmail && newEmail.toLowerCase() !== currentEmail.toLowerCase());
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    try {
+      const res = await fetch('/api/profile/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({
+          username: newUsername,
+          first_name: newFirst,
+          last_name: newLast,
+          email: isEmailChanging ? currentEmail : newEmail
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || data.status !== 'success') {
+        showToast(data.error || 'Could not update profile', 'error');
+        return;
+      }
+
+      closeModal('editProfileModal');
+      if (isEmailChanging) {
+        await sendEmailVerificationOtp(newEmail);
+        return;
+      }
+      showToast('Profile updated!', 'success');
+      await loadSettingsTab();
+      const topMeta = document.querySelector('.profile-meta strong');
+      if (topMeta && data.profile && data.profile.username) topMeta.textContent = data.profile.username;
+    } catch (err) {
+      showToast('Network error updating profile', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save Profile Changes'; }
+    }
+  }
+
+  function handleSettingsEmailAction() {
+    const p = window._settingsProfile || {};
+    const email = (p.email || '').trim();
+    if (!email || p.email_verified) {
+      openSettingsEditProfile();
+    } else {
+      sendEmailVerificationOtp(email);
+    }
+  }
+
+  async function sendEmailVerificationOtp(targetEmail) {
+    const email = (targetEmail || (window._settingsProfile && window._settingsProfile.email) || '').trim();
+    if (!email) {
+      openSettingsEditProfile();
+      return showToast('Please add an email address first', 'warning');
+    }
+    window._pendingVerifyEmail = email;
+    const hintEl = document.getElementById('ev-dev-hint');
+    if (hintEl) { hintEl.style.display = 'none'; hintEl.textContent = ''; }
+    if (document.getElementById('ev-target-email')) document.getElementById('ev-target-email').textContent = email;
+    if (document.getElementById('ev-otp-input')) document.getElementById('ev-otp-input').value = '';
+
+    try {
+      const res = await fetch('/api/auth/send-email-verification/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        openModal('emailVerifyModal');
+        if (hintEl && data.message && (data.email_sent === false || data.message.includes('OTP'))) {
+          hintEl.textContent = data.message;
+          hintEl.style.display = 'block';
+        }
+        showToast('Verification OTP ready for ' + email, 'success');
+      } else {
+        showToast(data.error || 'Could not send verification OTP', 'error');
+      }
+    } catch (e) {
+      showToast('Network error sending OTP', 'error');
+    }
+  }
+
+  async function confirmEmailVerificationOtp(e) {
+    e.preventDefault();
+    const otp = (document.getElementById('ev-otp-input').value || '').trim();
+    const email = (window._pendingVerifyEmail || (window._settingsProfile && window._settingsProfile.email) || '').trim();
+    if (!otp || otp.length !== 6) return showToast('Enter the 6-digit OTP code', 'error');
+
+    const btn = document.getElementById('ev-verify-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
+
+    try {
+      const res = await fetch('/api/auth/verify-email/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ email, otp })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        closeModal('emailVerifyModal');
+        showToast('Email verified successfully!', 'success');
+        await loadSettingsTab();
+      } else {
+        showToast(data.error || 'Invalid or expired OTP', 'error');
+      }
+    } catch (err) {
+      showToast('Network error verifying OTP', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Verify & Confirm Email'; }
+    }
+  }
+
+  async function submitStatementImport(e) {
+    e.preventDefault();
+    const fileEl = document.getElementById('si-file-input');
+    const textEl = document.getElementById('si-text-input');
+    const resultBox = document.getElementById('si-result-box');
+    const btn = document.getElementById('si-submit-btn');
+    const hasFile = fileEl && fileEl.files && fileEl.files.length > 0;
+    const rawText = textEl ? textEl.value.trim() : '';
+
+    if (!hasFile && !rawText) {
+      return showToast('Upload a file or paste statement lines first', 'error');
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Importing...'; }
+    if (resultBox) resultBox.style.display = 'none';
+
+    try {
+      let res;
+      if (hasFile) {
+        const fd = new FormData();
+        fd.append('file', fileEl.files[0]);
+        res = await fetch('/api/import-statement/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrf() },
+          body: fd
+        });
+      } else {
+        res = await fetch('/api/import-statement/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+          body: JSON.stringify({ text: rawText })
+        });
+      }
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        if (resultBox) {
+          resultBox.textContent = data.message + (data.duplicates_skipped ? ` (${data.duplicates_skipped} duplicates skipped)` : '');
+          resultBox.style.display = 'block';
+        }
+        showToast(data.message || 'Statement imported!', 'success');
+        if (data.imported_count > 0) {
+          setTimeout(() => window.location.reload(), 1200);
+        }
+      } else {
+        showToast(data.error || 'Could not parse statement lines', 'error');
+      }
+    } catch (err) {
+      showToast('Network error importing statement', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Import & Auto-Categorize'; }
+    }
+  }
+
+  function openDeleteAccountModal() {
+    const inp = document.getElementById('da-confirm-input');
+    const err = document.getElementById('da-error-box');
+    if (inp) inp.value = '';
+    if (err) { err.style.display = 'none'; err.textContent = ''; }
+    openModal('deleteAccountModal');
+  }
+
+  async function confirmDeleteAccountAction(e) {
+    e.preventDefault();
+    const inp = document.getElementById('da-confirm-input');
+    const errBox = document.getElementById('da-error-box');
+    const btn = document.getElementById('da-delete-btn');
+    const val = (inp ? inp.value : '').trim().toUpperCase();
+    if (val !== 'DELETE') {
+      if (errBox) { errBox.textContent = 'Please type "DELETE" exactly to confirm.'; errBox.style.display = 'block'; }
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Deleting Account...'; }
+    try {
+      const res = await fetch('/api/auth/delete-account/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+        body: JSON.stringify({ confirmation: 'DELETE', otp: 'DELETE' })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast('Account permanently deleted. Goodbye!', 'success');
+        setTimeout(() => { window.location.href = "{% url 'landing' %}"; }, 900);
+      } else {
+        if (errBox) { errBox.textContent = data.error || 'Account deletion failed.'; errBox.style.display = 'block'; }
+      }
+    } catch (err) {
+      if (errBox) { errBox.textContent = 'Network error deleting account.'; errBox.style.display = 'block'; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Permanently Delete My Account'; }
+    }
+  }
+</script>

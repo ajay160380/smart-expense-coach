@@ -1,200 +1,95 @@
-{% extends 'tracker/base.html' %}
-
-{% block extra_css %}
-<style>
-/* PREMIUM FEATURES PAGE CSS */
-.features-hero {
-    text-align: center;
-    padding: 80px 20px 60px;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.features-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    font-weight: 800;
-    color: var(--text-main);
-    line-height: 1.1;
-    margin-bottom: 20px;
-}
-
-.features-subtitle {
-    font-size: 1.2rem;
-    color: var(--text-muted);
-    line-height: 1.6;
-}
-
-/* Zig-Zag Features */
-.feature-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 60px;
-    max-width: 1100px;
-    margin: 0 auto 120px;
-    padding: 0 20px;
-}
-
-.feature-row:nth-child(even) {
-    flex-direction: row-reverse;
-}
-
-.feature-text {
-    flex: 1;
-}
-
-.feature-tag {
-    display: inline-block;
-    padding: 6px 14px;
-    border-radius: 100px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    margin-bottom: 16px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.tag-green { background: rgba(37, 211, 102, 0.1); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.2); }
-.tag-purple { background: rgba(168, 85, 247, 0.1); color: #A855F7; border: 1px solid rgba(168, 85, 247, 0.2); }
-.tag-blue { background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.2); }
-.tag-red { background: rgba(244, 63, 94, 0.1); color: #F43F5E; border: 1px solid rgba(244, 63, 94, 0.2); }
-
-.feature-text h2 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin-bottom: 20px;
-}
-
-.feature-text p {
-    font-size: 1.1rem;
-    color: var(--text-muted);
-    line-height: 1.7;
-}
-
-.feature-visual {
-    flex: 1;
-    position: relative;
-    border-radius: 24px;
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-glass);
-    padding: 40px;
-    box-shadow: var(--shadow-soft);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 350px;
-}
-
-.feature-visual::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: 26px;
-    background: linear-gradient(135deg, var(--primary), transparent, var(--secondary));
-    z-index: -1;
-    opacity: 0.3;
-}
-
-.visual-icon {
-    font-size: 5rem;
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
-    animation: float 6s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
-}
-
-/* CTA Section */
-.cta-section {
-    text-align: center;
-    padding: 80px 20px;
-    background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.05));
-    border-top: 1px solid var(--border-light);
-    margin-top: 50px;
-}
-
-.cta-section h2 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin-bottom: 30px;
-}
-
-@media (max-width: 900px) {
-    .feature-row, .feature-row:nth-child(even) {
-        flex-direction: column;
-        text-align: center;
-        gap: 40px;
-    }
-}
-</style>
-{% endblock %}
+{% extends 'tracker/noir_subpage.html' %}
+{% block title %}Features — ExpenseTracker WhatsApp AI{% endblock %}
 
 {% block content %}
-<div>
-    <section class="features-hero" data-aos="fade-up">
-        <h1 class="features-title">Features built for<br>real life.</h1>
-        <p class="features-subtitle">We didn't pack ExpenseTracker with confusing accounting tools. We built exactly what you need to stay on top of your money, effortlessly.</p>
-    </section>
-
-    <!-- Feature 1 -->
-    <div class="feature-row" data-aos="fade-up" data-aos-delay="100">
-        <div class="feature-text">
-            <span class="feature-tag tag-green">WhatsApp First</span>
-            <h2>Text it and forget it.</h2>
-            <p>No app to install. No login screens. Just open your favorite chat app and text our bot. Whether it's "500 for lunch" or "12k rent", we'll log it instantly. It's the lowest friction way to track expenses ever invented.</p>
+<div class="subpage-wrap">
+    <div class="subpage-hero">
+        <a href="{% url 'landing' %}" class="subpage-back">← Back to Home</a>
+        <div class="status-pill" style="margin-bottom:20px;">
+            <span class="ping-wrap" aria-hidden="true">
+                <span class="ping-ring"></span>
+                <span class="ping-core"></span>
+            </span>
+            <span class="status-pill__text">CORE CAPABILITIES</span>
         </div>
-        <div class="feature-visual">
-            <div class="visual-icon">💬</div>
+        <h1 class="hero-h1" style="font-size:clamp(36px, 5.2vw, 64px); margin-bottom:18px;">
+            <span class="hero-h1__line">Features built for</span>
+            <span class="hero-h1__blue">real life</span>
+        </h1>
+        <p class="hero-sub" style="margin-bottom:0;">
+            No cluttered accounting spreadsheets. Exactly what you need to stay on top of every rupee in seconds.
+        </p>
+    </div>
+
+    <div class="noir-zig">
+        <div class="subpage-panel">
+            <span class="status-pill" style="margin-bottom:16px;"><span class="status-pill__text">WHATSAPP FIRST</span></span>
+            <h2 class="noir-card__title" style="font-size:28px;">Text or speak and forget it.</h2>
+            <p class="noir-card__desc" style="margin-bottom:0;">
+                No dropdown menus to fight after paying at a stall. Open WhatsApp and text "250 ka petrol" or drop a
+                quick Hinglish voice note. Your ledger updates in ~840ms across Web and Android APK.
+            </p>
+        </div>
+        <div class="noir-visual-tile">
+            <div class="mini-metric-val" style="color:#60a5fa; font-size:32px;">"200 for lunch"</div>
+            <div class="mini-metric-lbl">LOGGED VIA WHATSAPP · 0 DROPDOWNS</div>
         </div>
     </div>
 
-    <!-- Feature 2 -->
-    <div class="feature-row" data-aos="fade-up">
-        <div class="feature-text">
-            <span class="feature-tag tag-purple">AI Powered</span>
-            <h2>Smart Categorization</h2>
-            <p>Our Large Language Model acts as your personal accountant. It understands natural language, slang, and context. It automatically sorts your spending into beautiful categories without you ever touching a dropdown menu.</p>
+    <div class="noir-zig noir-zig--rev">
+        <div class="noir-visual-tile">
+            <div class="mini-metric-val" style="color:#34d399; font-size:32px;">EN · HI · Hinglish</div>
+            <div class="mini-metric-lbl">MULTI-LANGUAGE LLM PARSER</div>
         </div>
-        <div class="feature-visual">
-            <div class="visual-icon">🧠</div>
-        </div>
-    </div>
-
-    <!-- Feature 3 -->
-    <div class="feature-row" data-aos="fade-up">
-        <div class="feature-text">
-            <span class="feature-tag tag-blue">Web Dashboard</span>
-            <h2>Beautiful Analytics</h2>
-            <p>When you need the big picture, log into our stunning glassmorphic dashboard. View beautiful charts, track category trends, and see exactly where your money is going over time.</p>
-        </div>
-        <div class="feature-visual">
-            <div class="visual-icon">📊</div>
+        <div class="subpage-panel">
+            <span class="status-pill" style="margin-bottom:16px;"><span class="status-pill__text">AI CATEGORIZATION</span></span>
+            <h2 class="noir-card__title" style="font-size:28px;">Smart Hinglish &amp; Voice AI</h2>
+            <p class="noir-card__desc" style="margin-bottom:0;">
+                Understands everyday Indian slang, informal spellings, and speech natively — extracting Category,
+                Amount, and Necessity cleanly while learning your merchant habits.
+            </p>
         </div>
     </div>
 
-    <!-- Feature 4 -->
-    <div class="feature-row" data-aos="fade-up">
-        <div class="feature-text">
-            <span class="feature-tag tag-red">Active Coaching</span>
-            <h2>Brutally Honest Bot</h2>
-            <p>Unlike other apps that just show you numbers, ExpenseTracker actively coaches you. Set a budget, and the bot will warn you when you're overspending with witty, helpful, and sometimes sarcastic advice.</p>
+    <div class="noir-zig">
+        <div class="subpage-panel">
+            <span class="status-pill" style="margin-bottom:16px;"><span class="status-pill__text">WEB ANALYTICS &amp; SPLITS</span></span>
+            <h2 class="noir-card__title" style="font-size:28px;">Safe-to-Spend &amp; Group Splits</h2>
+            <p class="noir-card__desc" style="margin-bottom:18px;">
+                Inspect live burn-rate telemetry, anomaly spikes, 52-week heatmaps, CSV/JSON exports, and one-click
+                group trip splits directly in the dashboard.
+            </p>
+            <a href="{% url 'dashboard' %}" class="card-foot-cue" style="padding-top:0;">
+                <span>OPEN WEB DASHBOARD</span>
+                <span>→</span>
+            </a>
         </div>
-        <div class="feature-visual">
-            <div class="visual-icon">🤖</div>
+        <div class="noir-visual-tile">
+            <div class="mini-metric-val" style="color:#60a5fa; font-size:32px;">₹1,400 / pp</div>
+            <div class="mini-metric-lbl">GOA TRIP SPLIT SYNCED LIVE</div>
         </div>
     </div>
 
-    <section class="cta-section" data-aos="fade-up">
-        <h2>Ready to take control?</h2>
-        <a href="{% url 'register' %}" class="btn-primary" style="font-size: 1.2rem; padding: 15px 40px; border-radius: 100px;">Start Tracking for Free</a>
-    </section>
+    <div class="noir-zig noir-zig--rev">
+        <div class="noir-visual-tile">
+            <div class="mini-metric-val" style="color:#facc15; font-size:32px;">14-Day Streak · Level 12</div>
+            <div class="mini-metric-lbl">GAMIFIED XP &amp; COFFEE ROAST COACH</div>
+        </div>
+        <div class="subpage-panel">
+            <span class="status-pill" style="margin-bottom:16px;"><span class="status-pill__text">ACTIVE COACHING</span></span>
+            <h2 class="noir-card__title" style="font-size:28px;">Brutally Honest AI Coach</h2>
+            <p class="noir-card__desc" style="margin-bottom:0;">
+                Unlike passive ledgers that only show numbers after the damage is done, ExpenseTracker warns you on
+                overspending spikes with helpful, witty nudges while rewarding daily streaks.
+            </p>
+        </div>
+    </div>
+
+    <div class="hero-ctas" style="margin-top:48px;">
+        <a href="{% url 'register' %}" class="shiny-cta">
+            <span class="shiny-cta__inner">Start Tracking Free →</span>
+        </a>
+        <a href="{% url 'download_apk' %}" class="ghost-pill-btn">Download Android APK</a>
+    </div>
 </div>
 {% endblock %}

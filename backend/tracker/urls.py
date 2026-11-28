@@ -110,6 +110,8 @@ urlpatterns = [
 
     # Phase 9.8: Notification & Budget Settings
     path('api/notification-settings/', views.api_notification_settings, name='api_notification_settings'),
+    path('api/alerts/live-feed/',      views.api_web_alerts_feed,       name='api_web_alerts_feed'),
+    path('api/alerts/test/',           views.api_test_web_alert,        name='api_test_web_alert'),
 
     # Phase 9.6: "Where Did My Money Go" Breakdown & Recurring Subscriptions
     path('api/money-breakdown/',       views.api_money_breakdown,       name='api_money_breakdown'),

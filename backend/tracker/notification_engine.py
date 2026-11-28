@@ -355,3 +355,265 @@ def send_live_budget_alert(user, expense, current_time=None) -> tuple[bool, str]
         details={"expense_id": expense.id, "amount": amt, "remaining": rem, "message": alert_msg}
     )
     return True, alert_msg
+
+
+def _get_user_local_dt(profile):
+    """Returns current timezone-aware datetime in user's preferred timezone."""
+    import zoneinfo
+    tz_str = (getattr(profile, 'timezone_name', 'Asia/Kolkata') or 'Asia/Kolkata').strip()
+    try:
+        user_tz = zoneinfo.ZoneInfo(tz_str)
+    except Exception:
+        tz_str = 'Asia/Kolkata'
+        user_tz = zoneinfo.ZoneInfo(tz_str)
+    return timezone.now().astimezone(user_tz), tz_str
+
+
+def _parse_hhmm(time_str: str, fallback_hour: int, fallback_min: int = 0) -> int:
+    try:
+        h, m = map(int, str(time_str).strip().split(':'))
+        if 0 <= h <= 23 and 0 <= m <= 59:
+            return h * 60 + m
+    except Exception:
+        pass
+    return fallback_hour * 60 + fallback_min
+
+
+def build_live_alert_message(desc: str, amt: float, rem: float, tone: str = 'normal') -> str:
+    """Formats live spend feedback honoring Normal vs Roast tone."""
+    clean_desc = (desc or "Expense").strip()
+    if tone == 'roast':
+        if rem < 0:
+            return f"{clean_desc} pe -₹{amt:,.0f} aur uda diye! Aaj ka limit ₹{abs(rem):,.0f} cross ho chuka hai 🔥"
+        if rem < 200:
+            return f"{clean_desc} -₹{amt:,.0f}! Aaj sirf ₹{rem:,.0f} bache hain — UPI ko thoda break do 😅"
+        return f"{clean_desc} -₹{amt:,.0f} logged! Aaj ka bacha: ₹{rem:,.0f} — sambhal ke kharch karna 🔥"
+    return f"{clean_desc} -₹{amt:,.0f}. Aaj ka bacha: ₹{rem:,.0f}."
+
+
+def build_repeat_nudge_message(label: str, count: int, total_amt: float, tone: str = 'normal') -> str:
+    """Formats repeat spend nudge honoring Normal vs Roast tone."""
+    if tone == 'roast':
+        return f"Arrey bhai! Aaj '{label}' pe {count} baar kharch ho gaya (Total ₹{total_amt:,.0f}) — thoda control! 🔥"
+    return f"Dhyan dein: Aaj '{label}' se {count} baar kharch hua hai (Total: ₹{total_amt:,.0f})."
+
+
+def evaluate_expense_alerts(user, expense) -> list[dict]:
+    """
+    Real-time evaluator invoked whenever an expense is saved (Web, Voice, or API).
+    Runs live_budget_alerts and repeat_nudges using user's timezone & tone, logs
+    to DailyNotificationLog, optionally sends FCM push, and returns alerts for UI.
+    """
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    now_local, tz_str = _get_user_local_dt(profile)
+    today_local = now_local.date()
+    tone = 'roast' if getattr(profile, 'notification_tone', 'normal') == 'roast' else 'normal'
+    fired: list[dict] = []
+
+    # 1. Live Budget Spend Alert (respects 11 PM - 7 AM quiet hours in user's timezone, max 10/day)
+    if profile.live_budget_alerts:
+        hour = now_local.hour
+        if 7 <= hour < 23:
+            alerts_today = DailyNotificationLog.objects.filter(
+                user=user,
+                notification_type__startswith='live_alert',
+                target_date=today_local
+            ).count()
+            if alerts_today < 10:
+                from .views import calculate_daily_budget
+                daily_info = calculate_daily_budget(user, expense.date or today_local)
+                desc = (expense.description or expense.category or "Expense").strip()
+                amt = float(expense.amount)
+                rem = float(daily_info.get('today_remaining', 0))
+                alert_msg = build_live_alert_message(desc, amt, rem, tone=tone)
+                title = "Live Budget Update 🔥" if tone == 'roast' else "Rozana Budget Update 🎯"
+
+                if profile.fcm_token:
+                    try:
+                        from .fcm_utils import send_push_notification
+                        send_push_notification(profile.fcm_token, title, alert_msg, data={"type": "live_budget_alert"})
+                    except Exception:
+                        pass
+
+                unique_live_key = f"live_alert_{expense.id}"[:50]
+                DailyNotificationLog.objects.get_or_create(
+                    user=user,
+                    notification_type=unique_live_key,
+                    target_date=today_local,
+                    defaults={"details": {"expense_id": expense.id, "amount": amt, "remaining": rem, "message": alert_msg, "tone": tone}}
+                )
+                fired.append({"type": "live_alert", "title": title, "message": alert_msg, "tone": tone})
+
+    # 2. Repeat Merchant / Category Nudge (2+ same merchant, or 3+ same category when merchant unnamed)
+    if profile.repeat_nudges:
+        exp_date = expense.date or today_local
+        raw_desc = (expense.description or "").strip()
+        if len(raw_desc) >= 2:
+            key_label = raw_desc[:40]
+            log_key = f"repeat_{key_label.lower()[:40]}"[:50]
+            same_qs = Expense.objects.filter(user=user, date=exp_date, description__iexact=raw_desc)
+            threshold = 2
+        else:
+            key_label = (expense.category or "other").title()
+            log_key = f"repeat_cat_{(expense.category or 'other').lower()}"[:50]
+            same_qs = Expense.objects.filter(user=user, date=exp_date, category=expense.category)
+            threshold = 3
+
+        count = same_qs.count()
+        if count >= threshold and not DailyNotificationLog.objects.filter(
+            user=user, notification_type=log_key, target_date=exp_date
+        ).exists():
+            from django.db.models import Sum
+            total_amt = float(same_qs.aggregate(t=Sum('amount'))['t'] or 0)
+            nudge_msg = build_repeat_nudge_message(key_label, count, total_amt, tone=tone)
+            title = f"{key_label} Repeat Alert ⚠️"
+
+            if profile.fcm_token:
+                try:
+                    from .fcm_utils import send_push_notification
+                    send_push_notification(profile.fcm_token, title, nudge_msg, data={"type": "repeat_nudge"})
+                except Exception:
+                    pass
+
+            DailyNotificationLog.objects.get_or_create(
+                user=user,
+                notification_type=log_key,
+                target_date=exp_date,
+                defaults={"details": {"label": key_label, "count": count, "total": total_amt, "message": nudge_msg, "tone": tone}}
+            )
+            fired.append({"type": "repeat_nudge", "title": title, "message": nudge_msg, "tone": tone})
+
+    return fired
+
+
+def check_web_due_notifications(user) -> dict:
+    """
+    Evaluates scheduled morning/nightly alerts on web dashboard load using user's timezone.
+    Delivers due Morning/Night briefings cleanly once per day to DailyNotificationLog + web UI.
+    """
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    now_local, tz_str = _get_user_local_dt(profile)
+    local_date = now_local.date()
+    current_minutes = now_local.hour * 60 + now_local.minute
+    tone = 'roast' if getattr(profile, 'notification_tone', 'normal') == 'roast' else 'normal'
+
+    due_alerts: list[dict] = []
+
+    if profile.morning_budget_push:
+        target_m = _parse_hhmm(profile.morning_push_time, 8, 0)
+        if current_minutes >= target_m and not DailyNotificationLog.objects.filter(
+            user=user, notification_type='morning', target_date=local_date
+        ).exists():
+            msg = build_morning_message(user, local_date)
+            title = "Good Morning! Aaj Ka Budget ☀️"
+            if profile.fcm_token:
+                try:
+                    from .fcm_utils import send_push_notification
+                    send_push_notification(profile.fcm_token, title, msg, data={"type": "daily_budget"})
+                except Exception:
+                    pass
+            DailyNotificationLog.objects.create(
+                user=user, notification_type='morning', target_date=local_date,
+                details={"message": msg, "tone": tone, "channel": "web"}
+            )
+            due_alerts.append({"type": "morning", "title": title, "message": msg, "tone": tone})
+
+    if profile.nightly_summary:
+        target_n = _parse_hhmm(profile.nightly_push_time, 22, 0)
+        if current_minutes >= target_n and not DailyNotificationLog.objects.filter(
+            user=user, notification_type='night', target_date=local_date
+        ).exists():
+            msg, status = build_night_message(user, local_date)
+            title = "Aaj Ka Kharch Summary 🌙" if status != "over" else "Aaj Ka Budget Alert 🚨"
+            if profile.fcm_token:
+                try:
+                    from .fcm_utils import send_push_notification
+                    send_push_notification(profile.fcm_token, title, msg, data={"type": "nightly_summary"})
+                except Exception:
+                    pass
+            DailyNotificationLog.objects.create(
+                user=user, notification_type='night', target_date=local_date,
+                details={"message": msg, "status": status, "tone": tone, "channel": "web"}
+            )
+            due_alerts.append({"type": "night", "title": title, "message": msg, "tone": tone})
+
+    recent_qs = DailyNotificationLog.objects.filter(user=user).order_by('-sent_at')[:6]
+    recent_logs = []
+    for log in recent_qs:
+        det = log.details if isinstance(log.details, dict) else {}
+        sent_local = log.sent_at.astimezone(now_local.tzinfo)
+        recent_logs.append({
+            "type": log.notification_type,
+            "message": det.get("message") or f"{log.notification_type.replace('_', ' ').title()} notification",
+            "tone": det.get("tone", tone),
+            "sent_at": sent_local.strftime("%d %b, %I:%M %p"),
+        })
+
+    return {
+        "due_alerts": due_alerts,
+        "recent_logs": recent_logs,
+        "schedule": {
+            "timezone_name": tz_str,
+            "local_time": now_local.strftime("%I:%M %p"),
+            "notification_tone": tone,
+        }
+    }
+
+
+def send_test_notification(user, kind: str) -> dict:
+    """
+    Runs a live test of Morning / Night / Live / Repeat Nudge using real user numbers,
+    selected AI Alert Tone, and configured timezone; logs to DailyNotificationLog and
+    dispatches FCM push if available.
+    """
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    now_local, tz_str = _get_user_local_dt(profile)
+    local_date = now_local.date()
+    tone = 'roast' if getattr(profile, 'notification_tone', 'normal') == 'roast' else 'normal'
+
+    if kind == 'morning':
+        title = "Morning Budget Push (Test) ☀️"
+        msg = build_morning_message(user, local_date)
+    elif kind == 'night':
+        msg, status = build_night_message(user, local_date)
+        title = "Nightly Summary (Test) 🌙" if status != "over" else "Nightly Alert (Test) 🚨"
+    elif kind == 'nudge':
+        title = "Repeat Merchant Nudge (Test) ⚠️"
+        recent_exp = Expense.objects.filter(user=user).order_by('-date', '-id').first()
+        label = ((recent_exp.description or recent_exp.category) if recent_exp else "Coffee").strip().title()
+        amt = float(recent_exp.amount) if recent_exp else 240.0
+        msg = build_repeat_nudge_message(label, 2, amt * 2, tone=tone)
+    else:
+        kind = 'live'
+        from .views import calculate_daily_budget
+        daily_info = calculate_daily_budget(user, local_date)
+        title = "Live Budget Alert (Test) 🎯"
+        msg = build_live_alert_message("Sample Expense", 150.0, float(daily_info.get('today_remaining', 0)), tone=tone)
+
+    if profile.fcm_token:
+        try:
+            from .fcm_utils import send_push_notification
+            send_push_notification(profile.fcm_token, title, msg, data={"type": f"test_{kind}"})
+        except Exception:
+            pass
+
+    DailyNotificationLog.objects.filter(
+        user=user,
+        notification_type=f"test_{kind}",
+        target_date=local_date,
+    ).delete()
+    DailyNotificationLog.objects.create(
+        user=user,
+        notification_type=f"test_{kind}",
+        target_date=local_date,
+        details={"message": msg, "tone": tone, "test": True}
+    )
+    return {
+        "status": "success",
+        "type": kind,
+        "title": title,
+        "message": msg,
+        "tone": tone,
+        "local_time": now_local.strftime("%I:%M %p"),
+        "timezone_name": tz_str,
+    }

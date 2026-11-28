@@ -1,0 +1,578 @@
+<!-- SETTINGS & PREFERENCES — CLEAN SINGLE-FLOW FULL-WIDTH WORKSPACE -->
+<div class="set-shell">
+
+  <!-- 1. COMPACT IDENTITY & METRICS BAR -->
+  <section class="set-profile-strip" aria-labelledby="set-identity-heading">
+    <div class="set-p-left">
+      <div class="set-avatar-circle" id="set-avatar-letter">{{ request.user.username|slice:":1"|upper }}</div>
+      <div style="min-width:0;">
+        <div class="set-p-title-row">
+          <h2 id="set-identity-heading" class="set-p-name"><span id="set-full-name">{{ request.user.get_full_name|default:request.user.username|title }}</span></h2>
+          <span class="set-hero-ver-pill {% if request.user.profile.email_verified %}set-badge--ok{% else %}set-badge--warn{% endif %}" id="set-email-badge">{% if not request.user.email %}Not Linked{% elif request.user.profile.email_verified %}✓ Verified{% else %}⚠ Unverified{% endif %}</span>
+        </div>
+        <div class="set-p-meta">
+          <span id="set-handle">@{{ request.user.username }}</span>
+          <span>·</span>
+          <span id="set-email-value">{{ request.user.email|default:"No email linked" }}</span>
+          <span>·</span>
+          <span id="set-joined">Joined {{ request.user.date_joined|date:"d M Y" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="set-p-stats">
+      <div class="set-p-stat">
+        <span>Lifetime Spent</span>
+        <strong id="set-stat-spent">₹—</strong>
+      </div>
+      <div class="set-p-stat">
+        <span>Monthly Budget</span>
+        <strong id="set-stat-budget">₹{{ budget|floatformat:0 }}</strong>
+      </div>
+      <div class="set-p-stat">
+        <span>Active Days</span>
+        <strong id="set-stat-days">{{ member_days|default:0 }} days</strong>
+      </div>
+    </div>
+
+    <div class="set-p-actions">
+      <button type="button" class="set-outline-btn" onclick="openSettingsEditProfile()">Edit Profile</button>
+      <button type="button" class="set-tint-btn" id="set-email-action-btn" onclick="handleSettingsEmailAction()">Verify Email</button>
+    </div>
+  </section>
+
+  <!-- 2. INTEGRATED FOLDER TABS + CONNECTED WORKSPACE SHEET -->
+  <div class="set-tabbed-frame">
+    <nav class="set-nav-tabs" aria-label="Settings Sections">
+      <button type="button" class="set-subnav-btn active" data-subtab="budget" onclick="switchSettingsSubtab('budget', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Budget &amp; Cycle</span>
+      </button>
+
+      <button type="button" class="set-subnav-btn" data-subtab="alerts" onclick="switchSettingsSubtab('alerts', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Smart Alerts</span>
+      </button>
+
+      <button type="button" class="set-subnav-btn" data-subtab="tools" onclick="switchSettingsSubtab('tools', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Tools &amp; Sync</span>
+      </button>
+
+      <button type="button" class="set-subnav-btn" data-subtab="security" onclick="switchSettingsSubtab('security', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Security &amp; Account</span>
+      </button>
+    </nav>
+
+    <!-- 3. FULL-WIDTH FOCUSED CONNECTED SHEET PANEL -->
+    <div class="set-sheet-panel">
+  <!-- PANE 1: BUDGET & CYCLE -->
+  <div id="set-pane-budget" class="set-subpane active">
+    <div class="set-pane-grid">
+      <section class="fin-card set-card-full" aria-labelledby="set-budget-heading">
+        <div class="card-head-row" style="margin-bottom: 20px;">
+          <div>
+            <div id="set-budget-heading" class="card-title-lg">Budget, Income &amp; Cycle Rules</div>
+            <div class="card-sub-sm">Configure monthly limits, income basis, cycle reset date, and daily rollover</div>
+          </div>
+        </div>
+
+        <div class="set-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="set-budget-input">Monthly Budget</label>
+            <div class="set-num-wrap">
+              <span class="set-num-pfx">₹</span>
+              <input type="number" class="form-input set-num-inp" id="set-budget-input" min="1" step="1" value="{{ budget|floatformat:0 }}" placeholder="20000" oninput="updateDailyTargetPreview()">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="set-income-input">Monthly Income / Salary</label>
+            <div class="set-num-wrap">
+              <span class="set-num-pfx">₹</span>
+              <input type="number" class="form-input set-num-inp" id="set-income-input" min="0" step="1" placeholder="Optional (e.g. 50000)" oninput="updateDailyTargetPreview()">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="set-cycle-start-input">Cycle Reset Day (1–28)</label>
+            <div class="set-num-wrap">
+              <input type="number" class="form-input set-num-inp" id="set-cycle-start-input" min="1" max="28" value="{{ budget_cycle_start_day|default:1 }}" oninput="updateDailyTargetPreview()">
+              <span class="set-num-sfx">of month</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Daily Budget Basis</label>
+            <div class="set-segmented-pill">
+              <button type="button" class="set-seg-btn active" id="set-basis-budget-btn" onclick="setBudgetBasis('budget')">Budget-Based</button>
+              <button type="button" class="set-seg-btn" id="set-basis-income-btn" onclick="setBudgetBasis('income')">Income-Based</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="set-pref-row set-pref-row--box">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--green" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Daily Budget Rollover</div>
+              <div class="set-row-sub">Carry unspent daily allowance forward into the next day's limit</div>
+            </div>
+          </div>
+          <label class="set-switch">
+            <input type="checkbox" id="set-rollover-toggle" onchange="updateDailyTargetPreview()">
+            <span class="set-slider"></span>
+          </label>
+        </div>
+
+        <div class="set-form-footer">
+          <div class="set-daily-preview" id="set-daily-preview">Est. daily target: <strong>₹667 / day</strong></div>
+          <button type="button" class="set-primary-btn" id="set-budget-save-btn" onclick="saveBudgetCycleSettings()">Save Budget &amp; Cycle</button>
+        </div>
+      </section>
+
+      <section class="fin-card set-card-full" aria-label="Live Cycle Preview">
+        <div class="card-head-row" style="margin-bottom: 16px;">
+          <div>
+            <div class="card-title-lg">Live Cycle Preview</div>
+            <div class="card-sub-sm">How "Aaj Ka Bacha" &amp; daily pacing react</div>
+          </div>
+        </div>
+
+        <div class="set-sim-hero">
+          <span>Calculated Daily Target</span>
+          <strong id="set-sim-daily">₹667 / day</strong>
+        </div>
+
+        <div class="set-sim-list">
+          <div class="set-sim-row">
+            <span>Active Limit Source</span>
+            <strong id="set-sim-basis">Monthly Budget</strong>
+          </div>
+          <div class="set-sim-row">
+            <span>Monthly Cycle Reset</span>
+            <strong id="set-sim-reset">Every 1st</strong>
+          </div>
+          <div class="set-sim-row">
+            <span>Rollover Mode</span>
+            <strong id="set-sim-rollover">Standard Fixed</strong>
+          </div>
+        </div>
+
+        <div class="set-sim-note">
+          Updating your budget or cycle start day recalculates safe-to-spend limits across Web, Android app, and WhatsApp alerts immediately.
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- PANE 2: SMART ALERTS & SCHEDULE -->
+  <div id="set-pane-alerts" class="set-subpane">
+    <div class="set-pane-grid">
+      <section class="fin-card" aria-labelledby="set-alerts-heading">
+        <div class="card-head-row" style="margin-bottom: 8px;">
+          <div>
+            <div id="set-alerts-heading" class="card-title-lg">Smart Spending Alerts &amp; Schedule</div>
+            <div class="card-sub-sm">Real-time threshold warnings &amp; daily briefings synced across devices</div>
+          </div>
+          <div class="set-status-pills">
+            <span class="set-clock-pill" id="set-local-clock">IST</span>
+            <span class="set-sync-pill" id="set-notif-status">Synced</span>
+          </div>
+        </div>
+
+        <div class="set-pref-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--amber" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Morning Budget Push</div>
+              <div class="set-row-sub">Daily morning allowance ("Aaj Ka Bacha") summary</div>
+            </div>
+          </div>
+          <div class="set-row-right">
+            <button type="button" class="set-test-btn" onclick="triggerTestAlert('morning')">Test</button>
+            <input type="time" class="set-time-inp" id="set-notif-morning-time" value="08:00" aria-label="Morning Push Time" onchange="saveNotificationSettings()">
+            <label class="set-switch">
+              <input type="checkbox" id="set-notif-morning" onchange="saveNotificationSettings()">
+              <span class="set-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="set-pref-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--indigo" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Nightly Spend Summary</div>
+              <div class="set-row-sub">End-of-day category breakdown &amp; streak check-in</div>
+            </div>
+          </div>
+          <div class="set-row-right">
+            <button type="button" class="set-test-btn" onclick="triggerTestAlert('night')">Test</button>
+            <input type="time" class="set-time-inp" id="set-notif-nightly-time" value="22:00" aria-label="Nightly Summary Time" onchange="saveNotificationSettings()">
+            <label class="set-switch">
+              <input type="checkbox" id="set-notif-nightly" onchange="saveNotificationSettings()">
+              <span class="set-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="set-pref-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--rose" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Live Budget Spend Alerts</div>
+              <div class="set-row-sub">Warn immediately at 80% or 100% of monthly cycle budget</div>
+            </div>
+          </div>
+          <div class="set-row-right">
+            <button type="button" class="set-test-btn" onclick="triggerTestAlert('live')">Test</button>
+            <label class="set-switch">
+              <input type="checkbox" id="set-notif-live" onchange="saveNotificationSettings()">
+              <span class="set-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="set-pref-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--blue" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Repeat Merchant Nudges</div>
+              <div class="set-row-sub">Alert when logging duplicate spends at the same merchant today</div>
+            </div>
+          </div>
+          <div class="set-row-right">
+            <button type="button" class="set-test-btn" onclick="triggerTestAlert('nudge')">Test</button>
+            <label class="set-switch">
+              <input type="checkbox" id="set-notif-nudges" onchange="saveNotificationSettings()">
+              <span class="set-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="set-pref-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--cyan" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Preferred Timezone</div>
+              <div class="set-row-sub">Controls morning &amp; nightly schedule checks</div>
+            </div>
+          </div>
+          <select class="form-select set-tz-select" id="set-timezone-select" aria-label="Timezone" onchange="saveNotificationSettings()">
+            <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+            <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+            <option value="Europe/London">Europe/London (GMT)</option>
+            <option value="America/New_York">America/New_York (EST)</option>
+            <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
+            <option value="UTC">UTC</option>
+          </select>
+        </div>
+
+        <div class="set-pref-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--blue" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Browser Push Notifications</div>
+              <div class="set-row-sub" id="set-browser-notif-sub">Native desktop popups when dashboard alerts fire</div>
+            </div>
+          </div>
+          <button type="button" class="set-pill-btn" id="set-browser-notif-btn" onclick="enableBrowserNotifications()">Enable Alerts</button>
+        </div>
+      </section>
+
+      <section class="fin-card" aria-label="AI Alert Tone and Feed">
+        <div class="card-head-row" style="margin-bottom: 14px;">
+          <div>
+            <div class="card-title-lg">AI Coaching Tone &amp; Live Log</div>
+            <div class="card-sub-sm">Switch alert voice &amp; inspect recent triggers</div>
+          </div>
+        </div>
+
+        <div class="set-segmented-pill set-segmented-pill--full">
+          <button type="button" class="set-seg-btn active" id="set-tone-normal-btn" onclick="setNotifTone('normal')">Normal 😊 Coaching</button>
+          <button type="button" class="set-seg-btn" id="set-tone-roast-btn" onclick="setNotifTone('roast')">Roast 🔥 Honest</button>
+        </div>
+
+        <div class="set-tone-preview-box" id="set-tone-sample-msg">
+          Morning Ajay! Today's safe-to-spend budget is ready to keep your month green.
+        </div>
+
+        <div class="set-feed-head">
+          <span>Recent Alert Activity</span>
+          <small id="set-alert-feed-count">Live log</small>
+        </div>
+        <div id="set-alert-feed-list" class="set-alert-feed-list">
+          <div class="set-alert-empty">Hit any <strong>Test</strong> button to preview an alert live here.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- PANE 3: TOOLS, DATA & WHATSAPP SYNC -->
+  <div id="set-pane-tools" class="set-subpane">
+    <div class="set-pane-grid set-pane-grid--even">
+      <section class="fin-card set-card-full" aria-labelledby="set-tools-heading">
+        <div class="card-head-row" style="margin-bottom: 8px;">
+          <div>
+            <div id="set-tools-heading" class="card-title-lg">Appearance, Statements &amp; App</div>
+            <div class="card-sub-sm">Theme mode, UPI statement imports, ledger exports, and Android companion</div>
+          </div>
+        </div>
+
+        <div class="set-pref-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--indigo" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Dark Sapphire Theme</div>
+              <div class="set-row-sub" id="set-theme-sub">Crisp Light or Obsidian Dark UI</div>
+            </div>
+          </div>
+          <label class="set-switch">
+            <input type="checkbox" id="set-theme-toggle" onchange="toggleTheme()">
+            <span class="set-slider"></span>
+          </label>
+        </div>
+
+        <button type="button" class="set-action-row" onclick="openModal('statementImportModal')">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--blue" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Import Bank / UPI Statement</div>
+              <div class="set-row-sub">Upload CSV or paste bank debit SMS lines</div>
+            </div>
+          </div>
+          <span class="set-chevron">›</span>
+        </button>
+
+        <div class="set-pref-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--green" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Export Expense Ledger</div>
+              <div class="set-row-sub">Download monthly reports anytime</div>
+            </div>
+          </div>
+          <div class="set-export-btns">
+            <button type="button" class="set-mini-btn" onclick="exportCSV()">CSV ↓</button>
+            <button type="button" class="set-mini-btn" onclick="exportPDF()">PDF ↓</button>
+          </div>
+        </div>
+
+        <button type="button" class="set-action-row" onclick="openModal('feedbackModal')">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--amber" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Submit Feedback</div>
+              <div class="set-row-sub">Share feature ideas or report bugs</div>
+            </div>
+          </div>
+          <span class="set-chevron">›</span>
+        </button>
+
+        <a href="{% url 'download_apk' %}" class="set-action-row set-action-row--last">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--cyan" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Android Companion App</div>
+              <div class="set-row-sub">Download APK with biometric lock &amp; widgets</div>
+            </div>
+          </div>
+          <span class="set-chevron">›</span>
+        </a>
+      </section>
+
+      <section class="fin-card set-card-full" aria-label="WhatsApp Expense Bot">
+        <div class="set-wa-card" style="height:100%;display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div class="set-wa-top">
+              <div class="set-wa-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="#ffffff">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884Z"/>
+                </svg>
+              </div>
+              <div class="set-wa-meta">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <strong>WhatsApp Expense Bot</strong>
+                  <span class="set-wa-pill {% if whatsapp_linked %}linked{% endif %}" id="set-wa-badge">{% if whatsapp_linked %}Connected{% else %}Not Linked{% endif %}</span>
+                </div>
+                <p id="set-wa-sub">{% if whatsapp_linked %}Synced with {{ whatsapp_display|default:"Active Bot" }} · Voice notes &amp; quick chat logging{% else %}Text "500 petrol" or drop Hindi/English voice notes directly to +91 7379053923{% endif %}</p>
+              </div>
+            </div>
+
+            <div class="set-wa-guide">
+              <div class="set-wa-cmd"><span>Quick text expense</span><code>250 cold coffee</code></div>
+              <div class="set-wa-cmd"><span>Voice logging</span><code>🎙️ 5 sec voice note</code></div>
+              <div class="set-wa-cmd"><span>Check today's limit</span><code>budget status</code></div>
+            </div>
+          </div>
+
+          <a href="{% if whatsapp_linked %}https://wa.me/917379053923{% else %}https://wa.me/917379053923?text=Link%20{{ user_phone }}{% endif %}" target="_blank" rel="noopener" class="set-wa-btn" style="margin-top:18px;">
+            {% if whatsapp_linked %}Open WhatsApp Bot →{% else %}Link WhatsApp Bot (1-Tap) →{% endif %}
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- PANE 4: SECURITY, ACCOUNT POSTURE & LEGAL -->
+  <div id="set-pane-security" class="set-subpane">
+    <div class="set-sec-posture">
+      <div class="set-sec-stat-card">
+        <div class="set-icon-tile set-icon-tile--green" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="set-sec-stat-meta">
+          <small>Email Protection</small>
+          <strong>{% if request.user.profile.email_verified %}Verified &amp; Secured{% else %}Verification Needed{% endif %}</strong>
+          <span>{{ request.user.email|default:"Add email to enable OTP" }}</span>
+        </div>
+      </div>
+
+      <div class="set-sec-stat-card">
+        <div class="set-icon-tile set-icon-tile--blue" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>
+        </div>
+        <div class="set-sec-stat-meta">
+          <small>WhatsApp Bot Session</small>
+          <strong>{% if whatsapp_linked %}Linked &amp; Syncing{% else %}Not Connected{% endif %}</strong>
+          <span>{% if whatsapp_linked %}{{ whatsapp_display|default:"Active Bot" }}{% else %}Connect via Tools &amp; Sync{% endif %}</span>
+        </div>
+      </div>
+
+      <div class="set-sec-stat-card">
+        <div class="set-icon-tile set-icon-tile--indigo" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="set-sec-stat-meta">
+          <small>Account Role</small>
+          <strong>{% if user.username == 'ajay' and user.profile.phone_number == '917905398965' %}Administrator{% else %}Standard Member{% endif %}</strong>
+          <span>Private session · Auto-persisted</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="set-pane-grid set-pane-grid--even">
+      <section class="fin-card set-card-full" aria-labelledby="set-security-heading">
+        <div class="card-head-row" style="margin-bottom: 10px;">
+          <div>
+            <div id="set-security-heading" class="card-title-lg">Account Security &amp; Danger Zone</div>
+            <div class="card-sub-sm">Admin tools, permanent account removal, and session sign out</div>
+          </div>
+        </div>
+
+        <a href="{% url 'admin_panel' %}" class="set-action-row" id="set-admin-row" {% if not user.username == 'ajay' or not user.profile.phone_number == '917905398965' %}style="display:none;"{% endif %}>
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--amber" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Admin Console</div>
+              <div class="set-row-sub">Platform telemetry, feedback &amp; user management</div>
+            </div>
+          </div>
+          <span class="set-chevron">›</span>
+        </a>
+
+        <button type="button" class="set-action-row set-action-row--danger set-action-row--last" onclick="openDeleteAccountModal()">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--rose" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title" style="color:var(--red);">Delete Account Permanently</div>
+              <div class="set-row-sub">Permanently erase ledger, goals, notes, and split records</div>
+            </div>
+          </div>
+          <span class="set-chevron" style="color:var(--red);">›</span>
+        </button>
+
+        <a href="{% url 'logout' %}" class="set-logout-full" style="margin-top:auto;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Sign Out of Dashboard</span>
+        </a>
+      </section>
+
+      <section class="fin-card set-card-full" aria-label="Privacy & Legal Resources">
+        <div class="card-head-row" style="margin-bottom: 10px;">
+          <div>
+            <div class="card-title-lg">Privacy, Policies &amp; Support</div>
+            <div class="card-sub-sm">How your personal financial ledger is protected</div>
+          </div>
+        </div>
+
+        <a href="{% url 'privacy' %}" target="_blank" rel="noopener" class="set-action-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--blue" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Privacy Policy</div>
+              <div class="set-row-sub">Data encryption, retention &amp; ownership rights</div>
+            </div>
+          </div>
+          <span class="set-chevron">↗</span>
+        </a>
+
+        <a href="{% url 'terms' %}" target="_blank" rel="noopener" class="set-action-row">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--indigo" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Terms of Service</div>
+              <div class="set-row-sub">Platform rules &amp; shared split usage terms</div>
+            </div>
+          </div>
+          <span class="set-chevron">↗</span>
+        </a>
+
+        <a href="{% url 'contact' %}" target="_blank" rel="noopener" class="set-action-row set-action-row--last">
+          <div class="set-row-main">
+            <div class="set-icon-tile set-icon-tile--green" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div>
+              <div class="set-row-title">Contact Support</div>
+              <div class="set-row-sub">Direct help desk &amp; feedback channels</div>
+            </div>
+          </div>
+          <span class="set-chevron">↗</span>
+        </a>
+      </section>
+    </div>
+  </div>
+
+    </div><!-- /.set-sheet-panel -->
+  </div><!-- /.set-tabbed-frame -->
+
+</div>

@@ -1,263 +1,96 @@
-{% extends 'tracker/base.html' %}
-
-{% block extra_css %}
-<style>
-/* PREMIUM CONTACT PAGE CSS */
-.contact-container {
-    max-width: 1200px;
-    margin: 60px auto;
-    padding: 0 20px;
-    display: flex;
-    gap: 40px;
-    align-items: stretch;
-}
-
-/* Left Side - Info */
-.contact-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.contact-header {
-    margin-bottom: 40px;
-}
-
-.contact-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 3rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin-bottom: 16px;
-    line-height: 1.1;
-}
-
-.contact-subtitle {
-    font-size: 1.1rem;
-    color: var(--text-muted);
-    line-height: 1.6;
-}
-
-.info-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    flex: 1;
-}
-
-.info-card {
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-light);
-    border-radius: 20px;
-    padding: 30px;
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    transition: transform 0.3s, border-color 0.3s;
-    text-decoration: none;
-    box-shadow: var(--shadow-soft);
-}
-
-.info-card:hover {
-    transform: translateX(10px);
-    border-color: var(--primary);
-}
-
-.ic-icon {
-    width: 50px; height: 50px;
-    border-radius: 14px;
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--primary);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
-}
-
-.ic-icon.wa { background: rgba(37, 211, 102, 0.1); color: #25D366; }
-
-.ic-content h3 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.2rem;
-    color: var(--text-main);
-    margin-bottom: 6px;
-    font-weight: 700;
-}
-
-.ic-content p {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    margin: 0;
-}
-
-/* Right Side - Form */
-.contact-form-wrapper {
-    flex: 1.2;
-    background: var(--bg-card);
-    backdrop-filter: blur(24px);
-    border: 1px solid var(--border-glass);
-    border-radius: 24px;
-    padding: 50px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-    position: relative;
-    overflow: hidden;
-}
-
-.contact-form-wrapper::before {
-    content: '';
-    position: absolute;
-    top: -50%; right: -50%;
-    width: 100%; height: 100%;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.cf-group {
-    margin-bottom: 24px;
-}
-
-.cf-label {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-main);
-    margin-bottom: 8px;
-    font-family: 'Outfit', sans-serif;
-}
-
-.cf-input, .cf-textarea {
-    width: 100%;
-    background: var(--bg-base);
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    padding: 16px;
-    color: var(--text-main);
-    font-size: 1rem;
-    font-family: 'Inter', sans-serif;
-    transition: all 0.3s;
-}
-
-.cf-textarea {
-    min-height: 150px;
-    resize: vertical;
-}
-
-.cf-input:focus, .cf-textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px var(--primary-glow);
-}
-
-.btn-send {
-    width: 100%;
-    padding: 16px;
-    border-radius: 12px;
-    border: none;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-    font-size: 1.1rem;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 10px 20px var(--primary-glow);
-}
-
-.btn-send:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 30px var(--primary-glow);
-}
-
-@media (max-width: 900px) {
-    .contact-container {
-        flex-direction: column;
-    }
-    .contact-form-wrapper {
-        padding: 30px;
-    }
-}
-</style>
-{% endblock %}
+{% extends 'tracker/noir_subpage.html' %}
+{% block title %}Contact Support — ExpenseTracker{% endblock %}
 
 {% block content %}
-<div class="contact-container">
-    
-    <!-- Left Info -->
-    <div class="contact-info" data-aos="fade-right">
-        <div class="contact-header">
-            <h1 class="contact-title">Let's chat.</h1>
-            <p class="contact-subtitle">Whether you have a question about features, trials, pricing, or anything else, our team is ready to answer all your questions.</p>
-        </div>
-        
-        <div class="info-cards">
-            <a href="mailto:support@paisamitra.com" class="info-card">
-                <div class="ic-icon">✉️</div>
-                <div class="ic-content">
-                    <h3>Email Support</h3>
-                    <p>support@paisamitra.com<br>We typically respond within 24 hours.</p>
-                </div>
-            </a>
-            
-            <a href="https://wa.me/917379053923" target="_blank" class="info-card">
-                <div class="ic-icon wa"><i class="fab fa-whatsapp"></i></div>
-                <div class="ic-content">
-                    <h3>WhatsApp Us</h3>
-                    <p>+91 7379053923<br>Message our human support line.</p>
-                </div>
-            </a>
-        </div>
-    </div>
-    
-    <!-- Right Form -->
-    <div class="contact-form-wrapper" data-aos="fade-left" data-aos-delay="100">
-        {% if success %}
-            <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #22c55e; padding: 20px; border-radius: 16px; margin-bottom: 24px; text-align: center;">
-                <div style="font-size: 2rem; margin-bottom: 8px;">✅</div>
-                <h3 style="margin: 0 0 6px 0; font-family: 'Outfit', sans-serif;">Message Sent!</h3>
-                <p style="margin: 0; font-size: 0.95rem; color: var(--text-main);">Thank you for reaching out. Our support team will review your message and reply via email within 24 hours.</p>
-            </div>
-        {% endif %}
+<div class="subpage-wrap">
+    <a href="{% url 'landing' %}" class="subpage-back">← Back to Home</a>
 
-        {% if errors %}
-            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 16px 20px; border-radius: 14px; margin-bottom: 24px;">
-                <h4 style="margin: 0 0 8px 0; font-family: 'Outfit', sans-serif;">Please correct the following:</h4>
-                <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
+    <div class="contact-grid">
+        <div>
+            <div class="status-pill" style="margin-bottom:20px;">
+                <span class="status-pill__text">DIRECT SUPPORT</span>
+            </div>
+            <h1 class="hero-h1" style="font-size:clamp(36px, 4.6vw, 56px); margin:0 0 18px; text-align:left;">
+                <span class="hero-h1__line">Let's <span class="hero-h1__blue">chat.</span></span>
+            </h1>
+            <p class="noir-card__desc" style="font-size:17px;">
+                Questions about WhatsApp AI setup, Android APK builds, budgets, or privacy? Message us directly.
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:16px; margin-top:28px;">
+                <a href="mailto:support@paisamitra.com" class="noir-card" style="padding:22px;">
+                    <div style="font-family:var(--font-mono); font-size:11px; color:var(--accent-blue); margin-bottom:6px;">
+                        EMAIL SUPPORT
+                    </div>
+                    <strong style="font-family:var(--font-display); font-size:18px;">support@paisamitra.com</strong>
+                    <span style="color:var(--text-muted); font-size:14px; margin-top:4px;">We typically reply within 24
+                        hours.</span>
+                </a>
+
+                <a href="https://wa.me/917379053923" target="_blank" rel="noopener" class="noir-card"
+                    style="padding:22px;">
+                    <div style="font-family:var(--font-mono); font-size:11px; color:#34d399; margin-bottom:6px;">
+                        WHATSAPP DIRECT LINE
+                    </div>
+                    <strong style="font-family:var(--font-display); font-size:18px;">+91 7379053923</strong>
+                    <span style="color:var(--text-muted); font-size:14px; margin-top:4px;">Message our human support
+                        channel directly.</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="subpage-panel">
+            {% if success %}
+            <div class="noir-alert noir-alert--ok">
+                <strong style="display:block; margin-bottom:4px;">Message Sent</strong>
+                Thank you for reaching out. Our support team will review your message and reply via email within 24
+                hours.
+            </div>
+            {% endif %}
+
+            {% if errors %}
+            <div class="noir-alert noir-alert--err">
+                <strong style="display:block; margin-bottom:6px;">Please correct the following:</strong>
+                <ul style="margin:0; padding-left:18px;">
                     {% for err in errors %}
-                        <li>{{ err }}</li>
+                    <li>{{ err }}</li>
                     {% endfor %}
                 </ul>
             </div>
-        {% endif %}
+            {% endif %}
 
-        <form method="POST" action="{% url 'contact' %}">
-            {% csrf_token %}
-            <!-- Honeypot spam trap -->
-            <input type="text" name="website" style="display:none;" tabindex="-1" autocomplete="off">
+            <form method="POST" action="{% url 'contact' %}">
+                {% csrf_token %}
+                <input type="text" name="website" style="display:none;" tabindex="-1" autocomplete="off">
 
-            <div class="cf-group">
-                <label class="cf-label">Full Name</label>
-                <input type="text" name="name" class="cf-input" placeholder="John Doe" value="{{ form_data.name|default:'' }}" required maxlength="150">
-            </div>
-            
-            <div class="cf-group">
-                <label class="cf-label">Email Address</label>
-                <input type="email" name="email" class="cf-input" placeholder="john@example.com" value="{{ form_data.email|default:'' }}" required maxlength="254">
-            </div>
+                <div class="noir-form-group">
+                    <label for="contactName" class="noir-label">Full Name</label>
+                    <input type="text" id="contactName" name="name" class="noir-input" placeholder="Your name"
+                        value="{{ form_data.name|default:'' }}" required maxlength="150">
+                </div>
 
-            <div class="cf-group">
-                <label class="cf-label">Subject</label>
-                <input type="text" name="subject" class="cf-input" placeholder="How can we help?" value="{{ form_data.subject|default:'' }}" maxlength="200">
-            </div>
-            
-            <div class="cf-group">
-                <label class="cf-label">Message</label>
-                <textarea name="message" class="cf-textarea" placeholder="Describe your question or issue in detail..." required maxlength="5000">{{ form_data.message|default:'' }}</textarea>
-            </div>
-            
-            <button type="submit" class="btn-send">Send Message</button>
-        </form>
+                <div class="noir-form-group">
+                    <label for="contactEmail" class="noir-label">Email Address</label>
+                    <input type="email" id="contactEmail" name="email" class="noir-input" placeholder="you@example.com"
+                        value="{{ form_data.email|default:'' }}" required maxlength="254">
+                </div>
+
+                <div class="noir-form-group">
+                    <label for="contactSubject" class="noir-label">Subject</label>
+                    <input type="text" id="contactSubject" name="subject" class="noir-input"
+                        placeholder="How can we help?" value="{{ form_data.subject|default:'' }}" maxlength="200">
+                </div>
+
+                <div class="noir-form-group">
+                    <label for="contactMessage" class="noir-label">Message</label>
+                    <textarea id="contactMessage" name="message" class="noir-textarea"
+                        placeholder="Describe your question or issue in detail..." required
+                        maxlength="5000">{{ form_data.message|default:'' }}</textarea>
+                </div>
+
+                <button type="submit" class="surface-btn surface-btn--primary" style="padding:14px 20px;">Send Message</button>
+            </form>
+        </div>
     </div>
-    
 </div>
 {% endblock %}

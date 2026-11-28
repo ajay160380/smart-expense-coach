@@ -1,229 +1,85 @@
-{% extends 'tracker/base.html' %}
-
-{% block extra_css %}
-<style>
-/* PREMIUM ABOUT PAGE CSS */
-.about-header {
-    text-align: center;
-    padding: 80px 20px 40px;
-    max-width: 900px;
-    margin: 0 auto;
-    position: relative;
-}
-
-.about-badge {
-    display: inline-block;
-    padding: 8px 16px;
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--primary);
-    border-radius: 100px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    margin-bottom: 20px;
-    border: 1px solid rgba(99, 102, 241, 0.2);
-}
-
-.about-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: clamp(3rem, 6vw, 4.5rem);
-    font-weight: 800;
-    color: var(--text-main);
-    line-height: 1.1;
-    margin-bottom: 24px;
-}
-
-.about-title span {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.about-subtitle {
-    font-size: 1.25rem;
-    color: var(--text-muted);
-    line-height: 1.7;
-    max-width: 700px;
-    margin: 0 auto;
-}
-
-/* MISSION BENTO */
-.mission-bento {
-    max-width: 1200px;
-    margin: 60px auto;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    padding: 0 20px;
-}
-
-.mb-card {
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-glass);
-    border-radius: 24px;
-    padding: 40px;
-    box-shadow: var(--shadow-soft);
-    transition: transform 0.3s, border-color 0.3s;
-}
-
-.mb-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--primary);
-}
-
-.mb-wide { grid-column: span 2; }
-
-.mb-icon {
-    width: 60px; height: 60px;
-    border-radius: 16px;
-    background: var(--bg-base);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; margin-bottom: 24px;
-    border: 1px solid var(--border-light);
-}
-
-.mb-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 12px;
-    color: var(--text-main);
-}
-
-.mb-text {
-    color: var(--text-muted);
-    line-height: 1.6;
-    font-size: 1.05rem;
-}
-
-/* STORY TIMELINE */
-.timeline-section {
-    max-width: 800px;
-    margin: 100px auto;
-    padding: 0 20px;
-}
-
-.timeline-header {
-    text-align: center;
-    font-family: 'Outfit', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin-bottom: 60px;
-    color: var(--text-main);
-}
-
-.timeline {
-    position: relative;
-    border-left: 2px solid var(--border-light);
-    padding-left: 40px;
-    margin-left: 20px;
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 50px;
-}
-
-.timeline-item::before {
-    content: '';
-    position: absolute;
-    left: -49px;
-    top: 0;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--primary);
-    border: 4px solid var(--bg-base);
-    box-shadow: 0 0 10px var(--primary-glow);
-}
-
-.tl-date {
-    font-family: 'Outfit', sans-serif;
-    color: var(--primary);
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: 8px;
-}
-
-.tl-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin-bottom: 12px;
-}
-
-.tl-text {
-    color: var(--text-muted);
-    line-height: 1.6;
-}
-
-@media (max-width: 900px) {
-    .mission-bento { grid-template-columns: 1fr; }
-    .mb-wide { grid-column: span 1; }
-}
-</style>
-{% endblock %}
+{% extends 'tracker/noir_subpage.html' %}
+{% block title %}About Us — ExpenseTracker{% endblock %}
+{% load static %}
 
 {% block content %}
-<div style="position: relative;">
-    <!-- Hero Section -->
-    <section class="about-header" data-aos="fade-up">
-        <div class="about-badge">Our Story</div>
-        <h1 class="about-title">Making finance <span>effortless</span>.</h1>
-        <p class="about-subtitle">ExpenseTracker was built because we were tired of complex apps. We believe that tracking expenses should be as easy as sending a text message to a friend.</p>
-    </section>
+<div class="subpage-wrap">
+    <div class="subpage-hero">
+        <a href="{% url 'landing' %}" class="subpage-back">← Back to Home</a>
+        <div class="status-pill" style="margin-bottom:20px;">
+            <span class="status-pill__text">OUR STORY</span>
+        </div>
+        <h1 class="hero-h1" style="font-size:clamp(36px, 5.2vw, 64px); margin-bottom:18px;">
+            <span class="hero-h1__line">Making finance</span>
+            <span class="hero-h1__blue">effortless</span>
+        </h1>
+        <p class="hero-sub" style="margin-bottom:0;">
+            ExpenseTracker was built because we were tired of bloated apps. Tracking expenses should be as simple as
+            sending a WhatsApp message to a friend.
+        </p>
+    </div>
 
-    <!-- Mission Bento Grid -->
-    <section class="mission-bento">
-        <div class="mb-card mb-wide" data-aos="fade-up" data-aos-delay="100">
-            <div class="mb-icon" style="color: #6366F1;">🚀</div>
-            <h3 class="mb-title">Our Mission</h3>
-            <p class="mb-text">To eliminate the friction of personal finance. We noticed a pattern: people want to track their money, but the habit breaks because opening an app for a ₹50 coffee is tedious. By bringing the tracker to WhatsApp, we ensure your financial awareness never drops.</p>
-        </div>
-        
-        <div class="mb-card" data-aos="fade-up" data-aos-delay="200">
-            <div class="mb-icon" style="color: #25D366;">💡</div>
-            <h3 class="mb-title">The "Aha" Moment</h3>
-            <p class="mb-text">Why build another app when 2 billion people already live on WhatsApp? That realization was the birth of ExpenseTracker.</p>
-        </div>
-        
-        <div class="mb-card" data-aos="fade-up" data-aos-delay="300">
-            <div class="mb-icon" style="color: #F43F5E;">🤖</div>
-            <h3 class="mb-title">AI Powered</h3>
-            <p class="mb-text">We leverage cutting-edge Large Language Models to understand the context of your texts, so you don't have to manually select categories.</p>
-        </div>
-        
-        <div class="mb-card mb-wide" data-aos="fade-up" data-aos-delay="400">
-            <div class="mb-icon" style="color: #FBBF24;">🛡️</div>
-            <h3 class="mb-title">Privacy First</h3>
-            <p class="mb-text">Your financial data is highly sensitive. We built ExpenseTracker with military-grade encryption and a strict policy: we never sell your data, and our AI only processes your messages for expense categorization.</p>
-        </div>
-    </section>
+    <div class="noir-bento-grid" style="margin-bottom:72px;">
+        <article class="noir-card noir-card--wide" data-spotlight>
+            <h3 class="noir-card__title">Our Mission</h3>
+            <p class="noir-card__desc" style="margin-bottom:0;">
+                Eliminate the friction of personal finance. People want to track money, but habits break when opening an
+                app for a ₹50 chai feels tedious. Bringing your expense ledger into WhatsApp keeps daily awareness at
+                100%.
+            </p>
+        </article>
 
-    <!-- Story Timeline -->
-    <section class="timeline-section">
-        <h2 class="timeline-header" data-aos="fade-up">How We Got Here</h2>
-        
-        <div class="timeline">
-            <div class="timeline-item" data-aos="fade-up" data-aos-delay="100">
-                <div class="tl-date">Early 2026</div>
-                <h3 class="tl-title">The Frustration</h3>
-                <p class="tl-text">After downloading the 5th budget tracker app and deleting it a week later, our founder realized the problem wasn't the apps, it was the friction of opening them.</p>
+        <article class="noir-card" data-spotlight>
+            <h3 class="noir-card__title">The Aha Moment</h3>
+            <p class="noir-card__desc" style="margin-bottom:0;">
+                Why force another app install when billions already open WhatsApp every hour?
+            </p>
+        </article>
+
+        <article class="noir-card" data-spotlight>
+            <h3 class="noir-card__title">AI Powered</h3>
+            <p class="noir-card__desc" style="margin-bottom:0;">
+                LLMs decode natural English, Hindi, and Hinglish messages deterministically with zero dropdown forms.
+            </p>
+        </article>
+
+        <article class="noir-card noir-card--wide" data-spotlight>
+            <h3 class="noir-card__title">Privacy First</h3>
+            <p class="noir-card__desc" style="margin-bottom:0;">
+                Your ledger is encrypted in transit and at rest. We never sell transaction histories to advertisers or
+                third-party brokers.
+            </p>
+        </article>
+    </div>
+
+    <div class="subpage-panel subpage-wrap--narrow" style="margin:0 auto;">
+        <h2 style="font-family:var(--font-display); font-size:28px; margin:0 0 28px;">How We Got Here</h2>
+        <div class="timeline-noir">
+            <div class="timeline-noir__item">
+                <div style="font-family:var(--font-mono); color:#60a5fa; font-size:12px; margin-bottom:6px;">EARLY 2026</div>
+                <h3 style="margin:0 0 8px; font-family:var(--font-display);">The Friction Problem</h3>
+                <p style="margin:0; color:var(--text-muted);">
+                    After deleting manual budget apps every two weeks, we saw the problem wasn't discipline — it was
+                    opening slow multi-screen forms for tiny everyday spends.
+                </p>
             </div>
-            
-            <div class="timeline-item" data-aos="fade-up" data-aos-delay="200">
-                <div class="tl-date">Mid 2026</div>
-                <h3 class="tl-title">The Prototype</h3>
-                <p class="tl-text">A basic script was built connecting WhatsApp to a spreadsheet. Friends loved it so much they begged for access. The LLM integration followed shortly after.</p>
+            <div class="timeline-noir__item">
+                <div style="font-family:var(--font-mono); color:#60a5fa; font-size:12px; margin-bottom:6px;">MID 2026</div>
+                <h3 style="margin:0 0 8px; font-family:var(--font-display);">The WhatsApp + LLM Prototype</h3>
+                <p style="margin:0; color:var(--text-muted);">
+                    A quick Hinglish parser inside WhatsApp evolved into real-time safe-to-spend targets, voice note
+                    transcription, and split trip links.
+                </p>
             </div>
-            
-            <div class="timeline-item" data-aos="fade-up" data-aos-delay="300">
-                <div class="tl-date">Today</div>
-                <h3 class="tl-title">ExpenseTracker Launch</h3>
-                <p class="tl-text">ExpenseTracker officially launches, bringing frictionless AI-powered financial coaching to thousands of daily spenders.</p>
+            <div class="timeline-noir__item">
+                <div style="font-family:var(--font-mono); color:#60a5fa; font-size:12px; margin-bottom:6px;">TODAY</div>
+                <h3 style="margin:0 0 8px; font-family:var(--font-display);">ExpenseTracker Platform</h3>
+                <p style="margin:0; color:var(--text-muted);">
+                    Serving 10,000+ daily spenders seamlessly synced across WhatsApp, Web Analytics Dashboard, and
+                    native Android APK.
+                </p>
             </div>
         </div>
-    </section>
+    </div>
 </div>
 {% endblock %}

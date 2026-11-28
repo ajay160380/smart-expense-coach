@@ -1,29 +1,31 @@
-<div class="card" style="padding: 0; display: flex; flex-direction: column; height: 600px; max-height: 70vh; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow);">
-  <div class="ai-pop-head" style="border-bottom: 1px solid var(--border); padding: 16px 20px; background: var(--surface2);">
-    <div class="ai-pop-av">🤖</div>
+<div class="card ai-inline-card">
+  <div class="ai-pop-head ai-inline-head">
+    <div class="ai-pop-av" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+    </div>
     <div>
-      <div class="ai-pop-name" style="font-size: 16px;">ExpenseTracker AI</div>
-      <div class="ai-pop-status">Always online</div>
+      <div class="ai-pop-name" style="font-size: 18px; color: #ffffff;">ExpenseTracker AI</div>
+      <div class="ai-pop-status" style="font-size: 12.5px; color: rgba(255,255,255,0.88);">● Always online · Personal Finance Coach</div>
     </div>
   </div>
   
   <div class="ai-error-banner" id="ai-error-banner">
     ⚠️ <span id="ai-error-text">Unable to connect to the server.</span>
-    <button onclick="retryLastMsg()" style="margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:var(--font);font-weight:600;">Retry</button>
+    <button onclick="retryLastMsg()" style="margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:var(--font);font-weight:600;">Retry</button>
   </div>
   
-  <div class="ai-msgs" id="ai-msgs" style="flex: 1; height: auto; max-height: none; padding: 20px;"></div>
+  <div class="ai-msgs ai-inline-msgs" id="ai-msgs"></div>
   
-  <div class="ai-chips" id="ai-chips" style="padding: 12px 20px; border-top: 1px solid var(--border2); background: var(--surface);">
+  <div class="ai-chips ai-inline-chips" id="ai-chips">
     <button class="ai-chip" onclick="quickAsk(this)">Where is my money going?</button>
     <button class="ai-chip" onclick="quickAsk(this)">Analyze my budget</button>
     <button class="ai-chip" onclick="quickAsk(this)">How can I save ₹5000?</button>
     <button class="ai-chip" onclick="quickAsk(this)">Give top 3 saving tips</button>
   </div>
   
-  <div class="ai-input-row" style="padding: 16px 20px; background: var(--surface2); border-top: 1px solid var(--border);">
-    <input class="ai-input" id="ai-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}" style="font-size: 15px;">
-    <button class="ai-send" id="ai-send" onclick="sendMsg()" title="Send" style="width: 44px; height: 44px;">➤</button>
+  <div class="ai-input-row ai-inline-input-row">
+    <input class="ai-input" id="ai-input" placeholder="Ask anything about your spending, budget, or savings..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
+    <button class="ai-send ai-inline-send" id="ai-send" onclick="sendMsg()" title="Send">➤</button>
   </div>
 </div>
 

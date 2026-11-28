@@ -1,51 +1,62 @@
 <!-- 📱 EXPENSE SPLIT -->
-      <div class="split-section">
-        <div class="bills-header">
-          <div class="section-title">📱 Split Expenses</div>
-          <button class="add-small-btn" onclick="openModal('splitModal')">+ New Split</button>
-        </div>
-        <div class="split-scroll" id="split-list">
-          {% for split in active_splits %}
-          <div class="split-card {% if split.is_settled %}settled{% endif %}" id="split-card-{{ split.pk }}">
-            <div class="split-top">
-              <span class="split-emoji">👥</span>
-              <span class="split-name">{{ split.name }}</span>
-              <span class="split-members-badge">{{ split.members.count }} members</span>
-            </div>
-            <div class="split-total" id="split-total-{{ split.pk }}">₹{{ split.tot|floatformat:0 }}</div>
-            <div class="split-pp" id="split-pp-{{ split.pk }}">Per person: ₹{{ split.pp|floatformat:0 }}</div>
-
-            {% if split.expenses.count > 0 %}
-            <div class="split-expenses-list" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
-              <div style="font-size: 11px; font-weight: 700; color: var(--text3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">All Expenses</div>
-              {% for exp in split.expenses.all reversed %}
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 13px;">
-                <div style="flex: 1;">
-                  <div style="color: var(--text1); font-weight: 500;">{{ exp.description }}</div>
-                  <div style="color: var(--text3); font-size: 11px; margin-top: 2px;">{{ exp.paid_by|title }} paid • {{ exp.date|date:"d M" }}</div>
-                </div>
-                <div style="color: var(--text1); font-weight: 600;">₹{{ exp.amount|floatformat:0 }}</div>
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-
-            <div class="split-actions-row" style="margin-top: 15px;">
-              <button class="split-action" 
-                      data-pk="{{ split.pk }}" 
-                      data-name="{{ split.name|escapejs }}" 
-                      data-members='[{% for m in split.members.all %}"{{ m.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
-                      onclick="openAddSplitExpense(this.getAttribute('data-pk'), this.getAttribute('data-name'), JSON.parse(this.getAttribute('data-members')))">+ Expense</button>
-              <button class="split-action" onclick="viewSplitSummary('{{ split.pk }}')">Summary</button>
-              <a href="/split/{{ split.share_token }}/" target="_blank" class="split-action" style="text-decoration:none;display:inline-flex;align-items:center;color:var(--primary);">🔗 Link</a>
-              <button class="split-action" onclick="settleSplit('{{ split.pk }}')">Settle</button>
-              <button class="split-action" style="color:var(--red);" onclick="deleteSplit('{{ split.pk }}')">Delete</button>
-            </div>
-          </div>
-          {% empty %}
-          <div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;width:100%;">
-            No split groups yet. Create one for your next trip! ✈️
-          </div>
-          {% endfor %}
-        </div>
+<div class="split-section">
+  <div class="bills-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="sec-icon-badge" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </span>
+      <div>
+        <div class="section-title">Split Expenses</div>
+        <div class="card-sub-sm">Group trips, dinners &amp; instant shareable settlements</div>
       </div>
+    </div>
+    <button class="add-small-btn add-small-btn--lg" onclick="openModal('splitModal')">+ New Split</button>
+  </div>
+  <div class="split-scroll" id="split-list">
+    {% for split in active_splits %}
+    <div class="split-card {% if split.is_settled %}settled{% endif %}" id="split-card-{{ split.pk }}">
+      <div class="split-top">
+        <span class="split-emoji">👥</span>
+        <span class="split-name">{{ split.name }}</span>
+        <span class="split-members-badge">{{ split.members.count }} members</span>
+      </div>
+      <div class="split-total" id="split-total-{{ split.pk }}">₹{{ split.tot|floatformat:0 }}</div>
+      <div class="split-pp" id="split-pp-{{ split.pk }}">Per person: ₹{{ split.pp|floatformat:0 }}</div>
+
+      {% if split.expenses.count > 0 %}
+      <div class="split-expenses-list" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">All Expenses</div>
+        {% for exp in split.expenses.all reversed %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: 13.5px;">
+          <div style="flex: 1;">
+            <div style="color: var(--text1); font-weight: 600;">{{ exp.description }}</div>
+            <div style="color: var(--text3); font-size: 11.5px; margin-top: 2px;">{{ exp.paid_by|title }} paid · {{ exp.date|date:"d M" }}</div>
+          </div>
+          <div style="color: var(--text1); font-weight: 700; font-family: var(--mono);">₹{{ exp.amount|floatformat:0 }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="split-actions-row" style="margin-top: 16px;">
+        <button class="split-action"
+                data-pk="{{ split.pk }}"
+                data-name="{{ split.name|escapejs }}"
+                data-members='[{% for m in split.members.all %}"{{ m.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
+                onclick="openAddSplitExpense(this.getAttribute('data-pk'), this.getAttribute('data-name'), JSON.parse(this.getAttribute('data-members')))">+ Expense</button>
+        <button class="split-action" onclick="viewSplitSummary('{{ split.pk }}')">Summary</button>
+        <a href="/split/{{ split.share_token }}/" target="_blank" class="split-action" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;color:var(--primary);">🔗 Link</a>
+        <button class="split-action" onclick="settleSplit('{{ split.pk }}')">Settle</button>
+        <button class="split-action" style="color:var(--red);" onclick="deleteSplit('{{ split.pk }}')">Delete</button>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-workspace empty-workspace--compact">
+      <div class="ew-icon">✈️</div>
+      <div class="ew-title">No split groups yet</div>
+      <div class="ew-sub">Split a weekend trip, flat rent, or group dinner with friends in seconds.</div>
+      <button class="ew-cta" type="button" onclick="openModal('splitModal')">+ Start New Split</button>
+    </div>
+    {% endfor %}
+  </div>
+</div>

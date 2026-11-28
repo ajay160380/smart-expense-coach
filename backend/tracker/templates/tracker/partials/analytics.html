@@ -1,11 +1,16 @@
-<!-- CATEGORY + CHART -->
-      <div class="grid2">
-        <div class="card">
-          <div class="card-title">📊 Spending by category</div>
-          <div id="cat-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">📈 Weekly trend</div>
-          <div class="chart-area" id="bar-chart"></div>
-        </div>
+<!-- EXPENSE ANALYTICS (Donut + Interactive Category List) -->
+<div class="card">
+  <div class="card-head-row">
+    <div class="card-title-lg">Expense Analytics</div>
+  </div>
+  <div class="analytics-split">
+    <div class="donut-box" id="cat-donut-wrap">
+      <svg viewBox="0 0 120 120" width="168" height="168" id="cat-donut" aria-label="Expense distribution chart"></svg>
+      <div class="donut-center">
+        <small>Total</small>
+        <strong id="donut-total">₹0</strong>
       </div>
+    </div>
+    <div class="cat-legend-wrap" id="cat-list"></div>
+  </div>
+</div>

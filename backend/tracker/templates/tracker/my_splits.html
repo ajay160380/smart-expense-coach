@@ -1,261 +1,385 @@
-{% extends 'tracker/base.html' %}
-{% block title %}My Trips & Splits | Expense Tracker{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block content %}
-<style>
-/* 📱 SPLIT CARD PREMIUM */
-.split-card {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-    transition: all 0.3s ease;
-}
-.split-card:hover {
-    border-color: var(--primary-l);
-    background: rgba(30, 41, 59, 0.8);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.3);
-}
-.split-top{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
-.split-emoji{font-size:24px;}
-.split-name{font-size:16px;font-weight:700;flex:1;}
-.split-members-badge{font-size:10px;background:var(--primary-l);color:var(--primary);padding:2px 8px;border-radius:12px;font-weight:600;}
-.split-total{font-size:22px;font-weight:700;font-family:var(--mono);margin-bottom:4px;}
-.split-pp{font-size:12px;color:var(--text3);margin-bottom:10px;}
-.split-actions-row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-}
-.split-action {
-    flex: 1 1 calc(50% - 5px);
-    padding: 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-    border: 1px solid var(--border2);
-    background: rgba(255,255,255,0.03);
-    color: var(--text2);
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-}
-.split-action:hover {
-    background: var(--primary-l);
-    color: var(--primary);
-    border-color: var(--primary);
-    transform: translateY(-2px);
-}
-.bills-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-.add-small-btn {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
-</style>
-<div class="content" style="max-width: 600px; margin: 20px auto; padding: 20px;">
-    <h2>✈️ My Trips & Splits History</h2>
-    <p style="color: var(--text3); margin-bottom: 20px;">Manage all your group expenses, trips, and shared bills here.</p>
-    
-    {% include 'tracker/partials/split_expenses.html' %}
-    
-    <div style="margin-top: 30px; text-align: center;">
-        <a href="{% url 'dashboard' %}" class="submit-btn" style="text-decoration: none; display: inline-block;">⬅️ Back to Dashboard</a>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Trips &amp; Splits | ExpenseTracker</title>
+  <script>
+    (function () {
+      try {
+        var mode = localStorage.getItem('dash_ui_mode');
+        if (mode === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <link rel="icon" type="image/png" href="{% static 'tracker/images/app-icon.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'tracker/css/dash_blue.css' %}?v=20261128v6">
+  <link rel="stylesheet" href="{% static 'tracker/css/dash_refined.css' %}?v=20261128v6">
+</head>
+
+<body>
+
+  <div class="dash-shell">
+
+    <!-- LEFT VERTICAL ELECTRIC BLUE ICON RAIL (Unified with Dashboard) -->
+    <aside class="blue-rail" aria-label="Dashboard navigation">
+      <a href="{% url 'landing' %}" class="rail-logo" title="ExpenseTracker Home">
+        <img src="{% static 'tracker/images/icon.png' %}?v=1784926718" alt="ExpenseTracker">
+      </a>
+
+      <nav class="rail-nav">
+        <a href="{% url 'dashboard' %}#overview" class="rail-btn" title="Overview" aria-label="Overview">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+          <span class="rail-label">Overview</span>
+        </a>
+        <a href="{% url 'dashboard' %}#transactions" class="rail-btn" title="Dashboard Ledger"
+          aria-label="Transactions">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <line x1="2" y1="10" x2="22" y2="10" />
+          </svg>
+          <span class="rail-label">Ledger</span>
+        </a>
+        <a href="{% url 'dashboard' %}#notepad_goals" class="rail-btn" title="Notepad & Goals" aria-label="Goals">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9" />
+            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+            <polyline points="7 23 3 19 7 15" />
+            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+          </svg>
+          <span class="rail-label">Goals</span>
+        </a>
+        <a href="{% url 'dashboard' %}#ai_coach" class="rail-btn" title="AI Coach" aria-label="AI Coach">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          <span class="rail-label">AI Coach</span>
+        </a>
+
+        <div class="rail-divider" aria-hidden="true"></div>
+
+        <a href="{% url 'my_splits_view' %}" class="rail-btn active" title="Trips &amp; Splits"
+          aria-label="Trips &amp; Splits" aria-current="page">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span class="rail-label">Splits</span>
+        </a>
+        <a href="{% url 'dashboard' %}#settings" class="rail-btn" title="Settings &amp; Account" aria-label="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+          </svg>
+          <span class="rail-label">Settings</span>
+        </a>
+        <a href="{% url 'download_apk' %}" class="rail-btn" title="Download Android APK" aria-label="Android APK">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="2" width="12" height="20" rx="2" />
+            <line x1="12" y1="18" x2="12.01" y2="18" />
+          </svg>
+          <span class="rail-label">App</span>
+        </a>
+      </nav>
+
+      <div class="rail-bottom">
+        <a href="{% url 'logout' %}" class="rail-btn" title="Logout" aria-label="Logout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span class="rail-label">Logout</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE STAGE -->
+    <div class="dash-stage">
+      <header class="dash-topbar">
+        <div class="dash-heading-wrap">
+          <h1>My Trips &amp; Splits</h1>
+          <div class="dash-heading-sub">
+            <span>Manage shared group bills, road trips, and instant friend settlements</span>
+          </div>
+        </div>
+
+        <div class="dash-top-actions">
+          <a href="{% url 'dashboard' %}" class="voice-pill-btn" style="text-decoration:none;">← Back to Dashboard</a>
+          <button type="button" class="add-pill-btn" onclick="openModal('splitModal')">+ New Split Group</button>
+          <button type="button" class="icon-square-btn" id="splits-theme-btn" onclick="toggleSplitsTheme()"
+            title="Toggle Theme" aria-label="Toggle Theme">
+            <span id="splits-theme-icon" aria-hidden="true" style="display:inline-flex;align-items:center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </span>
+          </button>
+          <div class="profile-trigger-card" onclick="window.location.href='{% url 'dashboard' %}'" role="button"
+            tabindex="0">
+            <div class="profile-meta">
+              <strong>{{ request.user.username|title }}</strong>
+              <span>Trips &amp; Splits</span>
+            </div>
+            <div class="profile-btn">{{ request.user.username|slice:":1"|upper }}</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="dash-layout splits-page-grid">
+        <div class="dash-main">
+          {% include 'tracker/partials/split_expenses.html' %}
+        </div>
+
+        <div class="dash-side">
+          <div class="hero splits-guide-hero">
+            <div class="hero-top">
+              <div>
+                <div class="hero-label">Instant Group Ledger</div>
+                <div class="hero-amount" style="font-size: 28px;">Split Fair. Settle Fast.</div>
+                <div class="hero-budget">Friends don't even need an app to view live settlements via share links.</div>
+              </div>
+            </div>
+
+            <div class="splits-step-list">
+              <div class="splits-step-row">
+                <span class="splits-step-num">1</span>
+                <div>
+                  <strong>Create Group</strong>
+                  <span>Add friends on trips, flat rent, or dinners.</span>
+                </div>
+              </div>
+              <div class="splits-step-row">
+                <span class="splits-step-num">2</span>
+                <div>
+                  <strong>Add Shared Bills</strong>
+                  <span>Track who paid for hotels, fuel, or food.</span>
+                </div>
+              </div>
+              <div class="splits-step-row">
+                <span class="splits-step-num">3</span>
+                <div>
+                  <strong>Share 1-Tap Link</strong>
+                  <span>Send clean WhatsApp settlement breakdown anytime.</span>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="budget-btn"
+              style="margin-top: 18px; width: 100%; padding: 12px 16px; font-size: 13.5px;"
+              onclick="openModal('splitModal')">+ Start New Trip Split</button>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Modals & Scripts for Splits -->
-{% include 'tracker/partials/modals.html' %}
-<div id="toast" class="toast"></div>
+  {% include 'tracker/partials/modals.html' %}
 
-<script>
-// Utilities
-function esc(s) {
-  if (!s) return '';
-  return s.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-}
-function getCsrf() {
-  const c = document.cookie.match(/csrftoken=([\w-]+)/);
-  return c ? c[1] : '';
-}
-function openModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add('open');
-}
-function closeModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove('open');
-}
-function showToast(msg, type='success') {
-  const t = document.getElementById('toast');
-  if(!t) return;
-  t.textContent = msg;
-  t.style.background = type==='error'?'#EF4444':'#25D366';
-  t.style.transform = 'translate(-50%, 0)';
-  t.style.opacity = '1';
-  setTimeout(() => {
-    t.style.transform = 'translate(-50%, 100px)';
-    t.style.opacity = '0';
-  }, 3000);
-}
-
-// Split Logic
-async function createSplit() {
-  const name = document.getElementById('split-name').value;
-  const membersTxt = document.getElementById('split-members').value;
-  if (!name || !membersTxt) return showToast('Please fill all fields', 'error');
-  
-  const members = membersTxt.split('\n').map(m => m.trim()).filter(m => m);
-  if (members.length < 2) return showToast('Need at least 2 members', 'error');
-
-  try {
-    const res = await fetch('/api/splits/create/', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
-      body: JSON.stringify({name, members})
-    });
-    if (res.ok) {
-      closeModal('splitModal');
-      showToast('Split group created! 👥', 'success');
-      location.reload();
-    } else {
-      const data = await res.json();
-      showToast(data.error || 'Failed to create group', 'error');
+  <script>
+    function toggleSplitsTheme() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('dash_ui_mode', 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('dash_ui_mode', 'dark');
+      }
     }
-  } catch (err) {
-    showToast('Network error', 'error');
-  }
-}
 
-let activeSplitId = null;
-function openAddSplitExpense(id, name, members) {
-  activeSplitId = id;
-  document.getElementById('split-exp-group-id').value = id;
-  document.getElementById('split-exp-modal-title').innerHTML = `💸 Add to ${esc(name)} <button class="modal-close" onclick="closeModal('splitExpModal')" type="button">✕</button>`;
-  
-  const select = document.getElementById('split-exp-paid-by');
-  select.innerHTML = members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
-  
-  openModal('splitExpModal');
-}
-
-async function addSplitExpense() {
-  if (!activeSplitId) return;
-  const amount = document.getElementById('split-exp-amount').value;
-  const description = document.getElementById('split-exp-desc').value;
-  const paidBy = document.getElementById('split-exp-paid-by').value;
-  if (!amount || !description || !paidBy) return showToast('Please fill all fields', 'error');
-
-  try {
-    const res = await fetch(`/api/splits/${activeSplitId}/add-expense/`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
-      body: JSON.stringify({amount, description, paid_by: paidBy})
-    });
-    if (res.ok) {
-      closeModal('splitExpModal');
-      showToast('Expense added to group!', 'success');
-      location.reload();
-    } else {
-      const data = await res.json();
-      showToast(data.error || 'Failed to add expense', 'error');
+    function esc(s) {
+      if (!s) return '';
+      return s.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
-  } catch (err) {
-    showToast('Network error', 'error');
-  }
-}
-
-async function deleteSplit(id) {
-  if (!confirm('Ye split group delete karna chahte ho?')) return;
-  try {
-    const res = await fetch(`/api/splits/${id}/delete/`, {
-      method: 'POST',
-      headers: {'X-CSRFToken': getCsrf()}
-    });
-    if (res.ok) {
-      const card = document.getElementById('split-card-' + id);
-      if (card) { card.style.transition='opacity 0.2s'; card.style.opacity='0'; setTimeout(() => card.remove(), 200); }
-      showToast('Split group deleted! 🗑️', 'success');
-    } else {
-      showToast('Failed to delete split group', 'error');
+    function getCsrf() {
+      const c = document.cookie.match(/csrftoken=([\w-]+)/);
+      return c ? c[1] : '';
     }
-  } catch (err) {
-    showToast('Network error', 'error');
-  }
-}
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('open');
+    }
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('open');
+    }
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.style.cssText = `padding: 12px 18px; border-radius: 12px; color: #fff; font-weight: 600; font-size: 13.5px; box-shadow: 0 10px 25px rgba(15,23,42,0.18); background: ${type === 'error' ? '#EF4444' : '#10B981'};`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3200);
+    }
 
-async function viewSplitSummary(id) {
-  try {
-    const res = await fetch(`/api/splits/${id}/summary/`);
-    if (res.ok) {
-      const data = await res.json();
-      let html = `<div style="padding:15px;background:var(--bg3);border-radius:12px;margin-bottom:15px;">`;
-      html += `<div style="color:var(--text2);margin-bottom:15px;font-size:14px;">Total Group Expense: <b style="color:var(--text);">₹${data.total}</b> (₹${data.per_person} per person)</div>`;
-      
-      html += `<div style="margin-bottom:15px;">`;
-      data.members.forEach(m => {
-        html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;">
+    async function createSplit() {
+      const name = document.getElementById('split-name').value;
+      const membersTxt = document.getElementById('split-members').value;
+      if (!name || !membersTxt) return showToast('Please fill all fields', 'error');
+      const members = membersTxt.split('\n').map(m => m.trim()).filter(m => m);
+      if (members.length < 2) return showToast('Need at least 2 members', 'error');
+
+      try {
+        const res = await fetch('/api/splits/create/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+          body: JSON.stringify({ name, members })
+        });
+        if (res.ok) {
+          closeModal('splitModal');
+          showToast('Split group created! 👥', 'success');
+          location.reload();
+        } else {
+          const data = await res.json();
+          showToast(data.error || 'Failed to create group', 'error');
+        }
+      } catch (err) {
+        showToast('Network error', 'error');
+      }
+    }
+
+    let activeSplitId = null;
+    function openAddSplitExpense(id, name, members) {
+      activeSplitId = id;
+      document.getElementById('split-exp-group-id').value = id;
+      document.getElementById('split-exp-modal-title').innerHTML = `💸 Add to ${esc(name)} <button class="modal-close" onclick="closeModal('splitExpModal')" type="button">✕</button>`;
+      const select = document.getElementById('split-exp-paid-by');
+      select.innerHTML = members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+      openModal('splitExpModal');
+    }
+
+    async function addSplitExpense() {
+      if (!activeSplitId) return;
+      const amount = document.getElementById('split-exp-amount').value;
+      const description = document.getElementById('split-exp-desc').value;
+      const paidBy = document.getElementById('split-exp-paid-by').value;
+      if (!amount || !description || !paidBy) return showToast('Please fill all fields', 'error');
+
+      try {
+        const res = await fetch(`/api/splits/${activeSplitId}/add-expense/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+          body: JSON.stringify({ amount, description, paid_by: paidBy })
+        });
+        if (res.ok) {
+          closeModal('splitExpModal');
+          showToast('Expense added to group!', 'success');
+          location.reload();
+        } else {
+          const data = await res.json();
+          showToast(data.error || 'Failed to add expense', 'error');
+        }
+      } catch (err) {
+        showToast('Network error', 'error');
+      }
+    }
+
+    async function deleteSplit(id) {
+      if (!confirm('Ye split group delete karna chahte ho?')) return;
+      try {
+        const res = await fetch(`/api/splits/${id}/delete/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrf() }
+        });
+        if (res.ok) {
+          const card = document.getElementById('split-card-' + id);
+          if (card) { card.style.transition = 'opacity 0.2s'; card.style.opacity = '0'; setTimeout(() => card.remove(), 200); }
+          showToast('Split group deleted! 🗑️', 'success');
+        } else {
+          showToast('Failed to delete split group', 'error');
+        }
+      } catch (err) {
+        showToast('Network error', 'error');
+      }
+    }
+
+    async function viewSplitSummary(id) {
+      try {
+        const res = await fetch(`/api/splits/${id}/summary/`);
+        if (res.ok) {
+          const data = await res.json();
+          let html = `<div style="padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;">`;
+          html += `<div style="color:var(--text2);margin-bottom:14px;font-size:15px;">Total Group Expense: <b style="color:var(--text);">₹${data.total}</b> (₹${data.per_person} per person)</div>`;
+          html += `<div style="margin-bottom:14px;">`;
+          data.members.forEach(m => {
+            html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13.5px;">
           <span>👤 ${esc(m.name)}</span>
           <span style="color:var(--text3);">Paid: ₹${m.paid}</span>
         </div>`;
-      });
-      html += `</div><hr style="border-color:var(--border);margin-bottom:15px;">`;
-
-      if (data.settlements.length === 0) {
-        html += `<div style="color:var(--green);font-weight:600;text-align:center;">Everyone is settled up! 🎉</div>`;
-      } else {
-        html += `<div style="font-size:12px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;letter-spacing:0.05em;">Who owes whom</div>`;
-        data.settlements.forEach(s => {
-          html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);align-items:center;">
-            <span style="font-size:14px;"><b>${esc(s.from)}</b> owes <b>${esc(s.to)}</b></span>
+          });
+          html += `</div><hr style="border-color:var(--border);margin-bottom:14px;">`;
+          if (data.settlements.length === 0) {
+            html += `<div style="color:var(--green);font-weight:700;text-align:center;">Everyone is settled up! 🎉</div>`;
+          } else {
+            html += `<div style="font-size:12px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;letter-spacing:0.05em;">Who owes whom</div>`;
+            data.settlements.forEach(s => {
+              html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-size:14.5px;"><b>${esc(s.from)}</b> owes <b>${esc(s.to)}</b></span>
             <span style="color:var(--red);font-weight:700;font-family:var(--mono);">₹${s.amount}</span>
           </div>`;
-        });
+            });
+          }
+          html += `</div>`;
+          const summaryText = data.settlements.length ?
+            encodeURIComponent(`*${data.group_name} Settlements*\n` + data.settlements.map(s => `${s.from} owes ${s.to}: ₹${s.amount}`).join('\n')) :
+            encodeURIComponent(`*${data.group_name}* is completely settled up! 🎉`);
+          html += `<button class="submit-btn" style="background:#25D366;color:#fff;" onclick="window.open('https://wa.me/?text=${summaryText}', '_blank')">Share via WhatsApp 💬</button>`;
+          document.getElementById('split-summary-content').innerHTML = html;
+          openModal('splitSummaryModal');
+        }
+      } catch (err) {
+        showToast('Failed to load summary', 'error');
       }
-      html += `</div>`;
-      
-      const summaryText = data.settlements.length ? 
-        encodeURIComponent(`*${data.group_name} Settlements*\n` + data.settlements.map(s => `${s.from} owes ${s.to}: ₹${s.amount}`).join('\n')) :
-        encodeURIComponent(`*${data.group_name}* is completely settled up! 🎉`);
-        
-      html += `<button class="submit-btn" style="background:#25D366;color:#fff;" onclick="window.open('https://wa.me/?text=${summaryText}', '_blank')">Share via WhatsApp 💬</button>`;
-      
-      document.getElementById('split-summary-content').innerHTML = html;
-      openModal('splitSummaryModal');
     }
-  } catch (err) {
-    showToast('Failed to load summary', 'error');
-  }
-}
 
-async function settleSplit(id) {
-  if (!confirm('Mark this entire split group as completely settled?')) return;
-  try {
-    const res = await fetch(`/api/splits/${id}/settle/`, {
-      method: 'POST',
-      headers: {'X-CSRFToken': getCsrf()}
-    });
-    if (res.ok) {
-      showToast('Split marked as settled!', 'success');
-      location.reload();
-    } else {
-      showToast('Failed to settle group', 'error');
+    async function settleSplit(id) {
+      if (!confirm('Mark this entire split group as completely settled?')) return;
+      try {
+        const res = await fetch(`/api/splits/${id}/settle/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrf() }
+        });
+        if (res.ok) {
+          showToast('Split marked as settled!', 'success');
+          location.reload();
+        } else {
+          showToast('Failed to settle group', 'error');
+        }
+      } catch (err) {
+        showToast('Network error', 'error');
+      }
     }
-  } catch (err) {
-    showToast('Network error', 'error');
-  }
-}
-</script>
-{% endblock %}
+  </script>
+</body>
+
+</html>

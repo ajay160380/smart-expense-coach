@@ -11,7 +11,7 @@ license: mit
 ---
 
 <div align="center">
-  <img src="backend/tracker/static/tracker/images/icon.png" alt="Paisa Mitra Logo" width="120" height="120" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+  <img src="backend/tracker/static/tracker/images/icon.png" alt="Expense Tracker Logo" width="120" height="120" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
 
   <h1> Smart Expense Tracker 💸🤖</h1>
   <p><strong>Your AI-Powered Personal Finance Assistant & WhatsApp Bot</strong></p>
@@ -63,7 +63,7 @@ license: mit
 
 ## 🌟 Overview
 
-**Smart Expense Coach** (also known as **Paisa Mitra**) is a modern, AI-powered expense tracking ecosystem. Unlike traditional apps where you have to manually enter data, Paisa Mitra lets you track your expenses entirely via **WhatsApp** using natural language (e.g., *"Maine aaj ₹150 ka pizza khaya"*).
+**Smart Expense Coach** (also known as **Expense Tracker**) is a modern, AI-powered expense tracking ecosystem. Unlike traditional apps where you have to manually enter data, Expense Tracker lets you track your expenses entirely via **WhatsApp** using natural language (e.g., *"Maine aaj ₹150 ka pizza khaya"*).
 
 The system uses **Groq AI (Llama 3.1)** to intelligently parse your message, categorize the expense, and save it straight to your dashboard — no forms, no friction. It also ships with a polished React Native mobile app and a full web dashboard.
 
@@ -159,7 +159,7 @@ sequenceDiagram
 
 <div align="center">
 
-### 👉 [**Launch Paisa Mitra**](https://smart-expense-coach.onrender.com) 👈
+### 👉 [**Launch Expense Tracker**](https://smart-expense-coach.onrender.com) 👈
 
 [![Open Web App](https://img.shields.io/badge/🌐%20Open%20Web%20App-smart--expense--coach.onrender.com-4CAF50?style=for-the-badge)](https://smart-expense-coach.onrender.com)
 [![Status](https://img.shields.io/website?url=https%3A%2F%2Fsmart-expense-coach.onrender.com&up_message=live&down_message=waking%20up&style=for-the-badge)](https://smart-expense-coach.onrender.com)

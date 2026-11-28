@@ -1,122 +1,94 @@
-{% extends 'tracker/base.html' %}
-
-{% block extra_css %}
-<style>
-.static-page {
-    width: 100%;
-    padding: 40px 20px;
-    min-height: calc(100vh - 80px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    animation: fadeIn 0.4s ease-out;
-}
-.static-card {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    background: var(--bg-card);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--border-light);
-    border-radius: 24px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-    padding: 50px;
-    color: var(--text-main);
-}
-.back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-muted);
-    text-decoration: none;
-    font-weight: 600;
-    font-family: 'Outfit', sans-serif;
-    margin-bottom: 20px;
-    transition: color 0.2s, transform 0.2s;
-}
-.back-btn:hover {
-    color: var(--primary);
-    transform: translateX(-4px);
-}
-.static-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin-bottom: 20px;
-    color: var(--primary);
-}
-.static-content p, .static-content li {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: var(--text-muted);
-    margin-bottom: 15px;
-}
-.static-content h3 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.5rem;
-    margin-top: 30px;
-    margin-bottom: 15px;
-    color: var(--text-main);
-}
-</style>
-{% endblock %}
+{% extends 'tracker/noir_subpage.html' %}
+{% block title %}Privacy Policy — ExpenseTracker{% endblock %}
 
 {% block content %}
-<div class="static-page">
-    <div class="static-card">
-        <a href="#" onclick="history.back(); return false;" class="back-btn">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            Back
-        </a>
-        <h1 class="static-title">Privacy Policy</h1>
-        <div class="static-content">
-            <p><strong>Effective Date:</strong> October 2026</p>
-            <p>Smart Expense Coach ("we", "our", or "us") is dedicated to protecting your privacy and personal financial data. This Privacy Policy details our data practices, third-party subprocessors, security measures, and data retention policies.</p>
-            
-            <h3>1. Information We Collect</h3>
-            <ul>
-                <li><strong>Account Credentials:</strong> Username, email address, phone number, and cryptographically hashed passwords / OTPs. We never store or log plaintext passwords or OTP codes.</li>
-                <li><strong>Financial Transactions:</strong> Expense records (amount, category, description, date), budget cycle limits, and peer split group settlements.</li>
-                <li><strong>Auto-Capture & Financial Notifications (Optional, Android Only):</strong> When the user explicitly opts into Auto-Capture, transaction amounts and merchant names from allowed financial apps (Google Pay, PhonePe, Paytm, BHIM, Banks) are parsed on-device to create draft expense records. Raw notification text, personal chats, and OTPs are NEVER uploaded or stored on servers.</li>
-                <li><strong>Voice & Message Inputs:</strong> Spoken audio and text commands sent via WhatsApp or our mobile application for automatic expense parsing.</li>
-                <li><strong>Technical Logs:</strong> Device type, IP address (for rate-limiting and brute-force protection), and client error reports.</li>
-            </ul>
+<div class="subpage-wrap subpage-wrap--narrow">
+    <a href="{% url 'landing' %}" class="subpage-back">← Back to Home</a>
 
-            <h3>2. AI & Third-Party Subprocessors</h3>
-            <p>To deliver real-time financial tracking, push alerts, and voice recognition, we utilize vetted industry-leading subprocessors:</p>
-            <ul>
-                <li><strong>Groq Inc. (AI Processing):</strong> Powers Whisper audio transcription and AI natural language processing for expense extraction. Audio data is processed in-memory for transcription and is not retained or used to train public foundation models.</li>
-                <li><strong>Google Firebase / Cloud Messaging (Push Notifications):</strong> Securely delivers user-consented transaction reminders, daily budgets, and alert banners to mobile devices.</li>
-                <li><strong>Neon / PostgreSQL (Database Hosting):</strong> Encrypted PostgreSQL cloud database storing user profiles, hashed credentials, and transactions with automated snapshot backups.</li>
-                <li><strong>Meta / WhatsApp Business (Messaging Interface):</strong> Delivers conversational messaging and instant expense confirmations via WhatsApp.</li>
-                <li><strong>Render (Application Hosting):</strong> Secure container hosting running our hardened Django backend and Gunicorn application servers.</li>
-                <li><strong>Resend / Brevo (Email Delivery):</strong> Delivers transactional OTP codes, password resets, and account verification emails.</li>
-            </ul>
-
-            <h3>3. Data Retention & Deletion Policy</h3>
-            <ul>
-                <li><strong>Active Accounts:</strong> User data and transaction records are retained as long as your account remains open to provide historical financial trends and budgeting insights.</li>
-                <li><strong>Account Deletion:</strong> When an account is deleted via the app or our public <a href="{% url 'delete_account' %}" style="color: var(--primary);">Account Deletion Page</a>, all user-linked transactions, notes, split memberships, profiles, and tokens are permanently and immediately purged from active databases via cascading deletes.</li>
-                <li><strong>One-Time Passwords & Tokens:</strong> Expired OTP codes and tokens inactive for over 30 days are automatically purged.</li>
-                <li><strong>Analytics & Client Error Logs:</strong> Performance telemetry and client error traces are retained for a maximum of 90 days, after which they are systematically purged.</li>
-                <li><strong>Database Backups:</strong> Automated database snapshots are encrypted at rest and retained on a rolling 7-to-30 day lifecycle for disaster recovery before permanent purging.</li>
-            </ul>
-
-            <h3>4. Security & Cryptography</h3>
-            <p>We enforce strict security boundaries: all data in transit is encrypted using TLS 1.3/HTTPS, authentication tokens are stored securely (using SecureStore on mobile), cookies are marked Secure and SameSite, and OTPs are hashed using salted SHA-256 digests.</p>
-
-            <h3>5. Contact & Data Subject Rights</h3>
-            <p>You have the right to inspect, export, or request immediate deletion of your personal financial records. You can delete your account directly via <a href="{% url 'delete_account' %}" style="color: var(--primary);">Delete Account</a>, contact our privacy team at <a href="mailto:support@paisamitra.com" style="color: var(--primary);">support@paisamitra.com</a>, or submit an inquiry through our <a href="/contact/" style="color: var(--primary);">Contact Support</a> page.</p>
-
-            <h3>6. Grievance Redressal Officer</h3>
-            <p>In accordance with the Information Technology Act, 2000 and the Digital Personal Data Protection (DPDP) Act, 2023, the details of the Grievance Officer are:</p>
-            <ul>
-                <li><strong>Designation:</strong> Grievance Redressal Officer (TODO: appoint designated officer)</li>
-                <li><strong>Email:</strong> <a href="mailto:grievance@smart-expense-coach.com" style="color: var(--primary);">grievance@smart-expense-coach.com</a></li>
-                <li><strong>Response Timeline:</strong> Acknowledgment within 24–48 hours, resolution within 15 business days.</li>
-            </ul>
+    <article class="subpage-panel subpage-doc">
+        <div class="status-pill" style="margin-bottom:20px;">
+            <span class="status-pill__text">EFFECTIVE OCTOBER 2026</span>
         </div>
-    </div>
+        <h1 style="font-family:var(--font-display); font-size:clamp(30px, 4vw, 44px); margin:0 0 20px;">
+            Privacy <span style="color:var(--accent-blue);">Policy</span>
+        </h1>
+
+        <p>Smart Expense Coach / ExpenseTracker ("we", "our", or "us") is dedicated to protecting your privacy and
+            personal financial data. This Privacy Policy details our data practices, third-party subprocessors, security
+            measures, and data retention policies.</p>
+
+        <h3>1. Information We Collect</h3>
+        <ul>
+            <li><strong>Account Credentials:</strong> Username, email address, phone number, and cryptographically
+                hashed passwords / OTPs. We never store or log plaintext passwords or OTP codes.</li>
+            <li><strong>Financial Transactions:</strong> Expense records (amount, category, description, date), budget
+                cycle limits, and peer split group settlements.</li>
+            <li><strong>Auto-Capture &amp; Financial Notifications (Optional, Android Only):</strong> When the user
+                explicitly opts into Auto-Capture, transaction amounts and merchant names from allowed financial apps
+                (Google Pay, PhonePe, Paytm, BHIM, Banks) are parsed on-device to create draft expense records. Raw
+                notification text, personal chats, and OTPs are NEVER uploaded or stored on servers.</li>
+            <li><strong>Voice &amp; Message Inputs:</strong> Spoken audio and text commands sent via WhatsApp or our
+                mobile application for automatic expense parsing.</li>
+            <li><strong>Technical Logs:</strong> Device type, IP address (for rate-limiting and brute-force protection),
+                and client error reports.</li>
+        </ul>
+
+        <h3>2. AI &amp; Third-Party Subprocessors</h3>
+        <p>To deliver real-time financial tracking, push alerts, and voice recognition, we utilize vetted
+            industry-leading subprocessors:</p>
+        <ul>
+            <li><strong>Groq Inc. (AI Processing):</strong> Powers Whisper audio transcription and AI natural language
+                processing for expense extraction. Audio data is processed in-memory for transcription and is not
+                retained or used to train public foundation models.</li>
+            <li><strong>Google Firebase / Cloud Messaging (Push Notifications):</strong> Securely delivers
+                user-consented transaction reminders, daily budgets, and alert banners to mobile devices.</li>
+            <li><strong>Neon / PostgreSQL (Database Hosting):</strong> Encrypted PostgreSQL cloud database storing user
+                profiles, hashed credentials, and transactions with automated snapshot backups.</li>
+            <li><strong>Meta / WhatsApp Business (Messaging Interface):</strong> Delivers conversational messaging and
+                instant expense confirmations via WhatsApp.</li>
+            <li><strong>Render (Application Hosting):</strong> Secure container hosting running our hardened Django
+                backend and Gunicorn application servers.</li>
+            <li><strong>Resend / Brevo (Email Delivery):</strong> Delivers transactional OTP codes, password resets, and
+                account verification emails.</li>
+        </ul>
+
+        <h3>3. Data Retention &amp; Deletion Policy</h3>
+        <ul>
+            <li><strong>Active Accounts:</strong> User data and transaction records are retained as long as your account
+                remains open to provide historical financial trends and budgeting insights.</li>
+            <li><strong>Account Deletion:</strong> When an account is deleted via the app or our public <a
+                    href="{% url 'delete_account' %}">Account Deletion Page</a>, all user-linked transactions, notes,
+                split memberships, profiles, and tokens are permanently and immediately purged from active databases via
+                cascading deletes.</li>
+            <li><strong>One-Time Passwords &amp; Tokens:</strong> Expired OTP codes and tokens inactive for over 30 days
+                are automatically purged.</li>
+            <li><strong>Analytics &amp; Client Error Logs:</strong> Performance telemetry and client error traces are
+                retained for a maximum of 90 days, after which they are systematically purged.</li>
+            <li><strong>Database Backups:</strong> Automated database snapshots are encrypted at rest and retained on a
+                rolling 7-to-30 day lifecycle for disaster recovery before permanent purging.</li>
+        </ul>
+
+        <h3>4. Security &amp; Cryptography</h3>
+        <p>We enforce strict security boundaries: all data in transit is encrypted using TLS 1.3/HTTPS, authentication
+            tokens are stored securely (using SecureStore on mobile), cookies are marked Secure and SameSite, and OTPs
+            are hashed using salted SHA-256 digests.</p>
+
+        <h3>5. Contact &amp; Data Subject Rights</h3>
+        <p>You have the right to inspect, export, or request immediate deletion of your personal financial records. You
+            can delete your account directly via <a href="{% url 'delete_account' %}">Delete Account</a>, contact our
+            privacy team at <a href="mailto:support@paisamitra.com">support@paisamitra.com</a>, or submit an inquiry
+            through our <a href="{% url 'contact' %}">Contact Support</a> page.</p>
+
+        <h3>6. Grievance Redressal Officer</h3>
+        <p>In accordance with the Information Technology Act, 2000 and the Digital Personal Data Protection (DPDP) Act,
+            2023, the details of the Grievance Officer are:</p>
+        <ul>
+            <li><strong>Designation:</strong> Grievance Redressal Officer (TODO: appoint designated officer)</li>
+            <li><strong>Email:</strong> <a
+                    href="mailto:grievance@smart-expense-coach.com">grievance@smart-expense-coach.com</a></li>
+            <li><strong>Response Timeline:</strong> Acknowledgment within 24–48 hours, resolution within 15 business days.
+            </li>
+        </ul>
+    </article>
 </div>
 {% endblock %}
